@@ -2,19 +2,19 @@
   <Transition name="now-playing">
     <div
       v-if="track && !nowPlaying.isOpen.value"
-      class="relative flex h-16 items-center gap-3 overflow-hidden rounded-[16px] border border-line-3 bg-glass pr-2 pl-2 shadow-float backdrop-blur-xl md:h-[76px] md:gap-5 md:rounded-[18px] md:pr-5 md:pl-3"
+      class="relative flex h-20 items-center gap-3 overflow-hidden rounded-[16px] border border-line-3 bg-glass pr-2 pl-2 shadow-float backdrop-blur-xl md:h-24 md:gap-5 md:rounded-[18px] md:pr-5 md:pl-3"
     >
       <!-- Progress: a hairline on phones, a scrubber on desktop. -->
-      <div class="absolute inset-x-3 bottom-0 h-0.5 bg-line-2 md:hidden">
+      <div class="absolute inset-x-3 bottom-0 h-1 bg-line-2 md:hidden">
         <div class="h-full bg-accent" :style="{ width: `${smoothPercent}%` }" />
       </div>
-      <div class="absolute inset-x-0 -top-2 hidden md:block">
+      <div class="absolute inset-x-0 -top-3 md:top-auto md:inset-x-0 md:bottom-0 z-10">
         <SliderBar
           :model-value="scrub ?? player.currentTime.value"
           :max="player.duration.value || 1"
           :label="t('player.seek')"
           :value-text="formatDuration(player.currentTime.value)"
-          :hit-height="16"
+          :hit-height="24"
           :playing="player.isPlaying.value"
           track-class="bg-transparent"
           fill-class="bg-accent"
@@ -41,7 +41,7 @@
             rounded="rounded-[10px]"
             :letter-size="18"
             :icon-size="18"
-            class="size-11 md:size-[52px]"
+            class="size-14 md:size-16"
           />
           <span class="flex min-w-0 flex-col">
             <span class="flex items-center gap-2">
@@ -83,7 +83,7 @@
         />
         <button
           type="button"
-          class="flex size-11 items-center justify-center rounded-full text-fg md:bg-invert md:text-on-invert md:transition-transform md:hover:scale-105"
+          class="flex size-12 items-center justify-center rounded-full text-fg md:size-13 md:bg-invert md:text-on-invert md:transition-transform md:hover:scale-105"
           :aria-label="
             player.isPlaying.value ? t('player.pause') : t('player.play')
           "
