@@ -256,6 +256,16 @@ export default {
     importButton: 'Избери CSV файл',
     importFailed: 'CSV файлът не може да бъде импортиран.',
   },
+  stats: {
+    title: 'Статистика',
+    tracks: 'Песни в библиотеката',
+    downloads30: 'Изтегляния (30 дни)',
+    plays: 'Излъшвания',
+    likes: 'Харесани',
+    downloadsPerDay: 'Изтегляния на ден',
+    topTracks: 'Най-слушани',
+    empty: 'Още няма',
+  },
   collections: {
     title: 'Колекции',
     placeholder: 'Име на нова колекция',

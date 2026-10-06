@@ -37,6 +37,12 @@ const routes = [
     component: () => import('/src/views/LibraryView.vue'),
   },
   {
+    // Library + activity numbers.
+    path: '/library/stats',
+    name: 'Stats',
+    component: () => import('/src/views/StatsView.vue'),
+  },
+  {
     // Named groups of library playlists.
     path: '/library/collections',
     name: 'Collections',

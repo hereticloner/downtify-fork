@@ -262,6 +262,16 @@ export default {
     importButton: 'Επιλογή αρχείου CSV',
     importFailed: 'Δεν ήταν δυνατή η εισαγωγή του CSV.',
   },
+  stats: {
+    title: 'Στατιστικά',
+    tracks: 'Κομμάτια στη βιβλιοθήκη',
+    downloads30: 'Λήψεις (30 ημέρες)',
+    plays: 'Αναπαραγωγές',
+    likes: 'Αγαπημένα',
+    downloadsPerDay: 'Λήψεις ανά ημέρα',
+    topTracks: 'Πιο ακούσματα',
+    empty: 'Τίποτα ακόμη',
+  },
   collections: {
     title: 'Συλλογές',
     placeholder: 'Όνομα νέας συλλογής',

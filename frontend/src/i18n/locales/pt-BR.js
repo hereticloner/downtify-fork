@@ -260,6 +260,16 @@ export default {
     importButton: 'Escolher arquivo CSV',
     importFailed: 'Não foi possível importar esse CSV.',
   },
+  stats: {
+    title: 'Estatísticas',
+    tracks: 'Faixas na biblioteca',
+    downloads30: 'Downloads (30 dias)',
+    plays: 'Reproduções',
+    likes: 'Curtidas',
+    downloadsPerDay: 'Downloads por dia',
+    topTracks: 'Mais reproduzidas',
+    empty: 'Nada ainda',
+  },
   collections: {
     title: 'Coleções',
     placeholder: 'Nome da nova coleção',

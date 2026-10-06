@@ -10,6 +10,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 
 from . import collections as coll
+from . import stats as stats_mod
 from .library_paths_cache import invalidate_library_paths_cache
 
 router = APIRouter()
@@ -77,6 +78,48 @@ async def edit_collection_items_endpoint(
         return data
     except coll.CollectionError as exc:
         _raise(exc)
+
+
+@router.get('/api/stats')
+async def stats_endpoint() -> dict[str, Any]:
+    from downtify import api as api_mod  # noqa: PLC0415
+
+    st = api_mod.state
+    track_count = 0
+    if st.track_index is not None:
+        track_count = len(st.track_index.list_filenames())
+    playlist_count = 0
+    try:
+        from main import DOWNLOAD_DIR  # noqa: PLC0415
+
+        playlist_count = len(
+            [
+                p
+                for p in api_mod.list_library_playlists(
+                    DOWNLOAD_DIR, None, None, stale_ok=True
+                )
+            ]
+        )
+    except Exception:
+        playlist_count = 0
+    likes = 0
+    try:
+        likes = st.likes.count() if st.likes is not None else 0
+    except Exception:
+        likes = 0
+    activity = st.activity
+    if activity is None:
+        return {
+            'library': {'tracks': 0, 'playlists': 0, 'likes': 0},
+            'downloads': {'total': 0, 'last_30_days': 0, 'per_day': []},
+            'playback': {'total': 0, 'top_tracks': []},
+        }
+    return stats_mod.build_stats(
+        activity=activity,
+        track_count=track_count,
+        likes=likes,
+        playlist_count=playlist_count,
+    )
 
 
 @router.delete('/api/collections/{name}')

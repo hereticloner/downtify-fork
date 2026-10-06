@@ -261,6 +261,16 @@ export default {
     importButton: 'CSV fájl kiválasztása',
     importFailed: 'Nem sikerült importálni a CSV-t.',
   },
+  stats: {
+    title: 'Statisztikák',
+    tracks: 'Számok a könyvtárban',
+    downloads30: 'Letöltések (30 nap)',
+    plays: 'Lejátszások',
+    likes: 'Kedvencek',
+    downloadsPerDay: 'Letöltések naponta',
+    topTracks: 'Legtöbbet játszottak',
+    empty: 'Még nincs adat',
+  },
   collections: {
     title: 'Gyűjtemények',
     placeholder: 'Új gyűjtemény neve',

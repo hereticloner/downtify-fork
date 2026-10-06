@@ -193,7 +193,7 @@ const items = [
     name: 'Library',
     icon: 'library',
     label: 'nav.library',
-    match: ['Album', 'Artist', 'Playlist', 'Collections'],
+    match: ['Album', 'Artist', 'Playlist', 'Collections', 'Stats'],
   },
   { name: 'Queue', icon: 'download', label: 'nav.queue' },
   {

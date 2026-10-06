@@ -263,6 +263,16 @@ export default {
     importButton: 'CSV dosyası seç',
     importFailed: 'Bu CSV içe aktarılamadı.',
   },
+  stats: {
+    title: 'İstatistikler',
+    tracks: 'Kütüphanedeki parça',
+    downloads30: 'İndirme (30 gün)',
+    plays: 'Dinlenme',
+    likes: 'Beğenilen',
+    downloadsPerDay: 'Günlük indirme',
+    topTracks: 'En çok dinlenenler',
+    empty: 'Henüz veri yok',
+  },
   collections: {
     title: 'Koleksiyonlar',
     placeholder: 'Yeni koleksiyon adı',

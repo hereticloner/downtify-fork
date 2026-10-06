@@ -256,6 +256,16 @@ export default {
     importButton: 'Choose CSV file',
     importFailed: "Couldn't import that CSV file.",
   },
+  stats: {
+    title: 'Stats',
+    tracks: 'Tracks in library',
+    downloads30: 'Downloads (30 days)',
+    plays: 'Plays',
+    likes: 'Liked',
+    downloadsPerDay: 'Downloads per day',
+    topTracks: 'Most played',
+    empty: 'Nothing yet',
+  },
   collections: {
     title: 'Collections',
     placeholder: 'New collection name',
