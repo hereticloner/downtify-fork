@@ -31,6 +31,7 @@ export default {
     discover: 'Keşfet',
     podcasts: 'Podcastler',
     charts: 'Müzik listeleri',
+    collections: 'Koleksiyonlar',
     settings: 'Ayarlar',
     more: 'Daha fazla',
     playlists: 'Çalma listeleri',
@@ -259,6 +260,15 @@ export default {
       'Soundiiz, TuneMyMusic, Exportify ve benzerlerinden bir CSV dışa aktarımı.',
     importButton: 'CSV dosyası seç',
     importFailed: 'Bu CSV içe aktarılamadı.',
+  },
+  collections: {
+    title: 'Koleksiyonlar',
+    placeholder: 'Yeni koleksiyon adı',
+    create: 'Oluştur',
+    addPlaylist: 'Adıyla playlist ekle',
+    empty: 'Bu koleksiyonda henüz playlist yok',
+    none: 'Henüz koleksiyon yok',
+    confirmDelete: '"{name}" koleksiyonu silinsin mi?',
   },
   library: {
     title: 'Kitaplık',

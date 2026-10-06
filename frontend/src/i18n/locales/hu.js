@@ -31,6 +31,7 @@ export default {
     discover: 'Felfedezés',
     podcasts: 'Podcastok',
     charts: 'Toplisták',
+    collections: 'Gyűjtemények',
     settings: 'Beállítások',
     more: 'Továbbiak',
     playlists: 'Lejátszási listák',
@@ -257,6 +258,15 @@ export default {
       'CSV export a Soundiiz, TuneMyMusic, Exportify vagy hasonló szolgáltatásból.',
     importButton: 'CSV fájl kiválasztása',
     importFailed: 'Nem sikerült importálni a CSV-t.',
+  },
+  collections: {
+    title: 'Gyűjtemények',
+    placeholder: 'Új gyűjtemény neve',
+    create: 'Létrehozás',
+    addPlaylist: 'Lejátszási lista hozzáadása név szerint',
+    empty: 'Ebben a gyűjteményben még nincsenek listák',
+    none: 'Még nincsenek gyűjtemények',
+    confirmDelete: 'Törlöd a(z) "{name}" gyűjteményt?',
   },
   library: {
     title: 'Könyvtár',

@@ -31,6 +31,7 @@ export default {
     discover: 'Откриване',
     podcasts: 'Подкасти',
     charts: 'Класации',
+    collections: 'Колекции',
     settings: 'Настройки',
     more: 'Още',
     playlists: 'Плейлисти',
@@ -252,6 +253,15 @@ export default {
     importHint: 'CSV експорт от Soundiiz, TuneMyMusic, Exportify и подобни.',
     importButton: 'Избери CSV файл',
     importFailed: 'CSV файлът не може да бъде импортиран.',
+  },
+  collections: {
+    title: 'Колекции',
+    placeholder: 'Име на нова колекция',
+    create: 'Създай',
+    addPlaylist: 'Добави плейлист по име',
+    empty: 'Все още няма плейлисти в тази колекция',
+    none: 'Все още няма колекции',
+    confirmDelete: 'Да се изтрие ли колекцията "{name}"?',
   },
   library: {
     title: 'Библиотека',

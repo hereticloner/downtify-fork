@@ -31,6 +31,7 @@ export default {
     discover: 'Ανακάλυψη',
     podcasts: 'Podcast',
     charts: 'Λίστες επιτυχιών',
+    collections: 'Συλλογές',
     settings: 'Ρυθμίσεις',
     more: 'Περισσότερα',
     playlists: 'Λίστες',
@@ -258,6 +259,15 @@ export default {
       'Εξαγωγή CSV από Soundiiz, TuneMyMusic, Exportify και παρόμοια.',
     importButton: 'Επιλογή αρχείου CSV',
     importFailed: 'Δεν ήταν δυνατή η εισαγωγή του CSV.',
+  },
+  collections: {
+    title: 'Συλλογές',
+    placeholder: 'Όνομα νέας συλλογής',
+    create: 'Δημιουργία',
+    addPlaylist: 'Προσθέστε playlist με όνομα',
+    empty: 'Δεν υπάρχουν playlists σε αυτή τη συλλογή ακόμη',
+    none: 'Δεν υπάρχουν συλλογές ακόμη',
+    confirmDelete: 'Διαγραφή της συλλογής "{name}";',
   },
   library: {
     title: 'Βιβλιοθήκη',

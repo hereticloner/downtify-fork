@@ -37,6 +37,12 @@ const routes = [
     component: () => import('/src/views/LibraryView.vue'),
   },
   {
+    // Named groups of library playlists.
+    path: '/library/collections',
+    name: 'Collections',
+    component: () => import('/src/views/CollectionsView.vue'),
+  },
+  {
     // Library maintenance: scan what's on disk and repair it.
     path: '/library/upgrade',
     name: 'Upgrade',

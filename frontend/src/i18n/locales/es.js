@@ -31,6 +31,7 @@ export default {
     discover: 'Descubrir',
     podcasts: 'Podcasts',
     charts: 'Listas de éxitos',
+    collections: 'Colecciones',
     settings: 'Ajustes',
     more: 'Más',
     playlists: 'Playlists',
@@ -256,6 +257,15 @@ export default {
       'Un CSV exportado de Soundiiz, TuneMyMusic, Exportify y similares.',
     importButton: 'Elegir archivo CSV',
     importFailed: 'No se pudo importar ese CSV.',
+  },
+  collections: {
+    title: 'Colecciones',
+    placeholder: 'Nombre de la nueva colección',
+    create: 'Crear',
+    addPlaylist: 'Añadir una playlist por nombre',
+    empty: 'Aún no hay playlists en esta colección',
+    none: 'Aún no hay colecciones',
+    confirmDelete: '¿Eliminar la colección "{name}"?',
   },
   library: {
     title: 'Biblioteca',
