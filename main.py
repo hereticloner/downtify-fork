@@ -625,6 +625,9 @@ def build_app() -> FastAPI:
     app.include_router(auth_routes.router)
     app.include_router(account_routes.router)
     app.include_router(mobile_routes.router)
+    from downtify.collections_api import router as collections_router
+
+    app.include_router(collections_router)
 
     @app.get('/list')
     def list_downloads(refresh: bool = False) -> list[str]:
