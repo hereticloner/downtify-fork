@@ -480,6 +480,10 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     # artist's bio fetched after a download, needs it. ``''`` until a page
     # has said - then there is no language to fetch in.
     'ui_language': '',
+    # YouTube reliability knobs (downtify-ng idea). Empty = the env-var /
+    # built-in defaults (DOWNTIFY_YT_PLAYER_CLIENTS / DOWNTIFY_YT_PO_TOKEN).
+    'yt_player_clients': [],
+    'yt_po_tokens': [],
     # Soulseek via slskd, used when 'slskd' is in audio_providers.
     'slskd': {
         'enabled': False,
@@ -5277,6 +5281,13 @@ async def update_settings_endpoint(
                 state.settings[key] = lyrics.coerce_bool(raw_value, True)
             elif key == 'lyrics_lrc_dir':
                 state.settings[key] = str(raw_value or '').strip()
+            elif key in {'yt_player_clients', 'yt_po_tokens'}:
+                cleaned = [
+                    part.strip()
+                    for part in (raw_value or [])
+                    if str(part).strip()
+                ]
+                state.settings[key] = cleaned
             else:
                 state.settings[key] = raw_value
         if {'audio_providers', 'slskd'} & set(payload):
@@ -5297,6 +5308,15 @@ async def update_settings_endpoint(
                 )
                 state.downloader.audio_providers = _effective_audio_providers(
                     state.settings
+                )
+            if {'yt_player_clients', 'yt_po_tokens'} & set(payload):
+                clients = state.settings.get('yt_player_clients') or []
+                tokens = state.settings.get('yt_po_tokens') or []
+                state.downloader.yt_player_clients = (
+                    [c.strip() for c in clients if c.strip()] or None
+                )
+                state.downloader.yt_po_tokens = (
+                    [t.strip() for t in tokens if t.strip()] or None
                 )
             fmt = payload.get('format')
             if isinstance(fmt, str) and fmt:

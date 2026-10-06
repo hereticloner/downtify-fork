@@ -833,6 +833,13 @@ export default {
     playlistCoverHint:
       'Escribe la portada de la propia playlist junto a su .m3u, para que los servidores multimedia la muestren en vez de un icono genérico.',
     pacingGroup: 'Ritmo',
+    ytGroup: 'Fiabilidad de YouTube',
+    ytClients: 'Clientes de reproductor',
+    ytClientsHint: 'Lista separada por comas de player_client. Vacío = predeterminado.',
+    ytClientsPlaceholder: 'tv, mweb',
+    ytPoTokens: 'Tokens PO',
+    ytPoTokensHint: 'Tokens separados por comas en formato <client>.<context>+<token>. Vacío = ninguno.',
+    ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Descargas simultáneas',
     parallelHint: 'Cuántas canciones se descargan o sincronizan a la vez.',
     delay: 'Pausa entre descargas',

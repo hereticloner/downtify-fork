@@ -823,6 +823,13 @@ export default {
     playlistCoverHint:
       'Записва обложката на самия плейлист до неговия .m3u, за да я показват медийните сървъри вместо обща иконка.',
     pacingGroup: 'Темпо',
+    ytGroup: 'Надеждност на YouTube',
+    ytClients: 'Player клиенти',
+    ytClientsHint: 'Списък с player_client, разделени със запетаи. Празно = по подразбиране.',
+    ytClientsPlaceholder: 'tv, mweb',
+    ytPoTokens: 'PO токени',
+    ytPoTokensHint: 'Токени, разделени със запетаи, във вид <client>.<context>+<token>. Празно = без.',
+    ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Едновременни изтегляния',
     parallelHint: 'Колко песни се изтеглят или синхронизират едновременно.',
     delay: 'Пауза между изтеглянията',

@@ -830,6 +830,13 @@ export default {
     playlistCoverHint:
       'Çalma listesinin kendi kapağını .m3u dosyasının yanına yazar; medya sunucuları genel bir simge yerine onu gösterir.',
     pacingGroup: 'Hız',
+    ytGroup: 'YouTube güvenilirliği',
+    ytClients: 'Player istemcileri',
+    ytClientsHint: 'Virgülle ayrılmış yt-dlp player_client listesi. Boş = varsayılan.',
+    ytClientsPlaceholder: 'tv, mweb',
+    ytPoTokens: 'PO token\'ları',
+    ytPoTokensHint: '<client>.<context>+<token> biçiminde virgülle ayrılmış token\'lar. Boş = yok.',
+    ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Eşzamanlı indirmeler',
     parallelHint: 'Aynı anda kaç şarkı indirileceği veya eşitleneceği.',
     delay: 'İndirmeler arası bekleme',

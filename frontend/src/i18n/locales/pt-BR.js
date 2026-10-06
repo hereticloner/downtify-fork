@@ -830,6 +830,13 @@ export default {
     playlistCoverHint:
       'Grava a capa da própria playlist ao lado do .m3u, para os servidores de mídia mostrarem ela no lugar de um ícone genérico.',
     pacingGroup: 'Ritmo',
+    ytGroup: 'Confiabilidade do YouTube',
+    ytClients: 'Clientes de player',
+    ytClientsHint: 'Lista separada por vírgulas de player_client. Vazio = padrão.',
+    ytClientsPlaceholder: 'tv, mweb',
+    ytPoTokens: 'Tokens PO',
+    ytPoTokensHint: 'Tokens separados por vírgula no formato <client>.<context>+<token>. Vazio = nenhum.',
+    ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Downloads simultâneos',
     parallelHint:
       'Quantas músicas são baixadas ou sincronizadas ao mesmo tempo.',

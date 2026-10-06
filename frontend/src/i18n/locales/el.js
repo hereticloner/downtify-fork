@@ -835,6 +835,13 @@ export default {
     playlistCoverHint:
       'Γράφει το εξώφυλλο της ίδιας της λίστας δίπλα στο .m3u, ώστε οι διακομιστές πολυμέσων να το δείχνουν αντί για ένα γενικό εικονίδιο.',
     pacingGroup: 'Ρυθμός',
+    ytGroup: 'Αξιοπιστία YouTube',
+    ytClients: 'Πελάτες player',
+    ytClientsHint: 'Λίστα player_client με κόμματα. Κενό = προεπιλογή.',
+    ytClientsPlaceholder: 'tv, mweb',
+    ytPoTokens: 'Tokens PO',
+    ytPoTokensHint: 'Tokens με κόμματα σε μορφή <client>.<context>+<token>. Κενό = κανένα.',
+    ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Ταυτόχρονες λήψεις',
     parallelHint: 'Πόσα τραγούδια κατεβαίνουν ή συγχρονίζονται ταυτόχρονα.',
     delay: 'Παύση μεταξύ λήψεων',

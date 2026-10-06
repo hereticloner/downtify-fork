@@ -832,6 +832,13 @@ export default {
     playlistCoverHint:
       'A lista saját borítóját a .m3u mellé írja, így a médiaszerverek azt mutatják egy általános ikon helyett.',
     pacingGroup: 'Ütemezés',
+    ytGroup: 'YouTube megbízhatóság',
+    ytClients: 'Lejátszó kliensek',
+    ytClientsHint: 'Vesszővel elválasztott player_client lista. Üres = alapértelmezett.',
+    ytClientsPlaceholder: 'tv, mweb',
+    ytPoTokens: 'PO tokenek',
+    ytPoTokensHint: 'Vesszővel elválasztott tokenek <client>.<context>+<token> formában. Üres = nincs.',
+    ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Párhuzamos letöltések',
     parallelHint: 'Hány dal töltődik le vagy szinkronizálódik egyszerre.',
     delay: 'Szünet a letöltések között',

@@ -812,6 +812,13 @@ export default {
     playlistCoverHint:
       "Write the playlist's own artwork next to its .m3u, so media servers show it instead of a generic icon.",
     pacingGroup: 'Pacing',
+    ytGroup: 'YouTube reliability',
+    ytClients: 'Player clients',
+    ytClientsHint: 'Comma-separated yt-dlp player_client list. Empty = built-in default.',
+    ytClientsPlaceholder: 'tv, mweb',
+    ytPoTokens: 'PO tokens',
+    ytPoTokensHint: 'Comma-separated tokens in <client>.<context>+<token> form. Empty = none.',
+    ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Parallel downloads',
     parallelHint: 'How many songs download or sync at the same time.',
     delay: 'Pause between downloads',

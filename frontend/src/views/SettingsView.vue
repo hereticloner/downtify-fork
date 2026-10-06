@@ -372,6 +372,44 @@
               </SettingRow>
             </SettingGroup>
 
+            <SettingGroup :title="t('settings.ytGroup')">
+              <SettingRow
+                :label="t('settings.ytClients')"
+                :description="t('settings.ytClientsHint')"
+                stacked
+              >
+                <UiInput
+                  :model-value="(s.yt_player_clients || []).join(', ')"
+                  :placeholder="t('settings.ytClientsPlaceholder')"
+                  :aria-label="t('settings.ytClients')"
+                  @update:model-value="
+                    (v) =>
+                      (s.yt_player_clients = String(v || '')
+                        .split(',')
+                        .map((part) => part.trim())
+                        .filter(Boolean))
+                  "
+                />
+              </SettingRow>
+              <SettingRow
+                :label="t('settings.ytPoTokens')"
+                :description="t('settings.ytPoTokensHint')"
+                stacked
+              >
+                <UiInput
+                  :model-value="(s.yt_po_tokens || []).join(', ')"
+                  :placeholder="t('settings.ytPoTokensPlaceholder')"
+                  :aria-label="t('settings.ytPoTokens')"
+                  @update:model-value="
+                    (v) =>
+                      (s.yt_po_tokens = String(v || '')
+                        .split(',')
+                        .map((part) => part.trim())
+                        .filter(Boolean))
+                  "
+                />
+              </SettingRow>
+            </SettingGroup>
             <SettingGroup :title="t('settings.pacingGroup')">
               <SettingRow
                 :label="t('settings.parallel')"

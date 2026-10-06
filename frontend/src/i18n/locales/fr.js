@@ -844,6 +844,13 @@ export default {
     playlistCoverHint:
       'Écrit la pochette de la playlist à côté de son .m3u, pour que les serveurs multimédias l’affichent au lieu d’une icône générique.',
     pacingGroup: 'Cadence',
+    ytGroup: 'Fiabilité YouTube',
+    ytClients: 'Clients player',
+    ytClientsHint: 'Liste de player_client séparés par des virgules. Vide = défaut.',
+    ytClientsPlaceholder: 'tv, mweb',
+    ytPoTokens: 'Jetons PO',
+    ytPoTokensHint: 'Jetons séparés par des virgules au format <client>.<context>+<token>. Vide = aucun.',
+    ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Téléchargements simultanés',
     parallelHint: 'Nombre de titres téléchargés ou synchronisés en même temps.',
     delay: 'Pause entre téléchargements',

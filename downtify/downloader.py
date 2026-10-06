@@ -333,6 +333,10 @@ class Downloader:
         # through the settings UI, in that order of precedence. ``None``
         # keeps the env-var-only behavior for direct/standalone use.
         self.cookies_store = cookies_store
+        # Per-install YouTube reliability knobs (Settings UI writes them;
+        # env vars keep working as the fallback - see _yt_player_clients).
+        self.yt_player_clients: Optional[list[str]] = None
+        self.yt_po_tokens: Optional[list[str]] = None
         self.audio_format = audio_format
         self.audio_bitrate = audio_bitrate
         self.output_template = output_template
@@ -1024,7 +1028,16 @@ class Downloader:
             # check on datacenter IPs. `tv` and `mweb` almost always
             # bypass it. Order matters — yt-dlp tries them in sequence.
             'extractor_args': {
-                'youtube': {'player_client': _yt_player_clients()}
+                'youtube': {
+                    'player_client': (
+                        self.yt_player_clients or _yt_player_clients()
+                    ),
+                    'po_token': (
+                        self.yt_po_tokens
+                        if self.yt_po_tokens is not None
+                        else _yt_po_tokens()
+                    ),
+                }
             },
             # `web`/`web_embedded` need a JS runtime to solve YouTube's
             # signature/n-challenges (see the comment on

@@ -609,6 +609,14 @@ def build_app() -> FastAPI:
         audio_providers=api._effective_audio_providers(api.state.settings),
         slskd_settings=api._effective_slskd_settings(api.state.settings),
     )
+    yt_clients = api.state.settings.get('yt_player_clients') or []
+    yt_tokens = api.state.settings.get('yt_po_tokens') or []
+    api.state.downloader.yt_player_clients = (
+        [c.strip() for c in yt_clients if c.strip()] or None
+    )
+    api.state.downloader.yt_po_tokens = (
+        [t.strip() for t in yt_tokens if t.strip()] or None
+    )
     api.normalize_lyrics_location(api.state.settings)
     api.bind_lrc_resolver()
     # A finished download (from the UI or a monitor sweep alike) seeds its
