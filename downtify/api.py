@@ -150,6 +150,8 @@ working without changes:
 * ``POST /api/playlist/m3u``
 * ``GET  /api/queue``, ``DELETE /api/queue``, ``DELETE /api/queue/item``
   and ``DELETE /api/queue/completed`` (drop finished jobs only)
+* ``POST /api/queue/pause`` and ``POST /api/queue/resume`` (stop starting
+  new downloads; in-flight rows finish - resume unblocks the queue)
 * ``DELETE /api/library/playlist`` (delete a downloaded playlist's
   tracks, M3U and catalog entry; a manual playlist only loses the M3U)
 * ``GET  /api/library/summary`` (Home page: counts + recent albums)
@@ -899,6 +901,10 @@ class AppState:
     monitor_db: Optional[PlaylistMonitorDB] = None
     download_jobs: dict[str, dict[str, Any]] = {}
     download_semaphore: Optional[asyncio.Semaphore] = None
+    # Global pause for the download pipeline. When True, _run_download
+    # waits (queued rows stay queued; in-flight rows finish). Toggled by
+    # POST /api/queue/pause and POST /api/queue/resume.
+    download_paused: bool = False
     # Fire-and-forget work owned by the process (import batches, monitor
     # loops, playlist refresh). Cancelled in :func:`shutdown_resources`.
     background_tasks: set[asyncio.Task[Any]] = set()
@@ -2605,6 +2611,13 @@ def _register_job(song: dict[str, Any], status: str = 'queued') -> str:
     return song_id
 
 
+async def _wait_while_paused() -> None:
+    """Block until the global download pause is lifted (or cancelled)."""
+
+    while state.download_paused:
+        await asyncio.sleep(0.2)
+
+
 async def _run_download(
     song: dict[str, Any],
     song_id: str,
@@ -2651,6 +2664,7 @@ async def _run_download(
 
     sem = state.download_semaphore
     try:
+        await _wait_while_paused()
         async with sem if sem is not None else contextlib.nullcontext():
             if not getattr(state.downloader, 'overwrite_existing_files', True):
                 existing_hit = await asyncio.to_thread(
@@ -5032,6 +5046,25 @@ def clear_completed_queue() -> dict:
     for song_id in removed:
         del state.download_jobs[song_id]
     return {'removed': len(removed)}
+
+
+@router.get('/api/queue/status')
+def queue_status() -> dict:
+    return {'paused': state.download_paused}
+
+
+@router.post('/api/queue/pause')
+def pause_downloads() -> dict:
+    """Stop starting new downloads (in-flight ones finish)."""
+
+    state.download_paused = True
+    return {'paused': True}
+
+
+@router.post('/api/queue/resume')
+def resume_downloads() -> dict:
+    state.download_paused = False
+    return {'paused': False}
 
 
 @router.delete('/api/queue/item')

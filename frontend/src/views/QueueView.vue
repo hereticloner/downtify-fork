@@ -4,6 +4,19 @@
   >
     <PageHeader :title="t('queue.title')" :subtitle="subtitle">
       <UiButton
+        v-if="counts.queued"
+        variant="ghost"
+        :icon="paused ? 'play' : 'pause'"
+        @click="togglePause"
+      >
+        <span class="max-sm:sr-only">{{
+          paused ? t('queue.resume') : t('queue.pause')
+        }}</span>
+        <span class="max-sm:hidden">{{
+          paused ? t('queue.resume') : t('queue.pause')
+        }}</span>
+      </UiButton>
+      <UiButton
         v-if="counts.failed"
         variant="ghost"
         icon="retry"
@@ -158,9 +171,27 @@ import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
 import { queueRowEstimate } from '/src/lib/queueList'
 import { useI18n } from '/src/i18n'
+import API from '/src/model/api'
 
 const { t } = useI18n()
 const route = useRoute()
+const paused = ref(false)
+
+async function togglePause() {
+  const resp = paused.value
+    ? await API.resumeQueue()
+    : await API.pauseQueue()
+  paused.value = Boolean(resp.paused)
+}
+
+onMounted(async () => {
+  try {
+    const st = await API.getQueueStatus()
+    paused.value = Boolean(st.paused)
+  } catch {
+    paused.value = false
+  }
+})
 const router = useRouter()
 const dm = useDownloadManager()
 const tracker = useProgressTracker()

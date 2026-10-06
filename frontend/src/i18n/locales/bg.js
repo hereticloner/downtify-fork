@@ -210,6 +210,8 @@ export default {
     playCountYoutubeMusic: 'Възпроизвеждания в YouTube Music (приблизително)',
   },
   queue: {
+    pause: 'Пауза на всички',
+    resume: 'Възобнови всички',
     title: 'Опашка',
     tabActive: 'В процес',
     tabQueued: 'Чакащи',

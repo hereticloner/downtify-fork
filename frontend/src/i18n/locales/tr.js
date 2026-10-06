@@ -215,6 +215,8 @@ export default {
     playCountYoutubeMusic: 'YouTube Music’teki dinlenme sayısı (yaklaşık)',
   },
   queue: {
+    pause: 'Tümünü duraklat',
+    resume: 'Tümünü sürdür',
     title: 'Kuyruk',
     tabActive: 'Devam eden',
     tabQueued: 'Bekleyen',

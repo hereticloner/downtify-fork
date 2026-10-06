@@ -211,6 +211,8 @@ export default {
     playCountYoutubeMusic: 'Lejátszások a YouTube Musicon (hozzávetőleges)',
   },
   queue: {
+    pause: 'Összes szüneteltetése',
+    resume: 'Összes folytatása',
     title: 'Sor',
     tabActive: 'Folyamatban',
     tabQueued: 'Várakozik',

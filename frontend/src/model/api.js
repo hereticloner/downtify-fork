@@ -697,6 +697,18 @@ function clearCompletedQueue() {
   return API.delete('/api/queue/completed')
 }
 
+function getQueueStatus() {
+  return API.get('/api/queue/status')
+}
+
+function pauseQueue() {
+  return API.post('/api/queue/pause')
+}
+
+function resumeQueue() {
+  return API.post('/api/queue/resume')
+}
+
 // ── Settings ─────────────────────────────────────────────────────────
 function getCookiesStatus() {
   return API.get('/api/cookies')
@@ -866,6 +878,9 @@ export default {
   removeQueueItem,
   clearQueue,
   clearCompletedQueue,
+  getQueueStatus,
+  pauseQueue,
+  resumeQueue,
   getSettings,
   suggestDirs,
   setSettings,

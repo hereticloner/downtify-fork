@@ -210,6 +210,8 @@ export default {
     playCountYoutubeMusic: 'Plays on YouTube Music (approximate)',
   },
   queue: {
+    pause: 'Pause all',
+    resume: 'Resume all',
     title: 'Queue',
     tabActive: 'In progress',
     tabQueued: 'Waiting',

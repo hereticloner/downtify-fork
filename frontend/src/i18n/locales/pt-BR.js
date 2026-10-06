@@ -214,6 +214,8 @@ export default {
     playCountYoutubeMusic: 'Reproduções no YouTube Music (aproximado)',
   },
   queue: {
+    pause: 'Pausar tudo',
+    resume: 'Retomar tudo',
     title: 'Fila',
     tabActive: 'Em andamento',
     tabQueued: 'Aguardando',

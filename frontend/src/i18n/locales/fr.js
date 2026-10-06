@@ -218,6 +218,8 @@ export default {
     playCountYoutubeMusic: 'Écoutes sur YouTube Music (approximatif)',
   },
   queue: {
+    pause: 'Tout mettre en pause',
+    resume: 'Tout reprendre',
     title: 'File',
     tabActive: 'En cours',
     tabQueued: 'En attente',

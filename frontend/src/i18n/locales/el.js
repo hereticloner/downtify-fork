@@ -215,6 +215,8 @@ export default {
     playCountYoutubeMusic: 'Αναπαραγωγές στο YouTube Music (κατά προσέγγιση)',
   },
   queue: {
+    pause: 'Παύση όλων',
+    resume: 'Συνέχεια όλων',
     title: 'Ουρά',
     tabActive: 'Σε εξέλιξη',
     tabQueued: 'Σε αναμονή',
