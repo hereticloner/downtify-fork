@@ -111,7 +111,33 @@ def _next_due_at(last: datetime, interval_minutes: int) -> datetime:
     return anchored_local.astimezone(timezone.utc)
 
 
-def _is_due(last_checked: Optional[str], interval_minutes: int) -> bool:
+#: A watch this many consecutive passes in a row with nothing new is
+#: checked at ``7x`` its configured interval, so a finished playlist
+#: that never changes doesn't get swept hourly forever (downtify-ng idea).
+QUIET_PASS_RELAX_MULTIPLIER = 7
+
+
+def effective_interval_minutes(
+    interval_minutes: int, quiet_passes: int
+) -> int:
+    """The configured interval, relaxed after consecutive quiet passes."""
+
+    if quiet_passes and quiet_passes > 0:
+        return int(interval_minutes) * QUIET_PASS_RELAX_MULTIPLIER
+    return int(interval_minutes)
+
+
+def next_quiet_passes(playlist: Any, had_activity: bool) -> int:
+    """The watch's next quiet-pass count after one sweep."""
+
+    return 0 if had_activity else getattr(playlist, 'quiet_passes', 0) + 1
+
+
+def _is_due(
+    last_checked: Optional[str],
+    interval_minutes: int,
+    quiet_passes: int = 0,
+) -> bool:
     if last_checked is None:
         return True
     try:
@@ -119,7 +145,7 @@ def _is_due(last_checked: Optional[str], interval_minutes: int) -> bool:
         if last.tzinfo is None:
             last = last.replace(tzinfo=timezone.utc)
         return datetime.now(timezone.utc) >= _next_due_at(
-            last, interval_minutes
+            last, effective_interval_minutes(interval_minutes, quiet_passes)
         )
     except ValueError:
         return True
@@ -251,7 +277,8 @@ class MonitoredPlaylist:
     enabled: bool
     last_checked: Optional[str]
     last_track_count: int
-    created_at: str
+    quiet_passes: int = 0
+    created_at: str = ''
     # 'playlist' watches a playlist's tracks; 'artist' watches a YouTube
     # Music artist's discography for new releases. ``spotify_id`` is just
     # the unique key a watch is addressed by: the Spotify or YouTube Music
@@ -301,6 +328,7 @@ class PlaylistMonitorDB:
                     enabled INTEGER NOT NULL DEFAULT 1,
                     last_checked TEXT,
                     last_track_count INTEGER NOT NULL DEFAULT 0,
+                    quiet_passes INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS downloaded_tracks (
@@ -329,6 +357,8 @@ class PlaylistMonitorDB:
                 'ALTER TABLE monitored_playlists ADD COLUMN release_types '
                 f"TEXT NOT NULL DEFAULT '{ALL_RELEASE_TYPES}'",
                 'ALTER TABLE monitored_playlists ADD COLUMN new_only '
+                'INTEGER NOT NULL DEFAULT 0',
+                'ALTER TABLE monitored_playlists ADD COLUMN quiet_passes '
                 'INTEGER NOT NULL DEFAULT 0',
                 'ALTER TABLE monitored_playlists ADD COLUMN baseline_pending '
                 'INTEGER NOT NULL DEFAULT 0',
@@ -436,6 +466,7 @@ class PlaylistMonitorDB:
             'release_types',
             'new_only',
             'baseline_pending',
+            'quiet_passes',
         }
         updates = {k: v for k, v in kwargs.items() if k in allowed}
         if not updates:
@@ -687,6 +718,9 @@ def _row_to_playlist(row: sqlite3.Row) -> MonitoredPlaylist:
         enabled=bool(row['enabled']),
         last_checked=row['last_checked'],
         last_track_count=row['last_track_count'],
+        quiet_passes=(
+            row['quiet_passes'] if 'quiet_passes' in keys else 0
+        ),
         created_at=row['created_at'],
         # Rows written before the kind migration have no column at all
         # when reading from a stale connection/schema cache.
@@ -873,6 +907,9 @@ async def check_playlist(
         playlist.id,
         last_checked=_now_iso(),
         last_track_count=len(tracks),
+        quiet_passes=next_quiet_passes(
+            playlist, downloaded > 0 or linked_from_library > 0
+        ),
     )
 
     if downloaded > 0 or linked_from_library > 0:
@@ -1479,7 +1516,11 @@ async def monitor_loop(
             for pl in playlists:
                 if not pl.enabled:
                     continue
-                if not _is_due(pl.last_checked, pl.interval_minutes):
+                if not _is_due(
+                    pl.last_checked,
+                    pl.interval_minutes,
+                    getattr(pl, 'quiet_passes', 0),
+                ):
                     continue
                 downloader = get_downloader()
                 if downloader is None:
