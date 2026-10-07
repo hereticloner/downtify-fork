@@ -24,12 +24,12 @@ describe('describeTest', () => {
   it('folds a working connection and login into one "Connected" line', () => {
     const lines = describeTest({
       ok: true,
-      server: 'slskd 0.21.4',
+      server: 'navidrome',
       checks: [check('connection', 'ok'), check('auth', 'ok')],
     })
 
     expect(lines).toEqual([
-      { status: 'ok', key: 'connected', params: { server: 'slskd 0.21.4' } },
+      { status: 'ok', key: 'connected', params: { server: 'navidrome' } },
     ])
   })
 
@@ -37,26 +37,24 @@ describe('describeTest', () => {
     const lines = describeTest(
       {
         ok: true,
-        server: 'slskd 0.21.4',
+        server: 'navidrome',
         checks: [
           check('connection', 'ok'),
           check('auth', 'ok'),
-          check('soulseek', 'warn', 'offline', 'Disconnected'),
-          check('folder', 'warn', 'missing', '/slskd'),
+          check('scan', 'warn', 'not_admin', 'Needs the admin login'),
         ],
       },
-      { url: 'http://slskd:5030' }
+      { url: 'http://navidrome:4533' }
     )
 
     expect(lines.map((line) => [line.status, line.key])).toEqual([
       ['ok', 'connected'],
-      ['warn', 'soulseek_offline'],
-      ['warn', 'folder_missing'],
+      ['warn', 'scan_not_admin'],
     ])
     // The message can name what it found and what was tried.
-    expect(lines[2].params).toMatchObject({
-      detail: '/slskd',
-      url: 'http://slskd:5030',
+    expect(lines[1].params).toMatchObject({
+      detail: 'Needs the admin login',
+      url: 'http://navidrome:4533',
     })
   })
 
@@ -74,11 +72,14 @@ describe('describeTest', () => {
     const lines = describeTest({
       ok: false,
       server: '',
-      checks: [check('connection', 'ok'), check('auth', 'fail', 'bad_key')],
+      checks: [
+        check('connection', 'ok'),
+        check('auth', 'fail', 'bad_credentials'),
+      ],
     })
 
     // The connection itself is fine, so only the rejection is shown.
-    expect(lines.map((line) => line.key)).toEqual(['auth_bad_key'])
+    expect(lines.map((line) => line.key)).toEqual(['auth_bad_credentials'])
   })
 
   it('shows a code it does not know generically instead of a raw key', () => {
@@ -95,15 +96,22 @@ describe('describeTest', () => {
 
 describe('canTest', () => {
   it('needs every required field to hold something', () => {
-    const fields = REQUIRED_FIELDS.slskd
-    expect(canTest({ base_url: 'http://x', api_key: 'k' }, fields)).toBe(true)
-    expect(canTest({ base_url: 'http://x', api_key: '' }, fields)).toBe(false)
-    expect(canTest({ base_url: 'http://x' }, fields)).toBe(false)
+    const fields = REQUIRED_FIELDS.navidrome
+    expect(canTest({ url: 'http://x', username: 'u', password: 'p' }, fields)).toBe(
+      true
+    )
+    expect(canTest({ url: 'http://x', username: 'u', password: '' }, fields)).toBe(
+      false
+    )
+    expect(canTest({ url: 'http://x', username: '' }, fields)).toBe(false)
   })
 
   it('does not count blanks as a value', () => {
     expect(
-      canTest({ base_url: '   ', api_key: 'k' }, REQUIRED_FIELDS.slskd)
+      canTest(
+        { url: '   ', username: 'u', password: 'p' },
+        REQUIRED_FIELDS.navidrome
+      )
     ).toBe(false)
   })
 
@@ -118,7 +126,7 @@ describe('canTest', () => {
   })
 
   it('is false, not an error, for a missing config', () => {
-    expect(canTest(undefined, REQUIRED_FIELDS.slskd)).toBe(false)
+    expect(canTest(undefined, REQUIRED_FIELDS.navidrome)).toBe(false)
   })
 })
 

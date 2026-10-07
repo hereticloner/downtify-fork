@@ -28,7 +28,7 @@ def test_normalize_ignores_youtube_ids():
     assert normalize_spotify_track_id({'song_id': 'dQw4w9WgXcQ'}) is None
 
 
-def test_resolve_existing_prefers_global_library(tmp_path):
+def test_resolve_existing_prefers_global_library(tmp_path, monkeypatch):
     download_dir = tmp_path / 'music'
     download_dir.mkdir()
     slskd_dir = tmp_path / 'slskd'
@@ -36,6 +36,9 @@ def test_resolve_existing_prefers_global_library(tmp_path):
     slskd_dir.mkdir(parents=True)
     target.write_bytes(b'x' * 100)
 
+    # A modern Downloader learns the legacy slskd mount from the
+    # environment, not from a settings dict.
+    monkeypatch.setenv('DOWNTIFY_SLSKD_SOURCE_DIR', str(slskd_dir))
     stored = library_stored_path(target, download_dir, slskd_dir)
     index = TrackIndex(tmp_path / 'library.db')
     index.register(SPOTIFY_ID, stored)
@@ -44,7 +47,6 @@ def test_resolve_existing_prefers_global_library(tmp_path):
         download_dir,
         audio_format='mp3',
         audio_providers=['youtube'],
-        slskd_settings={'source_dir': str(slskd_dir)},
     )
     song = {
         'song_id': SPOTIFY_ID,

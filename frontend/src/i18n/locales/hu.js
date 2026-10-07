@@ -777,21 +777,6 @@ export default {
     sourceYtmHint: 'Legjobb metaadat-egyezések',
     sourceYt: 'YouTube',
     sourceYtHint: 'Tartalék a YouTube Musicból hiányzó dalokhoz',
-    slskdTitle: 'slskd',
-    slskdHint:
-      'Letöltés a Soulseekről a slskd szervereden át. A nem talált számok a következő forráshoz kerülnek.',
-    slskdEnabled: 'slskd használata',
-    slskdEnabledHint: 'Szükséges a szerver URL és egy API-kulcs.',
-    slskdUrl: 'Szerver URL',
-    slskdKey: 'API-kulcs',
-    slskdFolder: 'slskd letöltési mappa',
-    slskdFolderHint:
-      'Az útvonal a Downtify konténeren belül, nem a gazdagépen.',
-    slskdTimeout: 'Teljes időkorlát',
-    slskdQueuedTimeout: 'Sorban állási időkorlát',
-    slskdInPlace: 'Fájlok hagyása az slskd mappában',
-    slskdInPlaceHint:
-      'Ott címkézi őket, ahová az slskd mentette, ahelyett hogy a letöltési mappába másolná.',
     youtubeTitle: 'YouTube',
     cookies: 'YouTube sütik',
     cookiesHint:
@@ -903,21 +888,12 @@ export default {
         'Ez a cím érvénytelen. http://-vel vagy https://-sel kezdődjön.',
       connection_tls:
         'A HTTPS-tanúsítvány nem megbízható. Használj http://-t, vagy megbízható hatóság tanúsítványát.',
-      connection_not_slskd:
-        'A(z) {url} címen válaszolt valami, de nem úgy néz ki, mint a slskd. Ellenőrizd a címet és a portot.',
       connection_not_navidrome:
         'A(z) {url} címen válaszolt valami, de nem úgy néz ki, mint a Navidrome. Ellenőrizd a címet és a portot.',
       connection_http_error: 'A szerver hibával válaszolt ({detail}).',
-      auth_bad_key: 'A slskd elutasította az API-kulcsot.',
       auth_bad_credentials:
         'A Navidrome elutasította a felhasználónevet vagy a jelszót.',
       auth_api_error: 'A Navidrome ezt válaszolta: {detail}',
-      soulseek_ok: 'A slskd be van jelentkezve a Soulseekbe.',
-      soulseek_offline:
-        'A slskd nincs bejelentkezve a Soulseekbe. Addig nem talál semmit.',
-      folder_ok: 'A Downtify olvasni tudja ezt: {detail}.',
-      folder_missing:
-        'A Downtify nem tudja olvasni ezt: {detail}. Ennek kell lennie annak a mappának, ahová a slskd letölt, és be kell csatolni ebbe a konténerbe.',
       scan_ok: 'Ez a fiók indíthat könyvtárvizsgálatot.',
       scan_not_admin:
         'Ez a fiók nem indíthat könyvtárvizsgálatot — a Navidrome ezt csak adminisztrátoroknak engedi. Add meg az admin felhasználónevet és jelszót, hogy az új számok előbb megjelenjenek.',

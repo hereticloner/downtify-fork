@@ -778,20 +778,6 @@ export default {
     sourceYtmHint: 'En iyi meta veri eşleşmeleri',
     sourceYt: 'YouTube',
     sourceYtHint: 'YouTube Music’te olmayan şarkılar için yedek',
-    slskdTitle: 'slskd',
-    slskdHint:
-      'Soulseek’ten slskd sunucun üzerinden indir. Bulunamayan parçalar sonraki kaynağa geçer.',
-    slskdEnabled: 'slskd kullan',
-    slskdEnabledHint: 'Sunucu URL’si ve API anahtarı gerekir.',
-    slskdUrl: 'Sunucu URL’si',
-    slskdKey: 'API anahtarı',
-    slskdFolder: 'slskd indirme klasörü',
-    slskdFolderHint: 'Ana makinedeki değil, Downtify kapsayıcısındaki yol.',
-    slskdTimeout: 'Toplam zaman aşımı',
-    slskdQueuedTimeout: 'Kuyruk zaman aşımı',
-    slskdInPlace: 'Dosyaları slskd klasöründe bırak',
-    slskdInPlaceHint:
-      'İndirme klasörüne kopyalamak yerine slskd’nin kaydettiği yerde etiketle.',
     youtubeTitle: 'YouTube',
     cookies: 'YouTube çerezleri',
     cookiesHint:
@@ -901,20 +887,11 @@ export default {
         'Bu adres geçerli değil. http:// veya https:// ile başlayın.',
       connection_tls:
         'HTTPS sertifikası güvenilir değil. http:// kullanın ya da güvenilir bir yetkiliden sertifika alın.',
-      connection_not_slskd:
-        '{url} adresinde bir şey yanıt verdi ama slskd’ye benzemiyor. Adresi ve bağlantı noktasını denetleyin.',
       connection_not_navidrome:
         '{url} adresinde bir şey yanıt verdi ama Navidrome’a benzemiyor. Adresi ve bağlantı noktasını denetleyin.',
       connection_http_error: 'Sunucu bir hatayla yanıt verdi ({detail}).',
-      auth_bad_key: 'slskd API anahtarını reddetti.',
       auth_bad_credentials: 'Navidrome kullanıcı adını veya parolayı reddetti.',
       auth_api_error: 'Navidrome şunu yanıtladı: {detail}',
-      soulseek_ok: 'slskd Soulseek’e bağlı.',
-      soulseek_offline:
-        'slskd Soulseek’e bağlı değil. Bağlanana kadar hiçbir şey bulamaz.',
-      folder_ok: 'Downtify {detail} yolunu okuyabiliyor.',
-      folder_missing:
-        'Downtify {detail} yolunu okuyamıyor. Burası slskd’nin indirdiği klasör olmalı ve bu kapsayıcıya bağlanmış olmalı.',
       scan_ok: 'Bu hesap kitaplık taraması başlatabilir.',
       scan_not_admin:
         'Bu hesap kitaplık taraması başlatamaz — Navidrome bunu yalnızca yöneticilere verir. Yeni şarkılar daha erken görünsün diye yönetici kullanıcı adını ve parolasını doldurun.',

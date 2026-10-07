@@ -742,10 +742,6 @@ function suggestDirs(path) {
 
 // Try an integration with the values as they are in the form, saved or
 // not. A failed test is still a 200: the answer says what's wrong.
-function testSlskd(config) {
-  return API.post('/api/slskd/test', config)
-}
-
 function testNavidrome(config) {
   return API.post('/api/navidrome/test', config)
 }
@@ -889,7 +885,6 @@ export default {
   getSettings,
   suggestDirs,
   setSettings,
-  testSlskd,
   testNavidrome,
   getCookiesStatus,
   uploadCookies,

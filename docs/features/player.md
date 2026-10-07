@@ -113,7 +113,7 @@ The player also reports the current track to the operating system (Media Session
 
 ## How it works
 
-Tracks come from the library listing (`GET /tracks`), which reads title, artist, album, track number, year and length from each file's tags. Files are served from the `/downloads` static mount; slskd downloads [left in place](slskd-navidrome.md#leave-files-in-place) are played through `/media/slskd/…`. Cover art comes from `/cover` and lyrics from `/lyrics` — see the [API reference](../api-reference.md#file-management).
+Tracks come from the library listing (`GET /tracks`), which reads title, artist, album, track number, year and length from each file's tags. Files are served from the `/downloads` static mount; library paths outside it (`slskd/…`, `ext/…`) are played through `/media/…`. Cover art comes from `/cover` and lyrics from `/lyrics` — see the [API reference](../api-reference.md#file-management).
 
 Playback uses the browser's native HTML5 audio. No plugins, no extra processes.
 

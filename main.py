@@ -607,7 +607,6 @@ def build_app() -> FastAPI:
             api.state.settings.get('overwrite_existing_files', True)
         ),
         audio_providers=api._effective_audio_providers(api.state.settings),
-        slskd_settings=api._effective_slskd_settings(api.state.settings),
     )
     yt_clients = api.state.settings.get('yt_player_clients') or []
     yt_tokens = api.state.settings.get('yt_po_tokens') or []

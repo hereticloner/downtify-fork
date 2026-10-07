@@ -124,21 +124,21 @@ On by default, matching Downtify's historical behavior: every download runs thro
 
 ### What "again" actually means
 
-With it on, a re-download is a **completely fresh run**, not a repair of the existing file. Downtify does not look at what you already have: it searches your [audio sources](#audio-provider) in their configured order — so if slskd is first, slskd is tried first, not only as a fallback — fetches the audio from whichever source answers, and writes today's tags, cover art and lyrics onto it.
+With it on, a re-download is a **completely fresh run**, not a repair of the existing file. Downtify does not look at what you already have: it searches your [audio sources](#audio-provider) in their configured order, fetches the audio from whichever source answers, and writes today's tags, cover art and lyrics onto it.
 
 That has one consequence worth knowing before re-downloading a large library:
 
 ::: warning A different format leaves the old file behind
 The new file is written at the path the [filename template](#output-filename-template) produces, with the **new** audio's extension. Downtify overwrites the old file only when both end up with the same extension.
 
-So re-downloading `Artist - Song.mp3` when slskd answers with a FLAC gives you **both** `Artist - Song.mp3` (the old one, untouched) and `Artist - Song.flac`. With [Leave slskd files in place](slskd-navidrome.md#leave-files-in-place) on — the default — the slskd file isn't even copied into your downloads folder, so the old file stays exactly where it was and the new one lives under `slskd/`.
+So re-downloading `Artist - Song.mp3` when the new download comes out as a FLAC gives you **both** `Artist - Song.mp3` (the old one, untouched) and `Artist - Song.flac`.
 
 Nothing is lost, but you get duplicates. To actually replace a file, see [Replace audio](replace-audio.md), which keeps the path, the format and the tags.
 :::
 
 ### Cover art comes from Spotify or YouTube Music, not from the file
 
-Whatever artwork the downloaded audio carries — including a high-resolution cover embedded in an slskd file — is **discarded and replaced** during tagging. Downtify always embeds the cover it fetches for the track from Spotify or YouTube Music, at the [cover art resolution](#cover-art-resolution) you configured (600 px by default). The same applies to the title, artists, album and the rest of the tags: the source's own tags are not kept.
+Whatever artwork the downloaded audio carries is **discarded and replaced** during tagging. Downtify always embeds the cover it fetches for the track from Spotify or YouTube Music, at the [cover art resolution](#cover-art-resolution) you configured (600 px by default). The same applies to the title, artists, album and the rest of the tags: the source's own tags are not kept.
 
 If what you want is bigger artwork on files you already have, re-downloading is the long way around. [Upgrade library](library-upgrade.md) does exactly that — it compares each file's embedded cover against Spotify, iTunes and YouTube Music, writes the largest one, fills in missing lyrics and tags, and never touches the audio.
 
@@ -162,7 +162,7 @@ When a song is skipped:
 
 The default audio provider is **YouTube Music**. Downtify uses [`ytmusicapi`](https://ytmusicapi.readthedocs.io/) to search for the best match by comparing track duration. When YouTube Music has no acceptable match, or only one whose duration is far off (a likely different recording), Downtify automatically falls back to searching standard YouTube — see [How it works](../how-it-works.md#fallback-to-standard-youtube).
 
-**Settings → Audio source** can also use standard **YouTube** only, or **slskd** (Soulseek), as an ordered fallback list — see [slskd & Navidrome](slskd-navidrome.md#audio-sources-and-fallback-order).
+**Settings → Audio source** holds that as an ordered list you can edit — tap sources to add or remove them and use the arrows to reorder, e.g. standard **YouTube** only to skip YouTube Music.
 
 ### Force a specific audio source
 

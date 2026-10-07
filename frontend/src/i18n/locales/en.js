@@ -760,20 +760,6 @@ export default {
     sourceYtmHint: 'Best metadata matches',
     sourceYt: 'YouTube',
     sourceYtHint: 'Fallback for songs missing from YouTube Music',
-    slskdTitle: 'slskd',
-    slskdHint:
-      'Download from Soulseek through your slskd server. Tracks it can’t find fall through to the next source.',
-    slskdEnabled: 'Use slskd',
-    slskdEnabledHint: 'Needs the server URL and an API key.',
-    slskdUrl: 'Server URL',
-    slskdKey: 'API key',
-    slskdFolder: 'slskd download folder',
-    slskdFolderHint: 'The path inside the Downtify container, not on the host.',
-    slskdTimeout: 'Total timeout',
-    slskdQueuedTimeout: 'Queued timeout',
-    slskdInPlace: 'Leave files in the slskd folder',
-    slskdInPlaceHint:
-      'Tag them where slskd saved them instead of copying into your downloads folder.',
     youtubeTitle: 'YouTube',
     cookies: 'YouTube cookies',
     cookiesHint:
@@ -882,20 +868,11 @@ export default {
         'That address is not valid. Start it with http:// or https://.',
       connection_tls:
         "The HTTPS certificate isn't trusted. Use http://, or a certificate from a trusted authority.",
-      connection_not_slskd:
-        "Something answered at {url}, but it doesn't look like slskd. Check the address and port.",
       connection_not_navidrome:
         "Something answered at {url}, but it doesn't look like Navidrome. Check the address and port.",
       connection_http_error: 'The server answered with an error ({detail}).',
-      auth_bad_key: 'slskd rejected the API key.',
       auth_bad_credentials: 'Navidrome rejected the username or password.',
       auth_api_error: 'Navidrome answered: {detail}',
-      soulseek_ok: 'slskd is logged in to Soulseek.',
-      soulseek_offline:
-        "slskd isn't logged in to Soulseek. It will find nothing until it is.",
-      folder_ok: 'Downtify can read {detail}.',
-      folder_missing:
-        "Downtify can't read {detail}. That must be the folder slskd downloads into, mounted in this container.",
       scan_ok: 'This account can start library scans.',
       scan_not_admin:
         "This account can't start library scans — Navidrome only lets admins. Fill in the admin username and password so new songs show up sooner.",

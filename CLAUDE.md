@@ -33,7 +33,7 @@ downtify/
 frontend/              # Vue SPA (built into frontend/dist, served by FastAPI)
 docs/                  # Documentation: Markdown pages + VitePress site (docs/.vitepress)
 tests/                 # pytest suite (Python) + Vitest under frontend/ and docs/.vitepress/tests
-docker/                # Compose volumes (downloads/, data/, slskd/)
+docker/                # Compose volumes (downloads/, data/)
 ```
 
 ## Development workflow

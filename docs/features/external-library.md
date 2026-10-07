@@ -8,7 +8,7 @@ Downtify's Library is built from the files it downloaded — plus any **extra fo
 
 ## Add folders
 
-1. Mount the host folder into the container (Docker). The path you type in Settings is **inside the container**, the same rule as [slskd's download folder](slskd-navidrome.md).
+1. Mount the host folder into the container (Docker). The path you type in Settings is **inside the container**, not on the host.
 2. Open **Settings → Library**.
 3. Under **Existing music folders**, add one or more paths (for example `/music/collection`). The field suggests directories as you type.
 4. **Save** if you want them kept without syncing yet, or press **Sync folders** — that saves the list and scans immediately.
@@ -51,7 +51,7 @@ Folders that don't exist or aren't readable are reported after Sync; the others 
 
 ## Library paths
 
-Extra-folder files use a virtual path `ext/<id>/…` (the id is a hash of the folder path, so the list can be reordered). The player and `GET /media/…` use that path, like `slskd/…` for Soulseek files left in place.
+Extra-folder files use a virtual path `ext/<id>/…` (the id is a hash of the folder path, so the list can be reordered). The player and `GET /media/…` use that path.
 
 A folder that already sits **inside** `/downloads` (or the slskd source folder) is ignored here — that tree is already the library.
 

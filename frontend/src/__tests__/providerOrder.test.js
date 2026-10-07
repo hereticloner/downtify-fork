@@ -6,14 +6,17 @@ import {
   toggleProvider,
 } from '../lib/providerOrder.js'
 
-const ALL = ['slskd', 'youtube-music', 'youtube']
+const ALL = ['youtube-music', 'youtube']
 
 describe('providerRows', () => {
   it('numbers the enabled ones and parks the rest', () => {
-    expect(providerRows(ALL, ['youtube-music', 'slskd'])).toEqual([
+    expect(providerRows(ALL, ['youtube-music'])).toEqual([
       { id: 'youtube-music', enabled: true, position: 1 },
-      { id: 'slskd', enabled: true, position: 2 },
       { id: 'youtube', enabled: false, position: 0 },
+    ])
+    expect(providerRows(ALL, ALL)).toEqual([
+      { id: 'youtube-music', enabled: true, position: 1 },
+      { id: 'youtube', enabled: true, position: 2 },
     ])
   })
 
@@ -32,16 +35,13 @@ describe('toggleProvider', () => {
   })
 
   it('can put one first instead', () => {
-    expect(toggleProvider(['youtube'], 'slskd', true, { first: true })).toEqual(
-      ['slskd', 'youtube']
-    )
+    expect(
+      toggleProvider(['youtube'], 'youtube-music', true, { first: true })
+    ).toEqual(['youtube-music', 'youtube'])
   })
 
   it('removes when switched off', () => {
-    expect(toggleProvider(ALL, 'youtube-music', false)).toEqual([
-      'slskd',
-      'youtube',
-    ])
+    expect(toggleProvider(ALL, 'youtube-music', false)).toEqual(['youtube'])
   })
 
   it('refuses to leave the list empty unless allowed', () => {
@@ -58,20 +58,17 @@ describe('toggleProvider', () => {
 
 describe('moveProvider', () => {
   it('swaps with the neighbour', () => {
-    expect(moveProvider(ALL, 'youtube-music', -1)).toEqual([
-      'youtube-music',
-      'slskd',
-      'youtube',
-    ])
-    expect(moveProvider(ALL, 'youtube-music', 1)).toEqual([
-      'slskd',
+    expect(moveProvider(ALL, 'youtube', -1)).toEqual([
       'youtube',
       'youtube-music',
     ])
+    expect(
+      moveProvider(['youtube', 'youtube-music'], 'youtube-music', -1)
+    ).toEqual(['youtube-music', 'youtube'])
   })
 
   it('stops at the ends and ignores unknown ids', () => {
-    expect(moveProvider(ALL, 'slskd', -1)).toBeNull()
+    expect(moveProvider(ALL, 'youtube-music', -1)).toBeNull()
     expect(moveProvider(ALL, 'youtube', 1)).toBeNull()
     expect(moveProvider(ALL, 'nope', 1)).toBeNull()
   })
@@ -79,20 +76,17 @@ describe('moveProvider', () => {
 
 describe('dropProvider', () => {
   it('moves a provider to another one’s slot', () => {
-    expect(dropProvider(ALL, 'youtube', 'slskd')).toEqual([
+    expect(dropProvider(ALL, 'youtube', 'youtube-music')).toEqual([
       'youtube',
-      'slskd',
       'youtube-music',
     ])
-    expect(dropProvider(ALL, 'slskd', 'youtube')).toEqual([
-      'youtube-music',
-      'youtube',
-      'slskd',
-    ])
+    expect(
+      dropProvider(['youtube', 'youtube-music'], 'youtube-music', 'youtube')
+    ).toEqual(['youtube-music', 'youtube'])
   })
 
   it('ignores a drop on itself or on a disabled provider', () => {
-    expect(dropProvider(ALL, 'slskd', 'slskd')).toBeNull()
-    expect(dropProvider(['slskd'], 'slskd', 'youtube')).toBeNull()
+    expect(dropProvider(ALL, 'youtube', 'youtube')).toBeNull()
+    expect(dropProvider(['youtube'], 'youtube-music', 'youtube')).toBeNull()
   })
 })

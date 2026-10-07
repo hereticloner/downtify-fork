@@ -133,7 +133,7 @@ def test_media_duration_respects_custom_tolerance_percent():
     )
 
 
-def test_duration_tolerances_from_slskd_settings():
+def test_duration_tolerances_from_settings():
     assert duration_tolerances_from_settings({}) == {
         'seconds': 10,
         'percent': 15,

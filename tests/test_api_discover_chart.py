@@ -1,7 +1,7 @@
 """Tests for the Deezer-chart discovery endpoint and the download-request
 bypass its tracks rely on (a Deezer track link isn't a URL this app can
 resolve, so a ``source: 'deezer'`` row is taken from the request body
-as-is - the same escape hatch a slskd text-search stub uses)."""
+as-is)."""
 
 from __future__ import annotations
 

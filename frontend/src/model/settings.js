@@ -7,26 +7,6 @@ import { needsLanguageSync, splitUiLanguage } from '/src/lib/uiLanguage'
 
 const settings = ref({
   audio_providers: ['youtube-music'],
-  slskd: {
-    enabled: false,
-    base_url: '',
-    api_key: '',
-    source_dir: '/slskd',
-    leave_in_place: true,
-    timeout_seconds: 20,
-    search_retries: 5,
-    search_poll_seconds: 15,
-    download_attempts: 5,
-    poll_interval_seconds: 5,
-    poll_max_attempts: 60,
-    download_timeout_seconds: 600,
-    queued_timeout_seconds: 180,
-    duration_tolerance_seconds: 10,
-    duration_tolerance_percent: 15,
-    mix_duration_tolerance_percent: 50,
-    extensions: ['mp3', 'flac'],
-    min_bitrate: 256,
-  },
   external_library: {
     folders: [],
   },
@@ -79,7 +59,7 @@ const MIN_COVER_RESOLUTION = 300
 const MAX_COVER_RESOLUTION = 1200
 
 const settingsOptions = {
-  audio_providers: ['youtube', 'youtube-music', 'slskd'],
+  audio_providers: ['youtube', 'youtube-music'],
   lyrics_providers: ['lrclib', 'genius', 'musixmatch', 'azlyrics'],
   format: ['mp3', 'flac', 'ogg', 'opus', 'm4a'],
   bitrate: ['128', '192', '256', '320'],
@@ -174,11 +154,10 @@ function loadServerSettings() {
       const { uiLanguage: known, rest } = splitUiLanguage(res.data)
       uiLanguage.value = known
       // Merge nested blocks over the defaults so a settings file saved
-      // before slskd/Navidrome existed still binds every form field.
+      // before Navidrome existed still binds every form field.
       settings.value = {
         ...settings.value,
         ...rest,
-        slskd: { ...settings.value.slskd, ...(rest.slskd || {}) },
         navidrome: { ...settings.value.navidrome, ...(rest.navidrome || {}) },
         external_library: {
           ...settings.value.external_library,
@@ -220,7 +199,7 @@ watch(currentLocale, () => {
 const dirty = computed(() => loaded.value && snapshot() !== saved.value)
 const isSaved = ref()
 const saving = ref(false)
-// Backend rejection reason (e.g. slskd enabled without an API key).
+// Backend rejection reason (e.g. Navidrome enabled without a password).
 const saveErrorText = ref('')
 
 function rememberExternalFolders(folders) {
@@ -257,7 +236,6 @@ async function saveSettings() {
     settings.value = {
       ...settings.value,
       ...rest,
-      slskd: { ...settings.value.slskd, ...(rest.slskd || {}) },
       navidrome: { ...settings.value.navidrome, ...(rest.navidrome || {}) },
       external_library: {
         ...settings.value.external_library,

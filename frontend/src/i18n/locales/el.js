@@ -780,21 +780,6 @@ export default {
     sourceYtmHint: 'Καλύτερες αντιστοιχίες μεταδεδομένων',
     sourceYt: 'YouTube',
     sourceYtHint: 'Εναλλακτική για τραγούδια που λείπουν από το YouTube Music',
-    slskdTitle: 'slskd',
-    slskdHint:
-      'Λήψη από Soulseek μέσω του διακομιστή slskd. Όσα δεν βρεθούν περνούν στην επόμενη πηγή.',
-    slskdEnabled: 'Χρήση slskd',
-    slskdEnabledHint: 'Απαιτεί URL διακομιστή και κλειδί API.',
-    slskdUrl: 'URL διακομιστή',
-    slskdKey: 'Κλειδί API',
-    slskdFolder: 'Φάκελος λήψεων slskd',
-    slskdFolderHint:
-      'Η διαδρομή μέσα στο container του Downtify, όχι στον host.',
-    slskdTimeout: 'Συνολικό χρονικό όριο',
-    slskdQueuedTimeout: 'Χρονικό όριο αναμονής',
-    slskdInPlace: 'Διατήρηση αρχείων στον φάκελο slskd',
-    slskdInPlaceHint:
-      'Επισήμανση εκεί όπου τα αποθήκευσε το slskd αντί για αντιγραφή στον φάκελο λήψεων.',
     youtubeTitle: 'YouTube',
     cookies: 'Cookies YouTube',
     cookiesHint:
@@ -908,21 +893,12 @@ export default {
         'Η διεύθυνση δεν είναι έγκυρη. Ξεκινήστε με http:// ή https://.',
       connection_tls:
         'Το πιστοποιητικό HTTPS δεν είναι αξιόπιστο. Χρησιμοποιήστε http://, ή πιστοποιητικό από αξιόπιστη αρχή.',
-      connection_not_slskd:
-        'Κάτι απάντησε στο {url}, αλλά δεν μοιάζει με slskd. Ελέγξτε τη διεύθυνση και τη θύρα.',
       connection_not_navidrome:
         'Κάτι απάντησε στο {url}, αλλά δεν μοιάζει με Navidrome. Ελέγξτε τη διεύθυνση και τη θύρα.',
       connection_http_error: 'Ο διακομιστής απάντησε με σφάλμα ({detail}).',
-      auth_bad_key: 'Το slskd απέρριψε το κλειδί API.',
       auth_bad_credentials:
         'Το Navidrome απέρριψε το όνομα χρήστη ή τον κωδικό.',
       auth_api_error: 'Το Navidrome απάντησε: {detail}',
-      soulseek_ok: 'Το slskd είναι συνδεδεμένο στο Soulseek.',
-      soulseek_offline:
-        'Το slskd δεν είναι συνδεδεμένο στο Soulseek. Δεν θα βρίσκει τίποτα μέχρι να συνδεθεί.',
-      folder_ok: 'Το Downtify μπορεί να διαβάσει το {detail}.',
-      folder_missing:
-        'Το Downtify δεν μπορεί να διαβάσει το {detail}. Πρέπει να είναι ο φάκελος όπου κατεβάζει το slskd, προσαρτημένος σε αυτό το container.',
       scan_ok:
         'Αυτός ο λογαριασμός μπορεί να ξεκινήσει σαρώσεις της βιβλιοθήκης.',
       scan_not_admin:

@@ -567,7 +567,6 @@ def test_rebuild_playlist_catalog_from_library_links_all_on_disk(
     downloader = MagicMock()
     downloader.download_dir = str(download_dir)
     downloader.organize_by_artist = False
-    downloader.slskd_settings = {}
 
     api.state.playlist_catalog = catalog
     api.state.track_index = index

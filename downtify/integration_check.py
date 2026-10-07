@@ -1,4 +1,4 @@
-"""Try a slskd or Navidrome configuration and say what is wrong with it.
+"""Try a Navidrome configuration and say what is wrong with it.
 
 Both integrations are set up by pasting an address and a credential, and
 a typo shows up much later: a download that quietly falls back to YouTube,
@@ -15,17 +15,13 @@ URL carries the login token.
 
 from __future__ import annotations
 
-import os
-import re
 import ssl
-from pathlib import Path
 from typing import Any, Optional
 
 import httpx
 from loguru import logger
 
 from .navidrome import SUBSONIC_AUTH_FAILED, NavidromeClient, SubsonicError
-from .slskd_provider import SlskdClient
 
 #: Seconds each request may take. A test that hangs is worse than one
 #: that says "no answer".
@@ -34,14 +30,6 @@ PROBE_TIMEOUT = 8.0
 STATUS_OK = 'ok'
 STATUS_WARN = 'warn'
 STATUS_FAIL = 'fail'
-
-_VERSION = re.compile(r'^\d+(\.\d+)+')
-
-
-def _get(url: str, **kwargs: Any) -> httpx.Response:
-    """The one place a slskd probe touches the network (tests replace it)."""
-
-    return httpx.get(url, follow_redirects=True, **kwargs)
 
 
 def _check(
@@ -78,111 +66,6 @@ def _transport_code(exc: BaseException) -> str:
 def _log_failure(what: str, exc: BaseException) -> None:
     # The type only: the message may carry the URL, and with it a token.
     logger.info('{} check failed: {}', what, type(exc).__name__)
-
-
-# ── slskd ────────────────────────────────────────────────────────────
-def _slskd_version(resp: httpx.Response) -> Optional[str]:
-    """The version slskd reports, or ``None`` if this isn't slskd."""
-
-    try:
-        body = resp.json()
-    except ValueError:
-        body = resp.text
-    text = str(body).strip().strip('"') if isinstance(body, str) else ''
-    return text if _VERSION.match(text) else None
-
-
-def _slskd_soulseek(
-    base_url: str, headers: dict[str, str]
-) -> Optional[dict[str, str]]:
-    """Whether slskd is logged in to the Soulseek network."""
-
-    try:
-        resp = _get(
-            f'{base_url}/api/v0/server', headers=headers, timeout=PROBE_TIMEOUT
-        )
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as exc:
-        _log_failure('slskd server state', exc)
-        return None
-    if not isinstance(data, dict) or 'isLoggedIn' not in data:
-        return None
-    if data.get('isLoggedIn'):
-        return _check(
-            'soulseek', STATUS_OK, 'ok', str(data.get('username') or '')
-        )
-    return _check(
-        'soulseek', STATUS_WARN, 'offline', str(data.get('state') or '')
-    )
-
-
-def _slskd_folder(cfg: dict[str, Any]) -> dict[str, str]:
-    """Whether Downtify can read the folder slskd's files end up in."""
-
-    source = str(cfg.get('source_dir') or '')
-    probe_cfg = {**cfg, 'timeout_seconds': int(PROBE_TIMEOUT)}
-    candidates = [source]
-    try:
-        # slskd's own idea of where it downloads, in case it is mounted
-        # here at the same path.
-        candidates += SlskdClient(probe_cfg).remote_download_directories()
-    except Exception as exc:
-        _log_failure('slskd folders', exc)
-    for raw in candidates:
-        path = Path(raw) if raw else None
-        if path is not None and path.is_dir() and os.access(path, os.R_OK):
-            return _check('folder', STATUS_OK, 'ok', str(path))
-    return _check('folder', STATUS_WARN, 'missing', source)
-
-
-def check_slskd(cfg: dict[str, Any]) -> dict[str, Any]:
-    """Test a normalized slskd configuration (see ``_effective_slskd_settings``)."""
-
-    base_url = str(cfg.get('base_url') or '')
-    api_key = str(cfg.get('api_key') or '')
-    if not base_url or not api_key:
-        return _result([_check('config', STATUS_FAIL, 'missing')])
-
-    headers = {'X-API-Key': api_key}
-    try:
-        resp = _get(
-            f'{base_url}/api/v0/application/version',
-            headers=headers,
-            timeout=PROBE_TIMEOUT,
-        )
-    except Exception as exc:
-        _log_failure('slskd connection', exc)
-        return _result([
-            _check('connection', STATUS_FAIL, _transport_code(exc))
-        ])
-
-    if resp.status_code in {401, 403}:
-        return _result([
-            _check('connection', STATUS_OK),
-            _check('auth', STATUS_FAIL, 'bad_key'),
-        ])
-    if resp.status_code == 404:
-        return _result([_check('connection', STATUS_FAIL, 'not_slskd')])
-    if resp.status_code >= 400:
-        return _result([
-            _check(
-                'connection',
-                STATUS_FAIL,
-                'http_error',
-                str(resp.status_code),
-            )
-        ])
-    version = _slskd_version(resp)
-    if version is None:
-        return _result([_check('connection', STATUS_FAIL, 'not_slskd')])
-
-    checks = [_check('connection', STATUS_OK), _check('auth', STATUS_OK)]
-    soulseek = _slskd_soulseek(base_url, headers)
-    if soulseek is not None:
-        checks.append(soulseek)
-    checks.append(_slskd_folder(cfg))
-    return _result(checks, f'slskd {version}')
 
 
 # ── Navidrome ────────────────────────────────────────────────────────

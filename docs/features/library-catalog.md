@@ -4,7 +4,7 @@ icon: lucide/library
 
 # Library catalog & path sync
 
-Downtify keeps a small **catalog** of the files under `/downloads` (the slskd folder, when [slskd files are left in place](slskd-navidrome.md#leave-files-in-place), and [extra folders](external-library.md) you add in Settings) so the Library page, player, M3U export, Navidrome sync and duplicate detection stay consistent when files move or playlists grow.
+Downtify keeps a small **catalog** of the files under `/downloads` (including a legacy `slskd/` folder, and [extra folders](external-library.md) you add in Settings) so the Library page, player, M3U export, Navidrome sync and duplicate detection stay consistent when files move or playlists grow.
 
 ## What gets stored
 
@@ -46,7 +46,7 @@ It only runs when you press the button (or call `POST /api/library/reconcile`) �
 To play a collection that Downtify did not download, add the folders in **Settings → Library** and press **Sync folders**. Files stay on disk; tags are read and artists are matched. See [Existing music folders](external-library.md).
 
 ::: warning
-Rewriting a playlist deletes library files whose tags clearly don't match the Spotify track they're registered for — see [slskd & Navidrome](slskd-navidrome.md#playlist-sync).
+Rewriting a playlist deletes library files whose tags clearly don't match the Spotify track they're registered for — see [Navidrome](slskd-navidrome.md#playlist-sync).
 :::
 
 ::: info Deletes vs moves

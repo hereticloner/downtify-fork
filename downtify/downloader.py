@@ -5,7 +5,6 @@ from __future__ import annotations
 import base64
 import os
 import re
-import shutil
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
@@ -39,7 +38,6 @@ from . import spotify as spotify_mod
 from .cookies import CookiesStore
 from .file_naming import sanitize_file_name
 from .itunes import fetch_genre as _fetch_itunes_genre
-from .library_paths import library_stored_path, slskd_dir_from_downloader
 from .m3u import sanitize_playlist_name
 from .providers import (
     enrich_from_match,
@@ -47,7 +45,6 @@ from .providers import (
     find_match_for_video,
     find_match_youtube_only,
 )
-from .slskd_provider import download_from_slskd
 
 # Extensions that count as "this song is already downloaded". Deliberately
 # excludes sidecars written next to the audio (.lrc, cover.jpg, .m3u) so a
@@ -55,11 +52,11 @@ from .slskd_provider import download_from_slskd
 _AUDIO_EXTENSIONS = frozenset({'mp3', 'flac', 'ogg', 'opus', 'm4a'})
 
 # ``(percent, message, provider)`` — ``provider`` is the audio source
-# handling the download (``'slskd'``, ``'youtube-music'``, ``'youtube'``),
-# shown next to each queue row.
+# handling the download (``'youtube-music'``, ``'youtube'``), shown next to
+# each queue row.
 ProgressCallback = Callable[[float, str, Optional[str]], None]
 
-AUDIO_PROVIDERS = ('youtube-music', 'youtube', 'slskd')
+AUDIO_PROVIDERS = ('youtube-music', 'youtube')
 
 
 class NoAudioMatchError(RuntimeError):
@@ -321,14 +318,10 @@ class Downloader:
         overwrite_existing_files: bool = True,
         cookies_store: Optional[CookiesStore] = None,
         audio_providers: Optional[list[str]] = None,
-        slskd_settings: Optional[dict[str, Any]] = None,
     ):
         self.download_dir = Path(download_dir)
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.audio_providers = self._normalize_audio_providers(audio_providers)
-        self.slskd_settings = self._normalize_slskd_settings(slskd_settings)
-        # slskd copies a finished transfer here when it isn't left in place.
-        self.slskd_settings['output_dir'] = str(self.download_dir)
         # Resolves DOWNTIFY_COOKIES_FILE and the cookies.txt uploaded
         # through the settings UI, in that order of precedence. ``None``
         # keeps the env-var-only behavior for direct/standalone use.
@@ -368,91 +361,21 @@ class Downloader:
                 out.append(name)
         return out or ['youtube-music']
 
-    @staticmethod
-    def _normalize_slskd_settings(
-        settings: Optional[dict[str, Any]],
-    ) -> dict[str, Any]:
-        raw = settings if isinstance(settings, dict) else {}
-
-        def _int(value: Any, default: int, low: int, high: int) -> int:
-            try:
-                number = int(value if value is not None else default)
-            except (TypeError, ValueError):
-                number = default
-            return min(high, max(low, number))
-
-        download_dir = str(raw.get('download_dir') or '/downloads').strip()
-        return {
-            'enabled': bool(raw.get('enabled', False)),
-            'base_url': str(raw.get('base_url') or '').strip().rstrip('/'),
-            'api_key': str(raw.get('api_key') or '').strip(),
-            'download_dir': download_dir,
-            'source_dir': str(raw.get('source_dir') or download_dir).strip(),
-            'timeout_seconds': _int(raw.get('timeout_seconds'), 20, 1, 3600),
-            'search_retries': _int(raw.get('search_retries'), 5, 1, 100),
-            'search_poll_seconds': _int(
-                raw.get('search_poll_seconds'), 15, 1, 3600
-            ),
-            'download_attempts': _int(raw.get('download_attempts'), 5, 1, 100),
-            'poll_interval_seconds': _int(
-                raw.get('poll_interval_seconds'), 5, 1, 3600
-            ),
-            'poll_max_attempts': _int(
-                raw.get('poll_max_attempts'), 60, 1, 10000
-            ),
-            'download_timeout_seconds': _int(
-                raw.get('download_timeout_seconds'), 600, 30, 3600
-            ),
-            'queued_timeout_seconds': _int(
-                raw.get('queued_timeout_seconds'), 180, 15, 3600
-            ),
-            'duration_tolerance_seconds': _int(
-                raw.get('duration_tolerance_seconds'), 10, 1, 120
-            ),
-            'duration_tolerance_percent': _int(
-                raw.get('duration_tolerance_percent'), 15, 1, 100
-            ),
-            'mix_duration_tolerance_percent': _int(
-                raw.get('mix_duration_tolerance_percent'), 50, 1, 200
-            ),
-            'extensions': raw.get('extensions') or ['mp3', 'flac'],
-            'min_bitrate': _int(raw.get('min_bitrate'), 256, 0, 10000),
-            'leave_in_place': bool(raw.get('leave_in_place', True)),
-            'max_parallel_downloads': _int(
-                raw.get('max_parallel_downloads'), 3, 1, 8
-            ),
-        }
-
     def _resolve_source(
         self,
         song: dict[str, Any],
         progress_cb: Optional[ProgressCallback],
-    ) -> tuple[
-        Optional[str], Optional[dict[str, Any]], Optional[str], Optional[Path]
-    ]:
+    ) -> tuple[Optional[str], Optional[dict[str, Any]], Optional[str]]:
         """Try each audio provider in order.
 
-        Returns ``(video_id, ytm_match, provider, local_path)``: a YouTube
-        video id (with its YouTube Music result, if any) or, for slskd, the
-        path of the already-downloaded file. All ``None`` when every
+        Returns ``(video_id, ytm_match, provider)``: a YouTube video id
+        (with its YouTube Music result, if any). All ``None`` when every
         provider came up empty.
         """
 
         youtube_searched = False
         for provider in self.audio_providers:
-            if provider == 'slskd':
-                if not self.slskd_settings.get('enabled'):
-                    continue
-                local = download_from_slskd(
-                    song, self.slskd_settings, progress_cb=progress_cb
-                )
-                if local is not None:
-                    return None, None, 'slskd', local
-                logger.info(
-                    'Audio provider slskd: no match for {!r}', song.get('name')
-                )
-                _report(progress_cb, 0.0, 'Trying next source', 'slskd')
-            elif provider == 'youtube-music':
+            if provider == 'youtube-music':
                 # find_match falls back to standard YouTube on its own when
                 # YouTube Music has nothing (or only a far-off length).
                 video_id, match = find_match(song)
@@ -462,14 +385,13 @@ class Downloader:
                         video_id,
                         match,
                         'youtube-music' if match is not None else 'youtube',
-                        None,
                     )
             elif provider == 'youtube' and not youtube_searched:
                 video_id = find_match_youtube_only(song)
                 youtube_searched = True
                 if video_id:
-                    return video_id, None, 'youtube', None
-        return None, None, None, None
+                    return video_id, None, 'youtube'
+        return None, None, None
 
     def _resolve_cookies_file(self) -> str:
         """Path to the cookies.txt yt-dlp should use, or ``''``.
@@ -768,14 +690,11 @@ class Downloader:
 
         match: Optional[dict[str, Any]] = None
         provider: Optional[str] = 'youtube-music' if video_id else None
-        local_source: Optional[Path] = None
         if not video_id:
             # Playlist rows lack year/track number; the per-track embed has
-            # them, and they can feed the output path and the slskd match.
+            # them, and they can feed the output path.
             song = spotify_mod.enrich_track_from_spotify_if_sparse(song)
-            video_id, match, provider, local_source = self._resolve_source(
-                song, progress_cb
-            )
+            video_id, match, provider = self._resolve_source(song, progress_cb)
         elif not song.get('album_name') or not song.get('cover_url'):
             # We already have a target video, but the metadata is incomplete.
             # Look up the YT Music entry for THIS specific videoId so we
@@ -787,26 +706,12 @@ class Downloader:
                 logger.opt(exception=True).debug('enrichment match failed')
                 match = None
 
-        if not video_id and local_source is None:
-            source = (
-                'an audio match'
-                if 'slskd' in self.audio_providers
-                and self.slskd_settings.get('enabled')
-                else 'a YouTube match'
-            )
+        if not video_id:
             raise NoAudioMatchError(
-                f'Could not find {source} for {song.get("name")!r}'
+                f'Could not find a YouTube match for {song.get("name")!r}'
             )
 
         song = enrich_from_match(song, match)
-
-        if local_source is not None:
-            return self._downloaded(
-                song,
-                self._finalize_local_source(
-                    song, local_source, provider, progress_cb, subdir
-                ),
-            )
 
         if not skip_existing:
             return self._downloaded(
@@ -905,62 +810,6 @@ class Downloader:
                 embed_lyrics(final_path, found.lyrics)
             except Exception:
                 logger.exception('Failed to embed lyrics into {}', final_path)
-
-    def _finalize_local_source(
-        self,
-        song: dict[str, Any],
-        source_path: Path,
-        provider: Optional[str],
-        progress_cb: Optional[ProgressCallback],
-        subdir: Optional[str],
-    ) -> str:
-        """Tag a file a provider already downloaded (slskd) and return its
-        library path.
-
-        With slskd's ``leave_in_place`` the file stays under the slskd
-        folder and is returned with the virtual ``slskd/`` prefix (served
-        via ``/media/slskd/...``); otherwise it's copied into the same
-        destination a YouTube download would use, keeping its original
-        format — slskd files are not transcoded.
-        """
-
-        lookups = _MetadataLookups(self, song)
-        try:
-            if provider == 'slskd' and self.slskd_settings.get(
-                'leave_in_place', True
-            ):
-                final_path = source_path
-                target_dir = source_path.parent
-                stored = library_stored_path(
-                    final_path,
-                    self.download_dir,
-                    slskd_dir_from_downloader(self),
-                )
-                in_place = True
-            else:
-                target_dir, rel_prefix, basename = self._target_location(
-                    song, subdir
-                )
-                suffix = source_path.suffix or f'.{self.audio_format}'
-                final_path = target_dir / f'{basename}{suffix}'
-                if source_path.resolve() != final_path.resolve():
-                    shutil.copy2(source_path, final_path)
-                stored = f'{rel_prefix}{final_path.name}'
-                in_place = False
-            found = lookups.collect()
-        finally:
-            lookups.cancel()
-
-        # Never drop a cover.jpg into slskd's own folders.
-        self._tag_file(
-            final_path,
-            target_dir,
-            song,
-            found,
-            save_album_cover=not in_place,
-        )
-        _report(progress_cb, 100.0, 'Done', provider)
-        return stored
 
     @staticmethod
     def _progress_hook(

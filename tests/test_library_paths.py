@@ -33,19 +33,27 @@ def test_locate_prefers_configured_slskd_dir_over_legacy_copy(tmp_path):
     assert found == external.resolve()
 
 
-def test_slskd_dir_from_downloader_falls_back_to_env_mount(
+def test_slskd_dir_from_downloader_is_none_without_settings(
     tmp_path, monkeypatch
 ):
     slskd_mount = tmp_path / 'slskd_vol'
     slskd_mount.mkdir()
 
     class _Downloader:
-        slskd_settings = {
-            'enabled': True,
-            'source_dir': '',
-            'download_dir': str(tmp_path / 'downloads'),
-            'leave_in_place': True,
-        }
+        # Matches the real one: no slskd_settings attribute anymore, so
+        # slskd_dir_from_downloader can't learn a mount from it.
+        pass
 
     monkeypatch.setenv('DOWNTIFY_SLSKD_SOURCE_DIR', str(slskd_mount))
-    assert lp.slskd_dir_from_downloader(_Downloader()) == slskd_mount
+    assert lp.slskd_dir_from_downloader(_Downloader()) is None
+
+
+def test_default_slskd_source_roots_include_the_env_mount(
+    tmp_path, monkeypatch
+):
+    slskd_mount = tmp_path / 'slskd_vol'
+    monkeypatch.setenv('DOWNTIFY_SLSKD_SOURCE_DIR', str(slskd_mount))
+
+    roots = lp.default_slskd_source_roots(tmp_path / 'downloads')
+
+    assert slskd_mount in roots

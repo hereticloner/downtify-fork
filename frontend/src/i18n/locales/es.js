@@ -778,21 +778,6 @@ export default {
     sourceYtmHint: 'Mejores coincidencias de metadatos',
     sourceYt: 'YouTube',
     sourceYtHint: 'Alternativa para canciones que faltan en YouTube Music',
-    slskdTitle: 'slskd',
-    slskdHint:
-      'Descarga de Soulseek a través de tu servidor slskd. Lo que no encuentre pasa a la siguiente fuente.',
-    slskdEnabled: 'Usar slskd',
-    slskdEnabledHint: 'Necesita la URL del servidor y una clave de API.',
-    slskdUrl: 'URL del servidor',
-    slskdKey: 'Clave de API',
-    slskdFolder: 'Carpeta de descargas de slskd',
-    slskdFolderHint:
-      'La ruta dentro del contenedor de Downtify, no en el host.',
-    slskdTimeout: 'Tiempo de espera total',
-    slskdQueuedTimeout: 'Tiempo de espera en cola',
-    slskdInPlace: 'Dejar los archivos en la carpeta de slskd',
-    slskdInPlaceHint:
-      'Etiquetarlos donde slskd los guardó en lugar de copiarlos a tu carpeta de descargas.',
     youtubeTitle: 'YouTube',
     cookies: 'Cookies de YouTube',
     cookiesHint:
@@ -907,20 +892,11 @@ export default {
         'Esa dirección no es válida. Empieza con http:// o https://.',
       connection_tls:
         'El certificado HTTPS no es de confianza. Usa http://, o un certificado de una autoridad de confianza.',
-      connection_not_slskd:
-        'Algo respondió en {url}, pero no parece ser slskd. Revisa la dirección y el puerto.',
       connection_not_navidrome:
         'Algo respondió en {url}, pero no parece ser Navidrome. Revisa la dirección y el puerto.',
       connection_http_error: 'El servidor respondió con un error ({detail}).',
-      auth_bad_key: 'slskd rechazó la clave de API.',
       auth_bad_credentials: 'Navidrome rechazó el usuario o la contraseña.',
       auth_api_error: 'Navidrome respondió: {detail}',
-      soulseek_ok: 'slskd está conectado a Soulseek.',
-      soulseek_offline:
-        'slskd no está conectado a Soulseek. No encontrará nada hasta que lo esté.',
-      folder_ok: 'Downtify puede leer {detail}.',
-      folder_missing:
-        'Downtify no puede leer {detail}. Debe ser la carpeta donde descarga slskd, montada en este contenedor.',
       scan_ok: 'Esta cuenta puede iniciar escaneos de la biblioteca.',
       scan_not_admin:
         'Esta cuenta no puede iniciar escaneos de la biblioteca: Navidrome solo lo permite a los administradores. Rellena el usuario y la contraseña de administrador para que las canciones nuevas aparezcan antes.',

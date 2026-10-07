@@ -1,4 +1,4 @@
-// Turns the answer of POST /api/{slskd,navidrome}/test into the lines the
+// Turns the answer of POST /api/navidrome/test into the lines the
 // Settings page shows. Pure, so the mapping is unit-testable and the
 // component only has to translate and draw what this returns.
 
@@ -12,16 +12,10 @@ export const KNOWN_CODES = new Set([
   'connection_timeout',
   'connection_bad_url',
   'connection_tls',
-  'connection_not_slskd',
   'connection_not_navidrome',
   'connection_http_error',
-  'auth_bad_key',
   'auth_bad_credentials',
   'auth_api_error',
-  'soulseek_ok',
-  'soulseek_offline',
-  'folder_ok',
-  'folder_missing',
   'scan_ok',
   'scan_not_admin',
   'scan_not_admin_separate',
@@ -65,6 +59,5 @@ export function canTest(config, fields) {
 }
 
 export const REQUIRED_FIELDS = {
-  slskd: ['base_url', 'api_key'],
   navidrome: ['url', 'username', 'password'],
 }

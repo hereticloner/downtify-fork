@@ -190,8 +190,8 @@ working without changes:
 * ``POST /api/settings/update``
 * ``GET  /api/fs/dirs`` (admin: directory-name suggestions for path
   fields, ``?path=``)
-* ``POST /api/slskd/test`` and ``POST /api/navidrome/test`` (try the
-  connection with the settings as they are in the form, saved or not)
+* ``POST /api/navidrome/test`` (try the connection with the settings as
+  they are in the form, saved or not)
 * ``GET  /api/cookies`` (current YouTube cookie configuration)
 * ``POST /api/cookies`` (upload a Netscape cookies.txt as the raw request
   body - no multipart, so no ``python-multipart`` dependency)
@@ -430,7 +430,6 @@ from .podcasts import (
     search_shows,
 )
 from .server_identity import ServerIdentity
-from .slskd_provider import reset_slskd_parallelism
 from .track_index import (
     TrackIndex,
     normalize_spotify_track_id,
@@ -484,28 +483,6 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     # built-in defaults (DOWNTIFY_YT_PLAYER_CLIENTS / DOWNTIFY_YT_PO_TOKEN).
     'yt_player_clients': [],
     'yt_po_tokens': [],
-    # Soulseek via slskd, used when 'slskd' is in audio_providers.
-    'slskd': {
-        'enabled': False,
-        'base_url': '',
-        'api_key': '',
-        'download_dir': '/downloads',
-        'source_dir': '/slskd',
-        'leave_in_place': True,
-        'timeout_seconds': 20,
-        'search_retries': 5,
-        'search_poll_seconds': 15,
-        'download_attempts': 5,
-        'poll_interval_seconds': 5,
-        'poll_max_attempts': 60,
-        'download_timeout_seconds': 600,
-        'queued_timeout_seconds': 180,
-        'duration_tolerance_seconds': 10,
-        'duration_tolerance_percent': 15,
-        'mix_duration_tolerance_percent': 50,
-        'extensions': ['mp3', 'flac'],
-        'min_bitrate': 256,
-    },
     # Navidrome (Subsonic API) playlist sync after playlist downloads.
     'sync_navidrome': True,
     'navidrome': {
@@ -546,7 +523,6 @@ DEFAULT_SETTINGS: dict[str, Any] = {
 # defaults key by key, so a settings.json from an older version still gets
 # every newer option.
 _NESTED_SETTINGS = (
-    'slskd',
     'navidrome',
     'library_upgrade',
     'external_library',
@@ -618,133 +594,24 @@ def _clamp_cover_resolution(value: Any) -> int:
     return min(MAX_COVER_RESOLUTION, max(MIN_COVER_RESOLUTION, px))
 
 
-def _setting_int(
-    data: dict[str, Any],
-    key: str,
-    default: int,
-    *,
-    minimum: int,
-    maximum: int,
-) -> int:
-    try:
-        value = int(data.get(key) or default)
-    except (TypeError, ValueError):
-        value = default
-    return min(maximum, max(minimum, value))
-
-
-def _slskd_extensions(raw: dict[str, Any]) -> list[str]:
-    value = raw.get('extensions')
-    if isinstance(value, str):
-        value = value.split(',')
-    if not isinstance(value, list):
-        value = []
-    extensions = [
-        str(e).strip().lower().lstrip('.') for e in value if str(e).strip()
-    ]
-    return extensions or ['mp3', 'flac']
-
-
-def _effective_slskd_settings(settings: dict[str, Any]) -> dict[str, Any]:
-    """Normalized slskd settings (URLs trimmed, numbers clamped).
-
-    ``source_dir`` defaults to ``/slskd`` when files are left in place and
-    to the download folder otherwise. The parallel-download limit is taken
-    from the global setting, capped at 8 for slskd.
-    """
-
-    raw = settings.get('slskd')
-    if not isinstance(raw, dict):
-        raw = {}
-    download_dir = str(raw.get('download_dir') or '/downloads').strip()
-    leave_in_place = raw.get('leave_in_place')
-    leave_in_place = True if leave_in_place is None else bool(leave_in_place)
-    source_dir = str(raw.get('source_dir') or '').strip() or (
-        '/slskd' if leave_in_place else download_dir
-    )
-    try:
-        min_bitrate = int(raw.get('min_bitrate') or 256)
-    except (TypeError, ValueError):
-        min_bitrate = 256
-
-    def bounded(key: str, default: int, low: int, high: int) -> int:
-        return _setting_int(raw, key, default, minimum=low, maximum=high)
-
-    return {
-        'enabled': bool(raw.get('enabled', False)),
-        'base_url': str(raw.get('base_url') or '').strip().rstrip('/'),
-        'api_key': str(raw.get('api_key') or '').strip(),
-        'download_dir': download_dir,
-        'source_dir': source_dir,
-        'leave_in_place': leave_in_place,
-        'extensions': _slskd_extensions(raw),
-        'timeout_seconds': bounded('timeout_seconds', 20, 5, 120),
-        'search_retries': bounded('search_retries', 5, 1, 20),
-        'search_poll_seconds': bounded('search_poll_seconds', 15, 3, 60),
-        'download_attempts': bounded('download_attempts', 5, 1, 10),
-        'poll_interval_seconds': bounded('poll_interval_seconds', 5, 1, 30),
-        'poll_max_attempts': bounded('poll_max_attempts', 60, 1, 300),
-        'download_timeout_seconds': bounded(
-            'download_timeout_seconds', 600, 30, 3600
-        ),
-        'queued_timeout_seconds': bounded(
-            'queued_timeout_seconds', 180, 15, 3600
-        ),
-        'duration_tolerance_seconds': bounded(
-            'duration_tolerance_seconds', 10, 1, 120
-        ),
-        'duration_tolerance_percent': bounded(
-            'duration_tolerance_percent', 15, 1, 100
-        ),
-        'mix_duration_tolerance_percent': bounded(
-            'mix_duration_tolerance_percent', 50, 1, 200
-        ),
-        'min_bitrate': min_bitrate,
-        'max_parallel_downloads': _setting_int(
-            settings, 'max_parallel_downloads', 3, minimum=1, maximum=8
-        ),
-    }
-
-
 def _effective_audio_providers(settings: dict[str, Any]) -> list[str]:
     """Enabled audio providers in the configured order.
 
-    slskd is dropped while it's disabled. When slskd is the only provider
-    left, YouTube Music and YouTube are appended as fallbacks so a track
-    slskd can't find still downloads.
+    Unknown names (a provider from an older install, a bad manual edit)
+    are dropped. Defaults to YouTube Music when nothing is left.
     """
 
-    slskd_enabled = bool(_effective_slskd_settings(settings).get('enabled'))
     out: list[str] = []
     for raw in settings.get('audio_providers') or []:
         name = str(raw or '').strip()
-        if name == 'slskd' and not slskd_enabled:
-            continue
         if name in AUDIO_PROVIDERS and name not in out:
             out.append(name)
-    if not out:
-        return ['youtube-music']
-    if out == ['slskd']:
-        out += ['youtube-music', 'youtube']
-    return out
+    return out or ['youtube-music']
 
 
-def _validate_integration_settings(
-    slskd: dict[str, Any], navidrome: dict[str, Any]
-) -> None:
-    """Reject enabling slskd/Navidrome without the fields they need."""
+def _validate_navidrome_settings(navidrome: dict[str, Any]) -> None:
+    """Reject enabling Navidrome without the fields it needs."""
 
-    if slskd.get('enabled'):
-        if not slskd.get('base_url'):
-            raise HTTPException(
-                status_code=400,
-                detail='slskd base URL is required when enabled',
-            )
-        if not slskd.get('api_key'):
-            raise HTTPException(
-                status_code=400,
-                detail='slskd API key is required when enabled',
-            )
     if navidrome.get('enabled'):
         for key, label in (
             ('url', 'URL'),
@@ -1559,25 +1426,7 @@ def check_update() -> Optional[dict[str, Any]]:
 
 @router.get('/api/songs/search')
 def search_endpoint(query: str = Query('')) -> list[dict[str, Any]]:
-    results = providers.search_songs(query, limit=20)
-    if results:
-        return results
-    q = query.strip()
-    if not q or 'slskd' not in _effective_audio_providers(state.settings):
-        return []
-    # With slskd enabled, a search YouTube Music has nothing for can still
-    # be downloaded from Soulseek: offer the query itself as a track
-    # ("Artist - Title" is split into artist and title).
-    stub = providers.song_stub_from_text_query(q)
-    if stub is None:
-        return []
-    logger.info(
-        'Search fallback for slskd: q={!r} title={!r} artists={}',
-        q,
-        stub.get('name'),
-        stub.get('artists'),
-    )
-    return [stub]
+    return providers.search_songs(query, limit=20)
 
 
 @router.get('/api/albums/search')
@@ -2552,10 +2401,10 @@ def _song_from_download_request(
 ) -> dict[str, Any]:
     """The song to download for ``POST /api/download/url``.
 
-    A slskd search stub (``source == 'text_search'``, see
-    :func:`search_endpoint`) or a Deezer chart/Finder row (``source ==
-    'deezer'``, see :func:`discover_chart_endpoint` and
-    :func:`finder_search_endpoint`) has no URL this app
+    A client-resolved row (``source == 'text_search'`` or a Deezer
+    chart/Finder row, ``source == 'deezer'``, see
+    :func:`discover_chart_endpoint` and :func:`finder_search_endpoint`)
+    has no URL this app
     can resolve on its own - both are taken from the request body as-is,
     already-resolved metadata that :func:`downtify.providers.find_match`
     can search YouTube/YouTube Music for directly.
@@ -5239,11 +5088,9 @@ async def update_settings_endpoint(
     if isinstance(payload, dict):
         # Validated up front so a rejected save changes nothing.
         pending = {**state.settings, **payload}
-        slskd_cfg = _effective_slskd_settings(pending)
         navidrome_cfg = _effective_navidrome_settings(pending)
-        _validate_integration_settings(
-            slskd_cfg if 'slskd' in payload else {},
-            navidrome_cfg if 'navidrome' in payload else {},
+        _validate_navidrome_settings(
+            navidrome_cfg if 'navidrome' in payload else {}
         )
         for key, raw_value in payload.items():
             if key not in DEFAULT_SETTINGS:
@@ -5261,14 +5108,6 @@ async def update_settings_endpoint(
                 state.settings[key] = _clean_ui_language(raw_value) or (
                     state.settings.get(key, '')
                 )
-            elif key == 'slskd':
-                # The parallel limit is derived from max_parallel_downloads,
-                # not stored with slskd's own options.
-                state.settings[key] = {
-                    k: v
-                    for k, v in slskd_cfg.items()
-                    if k != 'max_parallel_downloads'
-                }
             elif key == 'navidrome':
                 state.settings[key] = navidrome_cfg
             elif key == 'external_library':
@@ -5290,22 +5129,12 @@ async def update_settings_endpoint(
                 state.settings[key] = cleaned
             else:
                 state.settings[key] = raw_value
-        if {'audio_providers', 'slskd'} & set(payload):
+        if 'audio_providers' in payload:
             state.settings['audio_providers'] = _effective_audio_providers(
                 state.settings
             )
         if state.downloader is not None:
-            if {'audio_providers', 'slskd', 'max_parallel_downloads'} & set(
-                payload
-            ):
-                state.downloader.slskd_settings = (
-                    state.downloader._normalize_slskd_settings(
-                        _effective_slskd_settings(state.settings)
-                    )
-                )
-                state.downloader.slskd_settings['output_dir'] = str(
-                    state.downloader.download_dir
-                )
+            if 'audio_providers' in payload:
                 state.downloader.audio_providers = _effective_audio_providers(
                     state.settings
                 )
@@ -5353,7 +5182,6 @@ async def update_settings_endpoint(
             state.download_semaphore = asyncio.Semaphore(
                 state.settings['max_parallel_downloads']
             )
-            reset_slskd_parallelism(_effective_slskd_settings(state.settings))
         if 'cover_resolution' in payload:
             providers.set_cover_resolution(state.settings['cover_resolution'])
         if 'external_library' in payload:
@@ -5386,30 +5214,14 @@ async def _json_object(request: Request) -> dict[str, Any]:
     return payload if isinstance(payload, dict) else {}
 
 
-@router.post('/api/slskd/test')
-async def test_slskd_endpoint(request: Request) -> dict[str, Any]:
-    """Try a slskd configuration without saving it.
-
-    The body is the ``slskd`` settings object as it stands in the form; an
-    empty body tests the saved one. A failed test is a normal answer, not
-    an error: ``{ok, server, checks: [{id, status, code, detail}]}``.
-    """
-
-    payload = await _json_object(request)
-    saved = state.settings.get('slskd')
-    cfg = _effective_slskd_settings({
-        **state.settings,
-        'slskd': payload or (saved if isinstance(saved, dict) else {}),
-    })
-    return await asyncio.to_thread(integration_check.check_slskd, cfg)
-
-
 @router.post('/api/navidrome/test')
 async def test_navidrome_endpoint(request: Request) -> dict[str, Any]:
     """Try a Navidrome configuration without saving it.
 
-    Same shape as ``POST /api/slskd/test``, with the ``navidrome`` settings
-    object as the body.
+    The body is the ``navidrome`` settings object as it stands in the
+    form; an empty body tests the saved one. A failed test is a normal
+    answer, not an error:
+    ``{ok, server, checks: [{id, status, code, detail}]}``.
     """
 
     payload = await _json_object(request)

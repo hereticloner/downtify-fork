@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import contextlib
 import time
-from pathlib import Path
 
 import pytest
 
@@ -134,33 +133,6 @@ def test_a_new_file_found_under_the_lock_calls_the_hook(tmp_path, monkeypatch):
     dl.on_downloaded = lambda song, filename: heard.append(filename)
     assert dl.download(SONG) == 'new.mp3'
     assert heard == ['new.mp3']
-
-
-def test_a_file_a_provider_downloaded_calls_the_hook(tmp_path, monkeypatch):
-    # slskd: the file is already there, and only gets tagged.
-    dl = Downloader(tmp_path)
-    spotify_song = {**SONG, 'source': 'spotify', 'song_id': 'a' * 22}
-    spotify_song.pop('cover_url')
-    monkeypatch.setattr(
-        downloader_mod.spotify_mod,
-        'enrich_track_from_spotify_if_sparse',
-        lambda song: song,
-    )
-    monkeypatch.setattr(
-        Downloader,
-        '_resolve_source',
-        lambda self, song, cb: (None, None, 'slskd', Path('x.flac')),
-    )
-    monkeypatch.setattr(
-        downloader_mod, 'enrich_from_match', lambda song, match: song
-    )
-    monkeypatch.setattr(
-        Downloader, '_finalize_local_source', lambda self, *a: 'slskd/x.flac'
-    )
-    heard: list[str] = []
-    dl.on_downloaded = lambda song, filename: heard.append(filename)
-    assert dl.download(spotify_song) == 'slskd/x.flac'
-    assert heard == ['slskd/x.flac']
 
 
 def test_a_download_that_fails_never_calls_the_hook(downloader, monkeypatch):

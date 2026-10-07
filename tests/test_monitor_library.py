@@ -20,7 +20,6 @@ PLAYLIST_ID = '37i9dQZF1DXcBWIGoYBM5M'
 class _Downloader:
     organize_by_artist = False
     organize_by_album = False
-    slskd_settings: dict = {}
 
     def __init__(self, download_dir: Path, *, overwrite: bool = True):
         self.download_dir = download_dir

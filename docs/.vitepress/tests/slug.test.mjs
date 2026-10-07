@@ -11,7 +11,7 @@ describe('slugify', () => {
       'delete-apiplaylistsbatchesspotify_playlist_id',
     ],
     ["One command and you're done", 'one-command-and-youre-done'],
-    ['slskd & Navidrome', 'slskd-navidrome'],
+    ['Users & Sign-in', 'users-sign-in'],
     [
       '2. Audio match — YouTube Music, then YouTube',
       '2-audio-match-youtube-music-then-youtube',

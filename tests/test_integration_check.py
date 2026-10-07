@@ -1,8 +1,8 @@
-"""Trying a slskd or Navidrome configuration from the Settings page.
+"""Trying a Navidrome configuration from the Settings page.
 
 Everything runs offline: the one network call per integration is replaced
-with canned answers shaped like the real services' (slskd's
-``/api/v0/...`` and Navidrome's Subsonic ``ping`` / ``getUser``).
+with a canned answer shaped like the real service (Navidrome's Subsonic
+``ping`` / ``getUser``).
 """
 
 from __future__ import annotations
@@ -18,12 +18,8 @@ import pytest
 from loguru import logger
 
 from downtify import api, integration_check, navidrome
-from downtify.api import (
-    _effective_navidrome_settings,
-    _effective_slskd_settings,
-)
-from downtify.integration_check import check_navidrome, check_slskd
-from downtify.slskd_provider import SlskdClient
+from downtify.api import _effective_navidrome_settings
+from downtify.integration_check import check_navidrome
 
 # ── helpers ────────────────────────────────────────────────────────────
 
@@ -40,273 +36,10 @@ def _by_id(result: dict[str, Any]) -> dict[str, dict[str, str]]:
     return {check['id']: check for check in result['checks']}
 
 
-# ── slskd ──────────────────────────────────────────────────────────────
-
-
-def _slskd_cfg(tmp_path, **over: Any) -> dict[str, Any]:
-    cfg = _effective_slskd_settings({
-        'slskd': {
-            'base_url': 'http://slskd:5030/',
-            'api_key': 'KEY',
-            'source_dir': str(tmp_path),
-            **over,
-        }
-    })
-    return cfg
-
-
-def _slskd_server(
-    *,
-    version: Any = '0.21.4',
-    server: Any = None,
-    version_status: int = 200,
-    seen: list | None = None,
-) -> Callable[..., httpx.Response]:
-    """A fake slskd keyed on the request path."""
-
-    if server is None:
-        server = {
-            'isLoggedIn': True,
-            'state': 'Connected, LoggedIn',
-            'username': 'me',
-        }
-
-    def fake(url: str, **kwargs: Any) -> httpx.Response:
-        if seen is not None:
-            seen.append((url, kwargs.get('headers')))
-        path = urlparse(url).path
-        if path == '/api/v0/application/version':
-            if version_status != 200:
-                return _response(version_status)
-            if isinstance(version, str) and version.startswith('<'):
-                return _response(200, text=version)
-            return _response(200, json=version)
-        if path == '/api/v0/server':
-            if isinstance(server, Exception):
-                raise server
-            return _response(200, json=server)
-        return _response(404)
-
-    return fake
-
-
-@pytest.fixture(autouse=True)
-def _no_remote_folders(monkeypatch):
-    """slskd's own folder list is another request; off unless a test wants it."""
-
-    monkeypatch.setattr(
-        SlskdClient, 'remote_download_directories', lambda s: []
-    )
-
-
-def test_a_working_slskd_reports_its_version_and_every_check(
-    monkeypatch, tmp_path
-):
-    monkeypatch.setattr(integration_check, '_get', _slskd_server())
-
-    result = check_slskd(_slskd_cfg(tmp_path))
-
-    assert result['ok'] is True
-    assert result['server'] == 'slskd 0.21.4'
-    checks = _by_id(result)
-    assert checks['connection']['status'] == 'ok'
-    assert checks['auth']['status'] == 'ok'
-    assert (checks['soulseek']['status'], checks['soulseek']['detail']) == (
-        'ok',
-        'me',
-    )
-    assert checks['folder']['status'] == 'ok'
-    assert checks['folder']['detail'] == str(tmp_path)
-
-
-def test_the_api_key_goes_in_a_header_never_in_the_url(monkeypatch, tmp_path):
-    seen: list = []
-    monkeypatch.setattr(integration_check, '_get', _slskd_server(seen=seen))
-
-    check_slskd(_slskd_cfg(tmp_path))
-
-    assert seen
-    for url, headers in seen:
-        assert 'KEY' not in url
-        assert headers == {'X-API-Key': 'KEY'}
-    # The trailing slash of the saved address is gone before it is used.
-    assert seen[0][0] == 'http://slskd:5030/api/v0/application/version'
-
-
-def test_a_rejected_key_is_an_auth_failure_not_a_dead_server(
-    monkeypatch, tmp_path
-):
-    monkeypatch.setattr(
-        integration_check, '_get', _slskd_server(version_status=401)
-    )
-
-    result = check_slskd(_slskd_cfg(tmp_path))
-
-    assert result['ok'] is False
-    checks = _by_id(result)
-    assert checks['connection']['status'] == 'ok'
-    assert (checks['auth']['status'], checks['auth']['code']) == (
-        'fail',
-        'bad_key',
-    )
-    assert not result['server']
-    # Nothing past the door is tried.
-    assert 'soulseek' not in checks
-    assert 'folder' not in checks
-
-
-def test_something_that_is_not_slskd_is_recognised(monkeypatch, tmp_path):
-    cfg = _slskd_cfg(tmp_path)
-    for fake in (
-        _slskd_server(version_status=404),
-        _slskd_server(version='<html>welcome</html>'),
-        _slskd_server(version={'not': 'a version'}),
-    ):
-        monkeypatch.setattr(integration_check, '_get', fake)
-        result = check_slskd(cfg)
-        assert result['ok'] is False
-        assert _by_id(result)['connection']['code'] == 'not_slskd'
-
-
-def test_other_http_errors_report_the_status(monkeypatch, tmp_path):
-    monkeypatch.setattr(
-        integration_check, '_get', _slskd_server(version_status=502)
-    )
-
-    check = _by_id(check_slskd(_slskd_cfg(tmp_path)))['connection']
-
-    assert (check['code'], check['detail']) == ('http_error', '502')
-
-
 def _tls_error() -> httpx.ConnectError:
     error = httpx.ConnectError('certificate verify failed')
     error.__cause__ = ssl.SSLCertVerificationError('self signed certificate')
     return error
-
-
-@pytest.mark.parametrize(
-    ('exc', 'code'),
-    [
-        (httpx.ConnectError('refused'), 'unreachable'),
-        (httpx.ConnectTimeout('slow'), 'timeout'),
-        (httpx.ReadTimeout('slow'), 'timeout'),
-        (httpx.UnsupportedProtocol('no scheme'), 'bad_url'),
-        (httpx.InvalidURL('bad'), 'bad_url'),
-        (_tls_error(), 'tls'),
-    ],
-)
-def test_a_request_that_gets_no_answer_says_why(
-    monkeypatch, tmp_path, exc, code
-):
-    def boom(url: str, **kwargs: Any) -> httpx.Response:
-        raise exc
-
-    monkeypatch.setattr(integration_check, '_get', boom)
-
-    result = check_slskd(_slskd_cfg(tmp_path))
-
-    assert result['ok'] is False
-    assert _by_id(result)['connection']['code'] == code
-
-
-def test_slskd_signed_out_of_soulseek_is_a_warning_not_a_failure(
-    monkeypatch, tmp_path
-):
-    monkeypatch.setattr(
-        integration_check,
-        '_get',
-        _slskd_server(server={'isLoggedIn': False, 'state': 'Disconnected'}),
-    )
-
-    result = check_slskd(_slskd_cfg(tmp_path))
-
-    # Connected and authorised, so the settings are right; searches just
-    # won't find anything until slskd logs in.
-    assert result['ok'] is True
-    check = _by_id(result)['soulseek']
-    assert (check['status'], check['code'], check['detail']) == (
-        'warn',
-        'offline',
-        'Disconnected',
-    )
-
-
-def test_an_unreadable_server_state_is_skipped_not_guessed(
-    monkeypatch, tmp_path
-):
-    monkeypatch.setattr(
-        integration_check,
-        '_get',
-        _slskd_server(server=httpx.ReadTimeout('slow')),
-    )
-
-    result = check_slskd(_slskd_cfg(tmp_path))
-
-    assert result['ok'] is True
-    assert 'soulseek' not in _by_id(result)
-
-
-def test_a_missing_download_folder_is_a_warning_with_the_path(
-    monkeypatch, tmp_path
-):
-    monkeypatch.setattr(integration_check, '_get', _slskd_server())
-    gone = tmp_path / 'not-mounted'
-
-    result = check_slskd(_slskd_cfg(tmp_path, source_dir=str(gone)))
-
-    assert result['ok'] is True
-    check = _by_id(result)['folder']
-    assert (check['status'], check['code'], check['detail']) == (
-        'warn',
-        'missing',
-        str(gone),
-    )
-
-
-def test_a_file_where_the_folder_should_be_does_not_count(
-    monkeypatch, tmp_path
-):
-    monkeypatch.setattr(integration_check, '_get', _slskd_server())
-    afile = tmp_path / 'afile'
-    afile.write_text('x')
-
-    check = _by_id(check_slskd(_slskd_cfg(tmp_path, source_dir=str(afile))))[
-        'folder'
-    ]
-
-    assert check['status'] == 'warn'
-
-
-def test_slskds_own_folder_counts_when_it_is_mounted_here(
-    monkeypatch, tmp_path
-):
-    monkeypatch.setattr(integration_check, '_get', _slskd_server())
-    mounted = tmp_path / 'mounted'
-    mounted.mkdir()
-    monkeypatch.setattr(
-        SlskdClient, 'remote_download_directories', lambda s: [str(mounted)]
-    )
-
-    check = _by_id(
-        check_slskd(_slskd_cfg(tmp_path, source_dir=str(tmp_path / 'nope')))
-    )['folder']
-
-    assert (check['status'], check['detail']) == ('ok', str(mounted))
-
-
-@pytest.mark.parametrize('field', ['base_url', 'api_key'])
-def test_slskd_without_its_address_or_key_is_not_even_tried(
-    monkeypatch, tmp_path, field
-):
-    def never(url: str, **kwargs: Any) -> httpx.Response:
-        raise AssertionError('no request should be made')
-
-    monkeypatch.setattr(integration_check, '_get', never)
-
-    result = check_slskd(_slskd_cfg(tmp_path, **{field: ''}))
-
-    assert result['ok'] is False
-    assert _by_id(result)['config']['code'] == 'missing'
 
 
 # ── Navidrome ──────────────────────────────────────────────────────────
@@ -657,67 +390,6 @@ def _spy(monkeypatch, name: str) -> list[dict[str, Any]]:
     return seen
 
 
-def test_the_slskd_endpoint_tests_the_form_not_the_saved_settings(
-    monkeypatch,
-):
-    seen = _spy(monkeypatch, 'check_slskd')
-    monkeypatch.setattr(
-        api.state,
-        'settings',
-        {'slskd': {'base_url': 'http://saved:1', 'api_key': 'SAVED'}},
-    )
-
-    result = asyncio.run(
-        api.test_slskd_endpoint(
-            _Body({'base_url': 'http://typed:2/', 'api_key': 'TYPED'})
-        )
-    )
-
-    assert result['ok'] is True
-    assert (seen[0]['base_url'], seen[0]['api_key']) == (
-        'http://typed:2',
-        'TYPED',
-    )
-
-
-def test_an_empty_body_tests_what_is_saved(monkeypatch):
-    seen = _spy(monkeypatch, 'check_slskd')
-    monkeypatch.setattr(
-        api.state,
-        'settings',
-        {'slskd': {'base_url': 'http://saved:1', 'api_key': 'SAVED'}},
-    )
-
-    for body in (
-        _Body({}),
-        _Body(broken=True),
-        _Body(['not', 'an', 'object']),
-    ):
-        asyncio.run(api.test_slskd_endpoint(body))
-
-    assert [cfg['base_url'] for cfg in seen] == ['http://saved:1'] * 3
-
-
-def test_a_cleared_field_in_the_form_is_not_refilled_from_the_saved_one(
-    monkeypatch,
-):
-    seen = _spy(monkeypatch, 'check_slskd')
-    monkeypatch.setattr(
-        api.state,
-        'settings',
-        {'slskd': {'base_url': 'http://saved:1', 'api_key': 'SAVED'}},
-    )
-
-    asyncio.run(
-        api.test_slskd_endpoint(
-            _Body({'base_url': 'http://typed:2', 'api_key': ''})
-        )
-    )
-
-    # Testing the saved key would say "fine" about a form that isn't.
-    assert not seen[0]['api_key']
-
-
 def test_the_navidrome_endpoint_tests_the_form_and_normalises_it(monkeypatch):
     seen = _spy(monkeypatch, 'check_navidrome')
     monkeypatch.setattr(
@@ -739,19 +411,20 @@ def test_the_navidrome_endpoint_tests_the_form_and_normalises_it(monkeypatch):
     assert seen[1]['url'] == 'http://saved:1'
 
 
-def test_a_failed_test_is_an_answer_not_an_error(monkeypatch, tmp_path):
-    def refused(url: str, **kwargs: Any) -> httpx.Response:
-        raise httpx.ConnectError('refused')
-
-    monkeypatch.setattr(integration_check, '_get', refused)
+def test_a_failed_test_is_an_answer_not_an_error(monkeypatch):
+    monkeypatch.setattr(
+        navidrome.httpx,
+        'get',
+        _navidrome_server(ping=httpx.ConnectError('refused')),
+    )
     monkeypatch.setattr(api.state, 'settings', {})
 
     result = asyncio.run(
-        api.test_slskd_endpoint(
-            _Body({'base_url': 'http://nowhere:1', 'api_key': 'K'})
+        api.test_navidrome_endpoint(
+            _Body({'url': 'http://nowhere:1', 'username': 'u', 'password': 'K'})
         )
     )
 
     # A plain dict is returned, so the client gets a 200 to read.
     assert result['ok'] is False
-    assert result['checks'][0]['code'] == 'unreachable'
+    assert _by_id(result)['connection']['code'] == 'unreachable'

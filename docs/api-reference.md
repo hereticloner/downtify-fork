@@ -50,8 +50,6 @@ Search YouTube Music by free text.
 
 **Response:** Array of song objects (up to 20 results).
 
-When YouTube Music returns nothing and slskd is an enabled audio source, the response is a single placeholder song built from the query itself (`"source": "text_search"`; `Artist - Title` is split into artist and title), so it can still be downloaded from Soulseek.
-
 ---
 
 ### `GET /api/discover/chart`
@@ -73,7 +71,7 @@ Deezer's own global chart (no genre filter, no auth) — top tracks, albums, art
 }
 ```
 
-Track rows download the same way a search result does — Downtify has no Deezer discography resolver, so `POST /api/download/url` takes a `"source": "deezer"` row's body as-is instead of trying to parse its `url` as a Spotify/YouTube link (the same escape hatch a `text_search` row above uses), and matches it on YouTube Music/YouTube by title, artist and length. A track's `preview_url`, when present, is a 30-second MP3 clip Deezer streams directly (`https://` only) — the web UI plays it with the same preview player an artist's Spotify top songs use; it's `""` when Deezer has no clip for that track. Album, artist and playlist rows are read-only summaries — their `url` only opens the item on `deezer.com`. `502` when Deezer can't be reached or refuses the request.
+Track rows download the same way a search result does — Downtify has no Deezer discography resolver, so `POST /api/download/url` takes a `"source": "deezer"` row's body as-is instead of trying to parse its `url` as a Spotify/YouTube link, and matches it on YouTube Music/YouTube by title, artist and length. A track's `preview_url`, when present, is a 30-second MP3 clip Deezer streams directly (`https://` only) — the web UI plays it with the same preview player an artist's Spotify top songs use; it's `""` when Deezer has no clip for that track. Album, artist and playlist rows are read-only summaries — their `url` only opens the item on `deezer.com`. `502` when Deezer can't be reached or refuses the request.
 
 ---
 
@@ -540,7 +538,7 @@ Download a single track. Blocks until complete.
 
 **Request body (optional):** the song object as returned by search/resolve. Its `track_number`/`album_track_total` survive the re-fetch by URL, `youtube_id` forces the audio source, and `downtify_playlist_url` (a Spotify playlist URL) registers the track as part of that playlist's download. A body with `"source": "deezer"` (a Deezer chart or resolved-link row) is taken as-is instead of re-fetching by `url` - Deezer isn't a URL this endpoint otherwise resolves on its own.
 
-**Response:** Filename string of the downloaded file — a `slskd/…` path for a slskd download left in place. `404` when no audio source has a match for the track.
+**Response:** Filename string of the downloaded file. `404` when no audio source has a match for the track.
 
 ---
 
@@ -631,7 +629,7 @@ Returns `400` if the CSV has no recognizable title/artist columns, is empty, or 
 
 List all download jobs (queued, in progress, done, error).
 
-**Response:** Array of job objects (`song`, `status`, `progress`, `message`, `filename`, and `provider` — the audio source that served it: `youtube-music`, `youtube` or `slskd`).
+**Response:** Array of job objects (`song`, `status`, `progress`, `message`, `filename`, and `provider` — the audio source that served it: `youtube-music` or `youtube`).
 
 ---
 
@@ -706,16 +704,6 @@ Return the current settings.
     "folders": []
   },
   "sync_navidrome": true,
-  "slskd": {
-    "enabled": false,
-    "base_url": "",
-    "api_key": "",
-    "source_dir": "/slskd",
-    "leave_in_place": true,
-    "download_timeout_seconds": 600,
-    "queued_timeout_seconds": 180,
-    "…": "…"
-  },
   "navidrome": {
     "enabled": false,
     "url": "",
@@ -746,8 +734,7 @@ Return the current settings.
 | `download_lyrics` | boolean | Whether to look lyrics up at all. |
 | `lyrics_lrc_beside` | boolean | When `true` (default), time-synced `.lrc` files are written next to the audio. When `false`, they go under `lyrics_lrc_dir`. See [Lyrics](features/lyrics.md#sidecar-lrc-file). |
 | `lyrics_lrc_dir` | string | Absolute folder for `.lrc` files when `lyrics_lrc_beside` is false. Default `/data/lyrics`. Paths inside downloads, slskd, or extra music folders are rejected. |
-| `audio_providers` | array | Ordered fallback list of audio sources: `youtube-music`, `youtube`, `slskd`. `slskd` is dropped while `slskd.enabled` is false. See [slskd & Navidrome](features/slskd-navidrome.md#audio-sources-and-fallback-order). |
-| `slskd` | object | slskd connection and matching options. Saving with `enabled: true` but no `base_url` or `api_key` returns `400`. |
+| `audio_providers` | array | Ordered fallback list of audio sources: `youtube-music`, `youtube`. Unknown names are dropped; an empty list falls back to `youtube-music`. See [Audio provider](features/download-settings.md#audio-provider). |
 | `navidrome` | object | Navidrome connection. Saving with `enabled: true` but no `url`, `username` or `password` returns `400`. |
 | `sync_navidrome` | boolean | Create/update a Navidrome playlist after playlist downloads, Playlist Monitor sweeps and library changes. |
 | `cache_cover_art` | boolean | Keep extracted cover images under `/data/cover_cache` to speed up `/cover`. Covers fetched for [read-only extra folders](features/external-library.md) are always stored there, even when this is `false`. |
@@ -774,44 +761,27 @@ Admin. Directory names that complete a path as typed in Settings (extra music fo
 
 ---
 
-### `POST /api/slskd/test`
+### `POST /api/navidrome/test`
 
-Try a slskd connection without saving anything. See [Testing the connection](features/slskd-navidrome.md#testing-the-connection).
+Try a Navidrome connection without saving anything. See [Testing the connection](features/slskd-navidrome.md#testing-the-connection).
 
-**Request body:** the `slskd` settings object as it stands in the form — at least `base_url` and `api_key`; `source_dir` is the folder Downtify checks it can read. The body wins over the saved settings, so a field that was cleared stays cleared. An empty body tests the saved settings instead.
+**Request body:** the `navidrome` settings object as it stands in the form (`url`, `username`, `password`, and optionally `admin_username` and `admin_password`). The body wins over the saved settings, so a field that was cleared stays cleared. An empty body tests the saved settings instead.
 
 **Response:** always `200`, whether or not the test passed:
 
 ```json
 {
   "ok": true,
-  "server": "slskd 0.21.4",
+  "server": "navidrome 0.53.3",
   "checks": [
     { "id": "connection", "status": "ok", "code": "", "detail": "" },
     { "id": "auth", "status": "ok", "code": "", "detail": "" },
-    { "id": "soulseek", "status": "ok", "code": "ok", "detail": "me" },
-    { "id": "folder", "status": "warn", "code": "missing", "detail": "/slskd" }
+    { "id": "scan", "status": "ok", "code": "ok", "detail": "" }
   ]
 }
 ```
 
-`ok` is `false` when any check has `status: "fail"`; a `warn` (slskd signed out of Soulseek, an unreadable folder) doesn't fail the test. `server` is set only when the address and key were both accepted. Each check is `{id, status, code, detail}`, where `detail` is only ever a short fact — a path, a state, an HTTP status — never text copied from an error.
-
-| `id` | `code` values |
-|------|---------------|
-| `config` | `missing` — the address or key is empty; nothing was tried |
-| `connection` | `unreachable`, `timeout`, `bad_url`, `tls`, `not_slskd`, `http_error` |
-| `auth` | `bad_key` |
-| `soulseek` | `ok`, `offline` |
-| `folder` | `ok`, `missing` |
-
-Each request gives up after 8 seconds.
-
----
-
-### `POST /api/navidrome/test`
-
-Try a Navidrome connection without saving anything. Same behaviour and answer shape as `POST /api/slskd/test`, with the `navidrome` settings object as the body (`url`, `username`, `password`, and optionally `admin_username` and `admin_password`).
+`ok` is `false` when any check has `status: "fail"`; a `warn` doesn't fail the test. `server` (`"<name> <version>"`) is set only when the address and the login were both accepted. Each check is `{id, status, code, detail}`, where `detail` is only ever a short fact — a path, a state, an HTTP status — never text copied from an error. Each request gives up after 8 seconds.
 
 | `id` | `code` values |
 |------|---------------|
@@ -882,7 +852,7 @@ Remove the uploaded cookie file.
 
 ### `GET /list`
 
-List all audio files in the downloads directory (recursive), plus slskd downloads left in place (`slskd/…`).
+List all audio files in the downloads directory (recursive), plus files stored under an `slskd/` folder (`slskd/…`).
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -920,7 +890,7 @@ Sorted by name, except that the [liked songs](features/liked-songs.md) playlist 
 
 ### `GET /tracks`
 
-List library tracks with artist/album read from each file's embedded tags — downloads, slskd files left in place, and [extra folders](features/external-library.md). The Library **Tracks** tab uses the unfiltered list; album and artist pages use `?artist=`; playlists use `?playlist=`. The [Built-in Player](features/player.md#how-it-works) plays the rows those pages already loaded.
+List library tracks with artist/album read from each file's embedded tags — downloads, files stored under an `slskd/` folder, and [extra folders](features/external-library.md). The Library **Tracks** tab uses the unfiltered list; album and artist pages use `?artist=`; playlists use `?playlist=`. The [Built-in Player](features/player.md#how-it-works) plays the rows those pages already loaded.
 
 **Response:**
 
@@ -1014,7 +984,7 @@ Duplicate paths are deduplicated before processing. Capped at 2000 files per req
 
 ### `GET /media/{path}`
 
-Serve a library file by its library path. Unlike the `/downloads` static mount, this also serves slskd downloads left in place (`slskd/…`) and extra-folder tracks (`ext/<id>/…`).
+Serve a library file by its library path. Unlike the `/downloads` static mount, this also serves files stored under an `slskd/` folder (`slskd/…`) and extra-folder tracks (`ext/<id>/…`).
 
 **Response:** The audio file. `404` if the path isn't in the library.
 

@@ -776,20 +776,6 @@ export default {
     sourceYtmHint: 'Melhores correspondências de metadados',
     sourceYt: 'YouTube',
     sourceYtHint: 'Alternativa para músicas ausentes do YouTube Music',
-    slskdTitle: 'slskd',
-    slskdHint:
-      'Baixe do Soulseek pelo seu servidor slskd. Faixas não encontradas passam para a próxima fonte.',
-    slskdEnabled: 'Usar slskd',
-    slskdEnabledHint: 'Requer a URL do servidor e uma chave de API.',
-    slskdUrl: 'URL do servidor',
-    slskdKey: 'Chave de API',
-    slskdFolder: 'Pasta de downloads do slskd',
-    slskdFolderHint: 'O caminho dentro do contêiner do Downtify, não no host.',
-    slskdTimeout: 'Tempo limite total',
-    slskdQueuedTimeout: 'Tempo limite na fila',
-    slskdInPlace: 'Manter arquivos na pasta do slskd',
-    slskdInPlaceHint:
-      'Marcar os arquivos onde o slskd os salvou em vez de copiar para sua pasta de downloads.',
     youtubeTitle: 'YouTube',
     cookies: 'Cookies do YouTube',
     cookiesHint:
@@ -903,20 +889,11 @@ export default {
         'Esse endereço não é válido. Comece com http:// ou https://.',
       connection_tls:
         'O certificado HTTPS não é confiável. Use http://, ou um certificado de uma autoridade confiável.',
-      connection_not_slskd:
-        'Algo respondeu em {url}, mas não parece ser o slskd. Confira o endereço e a porta.',
       connection_not_navidrome:
         'Algo respondeu em {url}, mas não parece ser o Navidrome. Confira o endereço e a porta.',
       connection_http_error: 'O servidor respondeu com um erro ({detail}).',
-      auth_bad_key: 'O slskd recusou a chave de API.',
       auth_bad_credentials: 'O Navidrome recusou o usuário ou a senha.',
       auth_api_error: 'O Navidrome respondeu: {detail}',
-      soulseek_ok: 'O slskd está conectado ao Soulseek.',
-      soulseek_offline:
-        'O slskd não está conectado ao Soulseek. Ele não encontrará nada até se conectar.',
-      folder_ok: 'O Downtify consegue ler {detail}.',
-      folder_missing:
-        'O Downtify não consegue ler {detail}. Essa deve ser a pasta onde o slskd baixa, montada neste contêiner.',
       scan_ok: 'Esta conta pode iniciar varreduras da biblioteca.',
       scan_not_admin:
         'Esta conta não pode iniciar varreduras da biblioteca — o Navidrome só permite a administradores. Preencha o usuário e a senha de administrador para as músicas novas aparecerem mais cedo.',

@@ -770,20 +770,6 @@ export default {
     sourceYtmHint: 'Най-добри съвпадения на метаданни',
     sourceYt: 'YouTube',
     sourceYtHint: 'Резерва за песни, които липсват в YouTube Music',
-    slskdTitle: 'slskd',
-    slskdHint:
-      'Изтегляй от Soulseek чрез своя slskd сървър. Ненамерените песни минават към следващия източник.',
-    slskdEnabled: 'Използвай slskd',
-    slskdEnabledHint: 'Нужни са URL на сървъра и API ключ.',
-    slskdUrl: 'URL на сървъра',
-    slskdKey: 'API ключ',
-    slskdFolder: 'Папка за изтегляния на slskd',
-    slskdFolderHint: 'Пътят в контейнера на Downtify, не на хоста.',
-    slskdTimeout: 'Общо време за изчакване',
-    slskdQueuedTimeout: 'Време за изчакване в опашка',
-    slskdInPlace: 'Остави файловете в папката на slskd',
-    slskdInPlaceHint:
-      'Тагва ги там, където slskd ги е запазил, вместо да ги копира в папката за изтегляния.',
     youtubeTitle: 'YouTube',
     cookies: 'Бисквитки за YouTube',
     cookiesHint:
@@ -895,21 +881,12 @@ export default {
         'Този адрес не е валиден. Започнете с http:// или https://.',
       connection_tls:
         'HTTPS сертификатът не е доверен. Използвайте http:// или сертификат от доверен орган.',
-      connection_not_slskd:
-        'Нещо отговори на {url}, но не прилича на slskd. Проверете адреса и порта.',
       connection_not_navidrome:
         'Нещо отговори на {url}, но не прилича на Navidrome. Проверете адреса и порта.',
       connection_http_error: 'Сървърът отговори с грешка ({detail}).',
-      auth_bad_key: 'slskd отхвърли API ключа.',
       auth_bad_credentials:
         'Navidrome отхвърли потребителското име или паролата.',
       auth_api_error: 'Navidrome отговори: {detail}',
-      soulseek_ok: 'slskd е свързан със Soulseek.',
-      soulseek_offline:
-        'slskd не е свързан със Soulseek. Няма да намира нищо, докато не се свърже.',
-      folder_ok: 'Downtify може да чете {detail}.',
-      folder_missing:
-        'Downtify не може да чете {detail}. Това трябва да е папката, в която slskd изтегля, монтирана в този контейнер.',
       scan_ok: 'Този акаунт може да стартира сканиране на библиотеката.',
       scan_not_admin:
         'Този акаунт не може да стартира сканиране на библиотеката — Navidrome го позволява само на администратори. Попълнете потребителското име и паролата на администратора, за да се показват новите песни по-рано.',
