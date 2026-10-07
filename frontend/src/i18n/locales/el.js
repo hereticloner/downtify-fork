@@ -865,6 +865,24 @@ export default {
     lyricsLrclibHint: 'Κοινοτική βάση — απλοί και συγχρονισμένοι στίχοι',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Μεγάλος κατάλογος, συνήθως συγχρονισμένος',
+    notifications: 'Ειδοποιήσεις',
+    notificationsTitle: 'Ειδοποιήσεις',
+    notificationsHint:
+      'Στέλνει μήνυμα όταν κάτι συμβεί στο παρασκήνιο, όπως μια παρακολούθηση που κατεβάζει νέα κομμάτια.',
+    notificationsEnabled: 'Ενεργοποίηση ειδοποιήσεων',
+    notificationsEnabledHint: 'Κύριος διακόπτης για κάθε κανάλι ειδοποιήσεων.',
+    telegramEnabled: 'Telegram',
+    telegramEnabledHint: 'Στέλνει μηνύματα μέσω bot του Telegram.',
+    telegramBotToken: 'Διακριτικό bot',
+    telegramChatId: 'Αναγνωριστικό συνομιλίας',
+    telegramChatIdHint:
+      'Ποιος λαμβάνει τα μηνύματα: αναγνωριστικό χρήστη, ομάδας ή καναλιού.',
+    notifyWatchDownloads: 'Νέα κομμάτια από παρακολούθηση',
+    notifyWatchDownloadsHint:
+      'Ειδοποιεί όταν μια παρακολούθηση λίστας ή καλλιτέχνη κατεβάζει νέα κομμάτια.',
+    testNotification: 'Αποστολή δοκιμαστικού μηνύματος',
+    notificationSent: 'Το δοκιμαστικό μήνυμα στάλθηκε.',
+    notificationFailed: 'Δεν ήταν δυνατή η αποστολή του δοκιμαστικού μηνύματος.',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Αντιγράφει τις λίστες στο Navidrome. Ο φάκελος μουσικής του πρέπει να περιλαμβάνει τις λήψεις του Downtify.',

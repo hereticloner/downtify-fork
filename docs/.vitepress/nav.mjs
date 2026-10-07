@@ -38,6 +38,7 @@ export const NAV = [
       { title: 'Library Catalog', page: 'features/library-catalog.md' },
       { title: 'Collections', page: 'features/collections.md' },
       { title: 'Stats', page: 'features/stats.md' },
+      { title: 'Notifications', page: 'features/notifications.md' },
       {
         title: 'Existing music folders',
         page: 'features/external-library.md',

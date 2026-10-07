@@ -12,7 +12,7 @@ from typing import Any, Callable, Optional
 
 from loguru import logger
 
-from . import m3u, providers, spotify
+from . import m3u, notifications, providers, spotify
 from .cover_cache import CoverArtCache
 from .downloader import (
     DOWNLOAD_EXECUTOR,
@@ -933,6 +933,14 @@ async def check_playlist(
             known_tracks,
             library,
             settings,
+        )
+    if downloaded > 0:
+        # Best-effort: a Telegram hiccup must never fail the sweep.
+        await asyncio.to_thread(
+            notifications.notify_watch_downloads,
+            settings,
+            playlist.name,
+            downloaded,
         )
     return downloaded
 

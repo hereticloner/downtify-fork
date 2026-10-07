@@ -841,6 +841,24 @@ export default {
     lyricsLrclibHint: 'Community database — plain and time-synced lyrics',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Large catalogue, usually time-synced',
+    notifications: 'Notifications',
+    notificationsTitle: 'Notifications',
+    notificationsHint:
+      'Send a message when something happens in the background, like a watch downloading new tracks.',
+    notificationsEnabled: 'Enable notifications',
+    notificationsEnabledHint: 'Master switch for every notification channel.',
+    telegramEnabled: 'Telegram',
+    telegramEnabledHint: 'Send messages through a Telegram bot.',
+    telegramBotToken: 'Bot token',
+    telegramChatId: 'Chat id',
+    telegramChatIdHint:
+      'Who receives the messages: a user, group or channel id.',
+    notifyWatchDownloads: 'New tracks from a watch',
+    notifyWatchDownloadsHint:
+      'Notify when a playlist or artist watch downloads new tracks.',
+    testNotification: 'Send test message',
+    notificationSent: 'Test message sent.',
+    notificationFailed: 'Could not send the test message.',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Mirror downloaded playlists into Navidrome. Its music folder must include Downtify’s downloads.',

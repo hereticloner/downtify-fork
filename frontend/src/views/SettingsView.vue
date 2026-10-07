@@ -547,6 +547,80 @@
             </SettingGroup>
           </template>
 
+          <!-- Notifications -->
+          <template v-else-if="section === 'notifications'">
+            <SettingGroup
+              :title="t('settings.notificationsTitle')"
+              :description="t('settings.notificationsHint')"
+            >
+              <SettingRow
+                :label="t('settings.notificationsEnabled')"
+                :description="t('settings.notificationsEnabledHint')"
+              >
+                <UiSwitch
+                  v-model="s.notifications.enabled"
+                  :aria-label="t('settings.notificationsEnabled')"
+                />
+              </SettingRow>
+              <template v-if="s.notifications.enabled">
+                <SettingRow
+                  :label="t('settings.telegramEnabled')"
+                  :description="t('settings.telegramEnabledHint')"
+                >
+                  <UiSwitch
+                    v-model="s.notifications.telegram_enabled"
+                    :aria-label="t('settings.telegramEnabled')"
+                  />
+                </SettingRow>
+                <template v-if="s.notifications.telegram_enabled">
+                  <div class="grid gap-4 px-5 py-4 sm:grid-cols-2">
+                    <UiInput
+                      v-model="s.notifications.telegram_bot_token"
+                      :label="t('settings.telegramBotToken')"
+                      autocomplete="off"
+                    />
+                    <UiInput
+                      v-model.trim="s.notifications.telegram_chat_id"
+                      :label="t('settings.telegramChatId')"
+                      :hint="t('settings.telegramChatIdHint')"
+                      autocomplete="off"
+                    />
+                  </div>
+                  <div class="flex flex-wrap items-center gap-3 px-5 py-4">
+                    <UiButton
+                      variant="ghost"
+                      :disabled="notificationTest === 'sending'"
+                      @click="sendTestNotification"
+                    >
+                      {{ t('settings.testNotification') }}
+                    </UiButton>
+                    <span
+                      v-if="notificationTest === 'sent'"
+                      class="text-sm text-accent"
+                    >
+                      {{ t('settings.notificationSent') }}
+                    </span>
+                    <span
+                      v-else-if="notificationTest === 'failed'"
+                      class="text-sm text-red-500"
+                    >
+                      {{ t('settings.notificationFailed') }}
+                    </span>
+                  </div>
+                  <SettingRow
+                    :label="t('settings.notifyWatchDownloads')"
+                    :description="t('settings.notifyWatchDownloadsHint')"
+                  >
+                    <UiSwitch
+                      v-model="s.notifications.notify_watch_downloads"
+                      :aria-label="t('settings.notifyWatchDownloads')"
+                    />
+                  </SettingRow>
+                </template>
+              </template>
+            </SettingGroup>
+          </template>
+
           <!-- Library -->
           <template v-else-if="section === 'library'">
             <SettingGroup :title="t('settings.libraryGroup')">
@@ -767,6 +841,19 @@ const hasTrack = computed(() => !!player.currentTrack.value)
 const s = sm.settings
 const version = localStorage.getItem('version')
 
+// Telegram test: sends the notifications block as it stands in the form,
+// saved or not, so a token/chat id can be checked before saving.
+const notificationTest = ref('')
+async function sendTestNotification() {
+  notificationTest.value = 'sending'
+  try {
+    const res = await API.testNotifications(s.value.notifications)
+    notificationTest.value = res?.data?.ok ? 'sent' : 'failed'
+  } catch {
+    notificationTest.value = 'failed'
+  }
+}
+
 // Normal users see General, Apps and About; the rest is the server's,
 // an admin's to change.
 const sections = computed(() =>
@@ -783,6 +870,12 @@ const sections = computed(() =>
       { id: 'files', icon: 'folder', label: t('settings.files'), admin: true },
       { id: 'tags', icon: 'tag', label: t('settings.tags'), admin: true },
       { id: 'navidrome', icon: 'server', label: 'Navidrome', admin: true },
+      {
+        id: 'notifications',
+        icon: 'bell',
+        label: t('settings.notifications'),
+        admin: true,
+      },
       {
         id: 'library',
         icon: 'library',

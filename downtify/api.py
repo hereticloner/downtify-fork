@@ -192,6 +192,8 @@ working without changes:
   fields, ``?path=``)
 * ``POST /api/navidrome/test`` (try the connection with the settings as
   they are in the form, saved or not)
+* ``POST /api/notifications/test`` (send a Telegram test notification
+  with the settings as they are in the form, saved or not)
 * ``GET  /api/cookies`` (current YouTube cookie configuration)
 * ``POST /api/cookies`` (upload a Netscape cookies.txt as the raw request
   body - no multipart, so no ``python-multipart`` dependency)
@@ -310,6 +312,7 @@ from . import (
     library_upgrade,
     lyrics,
     m3u,
+    notifications,
     providers,
     spotify,
 )
@@ -517,6 +520,18 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         'artwork_source': cover_sources.PREFERENCE_HIGHEST,
         'recheck_days': library_upgrade.DEFAULT_RECHECK_DAYS,
     },
+    # Outbound notifications (Telegram) for background events. Off until
+    # a bot token and chat id are set; sending is best-effort and never
+    # blocks the download that triggered it (see downtify.notifications).
+    'notifications': {
+        'enabled': False,
+        'telegram_enabled': False,
+        'telegram_bot_token': '',
+        'telegram_chat_id': '',
+        # Announce a watch (playlist/artist monitor) that pulled in new
+        # tracks. Other events can join this block later.
+        'notify_watch_downloads': True,
+    },
 }
 
 # Settings stored as nested objects: saved values are merged over the
@@ -526,6 +541,7 @@ _NESTED_SETTINGS = (
     'navidrome',
     'library_upgrade',
     'external_library',
+    'notifications',
 )
 
 
@@ -623,6 +639,45 @@ def _validate_navidrome_settings(navidrome: dict[str, Any]) -> None:
                     status_code=400,
                     detail=f'Navidrome {label} is required when enabled',
                 )
+
+
+def _clean_notifications(value: Any) -> dict[str, Any]:
+    """Coerce a notifications block to the stored shape.
+
+    Strings are trimmed and booleans coerced so a saved block always has
+    every key, whatever the client sent.
+    """
+
+    base = dict(DEFAULT_SETTINGS['notifications'])
+    if isinstance(value, dict):
+        base.update(value)
+    return {
+        'enabled': bool(base.get('enabled')),
+        'telegram_enabled': bool(base.get('telegram_enabled')),
+        'telegram_bot_token': str(
+            base.get('telegram_bot_token') or ''
+        ).strip(),
+        'telegram_chat_id': str(base.get('telegram_chat_id') or '').strip(),
+        'notify_watch_downloads': bool(
+            base.get('notify_watch_downloads', True)
+        ),
+    }
+
+
+def _validate_notifications_settings(notifications: dict[str, Any]) -> None:
+    """Reject enabling Telegram without the fields it needs."""
+
+    if not notifications.get('enabled'):
+        return
+    if not notifications.get('telegram_enabled'):
+        return
+    for key, label in (
+        ('telegram_bot_token', 'bot token'),
+        ('telegram_chat_id', 'chat id'),
+    ):
+        if not notifications.get(key):
+            detail = f'Telegram {label} is required when enabled'
+            raise HTTPException(status_code=400, detail=detail)
 
 
 def _organize_enabled() -> bool:
@@ -5092,6 +5147,17 @@ async def update_settings_endpoint(
         _validate_navidrome_settings(
             navidrome_cfg if 'navidrome' in payload else {}
         )
+        pending_notifications = _clean_notifications({
+            **(state.settings.get('notifications') or {}),
+            **(
+                payload.get('notifications')
+                if isinstance(payload.get('notifications'), dict)
+                else {}
+            ),
+        })
+        _validate_notifications_settings(
+            pending_notifications if 'notifications' in payload else {}
+        )
         for key, raw_value in payload.items():
             if key not in DEFAULT_SETTINGS:
                 continue
@@ -5127,6 +5193,8 @@ async def update_settings_endpoint(
                     if str(part).strip()
                 ]
                 state.settings[key] = cleaned
+            elif key == 'notifications':
+                state.settings[key] = pending_notifications
             else:
                 state.settings[key] = raw_value
         if 'audio_providers' in payload:
@@ -5231,6 +5299,22 @@ async def test_navidrome_endpoint(request: Request) -> dict[str, Any]:
         'navidrome': payload or (saved if isinstance(saved, dict) else {}),
     })
     return await asyncio.to_thread(integration_check.check_navidrome, cfg)
+
+
+@router.post('/api/notifications/test')
+async def test_notifications_endpoint(request: Request) -> dict[str, Any]:
+    """Send a test notification without saving the settings.
+
+    The body is the ``notifications`` settings object as it stands in
+    the form; an empty body tests the saved one. Works whether or not
+    notifications are enabled - the point is to try the credentials.
+    A failed send is a normal answer, not an error: ``{ok, error?}``.
+    """
+
+    payload = await _json_object(request)
+    saved = state.settings.get('notifications')
+    block = payload or (saved if isinstance(saved, dict) else {})
+    return await asyncio.to_thread(notifications.send_test_message, block)
 
 
 # ---------------------------------------------------------------------------

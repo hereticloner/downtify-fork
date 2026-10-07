@@ -860,6 +860,24 @@ export default {
     lyricsLrclibHint: 'Topluluk veritabanı — düz ve zamanlı sözler',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Geniş katalog, genellikle zamanlı',
+    notifications: 'Bildirimler',
+    notificationsTitle: 'Bildirimler',
+    notificationsHint:
+      'Arka planda bir şey olduğunda, örneğin bir takip yeni parçalar indirdiğinde mesaj gönderir.',
+    notificationsEnabled: 'Bildirimleri etkinleştir',
+    notificationsEnabledHint: 'Tüm bildirim kanalları için ana anahtar.',
+    telegramEnabled: 'Telegram',
+    telegramEnabledHint: 'Bir Telegram botu üzerinden mesaj gönderir.',
+    telegramBotToken: 'Bot belirteci',
+    telegramChatId: 'Sohbet kimliği',
+    telegramChatIdHint:
+      'Mesajları kim alır: bir kullanıcı, grup veya kanal kimliği.',
+    notifyWatchDownloads: 'Bir takipten yeni parçalar',
+    notifyWatchDownloadsHint:
+      'Bir çalma listesi veya sanatçı takibi yeni parçalar indirdiğinde bildirir.',
+    testNotification: 'Test mesajı gönder',
+    notificationSent: 'Test mesajı gönderildi.',
+    notificationFailed: 'Test mesajı gönderilemedi.',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'İndirilen çalma listelerini Navidrome’a yansıt. Müzik klasörü Downtify indirmelerini içermeli.',

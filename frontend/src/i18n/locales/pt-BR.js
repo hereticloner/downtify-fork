@@ -861,6 +861,24 @@ export default {
     lyricsLrclibHint: 'Banco comunitário — letras simples e sincronizadas',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Catálogo grande, normalmente sincronizado',
+    notifications: 'Notificações',
+    notificationsTitle: 'Notificações',
+    notificationsHint:
+      'Envia uma mensagem quando algo acontece em segundo plano, como um monitoramento que baixa novas faixas.',
+    notificationsEnabled: 'Ativar notificações',
+    notificationsEnabledHint: 'Interruptor principal de todos os canais de notificação.',
+    telegramEnabled: 'Telegram',
+    telegramEnabledHint: 'Envia mensagens por um bot do Telegram.',
+    telegramBotToken: 'Token do bot',
+    telegramChatId: 'ID do chat',
+    telegramChatIdHint:
+      'Quem recebe as mensagens: o ID de um usuário, grupo ou canal.',
+    notifyWatchDownloads: 'Novas faixas de um monitoramento',
+    notifyWatchDownloadsHint:
+      'Avisa quando um monitoramento de playlist ou artista baixa novas faixas.',
+    testNotification: 'Enviar mensagem de teste',
+    notificationSent: 'Mensagem de teste enviada.',
+    notificationFailed: 'Não foi possível enviar a mensagem de teste.',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Espelha as playlists baixadas no Navidrome. A pasta de músicas dele precisa incluir os downloads do Downtify.',

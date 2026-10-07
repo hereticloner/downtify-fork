@@ -36,6 +36,13 @@ const settings = ref({
     client_name: 'Downtify',
     api_version: '1.16.1',
   },
+  notifications: {
+    enabled: false,
+    telegram_enabled: false,
+    telegram_bot_token: '',
+    telegram_chat_id: '',
+    notify_watch_downloads: true,
+  },
   organize_by_artist: true,
   cache_cover_art: false,
   organize_by_album: true,
@@ -159,6 +166,10 @@ function loadServerSettings() {
         ...settings.value,
         ...rest,
         navidrome: { ...settings.value.navidrome, ...(rest.navidrome || {}) },
+        notifications: {
+          ...settings.value.notifications,
+          ...(rest.notifications || {}),
+        },
         external_library: {
           ...settings.value.external_library,
           ...(rest.external_library || {}),
@@ -237,6 +248,10 @@ async function saveSettings() {
       ...settings.value,
       ...rest,
       navidrome: { ...settings.value.navidrome, ...(rest.navidrome || {}) },
+      notifications: {
+        ...settings.value.notifications,
+        ...(rest.notifications || {}),
+      },
       external_library: {
         ...settings.value.external_library,
         ...(rest.external_library || {}),

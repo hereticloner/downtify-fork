@@ -861,6 +861,24 @@ export default {
     lyricsLrclibHint: 'Közösségi adatbázis — sima és időzített dalszöveg',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Nagy katalógus, általában időzített',
+    notifications: 'Értesítések',
+    notificationsTitle: 'Értesítések',
+    notificationsHint:
+      'Üzenetet küld, amikor valami a háttérben történik, például egy figyelő új számokat tölt le.',
+    notificationsEnabled: 'Értesítések engedélyezése',
+    notificationsEnabledHint: 'Főkapcsoló minden értesítési csatornához.',
+    telegramEnabled: 'Telegram',
+    telegramEnabledHint: 'Üzeneteket küld egy Telegram boton keresztül.',
+    telegramBotToken: 'Bot token',
+    telegramChatId: 'Csevegés azonosítója',
+    telegramChatIdHint:
+      'Ki kapja az üzeneteket: felhasználó, csoport vagy csatorna azonosítója.',
+    notifyWatchDownloads: 'Új számok egy figyelőtől',
+    notifyWatchDownloadsHint:
+      'Értesít, amikor egy lejátszólista- vagy előadófigyelő új számokat tölt le.',
+    testNotification: 'Tesztüzenet küldése',
+    notificationSent: 'Tesztüzenet elküldve.',
+    notificationFailed: 'A tesztüzenetet nem sikerült elküldeni.',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Tükrözi a letöltött listákat a Navidrome-ba. A zenemappájának tartalmaznia kell a Downtify letöltéseit.',

@@ -853,6 +853,24 @@ export default {
     lyricsLrclibHint: 'Общностна база — обикновени и синхронизирани текстове',
     lyricsNetease: 'NetEase Cloud Music',
     lyricsNeteaseHint: 'Голям каталог, обикновено синхронизиран',
+    notifications: 'Известия',
+    notificationsTitle: 'Известия',
+    notificationsHint:
+      'Изпраща съобщение, когато нещо се случи във фонов режим, например проследяване, което изтегля нови песни.',
+    notificationsEnabled: 'Включи известията',
+    notificationsEnabledHint: 'Главен превключвател за всички канали за известия.',
+    telegramEnabled: 'Telegram',
+    telegramEnabledHint: 'Изпраща съобщения чрез Telegram бот.',
+    telegramBotToken: 'Токен на бота',
+    telegramChatId: 'Идентификатор на чата',
+    telegramChatIdHint:
+      'Кой получава съобщенията: идентификатор на потребител, група или канал.',
+    notifyWatchDownloads: 'Нови песни от проследяване',
+    notifyWatchDownloadsHint:
+      'Уведомява, когато проследяване на плейлист или изпълнител изтегли нови песни.',
+    testNotification: 'Изпрати тестово съобщение',
+    notificationSent: 'Тестовото съобщение е изпратено.',
+    notificationFailed: 'Тестовото съобщение не можа да бъде изпратено.',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Копира изтеглените плейлисти в Navidrome. Музикалната му папка трябва да включва изтеглянията на Downtify.',

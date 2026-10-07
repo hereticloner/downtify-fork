@@ -746,6 +746,10 @@ function testNavidrome(config) {
   return API.post('/api/navidrome/test', config)
 }
 
+function testNotifications(config) {
+  return API.post('/api/notifications/test', config)
+}
+
 function setSettings(settings) {
   return API.post('/api/settings/update', settings, {
     params: { client_id: sessionID },
@@ -886,6 +890,7 @@ export default {
   suggestDirs,
   setSettings,
   testNavidrome,
+  testNotifications,
   getCookiesStatus,
   uploadCookies,
   deleteCookies,

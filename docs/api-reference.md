@@ -822,6 +822,22 @@ The `scan` check reads whether the account used for library scans (the admin log
 
 ---
 
+### `POST /api/notifications/test`
+
+Send a Telegram test message without saving anything. See [Notifications](features/notifications.md).
+
+**Request body:** the `notifications` settings object as it stands in the form (`telegram_bot_token`, `telegram_chat_id`, and optionally `enabled` and `telegram_enabled`). Works whether or not notifications are enabled. An empty body tests the saved settings instead.
+
+**Response:** always `200`, whether or not the message went out:
+
+```json
+{ "ok": true }
+```
+
+`ok` is `false` with `"error": "missing_credentials"` when the token or chat id is blank, or `"error": "send_failed"` when Telegram refuses the message or can't be reached. Each request gives up after 6 seconds.
+
+---
+
 ## YouTube cookies
 
 Backs the **Settings → YouTube cookies** screen. The uploaded file lives in the data directory (`/data/cookies.txt`) so it survives container updates. See [YouTube Cookies](features/youtube-cookies.md).
