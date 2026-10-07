@@ -43,6 +43,15 @@ const settings = ref({
     telegram_chat_id: '',
     notify_watch_downloads: true,
   },
+  scrobbling: {
+    enabled: false,
+    lastfm_enabled: false,
+    lastfm_api_key: '',
+    lastfm_api_secret: '',
+    lastfm_session_key: '',
+    lastfm_username: '',
+    scrobble_now_playing: true,
+  },
   organize_by_artist: true,
   cache_cover_art: false,
   organize_by_album: true,
@@ -170,6 +179,10 @@ function loadServerSettings() {
           ...settings.value.notifications,
           ...(rest.notifications || {}),
         },
+        scrobbling: {
+          ...settings.value.scrobbling,
+          ...(rest.scrobbling || {}),
+        },
         external_library: {
           ...settings.value.external_library,
           ...(rest.external_library || {}),
@@ -251,6 +264,10 @@ async function saveSettings() {
       notifications: {
         ...settings.value.notifications,
         ...(rest.notifications || {}),
+      },
+      scrobbling: {
+        ...settings.value.scrobbling,
+        ...(rest.scrobbling || {}),
       },
       external_library: {
         ...settings.value.external_library,

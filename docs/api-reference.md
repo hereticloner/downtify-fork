@@ -838,6 +838,50 @@ Send a Telegram test message without saving anything. See [Notifications](featur
 
 ---
 
+### `POST /api/scrobbling/test`
+
+Check a last.fm session without saving anything. See [Scrobbling](features/scrobbling.md).
+
+**Request body:** the `scrobbling` settings object as it stands in the form (`lastfm_api_key`, `lastfm_api_secret`, `lastfm_session_key`). An empty body tests the saved settings instead.
+
+**Response:** always `200`:
+
+```json
+{ "ok": true, "username": "yourname" }
+```
+
+`ok` is `false` with `"error": "missing_credentials"` when the key, secret or session key is blank, or `"error": "auth_failed"` when last.fm rejects the session.
+
+---
+
+### `POST /api/scrobbling/lastfm/auth/start`
+
+First step of the last.fm connect flow. The body holds `lastfm_api_key` and `lastfm_api_secret`.
+
+**Response:**
+
+```json
+{ "ok": true, "token": "...", "auth_url": "https://www.last.fm/api/auth/?api_key=...&token=..." }
+```
+
+`ok` is `false` with `"error": "missing_credentials"` or `"error": "token_failed"`.
+
+---
+
+### `POST /api/scrobbling/lastfm/auth/finish`
+
+Last step of the connect flow. The body holds `lastfm_api_key`, `lastfm_api_secret` and the `token` from the start step.
+
+**Response:**
+
+```json
+{ "ok": true, "session_key": "...", "username": "yourname" }
+```
+
+`ok` is `false` with `"error": "missing_credentials"` or `"error": "auth_failed"`.
+
+---
+
 ## YouTube cookies
 
 Backs the **Settings → YouTube cookies** screen. The uploaded file lives in the data directory (`/data/cookies.txt`) so it survives container updates. See [YouTube Cookies](features/youtube-cookies.md).

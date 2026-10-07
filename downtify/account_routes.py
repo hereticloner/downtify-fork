@@ -20,7 +20,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from loguru import logger
 
-from . import api
+from . import api, scrobbling
 from .activity import KINDS, clean_track, track_label
 from .auth import SESSION_COOKIE, AuthStore, Principal, session_cookie
 from .users import ROLE_USER, UserError, UserStore
@@ -186,6 +186,7 @@ async def sign_out_everywhere(
     me = _me(request)
     await _sign_out_user(me.user_id)
     api.state.now_playing.forget_user(me.user_id)
+    api.state.scrobble_tracker.forget_user(me.user_id)
     response.delete_cookie(SESSION_COOKIE, path='/')
     logger.info('User {} signed out everywhere', me.username)
     return {'revoked': True}
@@ -295,6 +296,7 @@ async def delete_user(user_id: int, request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=status, detail=str(exc)) from exc
     await _sign_out_user(user_id)
     api.state.now_playing.forget_user(user_id)
+    api.state.scrobble_tracker.forget_user(user_id)
     await api.log_activity(request, 'user_deleted', user['username'])
     logger.info('Deleted user {}', user['username'])
     return {'id': user_id, 'deleted': True}
@@ -368,4 +370,23 @@ async def report_playback(request: Request) -> dict[str, Any]:
         await api.log_activity(
             request, 'playback', track_label(track), {'track': track}
         )
+    config = scrobbling.active_lastfm_config(api.state.settings)
+    if config:
+        song = str(
+            track.get('track_id') or track.get('file') or track_label(track)
+        )
+        player_key = f'{me.device_id}:{player}'
+        tracker = api.state.scrobble_tracker
+        if (
+            started
+            and config['now_playing']
+            and tracker.should_send_now_playing(me.user_id, player_key, song)
+        ):
+            await asyncio.to_thread(
+                scrobbling.update_now_playing, track, config
+            )
+        if scrobbling.is_scrobbleable(track, position) and (
+            tracker.should_scrobble(me.user_id, player_key, song)
+        ):
+            await asyncio.to_thread(scrobbling.scrobble, track, config)
     return {'ok': True}

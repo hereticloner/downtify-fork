@@ -621,6 +621,117 @@
             </SettingGroup>
           </template>
 
+          <!-- Scrobbling -->
+          <template v-else-if="section === 'scrobbling'">
+            <SettingGroup
+              :title="t('settings.scrobblingTitle')"
+              :description="t('settings.scrobblingHint')"
+            >
+              <SettingRow
+                :label="t('settings.scrobblingEnabled')"
+                :description="t('settings.scrobblingEnabledHint')"
+              >
+                <UiSwitch
+                  v-model="s.scrobbling.enabled"
+                  :aria-label="t('settings.scrobblingEnabled')"
+                />
+              </SettingRow>
+              <template v-if="s.scrobbling.enabled">
+                <SettingRow
+                  :label="t('settings.lastfmEnabled')"
+                  :description="t('settings.lastfmEnabledHint')"
+                >
+                  <UiSwitch
+                    v-model="s.scrobbling.lastfm_enabled"
+                    :aria-label="t('settings.lastfmEnabled')"
+                  />
+                </SettingRow>
+                <template v-if="s.scrobbling.lastfm_enabled">
+                  <div class="grid gap-4 px-5 py-4 sm:grid-cols-2">
+                    <UiInput
+                      v-model.trim="s.scrobbling.lastfm_api_key"
+                      :label="t('settings.lastfmApiKey')"
+                      autocomplete="off"
+                    />
+                    <UiInput
+                      v-model.trim="s.scrobbling.lastfm_api_secret"
+                      :label="t('settings.lastfmApiSecret')"
+                      autocomplete="off"
+                    />
+                  </div>
+                  <div class="flex flex-wrap items-center gap-3 px-5 py-4">
+                    <template v-if="!s.scrobbling.lastfm_session_key">
+                      <UiButton
+                        variant="ghost"
+                        :disabled="lastfmAuth.busy"
+                        @click="startLastfmAuth"
+                      >
+                        {{ t('settings.connectLastfm') }}
+                      </UiButton>
+                      <a
+                        v-if="lastfmAuth.url"
+                        :href="lastfmAuth.url"
+                        target="_blank"
+                        rel="noopener"
+                        class="text-sm text-accent underline"
+                      >
+                        {{ t('settings.authorizeLastfm') }}
+                      </a>
+                      <UiButton
+                        v-if="lastfmAuth.token"
+                        variant="ghost"
+                        :disabled="lastfmAuth.busy"
+                        @click="finishLastfmAuth"
+                      >
+                        {{ t('settings.finishLastfm') }}
+                      </UiButton>
+                    </template>
+                    <template v-else>
+                      <span class="text-sm text-accent">
+                        {{
+                          t('settings.lastfmConnected', {
+                            username: s.scrobbling.lastfm_username,
+                          })
+                        }}
+                      </span>
+                      <UiButton
+                        variant="ghost"
+                        :disabled="scrobblingTest === 'testing'"
+                        @click="runScrobblingTest"
+                      >
+                        {{ t('settings.testConnection') }}
+                      </UiButton>
+                      <UiButton variant="ghost" @click="disconnectLastfm">
+                        {{ t('settings.disconnectLastfm') }}
+                      </UiButton>
+                    </template>
+                    <span
+                      v-if="scrobblingTest === 'ok'"
+                      class="text-sm text-accent"
+                    >
+                      {{ t('settings.scrobblingOk') }}
+                    </span>
+                    <span
+                      v-else-if="scrobblingTest === 'failed'"
+                      class="text-sm text-red-500"
+                    >
+                      {{ t('settings.scrobblingFailed') }}
+                    </span>
+                  </div>
+                  <SettingRow
+                    :label="t('settings.scrobbleNowPlaying')"
+                    :description="t('settings.scrobbleNowPlayingHint')"
+                  >
+                    <UiSwitch
+                      v-model="s.scrobbling.scrobble_now_playing"
+                      :aria-label="t('settings.scrobbleNowPlaying')"
+                    />
+                  </SettingRow>
+                </template>
+              </template>
+            </SettingGroup>
+          </template>
+
           <!-- Library -->
           <template v-else-if="section === 'library'">
             <SettingGroup :title="t('settings.libraryGroup')">
@@ -853,7 +964,79 @@ async function sendTestNotification() {
     notificationTest.value = 'failed'
   }
 }
-
+ 
+// last.fm scrobbling: the Connect flow asks for a request token, the user
+// approves on last.fm, then the token is traded for a session key that the
+// form saves. The test button checks a saved session without saving.
+const lastfmAuth = ref({ token: '', url: '', busy: false })
+const scrobblingTest = ref('')
+ 
+async function startLastfmAuth() {
+  scrobblingTest.value = ''
+  lastfmAuth.value = { token: '', url: '', busy: true }
+  try {
+    const res = await API.startLastfmAuth({
+      lastfm_api_key: s.value.scrobbling.lastfm_api_key,
+      lastfm_api_secret: s.value.scrobbling.lastfm_api_secret,
+    })
+    const data = res?.data || {}
+    if (data.ok && data.token) {
+      lastfmAuth.value = {
+        token: data.token,
+        url: data.auth_url,
+        busy: false,
+      }
+    } else {
+      lastfmAuth.value = { token: '', url: '', busy: false }
+      scrobblingTest.value = 'failed'
+    }
+  } catch {
+    lastfmAuth.value = { token: '', url: '', busy: false }
+    scrobblingTest.value = 'failed'
+  }
+}
+ 
+async function finishLastfmAuth() {
+  lastfmAuth.value = { ...lastfmAuth.value, busy: true }
+  try {
+    const res = await API.finishLastfmAuth({
+      lastfm_api_key: s.value.scrobbling.lastfm_api_key,
+      lastfm_api_secret: s.value.scrobbling.lastfm_api_secret,
+      token: lastfmAuth.value.token,
+    })
+    const data = res?.data || {}
+    if (data.ok && data.session_key) {
+      s.value.scrobbling.lastfm_session_key = data.session_key
+      s.value.scrobbling.lastfm_username = data.username || ''
+      lastfmAuth.value = { token: '', url: '', busy: false }
+      scrobblingTest.value = 'ok'
+    } else {
+      lastfmAuth.value = { ...lastfmAuth.value, busy: false }
+      scrobblingTest.value = 'failed'
+    }
+  } catch {
+    lastfmAuth.value = { ...lastfmAuth.value, busy: false }
+    scrobblingTest.value = 'failed'
+  }
+}
+ 
+async function runScrobblingTest() {
+  scrobblingTest.value = 'testing'
+  try {
+    const res = await API.testScrobbling(s.value.scrobbling)
+    scrobblingTest.value = res?.data?.ok ? 'ok' : 'failed'
+  } catch {
+    scrobblingTest.value = 'failed'
+  }
+}
+ 
+function disconnectLastfm() {
+  s.value.scrobbling.lastfm_session_key = ''
+  s.value.scrobbling.lastfm_username = ''
+  lastfmAuth.value = { token: '', url: '', busy: false }
+  scrobblingTest.value = ''
+}
+ 
 // Normal users see General, Apps and About; the rest is the server's,
 // an admin's to change.
 const sections = computed(() =>
@@ -874,6 +1057,12 @@ const sections = computed(() =>
         id: 'notifications',
         icon: 'bell',
         label: t('settings.notifications'),
+        admin: true,
+      },
+      {
+        id: 'scrobbling',
+        icon: 'music',
+        label: t('settings.scrobbling'),
         admin: true,
       },
       {

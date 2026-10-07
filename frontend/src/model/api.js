@@ -750,6 +750,18 @@ function testNotifications(config) {
   return API.post('/api/notifications/test', config)
 }
 
+function testScrobbling(config) {
+  return API.post('/api/scrobbling/test', config)
+}
+
+function startLastfmAuth(config) {
+  return API.post('/api/scrobbling/lastfm/auth/start', config)
+}
+
+function finishLastfmAuth(config) {
+  return API.post('/api/scrobbling/lastfm/auth/finish', config)
+}
+
 function setSettings(settings) {
   return API.post('/api/settings/update', settings, {
     params: { client_id: sessionID },
@@ -891,6 +903,9 @@ export default {
   setSettings,
   testNavidrome,
   testNotifications,
+  testScrobbling,
+  startLastfmAuth,
+  finishLastfmAuth,
   getCookiesStatus,
   uploadCookies,
   deleteCookies,

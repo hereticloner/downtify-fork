@@ -194,6 +194,9 @@ working without changes:
   they are in the form, saved or not)
 * ``POST /api/notifications/test`` (send a Telegram test notification
   with the settings as they are in the form, saved or not)
+* ``POST /api/scrobbling/test`` and the
+  ``POST /api/scrobbling/lastfm/auth/{start,finish}`` pair (check the
+  last.fm session and connect the account without saving)
 * ``GET  /api/cookies`` (current YouTube cookie configuration)
 * ``POST /api/cookies`` (upload a Netscape cookies.txt as the raw request
   body - no multipart, so no ``python-multipart`` dependency)
@@ -314,6 +317,7 @@ from . import (
     m3u,
     notifications,
     providers,
+    scrobbling,
     spotify,
 )
 from .activity import ActivityLog, NowPlaying, describe_user_agent
@@ -530,7 +534,21 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         'telegram_chat_id': '',
         # Announce a watch (playlist/artist monitor) that pulled in new
         # tracks. Other events can join this block later.
+        # Announce a watch (playlist/artist monitor) that pulled in new
+        # tracks. Other events can join this block later.
         'notify_watch_downloads': True,
+    },
+    # Scrobble plays to last.fm (see downtify.scrobbling). Off until the
+    # account is connected; sending is best-effort and never blocks the
+    # player's report.
+    'scrobbling': {
+        'enabled': False,
+        'lastfm_enabled': False,
+        'lastfm_api_key': '',
+        'lastfm_api_secret': '',
+        'lastfm_session_key': '',
+        'lastfm_username': '',
+        'scrobble_now_playing': True,
     },
 }
 
@@ -542,6 +560,7 @@ _NESTED_SETTINGS = (
     'library_upgrade',
     'external_library',
     'notifications',
+    'scrobbling',
 )
 
 
@@ -678,6 +697,52 @@ def _validate_notifications_settings(notifications: dict[str, Any]) -> None:
         if not notifications.get(key):
             detail = f'Telegram {label} is required when enabled'
             raise HTTPException(status_code=400, detail=detail)
+
+
+def _clean_scrobbling(value: Any) -> dict[str, Any]:
+    """Coerce a scrobbling block to the stored shape.
+
+    Strings are trimmed and booleans coerced so a saved block always has
+    every key, whatever the client sent.
+    """
+
+    base = dict(DEFAULT_SETTINGS['scrobbling'])
+    if isinstance(value, dict):
+        base.update(value)
+    return {
+        'enabled': bool(base.get('enabled')),
+        'lastfm_enabled': bool(base.get('lastfm_enabled')),
+        'lastfm_api_key': str(base.get('lastfm_api_key') or '').strip(),
+        'lastfm_api_secret': str(
+            base.get('lastfm_api_secret') or ''
+        ).strip(),
+        'lastfm_session_key': str(
+            base.get('lastfm_session_key') or ''
+        ).strip(),
+        'lastfm_username': str(base.get('lastfm_username') or '').strip(),
+        'scrobble_now_playing': bool(
+            base.get('scrobble_now_playing', True)
+        ),
+    }
+
+
+def _validate_scrobbling_settings(scrobbling: dict[str, Any]) -> None:
+    """Reject enabling last.fm scrobbling without what it needs."""
+
+    if not scrobbling.get('enabled'):
+        return
+    if not scrobbling.get('lastfm_enabled'):
+        return
+    for key, label in (
+        ('lastfm_api_key', 'API key'),
+        ('lastfm_api_secret', 'API secret'),
+    ):
+        if not scrobbling.get(key):
+            detail = f'last.fm {label} is required when enabled'
+            raise HTTPException(status_code=400, detail=detail)
+    if not scrobbling.get('lastfm_session_key'):
+        detail = 'Connect your last.fm account before enabling scrobbling'
+        raise HTTPException(status_code=400, detail=detail)
 
 
 def _organize_enabled() -> bool:
@@ -861,6 +926,8 @@ class AppState:
     # What users do (downtify/activity.py), for admins.
     activity: Optional[ActivityLog] = None
     now_playing: NowPlaying = NowPlaying()
+    # Which player already got a now-playing/scrobble (downtify.scrobbling).
+    scrobble_tracker: Any = scrobbling.ScrobbleTracker()
     # The mobile API (downtify/mobile_routes.py).
     library_sync: Optional[LibrarySync] = None
     transcoder: Optional[Transcoder] = None
@@ -5158,6 +5225,17 @@ async def update_settings_endpoint(
         _validate_notifications_settings(
             pending_notifications if 'notifications' in payload else {}
         )
+        pending_scrobbling = _clean_scrobbling({
+            **(state.settings.get('scrobbling') or {}),
+            **(
+                payload.get('scrobbling')
+                if isinstance(payload.get('scrobbling'), dict)
+                else {}
+            ),
+        })
+        _validate_scrobbling_settings(
+            pending_scrobbling if 'scrobbling' in payload else {}
+        )
         for key, raw_value in payload.items():
             if key not in DEFAULT_SETTINGS:
                 continue
@@ -5195,6 +5273,8 @@ async def update_settings_endpoint(
                 state.settings[key] = cleaned
             elif key == 'notifications':
                 state.settings[key] = pending_notifications
+            elif key == 'scrobbling':
+                state.settings[key] = pending_scrobbling
             else:
                 state.settings[key] = raw_value
         if 'audio_providers' in payload:
@@ -5315,6 +5395,69 @@ async def test_notifications_endpoint(request: Request) -> dict[str, Any]:
     saved = state.settings.get('notifications')
     block = payload or (saved if isinstance(saved, dict) else {})
     return await asyncio.to_thread(notifications.send_test_message, block)
+
+
+@router.post('/api/scrobbling/test')
+async def test_scrobbling_endpoint(request: Request) -> dict[str, Any]:
+    """Check a last.fm session without saving the settings.
+
+    The body is the ``scrobbling`` settings object as it stands in the
+    form; an empty body tests the saved one. A failed check is a normal
+    answer, not an error: ``{ok, username?|error?}``.
+    """
+
+    payload = await _json_object(request)
+    saved = state.settings.get('scrobbling')
+    block = payload or (saved if isinstance(saved, dict) else {})
+    config = scrobbling.lastfm_credentials(block) or {}
+    return await asyncio.to_thread(scrobbling.check_connection, config)
+
+
+@router.post('/api/scrobbling/lastfm/auth/start')
+async def lastfm_auth_start_endpoint(request: Request) -> dict[str, Any]:
+    """First step of the last.fm auth flow.
+
+    The body holds ``lastfm_api_key`` and ``lastfm_api_secret``. Returns
+    the request token and the URL the user approves:
+    ``{ok, token, auth_url}``, or ``{ok: false, error}``.
+    """
+
+    payload = await _json_object(request)
+    config = scrobbling.lastfm_credentials(payload)
+    if config is None:
+        return {'ok': False, 'error': 'missing_credentials'}
+    token = await asyncio.to_thread(scrobbling.get_token, config)
+    if not token:
+        return {'ok': False, 'error': 'token_failed'}
+    return {
+        'ok': True,
+        'token': token,
+        'auth_url': scrobbling.build_auth_url(config['api_key'], token),
+    }
+
+
+@router.post('/api/scrobbling/lastfm/auth/finish')
+async def lastfm_auth_finish_endpoint(request: Request) -> dict[str, Any]:
+    """Last step of the last.fm auth flow.
+
+    The body holds ``lastfm_api_key``, ``lastfm_api_secret`` and the
+    ``token`` from the start step. Returns the session key to save:
+    ``{ok, session_key, username}``, or ``{ok: false, error}``.
+    """
+
+    payload = await _json_object(request)
+    config = scrobbling.lastfm_credentials(payload)
+    token = str(payload.get('token') or '').strip()
+    if config is None or not token:
+        return {'ok': False, 'error': 'missing_credentials'}
+    session = await asyncio.to_thread(scrobbling.get_session, config, token)
+    if not session:
+        return {'ok': False, 'error': 'auth_failed'}
+    return {
+        'ok': True,
+        'session_key': session['session_key'],
+        'username': session['username'],
+    }
 
 
 # ---------------------------------------------------------------------------
