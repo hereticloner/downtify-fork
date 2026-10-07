@@ -163,6 +163,15 @@ By default, a playlist checked every day (or week / 2 weeks / month) syncs at wh
 
 - Only affects intervals of a full day or more — shorter intervals (15 min – 12 h) are unaffected, since anchoring them to a single daily time would break their cadence.
 - The very first check after adding a playlist always runs immediately, regardless of this setting.
+- A playlist that keeps coming back empty is checked less and less often — see [Quiet passes](#quiet-passes-relaxing-a-finished-watch) below.
+
+## Quiet passes (relaxing a finished watch)
+
+A playlist that never changes shouldn't be swept at its full interval forever. So after a check that finds **nothing new**, Downtify marks that pass *quiet*, and while the last pass was quiet the **next** check is scheduled at **7× the configured interval** instead of the interval itself — an hourly watch becomes roughly a 7-hour watch, a daily one roughly weekly.
+
+It snaps back on its own: the moment a check finds something to do — a new track, or a track that is already in your library and gets linked to the playlist — the quiet count is cleared, and the following check runs at the configured interval again. Each watch keeps its own count, so a busy playlist never relaxes because a different one is idle.
+
+Only **playlist** watches use quiet passes. Artist and podcast watches keep their configured interval.
 
 ## Per-track metadata enrichment
 

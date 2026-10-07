@@ -46,6 +46,25 @@ When it is set, the settings screen shows the cookie section as locked and refus
 
 `DOWNTIFY_COOKIES_FROM_BROWSER` reads cookies straight out of a browser profile, but that requires the browser's cookie store to be reachable *inside* the container, so it's rarely usable in Docker.
 
+## Player clients and PO tokens
+
+Cookies are the usual fix for the "Sign in to confirm you're not a bot" wall, but two more knobs in **Settings → YouTube reliability** let you tune *how* yt-dlp talks to YouTube when cookies aren't enough — or when you can't use an account at all. They're the same escape hatches as the [`DOWNTIFY_YT_PLAYER_CLIENTS` and `DOWNTIFY_YT_PO_TOKEN`](../getting-started/environment-variables.md#anti-bot-youtube) variables, now editable from the web UI:
+
+| Setting | What it is |
+|---------|------------|
+| **Player clients** | A comma-separated, ordered list of YouTube *player clients* (e.g. `tv, mweb`) that yt-dlp tries one after another. Different clients are gated differently, so trying another one is often what gets around a bot check — that's why the built-in default already favours clients that need no JavaScript runtime. |
+| **PO tokens** | A comma-separated list of Proof-of-Origin tokens, each written as `<client>.<context>+<token>` (e.g. `mweb.gvs+abc123`). Only needed if YouTube starts demanding a PO token for the client you're using. |
+
+How the values behave:
+
+- **An empty box falls back**, first to the matching environment variable and then to Downtify's built-in default (for player clients, `ios, android, web_embedded, mweb, web, tv`; for PO tokens, none).
+- **Order matters** for player clients: yt-dlp tries them in the order written. Saved settings take effect immediately, without a restart, and the server trims blank entries.
+- The list is only a *hint* to yt-dlp — it can't make a blocked client work, so change one thing at a time and check a download before changing the next.
+
+::: warning Change these only when you need to
+The built-in list is already tuned so that a normal Docker host works without a JavaScript runtime. Override it when you know a specific client is being blocked, not pre-emptively — a wrong list can leave you with no working client at all.
+:::
+
 ## Keeping them working
 
 - Cookies expire. If age-restricted downloads start failing again, export a fresh file and upload it as a replacement.

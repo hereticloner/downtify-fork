@@ -23,6 +23,7 @@ export const NAV = [
       { title: 'Charts', page: 'features/charts.md' },
       { title: 'Finder', page: 'features/finder.md' },
       { title: 'Download Settings', page: 'features/download-settings.md' },
+      { title: 'Queue', page: 'features/queue.md' },
       { title: 'Playlist Monitor', page: 'features/playlist-monitor.md' },
       { title: 'Top Songs', page: 'features/top-songs.md' },
       { title: 'Library Import (CSV)', page: 'features/library-import.md' },
@@ -35,6 +36,8 @@ export const NAV = [
       { title: 'Server Settings', page: 'features/server.md' },
       { title: 'Navidrome', page: 'features/slskd-navidrome.md' },
       { title: 'Library Catalog', page: 'features/library-catalog.md' },
+      { title: 'Collections', page: 'features/collections.md' },
+      { title: 'Stats', page: 'features/stats.md' },
       {
         title: 'Existing music folders',
         page: 'features/external-library.md',

@@ -661,6 +661,30 @@ Remove a single job from the queue.
 
 ---
 
+### `GET /api/queue/status`
+
+Whether the download queue is currently paused.
+
+**Response:** `{ "paused": false }`
+
+---
+
+### `POST /api/queue/pause`
+
+Pause the download queue. Downloads already running finish; rows still waiting don't start until [`POST /api/queue/resume`](#post-apiqueueresume). The pause is process-wide and not persisted, so a restart starts unpaused. See [Queue](features/queue.md#pausing-and-resuming-the-queue).
+
+**Response:** `{ "paused": true }`
+
+---
+
+### `POST /api/queue/resume`
+
+Resume a paused queue, so waiting rows start again.
+
+**Response:** `{ "paused": false }`
+
+---
+
 ## Settings
 
 ### `GET /api/settings`
@@ -694,6 +718,8 @@ Return the current settings.
   "search_albums": true,
   "mini_player_enabled": true,
   "ui_language": "pt-BR",
+  "yt_player_clients": [],
+  "yt_po_tokens": [],
   "cache_cover_art": false,
   "library_upgrade": {
     "artwork_min_px": 600,
@@ -740,6 +766,8 @@ Return the current settings.
 | `cache_cover_art` | boolean | Keep extracted cover images under `/data/cover_cache` to speed up `/cover`. Covers fetched for [read-only extra folders](features/external-library.md) are always stored there, even when this is `false`. |
 | `library_upgrade` | object | Defaults a library upgrade scan starts from: `artwork_min_px` (clamped to `100–3000`), `artwork_source` (`highest`, `spotify`, `itunes`, `youtube-music`) and `recheck_days` (`0–3650`, `0` meaning always re-check). A scan request may override them. See [Upgrade library](features/library-upgrade.md#options). |
 | `external_library` | object | Extra folders of already-tagged audio. `folders` is a list of absolute paths (as seen inside the container, max 20). Relative paths are dropped. See [Existing music folders](features/external-library.md). |
+| `yt_player_clients` | array | Ordered list of yt-dlp YouTube player clients to try (e.g. `["tv", "mweb"]`). Empty or omitted falls back to [`DOWNTIFY_YT_PLAYER_CLIENTS`](getting-started/environment-variables.md#anti-bot-youtube), then Downtify's built-in default. Blank entries are dropped; applies immediately on save. See [YouTube cookies](features/youtube-cookies.md#player-clients-and-po-tokens). |
+| `yt_po_tokens` | array | Proof-of-Origin tokens, each `<client>.<context>+<token>` (e.g. `["mweb.gvs+abc123"]`). Empty or omitted falls back to `DOWNTIFY_YT_PO_TOKEN`, then no token. Blank entries are dropped; applies immediately on save. See [YouTube cookies](features/youtube-cookies.md#player-clients-and-po-tokens). |
 
 ---
 
@@ -1419,6 +1447,85 @@ Stop after the track being worked on. The queue is kept, and `POST /api/library/
 ### `POST /api/library/upgrade/cancel`
 
 Drop the rest of the queue. Tracks already upgraded stay upgraded.
+
+---
+
+## Collections
+
+Named groups of library playlists — see [Collections](features/collections.md). Stored as one JSON file per collection under `<downloads>/Playlists/.collections/`; there is no database.
+
+### `GET /api/collections`
+
+List every collection, sorted by name.
+
+**Response:** array of collection objects, e.g. `{ "version": 1, "name": "Road trip", "playlists": ["Chill", "Drive"] }`.
+
+---
+
+### `POST /api/collections`
+
+Create an empty collection.
+
+**Body:** `{ "name": "Road trip" }`
+
+**Response:** the new collection object. `400` when the name is empty; `409` when the name already exists.
+
+---
+
+### `POST /api/collections/{name}`
+
+Rename a collection. The playlists it holds are unchanged.
+
+**Body:** `{ "name": "New name" }`
+
+**Response:** the updated collection. `404` when `name` doesn't exist; `409` when the new name is taken.
+
+---
+
+### `POST /api/collections/{name}/items`
+
+Add and/or remove playlists. Both lists are optional; additions are applied first, then removals. A name in `add` that isn't a library playlist gives `404`; names already in the collection are ignored.
+
+**Body:** `{ "add": ["Chill"], "remove": ["Drive"] }`
+
+**Response:** the updated collection.
+
+---
+
+### `DELETE /api/collections/{name}`
+
+Delete a collection. The playlists themselves are never touched.
+
+**Response:** `{ "ok": true, "collection": "Road trip" }`. `404` when it doesn't exist.
+
+---
+
+## Stats
+
+Server-wide library and usage numbers — see [Stats](features/stats.md).
+
+### `GET /api/stats`
+
+**Response:**
+
+```json
+{
+  "library": { "tracks": 812, "playlists": 44, "likes": 96 },
+  "downloads": {
+    "total": 310,
+    "last_30_days": 27,
+    "per_day": [{ "date": "2026-09-29", "count": 3 }]
+  },
+  "playback": {
+    "total": 1543,
+    "top_tracks": [
+      { "summary": "The Night Owls - Do I Still Recall", "count": 42 }
+    ]
+  }
+}
+```
+
+Counts come from the library stores and the activity log (which keeps 90 days); a download request counts once, and a play is logged each time a song starts. See [Stats](features/stats.md#where-the-numbers-come-from).
 
 ---
 

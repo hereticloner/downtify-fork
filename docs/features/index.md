@@ -13,6 +13,7 @@ Downtify covers everything you need to build and maintain a local music library 
 | [Charts](charts.md) | Browse Deezer's global chart and download whatever is trending |
 | [Finder](finder.md) | Search Deezer, then browse an artist, their albums and any album's tracks in columns |
 | [Download Settings](download-settings.md) | Choose format (MP3/FLAC/M4A/OGG/OPUS), bitrate, parallel downloads and delay between downloads |
+| [Queue](queue.md) | Pause and resume the whole download queue from the Queue page |
 | [Playlist Monitor](playlist-monitor.md) | Watch Spotify or YouTube Music playlists and artists, and auto-download new tracks and releases |
 | [Top Songs](top-songs.md) | Paste an artist link and download their most popular songs, optionally as a playlist |
 | [Library Import (CSV)](library-import.md) | Import a library export from Soundiiz, TuneMyMusic or Exportify and queue the whole thing |
@@ -26,6 +27,8 @@ Downtify covers everything you need to build and maintain a local music library 
 | [Discover](discover.md) | Artists, albums and playlists you don't have yet, suggested from your library, likes and listening; hide the ones you don't want |
 | [Navidrome](slskd-navidrome.md) | Mirror the playlists you download into Navidrome, and track playlist downloads |
 | [Library catalog & path sync](library-catalog.md) | How Downtify tracks library files and playlists, playlists you create in the Library, and fixing paths after moving files |
+| [Collections](collections.md) | Group your library playlists into named collections, one level above the playlist |
+| [Stats](stats.md) | Library, download and play counts, a downloads-per-day chart and your most-played tracks |
 | [Existing music folders](external-library.md) | Point Downtify at folders of audio you already have; Sync reads tags, matches artists and skips songs already in the library |
 | [Upgrade library](library-upgrade.md) | Scan music you already downloaded and repair small covers, missing lyrics and incomplete tags |
 | [M3U Export](m3u-export.md) | Auto-generated playlist files for Jellyfin, Navidrome, Plex and any media app |

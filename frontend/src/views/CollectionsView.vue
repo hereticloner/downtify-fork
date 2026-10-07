@@ -30,6 +30,7 @@
             <input
               v-model="col._add"
               type="search"
+              list="collection-playlist-names"
               :placeholder="t('collections.addPlaylist')"
               class="h-9 min-w-0 flex-1 rounded-control border border-line-2 bg-surface px-3 text-sm outline-none placeholder:text-faint sm:max-w-[16rem]"
               @keyup.enter="add(col)"
@@ -44,13 +45,14 @@
         </div>
         <div class="mt-2 flex flex-wrap gap-2">
           <div v-if="col.playlists.length" class="flex flex-wrap gap-2">
-            <span
+            <router-link
               v-for="pl in col.playlists"
               :key="pl"
-              class="rounded-control border border-line-2 bg-surface px-2.5 py-1 text-sm"
+              :to="{ name: 'Playlist', query: { name: pl } }"
+              class="rounded-control border border-line-2 bg-surface px-2.5 py-1 text-sm transition-colors hover:border-accent hover:text-accent"
             >
               {{ pl }}
-            </span>
+            </router-link>
           </div>
           <span v-else class="text-sm text-faint">
             {{ t('collections.empty') }}
@@ -61,21 +63,36 @@
         {{ t('collections.none') }}
       </p>
     </div>
+
+    <datalist id="collection-playlist-names">
+      <option v-for="name in playlistNames" :key="name" :value="name" />
+    </datalist>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '/src/i18n'
+import { useLibrary } from '/src/model/library'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiChips from '/src/components/ui/UiChips.vue'
 import UiPanel from '/src/components/ui/UiPanel.vue'
 
 const { t } = useI18n()
+const library = useLibrary()
 const collections = ref([])
 const newName = ref('')
 const error = ref('')
 const loading = ref(true)
+
+// Names offered by the "add a playlist" box's native autocomplete - the
+// same playlist list the Library page shows, so a name can't be typo'd.
+const playlistNames = computed(() =>
+  library.playlists.value
+    .map((playlist) => String(playlist?.name || ''))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))
+)
 
 async function load() {
   loading.value = true
@@ -137,5 +154,8 @@ async function remove(col) {
   await load()
 }
 
-onMounted(load)
+onMounted(() => {
+  library.load()
+  load()
+})
 </script>
