@@ -106,6 +106,15 @@ const settingsOptions = {
   output: '{artists} - {title}.{output-ext}',
 }
 
+// The browser origin for default redirect suggestions; empty when the
+// module runs outside a browser (the node test environment).
+let browserOrigin = ''
+try {
+  browserOrigin = window.location.origin
+} catch {
+  browserOrigin = ''
+}
+
 export function clampParallelDownloads(value) {
   const parsed = Number.parseInt(value, 10)
   if (Number.isNaN(parsed)) {
@@ -198,6 +207,9 @@ function loadServerSettings() {
         spotify_mirror: {
           ...settings.value.spotify_mirror,
           ...(rest.spotify_mirror || {}),
+          redirect_uri:
+            (rest.spotify_mirror || {}).redirect_uri ||
+            `${browserOrigin}/integrations/spotify/callback`,
         },
         external_library: {
           ...settings.value.external_library,
@@ -288,6 +300,9 @@ async function saveSettings() {
       spotify_mirror: {
         ...settings.value.spotify_mirror,
         ...(rest.spotify_mirror || {}),
+        redirect_uri:
+          (rest.spotify_mirror || {}).redirect_uri ||
+          `${browserOrigin}/integrations/spotify/callback`,
       },
       external_library: {
         ...settings.value.external_library,

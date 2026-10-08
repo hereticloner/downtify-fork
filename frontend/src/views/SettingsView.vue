@@ -898,7 +898,11 @@
                   <UiInput
                     v-model.trim="s.spotify_mirror.redirect_uri"
                     :label="t('settings.spotifyMirrorRedirect')"
-                    :hint="t('settings.spotifyMirrorRedirectHint')"
+                    :hint="
+                      t('settings.spotifyMirrorRedirectHint', {
+                        suggest: spotifyRedirectSuggest,
+                      })
+                    "
                     autocomplete="off"
                   />
                 </div>
@@ -1331,6 +1335,10 @@ const spotifyMirrorOkLabel = computed(() => {
     device: r.device ?? '',
   })
 })
+
+// The redirect the Spotify app must register: shown in the field hint
+// (and auto-prefilled when the saved block has none).
+const spotifyRedirectSuggest = `${window.location.origin}/integrations/spotify/callback`
 
 // Connected (refresh token from the callback flow present) disables the
 // connect button: reconnect only makes sense after a disconnect.
