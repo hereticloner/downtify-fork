@@ -8,6 +8,9 @@ wheels/
 # Virtual environments
 .venv
 
+# The Downtify Mirror's real Spotify credentials (see spotifyd/)
+spotifyd/spotifyd.conf
+
 .python-version
 .vscode
 docker/

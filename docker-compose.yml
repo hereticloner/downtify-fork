@@ -21,3 +21,19 @@ services:
     dns:
       - 1.1.1.1
       - 1.0.0.1
+
+  # The Downtify Mirror: a silent, always-online Spotify Connect
+  # device for the Spotify Mirror (docs/features/spotify-mirror.md).
+  # Copy spotifyd/spotifyd.conf.example to spotifyd/spotifyd.conf,
+  # add your Spotify credentials there (the file is kept out of git),
+  # then: docker compose up -d spotifyd
+  spotifyd:
+    image: 'downtify-spotifyd:latest'
+    restart: unless-stopped
+    build: ./spotifyd
+    volumes:
+      - ./spotifyd/spotifyd.conf:/etc/spotifyd.conf:ro
+      - spotifyd-cache:/cache
+
+volumes:
+  spotifyd-cache: {}
