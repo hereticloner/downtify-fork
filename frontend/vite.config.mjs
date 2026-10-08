@@ -23,18 +23,11 @@ export default defineConfig({
   define: {
     'process.env': {},
   },
-  build: {
-    rollupOptions: {
-      output: {
-        // Framework code and translations change rarely — keep them in
-        // their own long-cached chunks.
-        manualChunks(id) {
-          if (id.includes('node_modules')) return 'vendor'
-          if (id.includes('/src/i18n/')) return 'i18n'
-        },
-      },
-    },
-  },
+  // No manualChunks: the vendor/i18n split once created a chunk cycle
+  // (a helper Rollup placed in the app's api chunk was needed by the
+  // vendor chunk while it was still initializing), which crashed the
+  // app at page load. Rollup's automatic assignment does not form
+  // that cycle.
   server: {
     proxy: Object.fromEntries(
       backendRoutes.map((route) => [

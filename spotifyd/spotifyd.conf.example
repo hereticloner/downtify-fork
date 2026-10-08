@@ -20,7 +20,7 @@ device_type = 'computer'
 # the stream, and the volume starts at 0 anyway.
 backend = 'alsa'
 alsa_device = 'null'
-initial_volume = '0'
+initial_volume = 0
 volume_normalisation = false
 
 # Stream quality.
