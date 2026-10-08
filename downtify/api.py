@@ -717,16 +717,12 @@ def _clean_scrobbling(value: Any) -> dict[str, Any]:
         'enabled': bool(base.get('enabled')),
         'lastfm_enabled': bool(base.get('lastfm_enabled')),
         'lastfm_api_key': str(base.get('lastfm_api_key') or '').strip(),
-        'lastfm_api_secret': str(
-            base.get('lastfm_api_secret') or ''
-        ).strip(),
+        'lastfm_api_secret': str(base.get('lastfm_api_secret') or '').strip(),
         'lastfm_session_key': str(
             base.get('lastfm_session_key') or ''
         ).strip(),
         'lastfm_username': str(base.get('lastfm_username') or '').strip(),
-        'scrobble_now_playing': bool(
-            base.get('scrobble_now_playing', True)
-        ),
+        'scrobble_now_playing': bool(base.get('scrobble_now_playing', True)),
     }
 
 
@@ -2635,11 +2631,16 @@ async def _run_download(
     if state.downloader is None:
         raise RuntimeError('Downloader not ready')
 
-    loop = state.loop or asyncio.get_running_loop()
+    # A job the queue no longer knows about was cleared ("Clear queue")
+    # while this download was waiting for a slot. Skip it instead of
+    # resurrecting it - every caller registers its job first, so a
+    # missing entry here only means the user cleared it, and a cleared
+    # queue must not refill itself behind their back.
     job = state.download_jobs.get(song_id)
     if job is None:
-        song_id = _register_job(song, status='downloading')
-        job = state.download_jobs[song_id]
+        return None
+
+    loop = state.loop or asyncio.get_running_loop()
 
     sem = state.download_semaphore
     try:
@@ -5010,6 +5011,15 @@ def get_queue() -> list[dict[str, Any]]:
 
 @router.delete('/api/queue')
 def clear_queue() -> dict:
+    """Empty the queue display.
+
+    Everything still in ``download_jobs`` is dropped, and a download
+    whose job is gone by the time its turn comes is skipped (see
+    :func:`_run_download`), so clearing the queue also stops what
+    hasn't started yet - songs don't re-appear behind the user's back.
+    A download already inside the executor keeps running.
+    """
+
     state.download_jobs.clear()
     return {'cleared': True}
 
@@ -5296,9 +5306,9 @@ async def update_settings_endpoint(
                 state.downloader.yt_player_clients = (
                     [c.strip() for c in clients if c.strip()] or None
                 )
-                state.downloader.yt_po_tokens = (
-                    [t.strip() for t in tokens if t.strip()] or None
-                )
+                state.downloader.yt_po_tokens = [
+                    t.strip() for t in tokens if t.strip()
+                ] or None
             fmt = payload.get('format')
             if isinstance(fmt, str) and fmt:
                 state.downloader.audio_format = fmt

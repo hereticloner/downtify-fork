@@ -774,7 +774,8 @@ async def check_playlist(
     """Fetch playlist, detect new tracks, download them. Returns count downloaded.
 
     With ``library`` stores, new tracks already in the library (by Spotify
-    id, when *Overwrite existing files* is off) are linked instead of
+    id) are linked instead of re-downloaded, whatever *Overwrite existing
+    files* says. When some are
     downloaded, every downloaded track is registered in them, and the
     playlist's catalog and Navidrome playlist are synced after the sweep.
     """
@@ -964,16 +965,17 @@ async def _split_new_tracks(
     """``(tracks to download, number linked from the library)``.
 
     Tracks the watch already recorded are skipped (and their filenames
-    added to ``resolved``). With *Overwrite existing files* off, a new
-    track the track index already has on disk is recorded for the watch
-    instead of being downloaded again.
+    added to ``resolved``). A new track the track index already has on
+    disk is recorded for the watch instead of being downloaded again -
+    whatever *Overwrite existing files* says, so adding a watch for a
+    playlist that is already downloaded links the songs rather than
+    fetching every one of them twice. Overwrite only governs a download
+    that was explicitly asked for.
     """
 
     new_tracks: list[dict[str, Any]] = []
     linked = 0
-    link_existing = library.track_index is not None and not getattr(
-        downloader, 'overwrite_existing_files', True
-    )
+    link_existing = library.track_index is not None
     for track in tracks:
         tid = track.get('song_id')
         if not tid:

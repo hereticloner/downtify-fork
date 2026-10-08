@@ -139,7 +139,16 @@ def test_sweep_links_tracks_already_in_library_when_overwrite_is_off(
     assert db.get_track_filenames(playlist.id)[TRACK_A] == 'Other/Alpha.mp3'
 
 
-def test_sweep_downloads_again_when_overwrite_is_on(monkeypatch, tmp_path):
+def test_sweep_links_library_tracks_even_when_overwrite_is_on(
+    monkeypatch, tmp_path
+):
+    """A watch must not re-download songs the library already has.
+
+    *Overwrite existing files* governs a download that was asked for;
+    a sweep links what the track index already has on disk either way,
+    so adding a watch for an already-downloaded playlist doesn't fetch
+    every song twice.
+    """
     library = _library(tmp_path)
     existing = tmp_path / 'downloads' / 'Other' / 'Alpha.mp3'
     existing.parent.mkdir(parents=True)
@@ -147,9 +156,13 @@ def test_sweep_downloads_again_when_overwrite_is_on(monkeypatch, tmp_path):
     library.track_index.register(TRACK_A, 'Other/Alpha.mp3')
     downloader = _Downloader(tmp_path / 'downloads', overwrite=True)
 
-    _sweep(monkeypatch, tmp_path, downloader, {'generate_m3u': False}, library)
+    count, db, playlist = _sweep(
+        monkeypatch, tmp_path, downloader, {'generate_m3u': False}, library
+    )
 
-    assert downloader.downloaded == [TRACK_A, TRACK_B]
+    assert downloader.downloaded == [TRACK_B]
+    assert count == 1
+    assert db.get_track_filenames(playlist.id)[TRACK_A] == 'Other/Alpha.mp3'
 
 
 def test_sweep_syncs_navidrome_only_when_enabled(monkeypatch, tmp_path):

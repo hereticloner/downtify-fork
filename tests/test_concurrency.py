@@ -65,8 +65,12 @@ def test_run_download_uses_the_dedicated_executor(monkeypatch):
     monkeypatch.setattr(api.state, 'download_semaphore', None)
     monkeypatch.setattr(api.state, 'loop', None)
     monkeypatch.setattr(api.state.connections, 'broadcast', _noop_broadcast)
+    # Callers register the job before running it; a job the queue no
+    # longer knows about is treated as cleared and skipped.
+    monkeypatch.setattr(api.state, 'download_jobs', {})
+    song_id = api._register_job(dict(_SONG), status='queued')
 
-    result = asyncio.run(api._run_download(dict(_SONG), 'job-1'))
+    result = asyncio.run(api._run_download(dict(_SONG), song_id))
 
     assert result == 'Artist - Song.mp3'
     assert seen[0].startswith('downtify-download')
