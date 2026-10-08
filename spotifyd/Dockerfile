@@ -14,8 +14,9 @@ RUN apt-get update \
         ca-certificates curl libasound2 libdbus-1-3 \
     && rm -rf /var/lib/apt/lists/*
 
-# A pinned official release binary: full build (alsa backend included),
-# matching the container's architecture.
+# A pinned official release binary: the 'default' build has the ALSA
+# backend we need (the 'full' one additionally links pulse/dbus, which
+# a server container doesn't need), matching the device's architecture.
 RUN set -e; \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
@@ -24,7 +25,7 @@ RUN set -e; \
         *) echo "unsupported architecture: $arch" >&2; exit 1 ;; \
     esac; \
     curl -fsSL \
-        "https://github.com/Spotifyd/spotifyd/releases/download/${SPOTIFYD_VERSION}/spotifyd-linux-${target}-full.tar.gz" \
+        "https://github.com/Spotifyd/spotifyd/releases/download/${SPOTIFYD_VERSION}/spotifyd-linux-${target}-default.tar.gz" \
         -o /tmp/spotifyd.tar.gz; \
     tar -xzf /tmp/spotifyd.tar.gz -C /usr/local/bin spotifyd; \
     chmod 0755 /usr/local/bin/spotifyd; \
