@@ -11,7 +11,7 @@ ARG SPOTIFYD_VERSION=v0.4.2
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates curl libasound2 \
+        ca-certificates curl libasound2 libdbus-1-3 \
     && rm -rf /var/lib/apt/lists/*
 
 # A pinned official release binary: full build (alsa backend included),
