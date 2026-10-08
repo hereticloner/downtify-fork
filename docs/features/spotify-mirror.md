@@ -54,6 +54,10 @@ In **Settings → Spotify Mirror**:
 **Silent mirror** keeps the targeted device at volume 0: you listen in
 Downtify; Spotify only gets to count.
 
+The switch can stay on with just the client id — the mirror stays
+inert until the account is connected **and** a device is chosen, so
+the connect flow never gets rejected for not having either yet.
+
 To stop mirroring, turn **Enable Spotify Mirror** off.
 
 ## How it behaves
@@ -101,6 +105,9 @@ The block is `spotify_mirror` in `settings.json`:
   }
 }
 ```
+
+Saving it with only `client_id` (no tokens yet) is fine: the runtime
+hooks mirror nothing until both a token and a device id exist.
 
 ## API
 

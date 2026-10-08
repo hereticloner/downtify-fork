@@ -902,7 +902,10 @@
                     autocomplete="off"
                   />
                 </div>
-                <div class="flex flex-wrap items-center gap-3 px-5 pb-4">
+                <div
+                  v-if="spotifyConnected"
+                  class="flex flex-wrap items-center gap-3 px-5 pb-4"
+                >
                   <UiButton
                     variant="ghost"
                     :disabled="spotifyDevicesLoading"

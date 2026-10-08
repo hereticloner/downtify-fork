@@ -485,14 +485,19 @@ def test_validate_rejects_enabled_without_client_id():
         })
 
 
-def test_validate_rejects_enabled_without_device():
-    with pytest.raises(HTTPException):
-        api._validate_spotify_mirror_settings({
-            'enabled': True,
-            'client_id': 'c',
-            'device_id': '',
-            'refresh_token': 'r',
-        })
+def test_validate_allows_enabled_without_device_before_connecting():
+    """The connect flow saves first: tokens and the device come later.
+
+    A block with just the client id is valid - the runtime hooks keep
+    it inert until both exist.
+    """
+
+    api._validate_spotify_mirror_settings({
+        'enabled': True,
+        'client_id': 'c',
+        'device_id': '',
+        'refresh_token': '',
+    })
 
 
 def test_validate_accepts_complete_config():

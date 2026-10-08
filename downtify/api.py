@@ -796,18 +796,19 @@ def _clean_spotify_mirror(value: Any) -> dict[str, Any]:
 
 
 def _validate_spotify_mirror_settings(mirror: dict[str, Any]) -> None:
-    """Reject enabling the mirror without what it needs."""
+    """Reject enabling the mirror beyond what the connect flow needs.
+
+    Only the client id is required up front: the connect flow itself
+    produces the tokens and the device comes from the picker right
+    after. A block without them saves fine but stays inert - the
+    runtime hooks require a working token and a device id before they
+    send anything.
+    """
 
     if not mirror.get('enabled'):
         return
     if not mirror.get('client_id'):
         detail = 'A Spotify client id is required when enabled'
-        raise HTTPException(status_code=400, detail=detail)
-    if not mirror.get('device_id'):
-        detail = 'Choose a Spotify Connect device when enabled'
-        raise HTTPException(status_code=400, detail=detail)
-    if not mirror.get('refresh_token'):
-        detail = 'Connect your Spotify account before enabling the mirror'
         raise HTTPException(status_code=400, detail=detail)
 
 
