@@ -882,6 +882,48 @@ Last step of the connect flow. The body holds `lastfm_api_key`, `lastfm_api_secr
 
 ---
 
+### `GET /api/storage/report`
+
+How full the disk is and how much the library takes. See [Storage](features/storage.md).
+
+**Response:**
+
+```json
+{ "disk": { "total": 500107862016, "used": 213966635008, "free": 286141227008, "percent": 42.8 },
+  "library": { "bytes": 89374863360, "tracks": 12412 } }
+```
+
+`disk` is read with `shutil.disk_usage` on the downloads folder; `percent` is rounded to one decimal. `library` sums the `size` of every playable library entry.
+
+---
+
+### `GET /api/storage/duplicates`
+
+Songs downloaded more than once, grouped for cleanup. See [Storage](features/storage.md).
+
+**Response:**
+
+```json
+{ "groups": [
+    { "key": "artist|title", "artist": "A", "title": "T", "album": "Al",
+      "keep": { "file": "b.mp3", "size": 200 },
+      "duplicates": [ { "file": "a.mp3", "size": 100 } ],
+      "wasted_bytes": 100 } ],
+  "total_wasted_bytes": 100 }
+```
+
+Groups are matched by folded artist + title (the Library page's own matching). Each keeps the largest copy, then highest bitrate, then earliest download; the rest are listed. Groups are sorted by `wasted_bytes`, biggest first.
+
+---
+
+### `POST /api/storage/duplicates/delete`
+
+Delete the listed duplicate files. Body: `{ "files": ["a.mp3", ...] }` — the stored paths as `GET /api/storage/duplicates` reported them.
+
+**Response:** `{ "removed": 2 }` — how many were deleted. A path that no longer resolves or isn't a file is skipped without error. The library cache is dropped when anything was removed, so the next Library listing is clean.
+
+---
+
 ## YouTube cookies
 
 Backs the **Settings → YouTube cookies** screen. The uploaded file lives in the data directory (`/data/cookies.txt`) so it survives container updates. See [YouTube Cookies](features/youtube-cookies.md).

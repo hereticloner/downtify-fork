@@ -732,6 +732,146 @@
             </SettingGroup>
           </template>
 
+          <!-- Storage -->
+          <template v-else-if="section === 'storage'">
+            <SettingGroup
+              :title="t('settings.storageTitle')"
+              :description="t('settings.storageHint')"
+            >
+              <SettingRow
+                :label="t('settings.diskUsage')"
+                :description="
+                  `${t('settings.diskUsed')}: ${formatBytes(
+                    storage.disk.used
+                  )} / ${formatBytes(storage.disk.total)}`
+                "
+              >
+                <div class="flex w-full items-center gap-2">
+                  <div class="h-2 flex-1 rounded-full bg-surface">
+                    <div
+                      class="h-2 rounded-full bg-accent"
+                      :style="{
+                        width: `${storage.disk.percent}%`,
+                      }"
+                    />
+                  </div>
+                  <span class="text-sm tabular-nums">
+                    {{ storage.disk.percent }}%
+                  </span>
+                </div>
+              </SettingRow>
+              <SettingRow
+                :label="t('settings.librarySize')"
+                :description="`${formatBytes(
+                  storage.library.bytes
+                )} · ${storage.library.tracks} ${t('settings.tracks')}`"
+              >
+                <UiButton
+                  variant="ghost"
+                  :disabled="storageLoading"
+                  @click="loadStorage"
+                >
+                  {{ t('settings.refresh') }}
+                </UiButton>
+              </SettingRow>
+              <div class="px-5 py-4">
+                <div class="mb-2 flex items-center justify-between">
+                  <h3 class="text-sm font-medium">
+                    {{ t('settings.duplicates') }}
+                  </h3>
+                  <span class="text-sm text-muted">
+                    {{
+                      storage.duplicates.groups.length
+                        ? `${t('settings.wastedSpace')}: ${formatBytes(
+                            storage.duplicates.total_wasted_bytes
+                          )}`
+                        : ''
+                    }}
+                  </span>
+                </div>
+                <p class="mb-3 text-sm text-muted">
+                  {{ t('settings.duplicatesHint') }}
+                </p>
+                <div v-if="storageLoading" class="text-sm text-muted">
+                  {{ t('settings.refreshing') }}
+                </div>
+                <div
+                  v-else-if="!storage.duplicates.groups.length"
+                  class="text-sm text-muted"
+                >
+                  {{ t('settings.noDuplicates') }}
+                </div>
+                <div v-else class="flex flex-col gap-2">
+                  <div
+                    v-for="group in storage.duplicates.groups"
+                    :key="group.key"
+                    class="rounded-lg border border-surface p-3"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="min-w-0">
+                        <div class="truncate text-sm font-medium">
+                          {{ group.artist }} - {{ group.title }}
+                        </div>
+                        <div v-if="group.album" class="text-sm text-muted">
+                          {{ group.album }}
+                        </div>
+                      </div>
+                      <span class="text-sm text-muted tabular-nums">
+                        +{{ formatBytes(group.wasted_bytes) }}
+                      </span>
+                    </div>
+                    <div class="mt-2 flex flex-col gap-1">
+                      <div class="flex items-center justify-between text-sm">
+                        <span class="truncate text-muted">
+                          {{ group.keep.file }}
+                        </span>
+                        <span class="text-accent">
+                          {{ t('settings.keep') }}
+                        </span>
+                      </div>
+                      <div
+                        v-for="dup in group.duplicates"
+                        :key="dup.file"
+                        class="flex items-center justify-between text-sm"
+                      >
+                        <span class="truncate text-muted">
+                          {{ dup.file }}
+                        </span>
+                        <span class="text-red-500">
+                          {{ formatBytes(dup.size) }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  v-if="storage.duplicates.groups.length"
+                  class="mt-3 flex items-center gap-3"
+                >
+                  <UiButton
+                    variant="ghost"
+                    :disabled="storageDeleting"
+                    @click="deleteDuplicates"
+                  >
+                    {{
+                      storageDeleting
+                        ? t('settings.deleting')
+                        : t('settings.deleteDuplicates')
+                    }}
+                  </UiButton>
+                  <span
+                    v-if="storageMessage"
+                    :class="
+                      storageMessageOk ? 'text-sm text-accent' : 'text-sm text-red-500'
+                    "
+                  >
+                    {{ storageMessage }}
+                  </span>
+                </div>
+              </div>
+            </SettingGroup>
+          </template>
+
           <!-- Library -->
           <template v-else-if="section === 'library'">
             <SettingGroup :title="t('settings.libraryGroup')">
@@ -892,7 +1032,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import AppIcon from '/src/components/ui/AppIcon.vue'
 import AppLogo from '/src/components/ui/AppLogo.vue'
@@ -1037,6 +1177,77 @@ function disconnectLastfm() {
   scrobblingTest.value = ''
 }
  
+// Storage: how full the disk is and which songs sit on it twice. The
+// report loads on section open; deleting drops the library cache server
+// side and re-loads the report.
+const storage = ref({
+  disk: { total: 0, used: 0, free: 0, percent: 0 },
+  library: { bytes: 0, tracks: 0 },
+  duplicates: { groups: [], total_wasted_bytes: 0 },
+})
+const storageLoading = ref(false)
+const storageDeleting = ref(false)
+const storageMessage = ref('')
+const storageMessageOk = ref(false)
+const storageLoaded = ref(false)
+
+function formatBytes(bytes) {
+  const value = Number(bytes) || 0
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let size = value
+  let unit = 0
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024
+    unit += 1
+  }
+  const digits = size >= 100 || unit === 0 ? 0 : 1
+  return `${size.toFixed(digits)} ${units[unit]}`
+}
+
+async function loadStorage() {
+  storageLoading.value = true
+  storageMessage.value = ''
+  try {
+    const [report, duplicates] = await Promise.all([
+      API.storageReport(),
+      API.storageDuplicates(),
+    ])
+    const r = report?.data || {}
+    const d = duplicates?.data || {}
+    storage.value = {
+      disk: r.disk || storage.value.disk,
+      library: r.library || storage.value.library,
+      duplicates: d.groups ? d : storage.value.duplicates,
+    }
+    storageLoaded.value = true
+  } catch {
+    storageMessage.value = t('settings.storageFailed')
+    storageMessageOk.value = false
+  } finally {
+    storageLoading.value = false
+  }
+}
+
+async function deleteDuplicates() {
+  storageDeleting.value = true
+  storageMessage.value = ''
+  try {
+    const files = storage.value.duplicates.groups.flatMap(
+      (group) => group.duplicates.map((dup) => dup.file)
+    )
+    const res = await API.deleteStorageDuplicates(files)
+    const removed = res?.data?.removed || 0
+    storageMessage.value = t('settings.deleted', { count: removed })
+    storageMessageOk.value = true
+    await loadStorage()
+  } catch {
+    storageMessage.value = t('settings.deleteFailed')
+    storageMessageOk.value = false
+  } finally {
+    storageDeleting.value = false
+  }
+}
+ 
 // Normal users see General, Apps and About; the rest is the server's,
 // an admin's to change.
 const sections = computed(() =>
@@ -1063,6 +1274,12 @@ const sections = computed(() =>
         id: 'scrobbling',
         icon: 'music',
         label: t('settings.scrobbling'),
+        admin: true,
+      },
+      {
+        id: 'storage',
+        icon: 'hard-drive',
+        label: t('settings.storage'),
         admin: true,
       },
       {
@@ -1108,6 +1325,14 @@ const section = computed(() => {
   return sections.value.some((item) => item.id === requested)
     ? requested
     : 'general'
+})
+
+// The storage report reads the whole library; load it when the section
+// opens, and again when asked to refresh.
+watch(section, (value) => {
+  if (value === 'storage' && !storageLoaded.value && !storageLoading.value) {
+    loadStorage()
+  }
 })
 
 function needsValue(value) {

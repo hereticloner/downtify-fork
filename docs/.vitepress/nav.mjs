@@ -40,6 +40,7 @@ export const NAV = [
       { title: 'Stats', page: 'features/stats.md' },
       { title: 'Notifications', page: 'features/notifications.md' },
       { title: 'Scrobbling', page: 'features/scrobbling.md' },
+      { title: 'Storage', page: 'features/storage.md' },
       {
         title: 'Existing music folders',
         page: 'features/external-library.md',

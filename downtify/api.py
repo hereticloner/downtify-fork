@@ -197,6 +197,9 @@ working without changes:
 * ``POST /api/scrobbling/test`` and the
   ``POST /api/scrobbling/lastfm/auth/{start,finish}`` pair (check the
   last.fm session and connect the account without saving)
+* ``GET /api/storage/report``, ``GET /api/storage/duplicates`` and
+  ``POST /api/storage/duplicates/delete`` (disk usage, duplicate songs
+  and their cleanup)
 * ``GET  /api/cookies`` (current YouTube cookie configuration)
 * ``POST /api/cookies`` (upload a Netscape cookies.txt as the raw request
   body - no multipart, so no ``python-multipart`` dependency)
@@ -319,6 +322,7 @@ from . import (
     providers,
     scrobbling,
     spotify,
+    storage,
 )
 from .activity import ActivityLog, NowPlaying, describe_user_agent
 from .auth import (
@@ -5458,6 +5462,60 @@ async def lastfm_auth_finish_endpoint(request: Request) -> dict[str, Any]:
         'session_key': session['session_key'],
         'username': session['username'],
     }
+
+
+# ---------------------------------------------------------------------------
+# Storage report and duplicate cleanup
+# ---------------------------------------------------------------------------
+
+
+@router.get('/api/storage/report')
+async def storage_report_endpoint() -> dict[str, Any]:
+    """How full the disk is and how much the library takes.
+
+    See [Storage](features/storage.md).
+    """
+
+    ctx = library_context()
+    download_dir = ctx.download_dir
+    return {
+        'disk': storage.disk_usage(download_dir),
+        'library': storage.library_size(ctx),
+    }
+
+
+@router.get('/api/storage/duplicates')
+async def storage_duplicates_endpoint() -> dict[str, Any]:
+    """Songs downloaded more than once, grouped for cleanup.
+
+    Each group keeps the best copy and lists the rest as deletable.
+    See [Storage](features/storage.md).
+    """
+
+    ctx = library_context()
+    duplicates = await asyncio.to_thread(storage.find_duplicates, ctx)
+    return {
+        'groups': duplicates,
+        'total_wasted_bytes': sum(g['wasted_bytes'] for g in duplicates),
+    }
+
+
+@router.post('/api/storage/duplicates/delete')
+async def storage_delete_duplicates_endpoint(
+    request: Request,
+) -> dict[str, Any]:
+    """Delete the listed duplicate files.
+
+    The body is ``{files: [stored path, ...]}``. Returns how many were
+    removed. The library cache is dropped so the next listing is clean.
+    """
+
+    payload = await _json_object(request)
+    files = payload.get('files')
+    if not isinstance(files, list):
+        raise HTTPException(status_code=400, detail='files is required')
+    ctx = library_context()
+    return await asyncio.to_thread(storage.delete_files, ctx, files)
 
 
 # ---------------------------------------------------------------------------

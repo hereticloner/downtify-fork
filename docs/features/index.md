@@ -31,6 +31,7 @@ Downtify covers everything you need to build and maintain a local music library 
 | [Stats](stats.md) | Library, download and play counts, a downloads-per-day chart and your most-played tracks |
 | [Notifications](notifications.md) | A Telegram message when a watch downloads new tracks |
 | [Scrobbling](scrobbling.md) | Send plays to last.fm |
+| [Storage](storage.md) | Disk usage and a duplicate-song cleanup with one kept copy |
 | [Existing music folders](external-library.md) | Point Downtify at folders of audio you already have; Sync reads tags, matches artists and skips songs already in the library |
 | [Upgrade library](library-upgrade.md) | Scan music you already downloaded and repair small covers, missing lyrics and incomplete tags |
 | [M3U Export](m3u-export.md) | Auto-generated playlist files for Jellyfin, Navidrome, Plex and any media app |

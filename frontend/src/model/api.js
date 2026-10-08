@@ -762,6 +762,18 @@ function finishLastfmAuth(config) {
   return API.post('/api/scrobbling/lastfm/auth/finish', config)
 }
 
+function storageReport() {
+  return API.get('/api/storage/report')
+}
+
+function storageDuplicates() {
+  return API.get('/api/storage/duplicates')
+}
+
+function deleteStorageDuplicates(files) {
+  return API.post('/api/storage/duplicates/delete', { files })
+}
+
 function setSettings(settings) {
   return API.post('/api/settings/update', settings, {
     params: { client_id: sessionID },
@@ -906,6 +918,9 @@ export default {
   testScrobbling,
   startLastfmAuth,
   finishLastfmAuth,
+  storageReport,
+  storageDuplicates,
+  deleteStorageDuplicates,
   getCookiesStatus,
   uploadCookies,
   deleteCookies,
