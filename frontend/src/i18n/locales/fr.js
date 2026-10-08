@@ -606,6 +606,8 @@ export default {
     sleepEndOfTrack: 'À la fin de ce titre',
     sleepEndOfTrackShort: 'Fin du titre',
     sleepOff: 'Désactiver la minuterie',
+    autoDj: 'Auto-DJ',
+    autoDjOn: 'Continuer la lecture depuis la bibliothèque quand la file se termine',
     minutesLeft: '{count} min',
     equalizer: 'Égaliseur',
     equalizerOn: 'Activé',

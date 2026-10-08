@@ -593,6 +593,8 @@ export default {
     sleepEndOfTrack: 'Στο τέλος του κομματιού',
     sleepEndOfTrackShort: 'Τέλος κομματιού',
     sleepOff: 'Απενεργοποίηση χρονοδιακόπτη',
+    autoDj: 'Auto-DJ',
+    autoDjOn: 'Συνέχισε να παίζεις από τη βιβλιοθήκη όταν τελειώσει η ουρά',
     minutesLeft: '{count} λεπ.',
     equalizer: 'Ισοσταθμιστής',
     equalizerOn: 'Ενεργός',

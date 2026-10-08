@@ -594,6 +594,8 @@ export default {
     sleepEndOfTrack: 'A szám végén',
     sleepEndOfTrackShort: 'Szám vége',
     sleepOff: 'Időzítő kikapcsolása',
+    autoDj: 'Auto-DJ',
+    autoDjOn: 'Folytatás a könyvtárból, ha a sor véget ér',
     minutesLeft: '{count} perc',
     equalizer: 'Hangszínszabályzó',
     equalizerOn: 'Be',

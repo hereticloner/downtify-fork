@@ -595,6 +595,8 @@ export default {
     sleepEndOfTrack: 'Al terminar esta canción',
     sleepEndOfTrackShort: 'Fin de canción',
     sleepOff: 'Desactivar temporizador',
+    autoDj: 'Auto-DJ',
+    autoDjOn: 'Sigue reproduciendo desde la biblioteca cuando la cola se agote',
     minutesLeft: '{count} min',
     equalizer: 'Ecualizador',
     equalizerOn: 'Activado',

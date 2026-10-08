@@ -597,6 +597,8 @@ export default {
     sleepEndOfTrack: 'Bu parçanın sonunda',
     sleepEndOfTrackShort: 'Parça sonu',
     sleepOff: 'Zamanlayıcıyı kapat',
+    autoDj: 'Auto-DJ',
+    autoDjOn: 'Sıra bitince kütüphaneden çalmaya devam et',
     minutesLeft: '{count} dk',
     equalizer: 'Ekolayzır',
     equalizerOn: 'Açık',

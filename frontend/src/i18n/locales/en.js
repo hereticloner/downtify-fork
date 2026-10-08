@@ -583,6 +583,8 @@ export default {
     sleepEndOfTrack: 'At the end of this track',
     sleepEndOfTrackShort: 'End of track',
     sleepOff: 'Turn off timer',
+    autoDj: 'Auto-DJ',
+    autoDjOn: 'Keep playing from the library when the queue runs out',
     minutesLeft: '{count} min',
     equalizer: 'Equalizer',
     equalizerOn: 'On',

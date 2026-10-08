@@ -9,9 +9,12 @@ import { attachEqualizer, resumeEqualizer } from '/src/model/equalizer'
 const VOLUME_KEY = 'downtify-player-volume'
 const RATE_KEY = 'downtify-player-rate'
 const SESSION_KEY = 'downtify-player-session'
+const AUTO_DJ_KEY = 'downtify-player-autodj'
 // Queues past this size aren't persisted across reloads (localStorage
 // quota); the player still works, it just starts empty next time.
 const MAX_PERSISTED_TRACKS = 2000
+// How many library tracks Auto-DJ adds when the queue runs out.
+const AUTO_DJ_APPEND = 15
 
 // Matches the `sm` breakpoint the mobile-only volume-UI hiding uses.
 // Phones control the actual output level with their hardware volume
@@ -426,10 +429,93 @@ function prevIndex() {
 function next() {
   const i = nextIndex()
   if (i < 0) {
+    // Sync when Auto-DJ is off, so "stops at the end" behaves exactly
+    // as before. With it on, the extension is async; pause only if
+    // the library offered nothing new.
+    if (autoDj.value) {
+      return extendWithAutoDj().then((extended) => {
+        if (!extended) pause()
+      })
+    }
     pause()
     return
   }
   playAt(i)
+}
+
+// ── Auto-DJ: keep the queue going ──────────────────────────────────
+// When the queue runs out and Auto-DJ is on, add more library tracks
+// (the current artist first, then anything else, queue members held
+// out) and keep playing instead of stopping at the end of a playlist.
+
+let autoDjSource = null
+let autoDjBusy = false
+const autoDj = ref(storage().getItem(AUTO_DJ_KEY) === '1')
+
+function setAutoDjSource(fn) {
+  // Test seam: the default source reads the library store lazily so
+  // player.js itself stays free of that import.
+  autoDjSource = typeof fn === 'function' ? fn : null
+}
+
+function setAutoDj(on) {
+  autoDj.value = !!on
+  storage().setItem(AUTO_DJ_KEY, autoDj.value ? '1' : '0')
+}
+
+async function autoDjCandidates() {
+  let all
+  if (autoDjSource) {
+    all = await autoDjSource()
+  } else {
+    try {
+      const { useLibrary } = await import('/src/model/library.js')
+      const library = useLibrary()
+      if (!library.loaded.value) await library.ensureTracks()
+      all = library.tracks.value
+    } catch {
+      return []
+    }
+  }
+  const queued = new Set(
+    playlist.value.map((t) => t.file).filter(Boolean)
+  )
+  const current = playlist.value[currentIndex.value]
+  const artist = String(current?.artist || '').toLowerCase()
+  const sameArtist = []
+  const rest = []
+  for (const track of all || []) {
+    if (!track?.file || queued.has(track.file)) continue
+    if (String(track.artist || '').toLowerCase() === artist) {
+      sameArtist.push(track)
+    } else {
+      rest.push(track)
+    }
+  }
+  const shuffled = (list) =>
+    list
+      .map((v) => [Math.random(), v])
+      .sort((a, b) => a[0] - b[0])
+      .map(([, v]) => v)
+  return [...shuffled(sameArtist), ...shuffled(rest)].slice(
+    0,
+    AUTO_DJ_APPEND
+  )
+}
+
+async function extendWithAutoDj() {
+  if (!autoDj.value || autoDjBusy) return false
+  autoDjBusy = true
+  try {
+    const more = await autoDjCandidates()
+    if (!more.length) return false
+    const at = playlist.value.length
+    enqueue(more)
+    playAt(at)
+    return true
+  } finally {
+    autoDjBusy = false
+  }
 }
 
 function prev() {
@@ -693,5 +779,8 @@ export function usePlayer() {
     setShuffle,
     toggleShuffle,
     setSleepTimer,
+    autoDj,
+    setAutoDj,
+    setAutoDjSource,
   }
 }

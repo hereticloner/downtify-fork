@@ -593,6 +593,8 @@ export default {
     sleepEndOfTrack: 'No fim desta faixa',
     sleepEndOfTrackShort: 'Fim da faixa',
     sleepOff: 'Desligar timer',
+    autoDj: 'Auto-DJ',
+    autoDjOn: 'Continuar tocando da biblioteca quando a fila acabar',
     minutesLeft: '{count} min',
     equalizer: 'Equalizador',
     equalizerOn: 'Ligado',

@@ -588,6 +588,8 @@ export default {
     sleepEndOfTrack: 'В края на песента',
     sleepEndOfTrackShort: 'Край на песента',
     sleepOff: 'Изключи таймера',
+    autoDj: 'Auto-DJ',
+    autoDjOn: 'Продължавай да пускаш от библиотеката, когато опашката свърши',
     minutesLeft: '{count} мин',
     equalizer: 'Еквалайзер',
     equalizerOn: 'Вкл.',

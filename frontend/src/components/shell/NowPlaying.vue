@@ -559,6 +559,16 @@ const sleepMenu = computed(() => [
     hidden: !player.sleepAt.value,
     action: () => player.setSleepTimer(null),
   },
+  {
+    heading: t('player.autoDj'),
+    hidden: !track.value || track.value.isPodcast,
+  },
+  {
+    label: t('player.autoDjOn'),
+    checked: player.autoDj.value,
+    hidden: !track.value || track.value.isPodcast,
+    action: () => player.setAutoDj(!player.autoDj.value),
+  },
 ])
 
 const trackMenu = computed(() => {

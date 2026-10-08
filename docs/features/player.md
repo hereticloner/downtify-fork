@@ -88,6 +88,18 @@ The same actions apply to a multi-track selection in the Library.
 
 The queue, the current track, its position, shuffle and repeat are remembered, so reopening Downtify resumes where you left off (queues of more than 2000 tracks aren't remembered). Deleted files drop out of the queue automatically.
 
+## Auto-DJ
+
+When the queue runs out and **Auto-DJ** is on, the music doesn't stop: 15 tracks from your library are added and play on, and when those run out the next batch follows. The Now playing menu (the timer button) has the toggle under an **Auto-DJ** heading — it stays off for podcasts.
+
+What gets added:
+
+- tracks of the **current artist** first, then other library tracks;
+- anything **already in the queue** is held out;
+- the batch is capped at 15 and the order is random inside each group.
+
+The choice is remembered across reloads, same as shuffle and repeat.
+
 ## Keyboard and media keys
 
 | Key | Action |
