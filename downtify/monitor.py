@@ -33,6 +33,7 @@ from .navidrome_index import NavidromeIndex
 from .playlist_catalog import PlaylistCatalog
 from .playlist_spotify_cache import PlaylistSpotifyCache
 from .podcasts import PodcastStore, sync_show
+from .sqlite_utils import connect_sqlite
 from .track_index import TrackIndex, normalize_spotify_track_id
 
 MONITOR_LOOP_INTERVAL = 60  # seconds between loop sweeps
@@ -311,9 +312,12 @@ class PlaylistMonitorDB:
         self._init_db()
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self._path, check_same_thread=False)
+        # Shared tuning: WAL + a 30 s busy timeout. This DB is written
+        # all through a sweep (one row per downloaded track); without it
+        # a page request reading the same file during a sweep hit
+        # SQLite's short default lock and answered 500s.
+        conn = connect_sqlite(self._path, row_factory=True)
         conn.execute('PRAGMA foreign_keys = ON')
-        conn.row_factory = sqlite3.Row
         return conn
 
     def _init_db(self) -> None:
