@@ -20,7 +20,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from loguru import logger
 
-from . import api, scrobbling
+from . import api, scrobbling, spotify_mirror
 from .activity import KINDS, clean_track, track_label
 from .auth import SESSION_COOKIE, AuthStore, Principal, session_cookie
 from .users import ROLE_USER, UserError, UserStore
@@ -36,6 +36,16 @@ def _store() -> AuthStore:
 
 def _users() -> UserStore:
     return _store().users
+
+
+class _LiveLibrary:
+    """The live track index, as ``spotify_mirror.uri_for_track`` reads
+    it: a runtime attribute lookup, since the index comes up with the
+    player. One attribute, no store rebuild."""
+
+    @property
+    def track_index(self):
+        return api.state.track_index
 
 
 def _accounts_on() -> None:
@@ -389,4 +399,21 @@ async def report_playback(request: Request) -> dict[str, Any]:
             tracker.should_scrobble(me.user_id, player_key, song)
         ):
             await asyncio.to_thread(scrobbling.scrobble, track, config)
+    mirror = spotify_mirror.active_mirror_config(api.state.settings)
+    if mirror and started:
+        song = str(
+            track.get('track_id') or track.get('file') or track_label(track)
+        )
+        player_key = f'{me.device_id}:{player}'
+        if api.state.mirror_tracker.should_mirror(
+            me.user_id, player_key, song
+        ):
+            renewed = await asyncio.to_thread(
+                spotify_mirror.mirror_track,
+                mirror,
+                track,
+                library=_LiveLibrary(),
+            )
+            if renewed:
+                api._persist_mirror_tokens(renewed)
     return {'ok': True}
