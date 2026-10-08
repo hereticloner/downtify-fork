@@ -906,6 +906,14 @@ async def check_playlist(
                 await asyncio.sleep(delay_seconds)
         except Exception:
             logger.exception('Failed to auto-download track {}', track_id)
+        await _emit_check(
+            broadcast,
+            phase='progress',
+            id=playlist.id,
+            name=playlist.name,
+            done=index + 1,
+            total=len(new_tracks),
+        )
 
     await asyncio.to_thread(
         db.update_playlist,
@@ -1472,6 +1480,19 @@ async def check_podcast_watch(
     return count
 
 
+async def _emit_check(
+    broadcast: Callable[[dict[str, Any]], Any],
+    **payload: Any,
+) -> None:
+    """Broadcast a ``monitor_check`` lifecycle event (best-effort)."""
+
+    message = {'type': 'monitor_check', **payload}
+    try:
+        await broadcast(message)
+    except Exception:  # noqa: BLE001 - UI nicety, never fail the sweep
+        logger.exception('Failed to broadcast monitor check event')
+
+
 async def check_watch(
     playlist: MonitoredPlaylist,
     db: PlaylistMonitorDB,
@@ -1482,34 +1503,69 @@ async def check_watch(
     library: Optional[LibraryStores] = None,
     podcasts: Optional[PodcastStore] = None,
 ) -> int:
-    """Run the right check for a watch by kind, unless one is already running."""
+    """Run the right check for a watch by kind, unless one is already
+    running.
+
+    ``monitor_check`` events bracket the check (``start`` / ``end``
+    with the downloaded count, or ``error``) so the web UI can show a
+    live progress bar for a manual "Check now".
+    """
+
     if playlist.id in _checks_running:
         logger.info('Watch "{}" is already being checked', playlist.name)
         return 0
     _checks_running.add(playlist.id)
     try:
-        if playlist.kind == KIND_PODCAST:
-            if podcasts is None:
-                logger.warning(
-                    'Podcast watch "{}" but podcast store not ready',
-                    playlist.name,
-                )
-                return 0
-            return await check_podcast_watch(
-                playlist,
-                db,
-                podcasts,
-                Path(downloader.download_dir),
-                broadcast,
-                loop,
-            )
-        if playlist.kind == KIND_ARTIST:
-            return await check_artist(
-                playlist, db, downloader, broadcast, loop, settings
-            )
-        return await check_playlist(
-            playlist, db, downloader, broadcast, loop, settings, library
+        await _emit_check(
+            broadcast,
+            phase='start',
+            id=playlist.id,
+            name=playlist.name,
+            kind=playlist.kind,
         )
+        try:
+            if playlist.kind == KIND_PODCAST:
+                if podcasts is None:
+                    logger.warning(
+                        'Podcast watch "{}" but podcast store not ready',
+                        playlist.name,
+                    )
+                    return 0
+                count = await check_podcast_watch(
+                    playlist,
+                    db,
+                    podcasts,
+                    Path(downloader.download_dir),
+                    broadcast,
+                    loop,
+                )
+            elif playlist.kind == KIND_ARTIST:
+                count = await check_artist(
+                    playlist, db, downloader, broadcast, loop, settings
+                )
+            else:
+                count = await check_playlist(
+                    playlist, db, downloader, broadcast, loop, settings,
+                    library,
+                )
+        except Exception:
+            await _emit_check(
+                broadcast,
+                phase='error',
+                id=playlist.id,
+                name=playlist.name,
+                kind=playlist.kind,
+            )
+            raise
+        await _emit_check(
+            broadcast,
+            phase='end',
+            id=playlist.id,
+            name=playlist.name,
+            kind=playlist.kind,
+            downloaded=count,
+        )
+        return count
     finally:
         _checks_running.discard(playlist.id)
 

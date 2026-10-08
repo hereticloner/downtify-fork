@@ -127,9 +127,19 @@ On each row:
 
 - **Active** switch — pause or resume the watch without removing it
 - **Checks** — how often it's checked
-- **Check now** (↻) — check it immediately, outside the schedule
+- **Check now** (↻) — check it immediately, outside the schedule (see [Check now progress](#check-now-progress))
 - **Edit** (✎) — see and change the watch's link, interval and active state (see [Editing a watch](#editing-a-watch))
 - **⋯** — pause/resume, copy the link, open the original, or **Stop watching** (the record is deleted; downloaded files are kept)
+
+### Check now progress
+
+**Check now** runs in the background — the page doesn't hold still and the row keeps its place in the list. While it runs (and after a **Check all now**, per row), the watch shows a progress bar instead of a silent spinner:
+
+- **Starting…** until the sweep learns how many tracks it needs to download;
+- then **`done/total`** with a filling bar, the time elapsed and an estimate of what's left — the estimate is simply the average track so far times the tracks remaining;
+- a toast names the count when the check finishes, the row's **last checked** refreshes itself, and a failure shows an error toast with the same on the bar.
+
+The bar follows real downloads: each track the sweep tries (downloaded, already linked from the library or failed) moves it one step. The watch list itself keeps using those live counts — the row doesn't jump around while it's checking.
 
 ### Editing a watch
 

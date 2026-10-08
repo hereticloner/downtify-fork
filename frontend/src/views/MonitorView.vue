@@ -193,6 +193,21 @@
                   class="block truncate font-mono text-[11.5px] text-muted hover:text-fg hover:underline"
                   >{{ displayUrl(item.url) }}</a
                 >
+                <div
+                  v-if="progressFor(item)"
+                  class="mt-1.5 flex items-center gap-2"
+                >
+                  <div class="h-1.5 w-36 overflow-hidden rounded bg-surface">
+                    <div
+                      class="h-full rounded bg-accent transition-[width]"
+                      :class="progressFor(item).total ? '' : 'animate-pulse'"
+                      :style="{ width: progressPct(item) }"
+                    />
+                  </div>
+                  <span class="tabular text-[11.5px] text-muted">
+                    {{ progressLabel(item) }}
+                  </span>
+                </div>
                 <span
                   v-if="
                     releaseFilterSummary(item).types.length ||
@@ -293,7 +308,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useLocalStorage } from '@vueuse/core'
 import AppIcon from '/src/components/ui/AppIcon.vue'
@@ -346,7 +361,143 @@ const newInterval = ref(360)
 // A new artist watch's filters (the artists tab's form).
 const newReleaseTypes = ref([...RELEASE_TYPES])
 const newOnly = ref(false)
-const checking = ref(new Set())
+// Live check state, driven by the server's ``monitor_check`` WS events:
+// watch id -> {phase, done, total, startedAt, name}. A click starts a
+// local entry so the row reacts at once, then the events take over and
+// an ``end`` (or ``error``) closes it.
+const checkState = ref({})
+// Ticks every second so the elapsed/ETA labels stay current while a
+// check runs.
+const nowTick = ref(Date.now())
+let ticking = null
+
+function startCheck(item) {
+  checkState.value = {
+    ...checkState.value,
+    [item.id]: {
+      phase: 'progress',
+      done: 0,
+      total: null,
+      name: item.name,
+      startedAt: Date.now(),
+      local: true,
+    },
+  }
+  setTimeout(() => {
+    const st = checkState.value[item.id]
+    // The server's own events never arrived; drop the local stub.
+    if (st && st.local) endCheck(item.id)
+  }, 15000)
+}
+
+function endCheck(id) {
+  const next = { ...checkState.value }
+  delete next[id]
+  checkState.value = next
+}
+
+function handleCheckEvent(data) {
+  if (!data || data.type !== 'monitor_check' || data.id == null) return
+  const prev = checkState.value[data.id] || {}
+  const base = {
+    name: data.name ?? prev.name,
+    startedAt: prev.startedAt || Date.now(),
+  }
+  if (data.phase === 'progress') {
+    checkState.value = {
+      ...checkState.value,
+      [data.id]: {
+        ...base,
+        phase: 'progress',
+        done: data.done ?? 0,
+        total: data.total ?? null,
+      },
+    }
+  } else if (data.phase === 'end') {
+    checkState.value = {
+      ...checkState.value,
+      [data.id]: {
+        ...base,
+        phase: 'end',
+        downloaded: data.downloaded ?? 0,
+      },
+    }
+    setTimeout(() => endCheck(data.id), 2500)
+  } else {
+    checkState.value = {
+      ...checkState.value,
+      [data.id]: { ...base, phase: 'error' },
+    }
+    setTimeout(() => endCheck(data.id), 2500)
+  }
+}
+
+const checking = computed(
+  () =>
+    new Set(
+      Object.entries(checkState.value)
+        .filter(([, st]) => st.phase === 'start' || st.phase === 'progress')
+        .map(([id]) => Number(id))
+    )
+)
+
+function progressFor(item) {
+  return checkState.value[item.id]
+}
+
+function progressPct(item) {
+  const st = progressFor(item)
+  if (!st || !st.total) return '30%'
+  return `${Math.round((st.done * 100) / st.total)}%`
+}
+
+function formatElapsed(totalSeconds) {
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  return m ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`
+}
+
+function progressLabel(item) {
+  const st = progressFor(item)
+  if (!st) return ''
+  if (st.phase === 'end') {
+    return t('monitor.checkFinished', { count: st.downloaded ?? 0 })
+  }
+  if (st.phase === 'error') return t('monitor.checkFailed')
+  const elapsed = Math.max(
+    0,
+    Math.floor((nowTick.value - (st.startedAt || nowTick.value)) / 1000)
+  )
+  if (!st.total) {
+    return `${t('monitor.checkStarting')} (${formatElapsed(elapsed)})`
+  }
+  const done = st.done || 0
+  const per = done ? elapsed / done : 0
+  const left = Math.max(0, Math.round(per * (st.total - done)))
+  return `${st.done}/${st.total} (${formatElapsed(elapsed)} ~${formatElapsed(left)})`
+}
+
+watch(checkState, (state) => {
+  for (const st of Object.values(state)) {
+    if (st.phase === 'end' && !st.announced) {
+      st.announced = true
+      ui.toast(t('monitor.checkFinished', { count: st.downloaded ?? 0 }))
+      load()
+    } else if (st.phase === 'error' && !st.announced) {
+      st.announced = true
+      ui.toast(t('toast.actionFailed'), { kind: 'error' })
+    }
+  }
+  // "Check all" waits for every watch it seeded to report back.
+  if (
+    checkingAll.value &&
+    !Object.values(state).some(
+      (s) => s.phase === 'start' || s.phase === 'progress'
+    )
+  ) {
+    checkingAll.value = false
+  }
+})
 const checkingAll = ref(false)
 const query = ref('')
 const show = ref('all')
@@ -578,19 +729,12 @@ function onSaved(updated) {
 }
 
 async function check(item) {
-  checking.value = new Set([...checking.value, item.id])
+  startCheck(item)
   try {
     await monitorAPI.checkMonitoredPlaylist(item.id)
-    ui.toast(t('monitor.checking', { name: item.name }))
-    setTimeout(load, 4000)
   } catch {
     ui.toast(t('toast.actionFailed'), { kind: 'error' })
-  } finally {
-    setTimeout(() => {
-      const next = new Set(checking.value)
-      next.delete(item.id)
-      checking.value = next
-    }, 4000)
+    endCheck(item.id)
   }
 }
 
@@ -598,6 +742,7 @@ async function checkAll() {
   checkingAll.value = true
   const kind = tab.value
   for (const item of enabledInTab.value) {
+    startCheck(item)
     await monitorAPI.checkMonitoredPlaylist(item.id).catch(() => {})
   }
   ui.toast(
@@ -605,10 +750,6 @@ async function checkAll() {
       ? t('monitor.checkingAllArtists')
       : t('monitor.checkingAllPlaylists')
   )
-  setTimeout(() => {
-    checkingAll.value = false
-    load()
-  }, 4000)
 }
 
 async function copyLink(item) {
@@ -668,5 +809,14 @@ function menuFor(item) {
   ]
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  API.onMessage(handleCheckEvent)
+  ticking = setInterval(() => {
+    nowTick.value = Date.now()
+  }, 1000)
+})
+onUnmounted(() => {
+  if (ticking) clearInterval(ticking)
+})
 </script>
