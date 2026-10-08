@@ -52,6 +52,18 @@ const settings = ref({
     lastfm_username: '',
     scrobble_now_playing: true,
   },
+  spotify_mirror: {
+    enabled: false,
+    client_id: '',
+    redirect_uri: '',
+    device_id: '',
+    access_token: '',
+    refresh_token: '',
+    token_expires_at: '',
+    mirror_user: '',
+    silent_on_target: true,
+    mirror_manual_checks: false,
+  },
   organize_by_artist: true,
   cache_cover_art: false,
   organize_by_album: true,
@@ -183,6 +195,10 @@ function loadServerSettings() {
           ...settings.value.scrobbling,
           ...(rest.scrobbling || {}),
         },
+        spotify_mirror: {
+          ...settings.value.spotify_mirror,
+          ...(rest.spotify_mirror || {}),
+        },
         external_library: {
           ...settings.value.external_library,
           ...(rest.external_library || {}),
@@ -268,6 +284,10 @@ async function saveSettings() {
       scrobbling: {
         ...settings.value.scrobbling,
         ...(rest.scrobbling || {}),
+      },
+      spotify_mirror: {
+        ...settings.value.spotify_mirror,
+        ...(rest.spotify_mirror || {}),
       },
       external_library: {
         ...settings.value.external_library,

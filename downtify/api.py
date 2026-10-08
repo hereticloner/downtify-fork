@@ -286,8 +286,10 @@ import hashlib
 import json
 import mimetypes
 import re
+import secrets
 import shutil
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -304,7 +306,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from loguru import logger
 
 from . import (
@@ -322,6 +324,7 @@ from . import (
     providers,
     scrobbling,
     spotify,
+    spotify_mirror,
     storage,
 )
 from .activity import ActivityLog, NowPlaying, describe_user_agent
@@ -554,6 +557,23 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         'lastfm_username': '',
         'scrobble_now_playing': True,
     },
+    # Mirror plays to Spotify Connect (see downtify.spotify_mirror): a
+    # play in Downtify starts the same track on the user's own Connect
+    # device - this fork ships a silent one on the server ("Downtify
+    # Mirror") - so the listening shows up on Spotify. Tokens land here
+    # through the connect flow.
+    'spotify_mirror': {
+        'enabled': False,
+        'client_id': '',
+        'redirect_uri': '',
+        'device_id': '',
+        'access_token': '',
+        'refresh_token': '',
+        'token_expires_at': '',
+        'mirror_user': '',
+        'silent_on_target': True,
+        'mirror_manual_checks': False,
+    },
 }
 
 # Settings stored as nested objects: saved values are merged over the
@@ -565,6 +585,7 @@ _NESTED_SETTINGS = (
     'external_library',
     'notifications',
     'scrobbling',
+    'spotify_mirror',
 )
 
 
@@ -742,6 +763,51 @@ def _validate_scrobbling_settings(scrobbling: dict[str, Any]) -> None:
             raise HTTPException(status_code=400, detail=detail)
     if not scrobbling.get('lastfm_session_key'):
         detail = 'Connect your last.fm account before enabling scrobbling'
+        raise HTTPException(status_code=400, detail=detail)
+
+
+def _clean_spotify_mirror(value: Any) -> dict[str, Any]:
+    """Coerce a spotify_mirror block to the stored shape."""
+
+    base = dict(DEFAULT_SETTINGS['spotify_mirror'])
+    if isinstance(value, dict):
+        base.update(value)
+    cleaned = {
+        'enabled': bool(base.get('enabled')),
+        'client_id': str(base.get('client_id') or '').strip(),
+        'redirect_uri': str(base.get('redirect_uri') or '').strip(),
+        'device_id': str(base.get('device_id') or '').strip(),
+        'access_token': str(base.get('access_token') or '').strip(),
+        'refresh_token': str(base.get('refresh_token') or '').strip(),
+        'mirror_user': str(base.get('mirror_user') or '').strip(),
+        'silent_on_target': bool(base.get('silent_on_target', True)),
+        'mirror_manual_checks': bool(
+            base.get('mirror_manual_checks', False)
+        ),
+    }
+    # Keep the expiry as stored: a number is kept a number, anything
+    # else stays an empty marker.
+    expires = base.get('token_expires_at')
+    if isinstance(expires, (int, float)) and not isinstance(expires, bool):
+        cleaned['token_expires_at'] = float(expires)
+    else:
+        cleaned['token_expires_at'] = ''
+    return cleaned
+
+
+def _validate_spotify_mirror_settings(mirror: dict[str, Any]) -> None:
+    """Reject enabling the mirror without what it needs."""
+
+    if not mirror.get('enabled'):
+        return
+    if not mirror.get('client_id'):
+        detail = 'A Spotify client id is required when enabled'
+        raise HTTPException(status_code=400, detail=detail)
+    if not mirror.get('device_id'):
+        detail = 'Choose a Spotify Connect device when enabled'
+        raise HTTPException(status_code=400, detail=detail)
+    if not mirror.get('refresh_token'):
+        detail = 'Connect your Spotify account before enabling the mirror'
         raise HTTPException(status_code=400, detail=detail)
 
 
@@ -928,6 +994,8 @@ class AppState:
     now_playing: NowPlaying = NowPlaying()
     # Which player already got a now-playing/scrobble (downtify.scrobbling).
     scrobble_tracker: Any = scrobbling.ScrobbleTracker()
+    # Which player/song was already mirrored to Spotify Connect.
+    mirror_tracker: Any = spotify_mirror.MirrorTracker()
     # The mobile API (downtify/mobile_routes.py).
     library_sync: Optional[LibrarySync] = None
     transcoder: Optional[Transcoder] = None
@@ -5250,6 +5318,17 @@ async def update_settings_endpoint(
         _validate_scrobbling_settings(
             pending_scrobbling if 'scrobbling' in payload else {}
         )
+        pending_spotify_mirror = _clean_spotify_mirror({
+            **(state.settings.get('spotify_mirror') or {}),
+            **(
+                payload.get('spotify_mirror')
+                if isinstance(payload.get('spotify_mirror'), dict)
+                else {}
+            ),
+        })
+        _validate_spotify_mirror_settings(
+            pending_spotify_mirror if 'spotify_mirror' in payload else {}
+        )
         for key, raw_value in payload.items():
             if key not in DEFAULT_SETTINGS:
                 continue
@@ -5289,6 +5368,8 @@ async def update_settings_endpoint(
                 state.settings[key] = pending_notifications
             elif key == 'scrobbling':
                 state.settings[key] = pending_scrobbling
+            elif key == 'spotify_mirror':
+                state.settings[key] = pending_spotify_mirror
             else:
                 state.settings[key] = raw_value
         if 'audio_providers' in payload:
@@ -5472,6 +5553,193 @@ async def lastfm_auth_finish_endpoint(request: Request) -> dict[str, Any]:
         'session_key': session['session_key'],
         'username': session['username'],
     }
+
+
+# ---------------------------------------------------------------------------
+# Spotify Mirror (Connect)
+# ---------------------------------------------------------------------------
+
+# In-flight connect flows: state -> (code_verifier, expires at). PKCE's
+# verifier has to survive the round trip through Spotify's authorize
+# page; restarts just drop a pending flow - the user clicks again.
+_spotify_connect_states: dict[str, tuple[str, float]] = {}
+
+_SPOTIFY_MIRROR_SCOPE = spotify_mirror.SCOPES
+
+
+def _spotify_mirror_block() -> dict[str, Any]:
+    block = state.settings.get('spotify_mirror')
+    return block if isinstance(block, dict) else {}
+
+
+def _spotify_mirror_redirect(request: Request) -> str:
+    """The redirect URI the connect flow uses.
+
+    The one saved in settings wins - the Spotify app must list it
+    verbatim; a blank falls back to this request's own origin.
+    """
+
+    saved = str(_spotify_mirror_block().get('redirect_uri') or '').strip()
+    if saved:
+        return saved
+    return str(request.base_url).rstrip('/') + '/integrations/spotify/callback'
+
+
+def _persist_mirror_tokens(tokens: dict[str, Any]) -> None:
+    """Save renewed tokens inside the settings block (and to disk)."""
+
+    if not tokens:
+        return
+    state.settings['spotify_mirror'] = _clean_spotify_mirror({
+        **state.settings.get('spotify_mirror', {}),
+        **tokens,
+    })
+    if state.settings_path is not None:
+        _save_settings(state.settings_path, state.settings)
+
+
+@router.get('/integrations/spotify/authorize')
+async def spotify_mirror_authorize_endpoint(request: Request) -> RedirectResponse:
+    """Step 1 of the connect flow: send the browser to Spotify."""
+
+    client_id = str(_spotify_mirror_block().get('client_id') or '').strip()
+    if not client_id:
+        raise HTTPException(
+            status_code=400,
+            detail='Save a Spotify client id before connecting',
+        )
+    state_value = secrets.token_urlsafe(16)
+    verifier, challenge = spotify_mirror.pkce_pair()
+    _spotify_connect_states[state_value] = (verifier, time.time() + 300)
+    url = spotify_mirror.authorize_url(
+        client_id,
+        _spotify_mirror_redirect(request),
+        state_value,
+        challenge,
+    )
+    return RedirectResponse(url, status_code=302)
+
+
+@router.get('/integrations/spotify/callback')
+async def spotify_mirror_callback_endpoint(request: Request) -> RedirectResponse:
+    """Step 3 of the connect flow: Spotify sends the code back.
+
+    Exchanges it for tokens, saves them into the settings block and
+    sends the browser back to Settings (with a result flag).
+    """
+
+    query = request.query_params
+    code = str(query.get('code') or '')
+    state_value = str(query.get('state') or '')
+    target = '/settings/apps'
+    entry = _spotify_connect_states.pop(state_value, None)
+    if not code or entry is None:
+        logger.warning('Spotify connect callback without a pending flow')
+        return RedirectResponse(f'{target}?spotify=error', 302)
+    verifier, expires_at = entry
+    if time.time() > expires_at:
+        return RedirectResponse(f'{target}?spotify=error', 302)
+    config = spotify_mirror.mirror_credentials(_spotify_mirror_block())
+    if config is None:
+        return RedirectResponse(f'{target}?spotify=error', 302)
+    tokens = await asyncio.to_thread(
+        spotify_mirror.exchange_code,
+        config['client_id'],
+        code,
+        _spotify_mirror_redirect(request),
+        verifier,
+    )
+    if tokens is None:
+        return RedirectResponse(f'{target}?spotify=error', 302)
+    state.settings['spotify_mirror'] = _clean_spotify_mirror({
+        **_spotify_mirror_block(),
+        **tokens,
+        'enabled': True,
+    })
+    if state.settings_path is not None:
+        _save_settings(state.settings_path, state.settings)
+    logger.info(
+        'Spotify mirror connected as {}', tokens.get('refresh_token') is not None
+    )
+    return RedirectResponse(f'{target}?spotify=connected', 302)
+
+
+@router.get('/api/spotify-mirror/devices')
+async def spotify_mirror_devices_endpoint() -> dict[str, Any]:
+    """Connect devices on the account, for the device picker."""
+
+    config = spotify_mirror.mirror_credentials(_spotify_mirror_block())
+    if config is None:
+        raise HTTPException(
+            status_code=400,
+            detail='Save a Spotify client id before listing devices',
+        )
+    current = await asyncio.to_thread(spotify_mirror.ensure_token, config)
+    if current is None:
+        raise HTTPException(
+            status_code=503,
+            detail='Spotify tokens need renewing - connect again',
+        )
+    if current.get('access_token') != config.get('access_token'):
+        _persist_mirror_tokens({
+            'access_token': current['access_token'],
+            'refresh_token': current['refresh_token'],
+            'token_expires_at': current['token_expires_at'],
+        })
+    devices = await asyncio.to_thread(
+        spotify_mirror.list_devices, current
+    )
+    return {'devices': devices}
+
+
+@router.post('/api/spotify-mirror/test')
+async def test_spotify_mirror_endpoint(request: Request) -> dict[str, Any]:
+    """Check the connect without saving: tokens work and the chosen
+    Spotify Connect device is visible. ``{ok, username?, device?|error}``.
+    """
+
+    payload = await _json_object(request)
+    saved = _spotify_mirror_block()
+    block = payload or saved
+    config = spotify_mirror.mirror_credentials(
+        _clean_spotify_mirror(block)
+    ) or {}
+    return await asyncio.to_thread(spotify_mirror.verify_connection, config)
+
+
+@router.post('/api/spotify-mirror/mirror-now')
+async def spotify_mirror_now_endpoint(request: Request) -> dict[str, Any]:
+    """Mirror one play for testing: body ``{track: {file, ...}}``.
+
+    Skips the dedupe tracker - it is an admin's manual test.
+    """
+
+    payload = await _json_object(request)
+    track = (
+        payload.get('track')
+        if isinstance(payload.get('track'), dict)
+        else {}
+    )
+    config = spotify_mirror.active_mirror_config(state.settings)
+    if config is None:
+        raise HTTPException(
+            status_code=400,
+            detail='The Spotify mirror is not configured (or connected)',
+        )
+    result = await asyncio.to_thread(
+        spotify_mirror.mirror_track,
+        config,
+        track,
+        library=library_stores(),
+    )
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail='No matching Spotify track for that file',
+        )
+    if result:
+        _persist_mirror_tokens(result)
+    return {'ok': True}
 
 
 # ---------------------------------------------------------------------------

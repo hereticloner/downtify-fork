@@ -750,6 +750,18 @@ function testNotifications(config) {
   return API.post('/api/notifications/test', config)
 }
 
+function spotifyMirrorDevices() {
+  return API.get('/api/spotify-mirror/devices')
+}
+
+function testSpotifyMirror(config) {
+  return API.post('/api/spotify-mirror/test', config)
+}
+
+function spotifyMirrorNow(track) {
+  return API.post('/api/spotify-mirror/mirror-now', { track })
+}
+
 function testScrobbling(config) {
   return API.post('/api/scrobbling/test', config)
 }
@@ -915,6 +927,9 @@ export default {
   setSettings,
   testNavidrome,
   testNotifications,
+  spotifyMirrorDevices,
+  testSpotifyMirror,
+  spotifyMirrorNow,
   testScrobbling,
   startLastfmAuth,
   finishLastfmAuth,

@@ -6,6 +6,18 @@ icon: lucide/hard-drive
 
 **Settings → Server** holds how the server itself runs. Only admins see it (see [Users & Sign-in](users.md#admins-and-users)).
 
+## The Downtify Mirror device
+
+For [Spotify Mirror](spotify-mirror.md) the server can ship its own silent Spotify Connect client: a `spotifyd` container named **Downtify Mirror**, always online, playing at volume 0 — plays sent to it are only there to be counted by Spotify.
+
+Setting it up on a compose server:
+
+1. Add the `spotifyd` service to `docker-compose.yml` (the image ships the client binary; its config lives in `/data/spotifyd.conf`).
+2. In `spotifyd.conf` name the device `Downtify Mirror`, set a silent output (`initial_volume = '0'`) and the Spotify credentials the mirror should run under (the same account the mirror is connected with).
+3. `docker compose up -d spotifyd`.
+
+The device shows up in **Settings → Spotify Mirror → Load devices**; every play you start in Downtify then begins there — silently — and lands in your Spotify history.
+
 ## Changing the port
 
 Downtify listens on port **8000**. An admin can choose another one in **Settings → Server → Port** (1024–65535):

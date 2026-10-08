@@ -924,6 +924,42 @@ Delete the listed duplicate files. Body: `{ "files": ["a.mp3", ...] }` — the s
 
 ---
 
+### `POST /api/spotify-mirror/test`
+
+Check the Spotify Mirror connect without saving. See [Spotify Mirror](features/spotify-mirror.md).
+
+**Request body:** the `spotify_mirror` settings block as it stands in the form (`client_id`, and whatever token fields exist: `access_token`, `refresh_token`).
+
+**Response:** always `200`:
+
+```json
+{ "ok": true, "username": "you", "device": "Downtify Mirror" }
+```
+
+`ok` is `false` with `"error": "auth_failed"` when the tokens can't renew, or `"error": "device_missing"` when the chosen Connect device isn't online.
+
+---
+
+### `GET /api/spotify-mirror/devices`
+
+Spotify Connect devices on the account, for the mirror's device picker.
+
+**Response:**
+
+```json
+{ "devices": [ { "id": "...", "name": "Downtify Mirror", "is_active": false } ] }
+```
+
+`503` when the tokens can't renew (connect again); `400` when no `client_id` is saved.
+
+---
+
+### `GET /integrations/spotify/authorize` and `GET /integrations/spotify/callback`
+
+The connect flow's two redirects (browser): authorize sends the browser to Spotify's authorize page using the saved `client_id`, redirect URI and a PKCE challenge; the callback exchanges the returned `code` for tokens, stores them in settings (enabled), and sends the browser back to `/settings/apps?spotify=connected|error`.
+
+---
+
 ## YouTube cookies
 
 Backs the **Settings → YouTube cookies** screen. The uploaded file lives in the data directory (`/data/cookies.txt`) so it survives container updates. See [YouTube Cookies](features/youtube-cookies.md).

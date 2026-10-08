@@ -887,6 +887,30 @@ export default {
     wastedSpace: 'Wasted space',
     refreshing: 'Loading…',
     storageFailed: 'Could not read the storage report.',
+    spotifyMirror: 'Spotify Mirror',
+    spotifyMirrorTitle: 'Spotify Mirror',
+    spotifyMirrorHint:
+      'Plays in Downtify start the same track on your Spotify Connect device (this server ships a silent one), so your listening shows up on Spotify.',
+    spotifyMirrorEnabled: 'Enable Spotify Mirror',
+    spotifyMirrorEnabledHint: 'Master switch for mirroring plays.',
+    spotifyMirrorClientId: 'Spotify client id',
+    spotifyMirrorClientIdHint:
+      'From developer.spotify.com - your own app, with the Web API.',
+    spotifyMirrorRedirect: 'Redirect URI',
+    spotifyMirrorRedirectHint:
+      'Must match the Spotify app exactly, e.g. {suggest}',
+    spotifyMirrorLoadDevices: 'Load devices',
+    spotifyMirrorDevice: 'Spotify Connect device',
+    spotifyMirrorNoDevices:
+      'No Spotify Connect device is online right now.',
+    spotifyMirrorConnect: 'Connect with Spotify',
+    spotifyMirrorOk: 'Connected as {username} - device {device}',
+    spotifyMirrorFailed: 'The test failed - connect again.',
+    spotifyMirrorConnected: 'Spotify connected.',
+    spotifyMirrorError: 'The Spotify connection did not complete.',
+    spotifyMirrorSilent: 'Silent mirror',
+    spotifyMirrorSilentHint:
+      'Keep the mirrored device at volume 0, so you hear only Downtify.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:

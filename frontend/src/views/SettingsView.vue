@@ -740,11 +740,9 @@
             >
               <SettingRow
                 :label="t('settings.diskUsage')"
-                :description="
-                  `${t('settings.diskUsed')}: ${formatBytes(
-                    storage.disk.used
-                  )} / ${formatBytes(storage.disk.total)}`
-                "
+                :description="`${t('settings.diskUsed')}: ${formatBytes(
+                  storage.disk.used
+                )} / ${formatBytes(storage.disk.total)}`"
               >
                 <div class="flex w-full items-center gap-2">
                   <div class="h-2 flex-1 rounded-full bg-surface">
@@ -862,13 +860,99 @@
                   <span
                     v-if="storageMessage"
                     :class="
-                      storageMessageOk ? 'text-sm text-accent' : 'text-sm text-red-500'
+                      storageMessageOk
+                        ? 'text-sm text-accent'
+                        : 'text-sm text-red-500'
                     "
                   >
                     {{ storageMessage }}
                   </span>
                 </div>
               </div>
+            </SettingGroup>
+          </template>
+
+          <!-- Spotify Mirror -->
+          <template v-else-if="section === 'spotify'">
+            <SettingGroup
+              :title="t('settings.spotifyMirrorTitle')"
+              :description="t('settings.spotifyMirrorHint')"
+            >
+              <SettingRow
+                :label="t('settings.spotifyMirrorEnabled')"
+                :description="t('settings.spotifyMirrorEnabledHint')"
+              >
+                <UiSwitch
+                  v-model="s.spotify_mirror.enabled"
+                  :aria-label="t('settings.spotifyMirrorEnabled')"
+                />
+              </SettingRow>
+              <template v-if="s.spotify_mirror.enabled">
+                <div class="grid gap-4 px-5 py-4 sm:grid-cols-2">
+                  <UiInput
+                    v-model.trim="s.spotify_mirror.client_id"
+                    :label="t('settings.spotifyMirrorClientId')"
+                    :hint="t('settings.spotifyMirrorClientIdHint')"
+                    autocomplete="off"
+                  />
+                  <UiInput
+                    v-model.trim="s.spotify_mirror.redirect_uri"
+                    :label="t('settings.spotifyMirrorRedirect')"
+                    :hint="t('settings.spotifyMirrorRedirectHint')"
+                    autocomplete="off"
+                  />
+                </div>
+                <div class="flex flex-wrap items-center gap-3 px-5 pb-4">
+                  <UiButton
+                    variant="ghost"
+                    :disabled="spotifyDevicesLoading"
+                    @click="loadSpotifyDevices"
+                  >
+                    {{ t('settings.spotifyMirrorLoadDevices') }}
+                  </UiButton>
+                  <UiSelect
+                    v-if="spotifyDevices.length"
+                    v-model="s.spotify_mirror.device_id"
+                    :options="spotifyDevices"
+                    :label="t('settings.spotifyMirrorDevice')"
+                    size="sm"
+                  />
+                </div>
+                <div class="flex flex-wrap items-center gap-3 px-5 pb-4">
+                  <UiButton
+                    variant="ghost"
+                    :disabled="spotifyConnected"
+                    @click="connectSpotify"
+                  >
+                    {{ t('settings.spotifyMirrorConnect') }}
+                  </UiButton>
+                  <UiButton
+                    variant="ghost"
+                    :disabled="spotifyTest === 'testing'"
+                    @click="runSpotifyMirrorTest"
+                  >
+                    {{ t('settings.testConnection') }}
+                  </UiButton>
+                  <span v-if="spotifyTest === 'ok'" class="text-sm text-accent">
+                    {{ spotifyMirrorOkLabel }}
+                  </span>
+                  <span
+                    v-else-if="spotifyTest === 'failed'"
+                    class="text-sm text-red-500"
+                  >
+                    {{ t('settings.spotifyMirrorFailed') }}
+                  </span>
+                </div>
+                <SettingRow
+                  :label="t('settings.spotifyMirrorSilent')"
+                  :description="t('settings.spotifyMirrorSilentHint')"
+                >
+                  <UiSwitch
+                    v-model="s.spotify_mirror.silent_on_target"
+                    :aria-label="t('settings.spotifyMirrorSilent')"
+                  />
+                </SettingRow>
+              </template>
             </SettingGroup>
           </template>
 
@@ -1032,7 +1116,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import AppIcon from '/src/components/ui/AppIcon.vue'
 import AppLogo from '/src/components/ui/AppLogo.vue'
@@ -1104,13 +1188,13 @@ async function sendTestNotification() {
     notificationTest.value = 'failed'
   }
 }
- 
+
 // last.fm scrobbling: the Connect flow asks for a request token, the user
 // approves on last.fm, then the token is traded for a session key that the
 // form saves. The test button checks a saved session without saving.
 const lastfmAuth = ref({ token: '', url: '', busy: false })
 const scrobblingTest = ref('')
- 
+
 async function startLastfmAuth() {
   scrobblingTest.value = ''
   lastfmAuth.value = { token: '', url: '', busy: true }
@@ -1135,7 +1219,7 @@ async function startLastfmAuth() {
     scrobblingTest.value = 'failed'
   }
 }
- 
+
 async function finishLastfmAuth() {
   lastfmAuth.value = { ...lastfmAuth.value, busy: true }
   try {
@@ -1159,7 +1243,7 @@ async function finishLastfmAuth() {
     scrobblingTest.value = 'failed'
   }
 }
- 
+
 async function runScrobblingTest() {
   scrobblingTest.value = 'testing'
   try {
@@ -1169,14 +1253,96 @@ async function runScrobblingTest() {
     scrobblingTest.value = 'failed'
   }
 }
- 
+
 function disconnectLastfm() {
   s.value.scrobbling.lastfm_session_key = ''
   s.value.scrobbling.lastfm_username = ''
   lastfmAuth.value = { token: '', url: '', busy: false }
   scrobblingTest.value = ''
 }
- 
+
+// Spotify Mirror: plays in Downtify start the same track on the user's
+// own Spotify Connect device (this fork ships a silent one on the
+// server), so the listening shows up on Spotify. The connect flow saves
+// the block first - Spotify reads the saved client id - then sends the
+// browser to Spotify, which returns through the callback into this
+// page.
+const spotifyDevices = ref([])
+const spotifyDevicesLoading = ref(false)
+const spotifyConnecting = ref(false)
+const spotifyTest = ref('')
+const spotifyTestResult = ref(null)
+
+async function loadSpotifyDevices() {
+  spotifyDevicesLoading.value = true
+  try {
+    const res = await API.spotifyMirrorDevices()
+    const devices = res?.data?.devices || []
+    spotifyDevices.value = devices.map((d) => ({
+      value: d.id,
+      label: d.name,
+    }))
+    if (!spotifyDevices.value.length) {
+      ui.toast(t('settings.spotifyMirrorNoDevices'), { kind: 'error' })
+    }
+  } catch {
+    ui.toast(t('toast.actionFailed'), { kind: 'error' })
+  } finally {
+    spotifyDevicesLoading.value = false
+  }
+}
+
+async function connectSpotify() {
+  if (spotifyConnecting.value) return
+  spotifyConnecting.value = true
+  try {
+    if (await sm.saveSettings()) {
+      window.location.assign('/integrations/spotify/authorize')
+    }
+  } finally {
+    spotifyConnecting.value = false
+  }
+}
+
+async function runSpotifyMirrorTest() {
+  spotifyTest.value = 'testing'
+  try {
+    const res = await API.testSpotifyMirror(s.value.spotify_mirror)
+    const data = res?.data || {}
+    if (data.ok) {
+      spotifyTest.value = 'ok'
+      spotifyTestResult.value = data
+    } else {
+      spotifyTest.value = 'failed'
+    }
+  } catch {
+    spotifyTest.value = 'failed'
+  }
+}
+
+const spotifyMirrorOkLabel = computed(() => {
+  const r = spotifyTestResult.value
+  if (!r) return t('settings.spotifyMirrorConnected')
+  return t('settings.spotifyMirrorOk', {
+    username: r.username ?? '',
+    device: r.device ?? '',
+  })
+})
+
+// Connected (refresh token from the callback flow present) disables the
+// connect button: reconnect only makes sense after a disconnect.
+const spotifyConnected = computed(() => !!s.value.spotify_mirror.refresh_token)
+
+// The callback lands on /settings/apps with a result flag.
+onMounted(() => {
+  const flag = route.query.spotify
+  if (flag === 'connected') {
+    ui.toast(t('settings.spotifyMirrorConnected'))
+  } else if (flag === 'error') {
+    ui.toast(t('settings.spotifyMirrorError'), { kind: 'error' })
+  }
+})
+
 // Storage: how full the disk is and which songs sit on it twice. The
 // report loads on section open; deleting drops the library cache server
 // side and re-loads the report.
@@ -1232,8 +1398,8 @@ async function deleteDuplicates() {
   storageDeleting.value = true
   storageMessage.value = ''
   try {
-    const files = storage.value.duplicates.groups.flatMap(
-      (group) => group.duplicates.map((dup) => dup.file)
+    const files = storage.value.duplicates.groups.flatMap((group) =>
+      group.duplicates.map((dup) => dup.file)
     )
     const res = await API.deleteStorageDuplicates(files)
     const removed = res?.data?.removed || 0
@@ -1247,7 +1413,7 @@ async function deleteDuplicates() {
     storageDeleting.value = false
   }
 }
- 
+
 // Normal users see General, Apps and About; the rest is the server's,
 // an admin's to change.
 const sections = computed(() =>
@@ -1274,6 +1440,12 @@ const sections = computed(() =>
         id: 'scrobbling',
         icon: 'music',
         label: t('settings.scrobbling'),
+        admin: true,
+      },
+      {
+        id: 'spotify',
+        icon: 'globe',
+        label: t('settings.spotifyMirror'),
         admin: true,
       },
       {
