@@ -387,6 +387,70 @@ def play_track(
         return False
 
 
+def _transport(
+    config: dict[str, Any],
+    action: str,
+    *,
+    params: Optional[dict[str, Any]] = None,
+    request: Optional[Request] = None,
+) -> bool:
+    """One player command (``pause``, ``seek``, resume ``play``)."""
+
+    current = ensure_token(config, request=request)
+    if current is None:
+        return False
+    target = current.get('device_id')
+    if not target:
+        return False
+    sender = request or _request
+    query = {'device_id': target, **(params or {})}
+    try:
+        response = sender(
+            'PUT',
+            f'{SPOTIFY_API}/me/player/{action}',
+            headers=_bearer(current['access_token']),
+            params=query,
+        )
+        response.raise_for_status()
+        return True
+    except Exception as exc:  # noqa: BLE001
+        logger.warning('Spotify mirror {} failed: {}', action, exc)
+        return False
+
+
+def pause_playback(
+    config: dict[str, Any], *, request: Optional[Request] = None
+) -> bool:
+    """Pause the mirrored device (a pause in Downtify)."""
+
+    return _transport(config, 'pause', request=request)
+
+
+def resume_playback(
+    config: dict[str, Any], *, request: Optional[Request] = None
+) -> bool:
+    """Resume the mirrored device where it stood."""
+
+    return _transport(config, 'play', request=request)
+
+
+def seek_playback(
+    config: dict[str, Any],
+    position_seconds: Any,
+    *,
+    request: Optional[Request] = None,
+) -> bool:
+    """Move the mirrored device to *position_seconds*."""
+
+    try:
+        position_ms = max(0, int(float(position_seconds or 0) * 1000))
+    except (TypeError, ValueError):
+        return False
+    return _transport(
+        config, 'seek', params={'position_ms': position_ms}, request=request
+    )
+
+
 def uri_for_track(
     config: dict[str, Any],
     track: dict[str, Any],
@@ -500,11 +564,14 @@ class MirrorTracker:
 
     Keeps repeated reports of the same song from one player (heartbeat
     every 30 s, pause/resume) from sending the same play command again.
+    Also remembers whether the mirrored song is paused, so a pause in
+    Downtify pauses the mirror once and a resume resumes it once.
     """
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._mirrored: dict[tuple[int, str], str] = {}
+        self._paused: dict[tuple[int, str], bool] = {}
 
     def should_mirror(self, user_id: int, player: str, song: str) -> bool:
         key = (int(user_id), player)
@@ -512,9 +579,47 @@ class MirrorTracker:
             if self._mirrored.get(key) == song:
                 return False
             self._mirrored[key] = song
+            self._paused[key] = False
+            return True
+
+    def knows(self, user_id: int, player: str, song: str) -> bool:
+        """Whether *song* is the one this player last mirrored."""
+
+        with self._lock:
+            return self._mirrored.get((int(user_id), player)) == song
+
+    def should_pause(self, user_id: int, player: str, song: str) -> bool:
+        key = (int(user_id), player)
+        with self._lock:
+            if self._mirrored.get(key) != song:
+                return False
+            if self._paused.get(key):
+                return False
+            self._paused[key] = True
+            return True
+
+    def should_resume(self, user_id: int, player: str, song: str) -> bool:
+        key = (int(user_id), player)
+        with self._lock:
+            if self._mirrored.get(key) != song:
+                return False
+            if not self._paused.get(key):
+                return False
+            self._paused[key] = False
+            return True
+
+    def should_pause_any(self, user_id: int, player: str) -> bool:
+        """A player that stopped: pause the mirror, once."""
+
+        key = (int(user_id), player)
+        with self._lock:
+            if key not in self._mirrored or self._paused.get(key):
+                return False
+            self._paused[key] = True
             return True
 
     def forget_user(self, user_id: int) -> None:
         with self._lock:
-            for key in [k for k in self._mirrored if k[0] == user_id]:
-                del self._mirrored[key]
+            for store in (self._mirrored, self._paused):
+                for key in [k for k in store if k[0] == user_id]:
+                    del store[key]

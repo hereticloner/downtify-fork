@@ -90,6 +90,26 @@ describe('playbackReport', () => {
       position: 0,
     })
   })
+
+  it('flags a seek so the Spotify mirror can follow it', () => {
+    const report = playbackReport(track, {
+      player: 'tab',
+      state: 'playing',
+      position: 120,
+      seek: true,
+    })
+    expect(report.seek).toBe(true)
+    expect(report.position).toBe(120)
+  })
+
+  it('omits the seek flag on ordinary reports', () => {
+    const report = playbackReport(track, {
+      player: 'tab',
+      state: 'playing',
+      position: 120,
+    })
+    expect('seek' in report).toBe(false)
+  })
 })
 
 describe('activity kinds', () => {

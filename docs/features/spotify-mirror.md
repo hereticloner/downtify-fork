@@ -67,6 +67,15 @@ A track's **start** is mirrored — the same signal
 one play command per player and song, so a scrub or a
 pause/resume never sends a second one.
 
+While the same track runs, the mirror follows the player:
+
+* **Pause / resume** in Downtify pauses and resumes the mirrored
+  device, once per transition.
+* **Seeking** (the position jumps) moves the mirrored playback to the
+  same spot — the web player flags a seek in its report.
+* **Stopping** (the player goes away) pauses the mirror, so autoplay
+  doesn't carry it on with recommendations.
+
 Finding the track's Spotify id: Downtify stores it for everything it
 downloaded (the track index registers a play for every download).
 Anything else falls

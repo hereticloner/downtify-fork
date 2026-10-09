@@ -511,3 +511,100 @@ def test_validate_accepts_complete_config():
 
 def test_validate_skips_when_not_enabled():
     api._validate_spotify_mirror_settings({'enabled': False})
+
+
+# -- transport commands (pause / resume / seek) -----------------------
+
+
+def test_pause_playback_puts_pause_on_the_device():
+    calls = []
+    ok = spotify_mirror.pause_playback(
+        _config(token_expires_at=99999999999),
+        request=_request(calls, status=204),
+    )
+
+    assert ok is True
+    assert calls[0]['url'].endswith('/me/player/pause')
+    assert calls[0]['params'] == {'device_id': 'dev-1'}
+
+
+def test_resume_playback_puts_play_without_a_body():
+    calls = []
+    ok = spotify_mirror.resume_playback(
+        _config(token_expires_at=99999999999),
+        request=_request(calls, status=204),
+    )
+
+    assert ok is True
+    assert calls[0]['url'].endswith('/me/player/play')
+    assert calls[0]['json'] is None
+
+
+def test_seek_playback_converts_seconds_to_milliseconds():
+    calls = []
+    ok = spotify_mirror.seek_playback(
+        _config(token_expires_at=99999999999),
+        12.5,
+        request=_request(calls, status=204),
+    )
+
+    assert ok is True
+    assert calls[0]['url'].endswith('/me/player/seek')
+    assert calls[0]['params']['position_ms'] == 12500
+
+
+def test_seek_playback_false_for_an_unreadable_position():
+    assert (
+        spotify_mirror.seek_playback(_config(), 'abc', request=_request([]))
+        is False
+    )
+
+
+def test_transport_false_without_a_device():
+    assert (
+        spotify_mirror.pause_playback(
+            _config(token_expires_at=99999999999, device_id=''),
+            request=_request([]),
+        )
+        is False
+    )
+
+
+# -- tracker transitions ----------------------------------------------
+
+
+def test_tracker_pauses_and_resumes_once():
+    tracker = spotify_mirror.MirrorTracker()
+    assert tracker.should_mirror(1, 'p', 'song') is True
+    assert tracker.should_pause(1, 'p', 'song') is True
+    assert tracker.should_pause(1, 'p', 'song') is False
+    assert tracker.should_resume(1, 'p', 'song') is True
+    assert tracker.should_resume(1, 'p', 'song') is False
+
+
+def test_tracker_ignores_pause_for_an_unmirrored_song():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.should_mirror(1, 'p', 'song')
+    assert tracker.should_pause(1, 'p', 'other') is False
+
+
+def test_tracker_pause_any_after_a_stop():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.should_mirror(1, 'p', 'song')
+    assert tracker.should_pause_any(1, 'p') is True
+    assert tracker.should_pause_any(1, 'p') is False
+
+
+def test_tracker_knows_only_the_current_song():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.should_mirror(1, 'p', 'song')
+    assert tracker.knows(1, 'p', 'song') is True
+    assert tracker.knows(1, 'p', 'other') is False
+
+
+def test_tracker_a_new_song_resets_the_paused_state():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.should_mirror(1, 'p', 'one')
+    tracker.should_pause(1, 'p', 'one')
+    tracker.should_mirror(1, 'p', 'two')
+    assert tracker.should_pause(1, 'p', 'two') is True

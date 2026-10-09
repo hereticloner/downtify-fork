@@ -30,13 +30,19 @@ export function settingsSectionsFor(role, sections, { authDisabled } = {}) {
  * (a player track: `{ file, title, artists, album, duration, ... }`).
  * `null` for nothing worth reporting (no track, a preview, a podcast).
  */
-export function playbackReport(track, { player, state, position = 0 }) {
+export function playbackReport(
+  track,
+  { player, state, position = 0, seek = false }
+) {
   if (state === 'stopped') return { player, state, track: {}, position: 0 }
   if (!track?.file || track.isPodcast || track.isPreview) return null
   return {
     player,
     state,
     position: Math.max(0, Math.round(Number(position) || 0)),
+    // A position jump (the user seeked): the Spotify mirror uses it to
+    // seek its own playback.
+    ...(seek ? { seek: true } : {}),
     track: {
       file: track.file,
       title: track.title || '',

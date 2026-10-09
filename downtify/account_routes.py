@@ -357,6 +357,7 @@ async def report_playback(request: Request) -> dict[str, Any]:
     state = str(payload.get('state') or 'playing')
     if state not in {'playing', 'paused', 'stopped'}:
         raise HTTPException(status_code=400, detail='Unknown state')
+    seek_requested = bool(payload.get('seek'))
     track = clean_track(payload.get('track'))
     if state != 'stopped' and not (track.get('file') or track.get('track_id')):
         raise HTTPException(status_code=400, detail='track is required')
@@ -400,20 +401,46 @@ async def report_playback(request: Request) -> dict[str, Any]:
         ):
             await asyncio.to_thread(scrobbling.scrobble, track, config)
     mirror = spotify_mirror.active_mirror_config(api.state.settings)
-    if mirror and started:
+    if mirror:
         song = str(
             track.get('track_id') or track.get('file') or track_label(track)
         )
         player_key = f'{me.device_id}:{player}'
-        if api.state.mirror_tracker.should_mirror(
-            me.user_id, player_key, song
-        ):
-            renewed = await asyncio.to_thread(
-                spotify_mirror.mirror_track,
-                mirror,
-                track,
-                library=_LiveLibrary(),
-            )
-            if renewed:
-                api._persist_mirror_tokens(renewed)
+        tracker = api.state.mirror_tracker
+        if started:
+            if tracker.should_mirror(me.user_id, player_key, song):
+                renewed = await asyncio.to_thread(
+                    spotify_mirror.mirror_track,
+                    mirror,
+                    track,
+                    library=_LiveLibrary(),
+                )
+                if renewed:
+                    api._persist_mirror_tokens(renewed)
+        elif state == 'stopped':
+            # The player went away: pause the mirror so it doesn't keep
+            # playing (autoplay would otherwise carry it on).
+            if tracker.should_pause_any(me.user_id, player_key):
+                await asyncio.to_thread(
+                    spotify_mirror.pause_playback, mirror
+                )
+        else:
+            if state == 'paused' and tracker.should_pause(
+                me.user_id, player_key, song
+            ):
+                await asyncio.to_thread(
+                    spotify_mirror.pause_playback, mirror
+                )
+            if state == 'playing' and tracker.should_resume(
+                me.user_id, player_key, song
+            ):
+                await asyncio.to_thread(
+                    spotify_mirror.resume_playback, mirror
+                )
+            if seek_requested and tracker.knows(
+                me.user_id, player_key, song
+            ):
+                await asyncio.to_thread(
+                    spotify_mirror.seek_playback, mirror, position
+                )
     return {'ok': True}

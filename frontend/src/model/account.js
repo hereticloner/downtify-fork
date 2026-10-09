@@ -84,13 +84,18 @@ function startPlaybackReports() {
   let lastSent = 0
   let lastState = ''
   let lastFile = ''
+  // The previous currentTime tick and the file it belonged to: a jump
+  // much larger than a normal tick means the user seeked.
+  let prevTick = 0
+  let tickFile = ''
 
-  function send(state) {
+  function send(state, seek = false) {
     const track = player.currentTrack.value
     const report = playbackReport(track, {
       player: API.clientId,
       state,
       position: player.currentTime.value,
+      seek,
     })
     if (!report) return
     lastSent = Date.now()
@@ -113,9 +118,22 @@ function startPlaybackReports() {
       if (file !== lastFile || state !== lastState) send(state)
     }
   )
-  watch(player.currentTime, () => {
-    if (player.isPlaying.value && Date.now() - lastSent > HEARTBEAT_MS)
-      send('playing')
+  watch(player.currentTime, (time) => {
+    const file = player.currentTrack.value?.file || ''
+    if (file !== tickFile) {
+      // A track change resets the position; not a seek.
+      tickFile = file
+      prevTick = time
+      return
+    }
+    const jump = Math.abs(time - prevTick)
+    prevTick = time
+    if (!player.isPlaying.value) return
+    if (jump > 4) {
+      send('playing', true)
+      return
+    }
+    if (Date.now() - lastSent > HEARTBEAT_MS) send('playing')
   })
   window.addEventListener('pagehide', () => {
     if (lastFile) send('stopped')
