@@ -559,6 +559,25 @@ def verify_connection(
     }
 
 
+def is_track_end(track: Any, position: Any) -> bool:
+    """Whether a report is the track *finishing*, not the user pausing.
+
+    When a track ends the player sends a ``paused`` report whose position
+    sits at (or past) the duration. Mirroring that pause parks the
+    device at the end and fights the next track's play, so the caller
+    skips it. A real pause in the last two seconds is sacrificed.
+    """
+
+    if not isinstance(track, dict):
+        return False
+    try:
+        duration = float(track.get('duration') or 0)
+        played = float(position or 0)
+    except (TypeError, ValueError):
+        return False
+    return duration > 0 and played >= duration - 2
+
+
 class MirrorTracker:
     """In-memory: which (player, song) was already mirrored.
 

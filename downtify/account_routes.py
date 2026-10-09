@@ -425,8 +425,10 @@ async def report_playback(request: Request) -> dict[str, Any]:
                     spotify_mirror.pause_playback, mirror
                 )
         else:
-            if state == 'paused' and tracker.should_pause(
-                me.user_id, player_key, song
+            if (
+                state == 'paused'
+                and not spotify_mirror.is_track_end(track, position)
+                and tracker.should_pause(me.user_id, player_key, song)
             ):
                 await asyncio.to_thread(
                     spotify_mirror.pause_playback, mirror
@@ -442,9 +444,10 @@ async def report_playback(request: Request) -> dict[str, Any]:
             ):
                 # Resume at the paused spot: go-librespot parks a paused
                 # play at the track's end, so seek first, then play.
-                await asyncio.to_thread(
-                    spotify_mirror.seek_playback, mirror, position
-                )
+                if not spotify_mirror.is_track_end(track, position):
+                    await asyncio.to_thread(
+                        spotify_mirror.seek_playback, mirror, position
+                    )
                 await asyncio.to_thread(
                     spotify_mirror.resume_playback, mirror
                 )

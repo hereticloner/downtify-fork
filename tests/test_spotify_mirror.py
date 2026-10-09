@@ -608,3 +608,19 @@ def test_tracker_a_new_song_resets_the_paused_state():
     tracker.should_pause(1, 'p', 'one')
     tracker.should_mirror(1, 'p', 'two')
     assert tracker.should_pause(1, 'p', 'two') is True
+
+
+# -- end-of-track detection -------------------------------------------
+
+
+def test_track_end_when_the_position_reaches_the_duration():
+    assert spotify_mirror.is_track_end({'duration': 100}, 99.5) is True
+    assert spotify_mirror.is_track_end({'duration': 100}, 100) is True
+    assert spotify_mirror.is_track_end({'duration': 100}, 120) is True
+
+
+def test_not_track_end_midway_or_without_duration():
+    assert spotify_mirror.is_track_end({'duration': 100}, 50) is False
+    assert spotify_mirror.is_track_end({'duration': 0}, 50) is False
+    assert spotify_mirror.is_track_end({}, 50) is False
+    assert spotify_mirror.is_track_end(None, 50) is False
