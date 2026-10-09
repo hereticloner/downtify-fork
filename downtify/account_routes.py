@@ -431,11 +431,22 @@ async def report_playback(request: Request) -> dict[str, Any]:
                 await asyncio.to_thread(
                     spotify_mirror.pause_playback, mirror
                 )
+                # go-librespot parks a paused play at the track's end
+                # (the cluster then shows the last second); put it back
+                # where the user stopped.
+                await asyncio.to_thread(
+                    spotify_mirror.seek_playback, mirror, position
+                )
             if state == 'playing' and tracker.should_resume(
                 me.user_id, player_key, song
             ):
                 await asyncio.to_thread(
                     spotify_mirror.resume_playback, mirror
+                )
+                # Same reason on the way back: resume does not know the
+                # paused spot, so seek to the position being reported.
+                await asyncio.to_thread(
+                    spotify_mirror.seek_playback, mirror, position
                 )
             if seek_requested and tracker.knows(
                 me.user_id, player_key, song
