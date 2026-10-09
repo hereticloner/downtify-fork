@@ -86,7 +86,8 @@
       >
         <TrackList
           v-if="playlist.tracks.length"
-          :tracks="playlist.tracks"
+          v-model:sort="trackSort"
+          :tracks="sortedTracks"
           :context="playlistActions.contextFor(playlist)"
         />
         <UiEmpty
@@ -167,6 +168,8 @@ import { useAuth } from '/src/model/auth'
 import { usePlaylistActions } from '/src/model/playlistActions'
 import { useTrackActions } from '/src/model/trackActions'
 import { splitLength } from '/src/lib/format'
+import { sortItems } from '/src/lib/library'
+import { useLocalStorage } from '@vueuse/core'
 import { useI18n } from '/src/i18n'
 
 const { t } = useI18n()
@@ -182,6 +185,19 @@ const playlist = computed(() =>
   library.findPlaylist(String(route.query.name || ''))
 )
 const batch = computed(() => playlist.value?.batch || null)
+
+// Track list sorting: the playlist's own order by default; the column
+// headers of TrackList sort by title/album/added/duration and the
+// choice is remembered like the library's.
+const trackSort = useLocalStorage('downtify-playlist-track-sort', {
+  key: '',
+  dir: 'asc',
+})
+const sortedTracks = computed(() => {
+  const tracks = playlist.value?.tracks || []
+  if (!trackSort.value.key) return tracks
+  return sortItems(tracks, trackSort.value.key, trackSort.value.dir)
+})
 
 const facts = computed(() => {
   const p = playlist.value
