@@ -25,10 +25,9 @@ ignore_last_volume: true
 
 bitrate: 320
 
-# A mirrored play is one track, not a listening session: stop when it
-# ends instead of autoplaying Spotify's recommendations (they'd land in
-# the account's history as noise).
-disable_autoplay: true
+# Do NOT set disable_autoplay: true here: on go-librespot v0.10.3 it
+# makes a Web-API play (a bare track list, no context) pause itself one
+# second after it starts, so mirrored plays never run. Autoplay stays on.
 
 credentials:
   type: device_auth
