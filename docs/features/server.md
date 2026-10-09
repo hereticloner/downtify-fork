@@ -8,15 +8,20 @@ icon: lucide/hard-drive
 
 ## The Downtify Mirror device
 
-For [Spotify Mirror](spotify-mirror.md) the server can ship its own silent Spotify Connect client: a `spotifyd` container named **Downtify Mirror**, always online, playing at volume 0 — plays sent to it are only there to be counted by Spotify.
+For [Spotify Mirror](spotify-mirror.md) the server can ship its own silent Spotify Connect client: the `mirror` service (go-librespot), named **Downtify Mirror**, always online, playing at volume 0 through ALSA's `null` device — plays sent to it are only there to be counted by Spotify.
 
-Setting it up on a compose server (the compose file already has the service):
+Setting it up on a compose server:
 
-1. Add your Spotify credentials: copy `spotifyd/spotifyd.conf.example` to `spotifyd/spotifyd.conf` next to the compose file and fill in `username` and `password` (the same Premium account the mirror is connected with in Downtify). Keep it as it is on the server — the real file is `.gitignore`d, never committed.
-2. `docker compose build spotifyd`
-3. `docker compose up -d spotifyd`
+1. `docker compose up -d mirror` — the first start logs a short pairing code:
+   ```
+   docker compose logs mirror | grep -A2 "code"
+   ```
+2. On any phone or computer, open [spotify.com/pair](https://spotify.com/pair) and enter that code with the account the mirror should run under (the same Premium account the Spotify Mirror is connected with).
+3. `docker compose logs -f mirror` shows the login complete; the credentials are stored in `mirror/state.json`, so restarts don't need pairing again.
 
-The device then shows up in **Settings → Spotify Mirror → Load devices** under the name **Downtify Mirror**; plays started in Downtify begin there — silently (initial volume 0, ALSA's `null` device swallows the stream) — and land in your Spotify history. The container keeps its `spotifyd` tokens in a `spotifyd-cache` volume so restarts don't need re-auth.
+The device then shows up in **Settings → Spotify Mirror → Load devices**; plays started in Downtify begin there — silently — and land in your Spotify history.
+
+> Password logins for Connect clients were removed by Spotify, so the device pairs once with a code (or interactive OAuth) instead; the credentials survive in `state.json`.
 
 ## Changing the port
 

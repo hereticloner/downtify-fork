@@ -1,0 +1,29 @@
+# go-librespot — the "Downtify Mirror": a silent, always-online Spotify
+# Connect device for Spotify Mirror (docs/features/spotify-mirror.md).
+#
+# Login uses Spotify's device-authorization flow: on first start the
+# daemon logs a short code, you enter it at https://spotify.com/pair
+# from any phone or computer, and the credentials are stored next to
+# this file in state.json. No browser redirect, no password — Spotify
+# removed password logins for Connect clients.
+#
+# Spotify Premium is required (Connect playback).
+
+device_name: Downtify Mirror
+device_type: computer
+
+# Stay discoverable whenever the account is connected.
+zeroconf_enabled: true
+
+# No sound card on the server: ALSA's built-in null device swallows the
+# stream and the volume starts (and stays) at 0 anyway - plays sent here
+# exist to be counted by Spotify, not to be heard.
+audio_backend: alsa
+audio_device: 'null'
+initial_volume: 0
+ignore_last_volume: true
+
+bitrate: 320
+
+credentials:
+  type: device_auth

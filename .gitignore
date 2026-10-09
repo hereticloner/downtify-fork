@@ -10,6 +10,7 @@ wheels/
 
 # The Downtify Mirror's real Spotify credentials (see spotifyd/)
 spotifyd/spotifyd.conf
+mirror/state.json
 
 .python-version
 .vscode

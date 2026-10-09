@@ -24,16 +24,12 @@ services:
 
   # The Downtify Mirror: a silent, always-online Spotify Connect
   # device for the Spotify Mirror (docs/features/spotify-mirror.md).
-  # Copy spotifyd/spotifyd.conf.example to spotifyd/spotifyd.conf,
-  # add your Spotify credentials there (the file is kept out of git),
-  # then: docker compose up -d spotifyd
-  spotifyd:
-    image: 'downtify-spotifyd:latest'
+  # go-librespot logs a pairing code on first start - enter it at
+  # https://spotify.com/pair; the credentials land in mirror/state.json.
+  mirror:
+    image: 'ghcr.io/devgianlu/go-librespot:v0.10.3'
     restart: unless-stopped
-    build: ./spotifyd
     volumes:
-      - ./spotifyd/spotifyd.conf:/etc/spotifyd.conf:ro
-      - spotifyd-cache:/cache
+      - ./mirror:/config
 
-volumes:
-  spotifyd-cache: {}
+volumes: {}
