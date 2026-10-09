@@ -25,5 +25,10 @@ ignore_last_volume: true
 
 bitrate: 320
 
+# A mirrored play is one track, not a listening session: stop when it
+# ends instead of autoplaying Spotify's recommendations (they'd land in
+# the account's history as noise).
+disable_autoplay: true
+
 credentials:
   type: device_auth
