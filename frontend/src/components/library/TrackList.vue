@@ -94,11 +94,30 @@
         @click="onRowClick($event, row)"
         @dblclick="playRow(row)"
         @contextmenu="openMenu($event, row)"
+        @pointerdown="longPress.down($event, row)"
+        @pointermove="longPress.move($event)"
+        @pointerup="longPress.up()"
+        @pointercancel="longPress.up()"
+        @pointerleave="longPress.up()"
       >
-        <span v-if="selectable" class="max-md:hidden" @click.stop>
+        <span
+          v-if="selectable"
+          class="flex items-center justify-center max-md:min-h-11 max-md:min-w-11"
+          @click.stop.self="selectionMode && toggleRow($event, row)"
+        >
+          <button
+            v-if="!selectionMode"
+            type="button"
+            class="flex size-11 items-center justify-center rounded-control text-faint transition-colors hover:text-fg md:hidden"
+            :aria-label="t('library.selectTrack', { title: row.track.title })"
+            @click.stop="beginSelection(row)"
+          >
+            <AppIcon name="check" :size="16" />
+          </button>
           <Checkbox
             :checked="isSelected(row.track)"
             :label="t('library.selectTrack', { title: row.track.title })"
+            :class="selectionMode ? '' : 'max-md:hidden'"
             @toggle="toggleRow($event, row)"
           />
         </span>
@@ -240,6 +259,8 @@ import { usePlayer } from '/src/model/player'
 import { useTrackActions } from '/src/model/trackActions'
 import { usePlaylistActions } from '/src/model/playlistActions'
 import { useRovingFocus } from '/src/model/rovingFocus'
+import { createLongPress } from '/src/model/longPress'
+import { selectRowMenuItem } from '/src/lib/selectionMenu'
 import { formatDuration, timeAgo } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
 
@@ -315,11 +336,20 @@ watch(
 const selectable = computed(() => props.selected !== null)
 const selectionMode = computed(() => (props.selected?.size || 0) > 0)
 
+// Touch has no hover, so a long-press on a row starts selection the same
+// way the checkbox or the row menu does. The click that ends the press is
+// swallowed so the row doesn't also start playing.
+const longPress = createLongPress({ onLongPress: (row) => beginSelection(row) })
+
 // Columns shown per breakpoint; each variant is a literal class string
 // so Tailwind picks it up.
 const gridClass = computed(() => {
   return [
-    'grid-cols-[minmax(0,1fr)_72px]',
+    // A selectable list keeps a 44px leading column on phones for the
+    // select button / checkbox, matching the md checkbox column.
+    selectable.value
+      ? 'grid-cols-[44px_minmax(0,1fr)_72px]'
+      : 'grid-cols-[minmax(0,1fr)_72px]',
     selectable.value
       ? props.showAlbum
         ? props.showAdded
@@ -416,11 +446,28 @@ function toggleRow(event, row) {
   setSelected(next)
 }
 
+// The select button and the long-press both call this: entering selection
+// mode for a fresh gesture, or toggling the row once already selecting.
+function beginSelection(row) {
+  if (!selectable.value) return
+  const next = new Set(props.selected)
+  if (selectionMode.value) {
+    if (next.has(row.track.file)) next.delete(row.track.file)
+    else next.add(row.track.file)
+  } else {
+    next.add(row.track.file)
+  }
+  anchor = row.index
+  setSelected(next)
+}
+
 function playRow(row) {
   actions.play(props.tracks, row.index, props.context)
 }
 
 function onRowClick(event, row) {
+  // A long-press already handled this gesture; don't also play.
+  if (longPress.consumeFired()) return
   // In selection mode a tap selects; otherwise a tap plays on touch
   // screens, and desktop plays on double-click.
   if (
@@ -434,6 +481,12 @@ function onRowClick(event, row) {
 }
 
 function openMenu(event, row) {
+  // A long-press on touch also raises a context menu; that gesture is
+  // selecting, not opening the row menu.
+  if (longPress.wasFired()) {
+    event.preventDefault()
+    return
+  }
   menus[row.track.file]?.openAt(event)
 }
 
@@ -464,13 +517,16 @@ function menuItems(row) {
     }
   }
   if (selectable.value) {
-    items.splice(3, 0, {
-      label: isSelected(row.track)
-        ? t('library.deselect')
-        : t('library.select'),
-      icon: 'check',
-      action: () => toggleRow(null, row),
-    })
+    items.splice(
+      3,
+      0,
+      selectRowMenuItem({
+        selected: isSelected(row.track),
+        selectLabel: t('library.select'),
+        deselectLabel: t('library.deselect'),
+        onToggle: () => toggleRow(null, row),
+      })
+    )
   }
   return items
 }
@@ -518,7 +574,12 @@ const Checkbox = defineComponent({
               ? 'border-accent bg-accent text-on-accent'
               : 'border-line-3 hover:border-fg-3',
           ],
-          onClick: (event) => emitBox('toggle', event),
+          // Toggling the box must not also reach the row's click handler
+          // (which would toggle it a second time).
+          onClick: (event) => {
+            event.stopPropagation()
+            emitBox('toggle', event)
+          },
         },
         boxProps.checked
           ? [h(AppIcon, { name: 'check', size: 13, strokeWidth: 3 })]

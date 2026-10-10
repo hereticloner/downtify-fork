@@ -50,6 +50,6 @@ Deleting a track from the Library page removes its per-playlist, artist or album
 
 ## Selecting and deleting several tracks at once
 
-The Library's track list has a checkbox on every track, plus a **Select all** checkbox that selects every track matching the current filter (see [Library page](library-catalog.md#library-page)). **Delete from library** in the selection bar removes all of them in one request (`DELETE /delete/batch`, see [API Reference](../api-reference.md)), with the same per-track cleanup (`.lrc`, orphaned `cover.jpg`, empty folders) as deleting one track at a time.
+The Library's track list has a checkbox on every track, plus a **Select all** checkbox that selects every track matching the current filter (see [Library page](library-catalog.md#library-page)). On a phone the checkboxes stay hidden until you start selecting — tap the **select** icon on a row, or press and hold it, to enter selection mode — and then they appear on every row. **Delete from library** in the selection bar removes all of them in one request (`DELETE /delete/batch`, see [API Reference](../api-reference.md)), with the same per-track cleanup (`.lrc`, orphaned `cover.jpg`, empty folders) as deleting one track at a time.
 
 To delete a whole album or playlist, open it and pick **Delete** from its **⋯** menu. For everything by one artist, type the artist's name in the track list's filter, then **Select all** and delete.

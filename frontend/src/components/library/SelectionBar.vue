@@ -1,8 +1,11 @@
 <template>
   <Transition name="now-playing">
+    <!-- Sticks just under the top bar: its height (4rem on phones, 4.5rem
+         from md up) plus a small gap and the notch inset, so it never
+         slides under the header on a phone. -->
     <div
       v-if="count"
-      class="sticky top-[76px] z-20 flex flex-wrap items-center gap-2 rounded-[14px] border border-line-3 bg-surface-2/95 p-2 pl-4 shadow-float backdrop-blur-xl md:top-[84px]"
+      class="sticky top-[calc(4rem+env(safe-area-inset-top)+0.5rem)] z-20 flex flex-wrap items-center gap-2 rounded-[14px] border border-line-3 bg-surface-2/95 p-2 pl-4 shadow-float backdrop-blur-xl md:top-[calc(4.5rem+env(safe-area-inset-top)+0.5rem)]"
     >
       <span class="tabular text-sm font-semibold">{{
         t('library.selectedCount', { count })
