@@ -134,7 +134,21 @@
         </template>
 
         <template v-else-if="tab === 'bio'">
-          <section class="flex flex-col gap-3">
+          <div v-if="!profileReady" class="flex flex-col gap-3" aria-busy="true">
+            <UiSkeleton class="h-4 w-1/3" />
+            <UiSkeleton class="h-4 w-full" />
+            <UiSkeleton class="h-4 w-5/6" />
+          </div>
+          <UiEmpty
+            v-else-if="profileError"
+            icon="alert"
+            :title="t('link.failed')"
+          >
+            <UiButton icon="refresh" @click="seedProfile">{{
+              t('common.retry')
+            }}</UiButton>
+          </UiEmpty>
+          <section v-else class="flex flex-col gap-3">
             <div v-if="profile.genre" class="flex items-center gap-2">
               <span class="text-[13px] text-muted">{{
                 t('artistBio.genre')
@@ -492,6 +506,7 @@ const profile = ref(blankProfile())
 // False until the first ensure of an artist has answered: the Spotify id,
 // and with it the Top songs tab, only exists after that.
 const profileReady = ref(false)
+const profileError = ref(false)
 const spotifyId = computed(() =>
   String(profile.value.platforms_id?.spotify || '')
 )
@@ -570,6 +585,7 @@ const relatedArtistItems = computed(() =>
 )
 
 async function refreshProfile() {
+  profileError.value = false
   if (!artist.value?.name) {
     profile.value = blankProfile()
     return
@@ -585,6 +601,7 @@ async function refreshProfile() {
     profile.value = res.data || blankProfile()
   } catch {
     profile.value = blankProfile()
+    profileError.value = true
   }
 }
 
