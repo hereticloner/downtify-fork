@@ -407,27 +407,16 @@ async def report_playback(request: Request) -> dict[str, Any]:
         )
         player_key = f'{me.device_id}:{player}'
         tracker = api.state.mirror_tracker
-        if started:
-            if tracker.should_mirror(me.user_id, player_key, song):
-                renewed = await asyncio.to_thread(
-                    spotify_mirror.mirror_track,
-                    mirror,
-                    track,
-                    library=_LiveLibrary(),
-                )
-                if renewed:
-                    api._persist_mirror_tokens(renewed)
-        elif state == 'stopped':
+        if state == 'stopped':
             # The player went away: pause the mirror so it doesn't keep
             # playing (autoplay would otherwise carry it on).
             if tracker.should_pause_any(me.user_id, player_key):
                 await asyncio.to_thread(
                     spotify_mirror.pause_playback, mirror
                 )
-        else:
+        elif state == 'paused':
             if (
-                state == 'paused'
-                and not spotify_mirror.is_track_end(track, position)
+                not spotify_mirror.is_track_end(track, position)
                 and tracker.should_pause(me.user_id, player_key, song)
             ):
                 await asyncio.to_thread(
@@ -439,9 +428,21 @@ async def report_playback(request: Request) -> dict[str, Any]:
                 await asyncio.to_thread(
                     spotify_mirror.seek_playback, mirror, position
                 )
-            if state == 'playing' and tracker.should_resume(
-                me.user_id, player_key, song
-            ):
+        else:
+            # should_mirror covers both a started track and the first
+            # play after a paused report: the player announces a new
+            # track as paused before its audio starts, so `started` is
+            # already false by the time the playing report arrives.
+            if tracker.should_mirror(me.user_id, player_key, song):
+                renewed = await asyncio.to_thread(
+                    spotify_mirror.mirror_track,
+                    mirror,
+                    track,
+                    library=_LiveLibrary(),
+                )
+                if renewed:
+                    api._persist_mirror_tokens(renewed)
+            elif tracker.should_resume(me.user_id, player_key, song):
                 # Resume at the paused spot: go-librespot parks a paused
                 # play at the track's end, so seek first, then play.
                 if not spotify_mirror.is_track_end(track, position):
@@ -451,7 +452,7 @@ async def report_playback(request: Request) -> dict[str, Any]:
                 await asyncio.to_thread(
                     spotify_mirror.resume_playback, mirror
                 )
-            if seek_requested and tracker.knows(
+            elif seek_requested and tracker.knows(
                 me.user_id, player_key, song
             ):
                 # A seek pauses go-librespot's playback; seek to the
@@ -459,8 +460,7 @@ async def report_playback(request: Request) -> dict[str, Any]:
                 await asyncio.to_thread(
                     spotify_mirror.seek_playback, mirror, position
                 )
-                if state == 'playing':
-                    await asyncio.to_thread(
-                        spotify_mirror.resume_playback, mirror
-                    )
+                await asyncio.to_thread(
+                    spotify_mirror.resume_playback, mirror
+                )
     return {'ok': True}
