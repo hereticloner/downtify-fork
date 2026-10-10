@@ -2,7 +2,7 @@
   <div
     class="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-6 sm:px-6 md:pt-8 lg:px-10"
   >
-    <h1 class="text-2xl font-semibold">{{ t('collections.title') }}</h1>
+    <PageHeader :title="t('collections.title')" />
 
     <div class="flex items-center gap-2">
       <input
@@ -17,9 +17,20 @@
       </UiButton>
     </div>
 
-    <div v-if="error" class="text-sm text-red-500">{{ error }}</div>
+    <div v-if="loading" class="flex flex-col gap-3" aria-busy="true">
+      <UiSkeleton v-for="n in 3" :key="n" class="h-28 w-full !rounded-panel" />
+    </div>
 
-    <div class="flex flex-col gap-3">
+    <UiEmpty
+      v-else-if="error"
+      icon="alert"
+      :title="t('library.loadFailed')"
+      :body="t('library.loadFailedHint')"
+    >
+      <UiButton icon="refresh" @click="load">{{ t('common.retry') }}</UiButton>
+    </UiEmpty>
+
+    <div v-else class="flex flex-col gap-3">
       <UiPanel v-for="col in collections" :key="col.name" class="p-4">
         <div class="flex flex-wrap items-center gap-3">
           <h2 class="text-lg font-medium">{{ col.name }}</h2>
@@ -59,7 +70,7 @@
           </span>
         </div>
       </UiPanel>
-      <p v-if="!collections.length && !loading" class="text-sm text-faint">
+      <p v-if="!collections.length" class="text-sm text-faint">
         {{ t('collections.none') }}
       </p>
     </div>
@@ -73,16 +84,20 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '/src/i18n'
+import PageHeader from '/src/components/library/PageHeader.vue'
 import { useLibrary } from '/src/model/library'
+import { useUi } from '/src/model/ui'
 import UiButton from '/src/components/ui/UiButton.vue'
-import UiChips from '/src/components/ui/UiChips.vue'
+import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiPanel from '/src/components/ui/UiPanel.vue'
+import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 
 const { t } = useI18n()
 const library = useLibrary()
+const ui = useUi()
 const collections = ref([])
 const newName = ref('')
-const error = ref('')
+const error = ref(false)
 const loading = ref(true)
 
 // Names offered by the "add a playlist" box's native autocomplete - the
@@ -94,15 +109,24 @@ const playlistNames = computed(() =>
     .sort((a, b) => a.localeCompare(b))
 )
 
+/** The backend's message for a failed request, or a generic one. */
+async function failure(resp) {
+  try {
+    return (await resp.json()).detail || t('toast.actionFailed')
+  } catch {
+    return t('toast.actionFailed')
+  }
+}
+
 async function load() {
   loading.value = true
-  error.value = ''
+  error.value = false
   try {
     const resp = await fetch('/api/collections')
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
     collections.value = (await resp.json()).map((c) => ({ ...c, _add: '' }))
-  } catch (exc) {
-    error.value = String(exc)
+  } catch {
+    error.value = true
   } finally {
     loading.value = false
   }
@@ -110,14 +134,13 @@ async function load() {
 
 async function create() {
   if (!newName.value.trim()) return
-  error.value = ''
   const resp = await fetch('/api/collections', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: newName.value }),
   })
   if (!resp.ok) {
-    error.value = (await resp.json()).detail || `HTTP ${resp.status}`
+    ui.toast(await failure(resp), { kind: 'error' })
     return
   }
   newName.value = ''
@@ -126,14 +149,16 @@ async function create() {
 
 async function add(col) {
   if (!col._add.trim()) return
-  error.value = ''
-  const resp = await fetch(`/api/collections/${encodeURIComponent(col.name)}/items`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ add: [col._add] }),
-  })
+  const resp = await fetch(
+    `/api/collections/${encodeURIComponent(col.name)}/items`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ add: [col._add] }),
+    }
+  )
   if (!resp.ok) {
-    error.value = (await resp.json()).detail || `HTTP ${resp.status}`
+    ui.toast(await failure(resp), { kind: 'error' })
     return
   }
   col._add = ''
@@ -141,14 +166,18 @@ async function add(col) {
 }
 
 async function remove(col) {
-  if (!confirm(t('collections.confirmDelete', { name: col.name }))) return
-  error.value = ''
+  const confirmed = await ui.confirm({
+    title: t('collections.confirmDelete', { name: col.name }),
+    confirmLabel: t('common.delete'),
+    danger: true,
+  })
+  if (!confirmed) return
   const resp = await fetch(
     `/api/collections/${encodeURIComponent(col.name)}`,
     { method: 'DELETE' }
   )
   if (!resp.ok) {
-    error.value = (await resp.json()).detail || `HTTP ${resp.status}`
+    ui.toast(await failure(resp), { kind: 'error' })
     return
   }
   await load()
