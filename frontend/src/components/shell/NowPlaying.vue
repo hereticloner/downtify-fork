@@ -257,7 +257,12 @@
                   "
                   @click="player.toggle()"
                 >
+                  <span
+                    v-if="player.isBuffering.value && player.isPlaying.value"
+                    class="size-6 animate-spin rounded-full border-2 border-current border-r-transparent"
+                  />
                   <AppIcon
+                    v-else
                     :name="player.isPlaying.value ? 'pause' : 'play'"
                     :size="26"
                   />
@@ -289,6 +294,7 @@
                       : 'text-white/80'
                   "
                   :aria-label="repeatLabel"
+                  :aria-pressed="player.repeatMode.value !== 'off'"
                   @click="player.cycleRepeat()"
                 >
                   <AppIcon
