@@ -2,6 +2,56 @@ export default {
   language: {
     name: 'Français',
   },
+  errors: {
+    network:
+      'Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.',
+    generic: "Une erreur s'est produite. Réessayez.",
+    unknown: "Une erreur s'est produite.",
+    request: {
+      invalid: "Cette requête n'était pas valide.",
+      invalid_url: 'Ce lien ne semble pas correct.',
+      unsupported_url: "Ce lien n'est pas pris en charge.",
+      missing_field: 'Il manquait un élément obligatoire.',
+      conflict:
+        "Cela entre en conflit avec l'état actuel. Actualisez et réessayez.",
+      too_large: 'Ce fichier est trop volumineux.',
+    },
+    resource: {
+      not_found: 'Introuvable.',
+    },
+    auth: {
+      invalid_credentials:
+        "Nom d'utilisateur ou mot de passe incorrect.",
+      rate_limited:
+        'Trop de tentatives. Attendez quelques minutes et réessayez.',
+      signin_required: 'Veuillez vous reconnecter.',
+      forbidden: "Vous n'avez pas la permission de faire cela.",
+      disabled: 'La connexion est désactivée sur ce serveur.',
+      not_ready:
+        "La connexion n'est pas encore prête. Réessayez bientôt.",
+      pairing_code: "Ce code d'appairage est erroné ou a expiré.",
+      pairing_not_found: "Cet appairage n'est plus disponible.",
+    },
+    server: {
+      starting: 'Le serveur démarre encore. Réessayez dans un instant.',
+      error: 'Le serveur a rencontré un problème. Réessayez.',
+      port_locked:
+        "Le port est fixé par l'environnement ou la ligne de commande.",
+      port_in_use: 'Ce port est déjà utilisé. Choisissez-en un autre.',
+    },
+    download: {
+      not_ready:
+        "Le téléchargeur n'est pas encore prêt. Réessayez dans un instant.",
+      failed: 'Le téléchargement a échoué. Réessayez.',
+      no_songs: 'Aucune piste téléchargeable trouvée.',
+    },
+    spotify: {
+      not_connected: "Connectez Spotify dans les paramètres d'abord.",
+    },
+    podcast: {
+      feed_error: "Ce lien n'est pas un flux de podcast lisible.",
+    },
+  },
   common: {
     cancel: 'Annuler',
     confirm: 'Confirmer',

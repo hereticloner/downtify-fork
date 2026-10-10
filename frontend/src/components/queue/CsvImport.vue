@@ -26,6 +26,7 @@ import UiButton from '../ui/UiButton.vue'
 import { useDownloadManager } from '/src/model/download'
 import { useUi } from '/src/model/ui'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t } = useI18n()
 const dm = useDownloadManager()
@@ -48,7 +49,7 @@ async function onPick(event) {
     })
     router.push({ name: 'Queue', params: { tab: 'queued' } })
   } catch (err) {
-    error.value = err?.response?.data?.detail || t('queue.importFailed')
+    error.value = friendlyError(t, err, 'queue.importFailed')
   } finally {
     busy.value = false
   }

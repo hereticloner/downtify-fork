@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import API from '/src/model/api'
 import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
+import { friendlyError } from '/src/lib/errors'
 import { isFirstLike, likedSet, withLike } from '/src/lib/likes'
 import { useI18n } from '/src/i18n'
 
@@ -80,7 +81,7 @@ export function useLikes() {
     } catch (err) {
       // Undo only this tap: another one may have landed since.
       liked.value = withLike(liked.value, file, !on)
-      ui.toast(err?.response?.data?.detail || t('likes.failed'), {
+      ui.toast(friendlyError(t, err, 'likes.failed'), {
         kind: 'error',
       })
       return false
@@ -118,7 +119,7 @@ export function useLikes() {
       library.refreshSoon(300)
       return true
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('likes.failed'), {
+      ui.toast(friendlyError(t, err, 'likes.failed'), {
         kind: 'error',
       })
       return false

@@ -355,6 +355,7 @@ from .downloader import (
     NoAudioMatchError,
     save_playlist_cover,
 )
+from .errors import ApiError
 from .external_library import (
     effective_external_library,
     extra_dirs_from_settings,
@@ -2294,7 +2295,7 @@ def _resolve_url(url: str):
             status_code=400, detail=f'Unsupported entity type: {kind}'
         )
 
-    raise HTTPException(status_code=400, detail='Invalid URL')
+    raise ApiError(400, 'request.invalid_url', 'Invalid URL')
 
 
 def _artists_label(song: dict[str, Any]) -> str:
@@ -2436,7 +2437,7 @@ def url_resolve_endpoint(url: str = Query(...)) -> dict[str, Any]:
         else deezer.parse_deezer_url(url)
     )
     if spotify_parsed is None and youtube_parsed is None and not deezer_parsed:
-        raise HTTPException(status_code=400, detail='Invalid URL')
+        raise ApiError(400, 'request.invalid_url', 'Invalid URL')
     try:
         if spotify_parsed is not None:
             return _spotify_details(*spotify_parsed)
@@ -2525,9 +2526,10 @@ def _resolve_artist_top_songs(url: str) -> dict[str, Any]:
             'songs': songs,
         }
 
-    raise HTTPException(
-        status_code=400,
-        detail='A Spotify, YouTube Music or Deezer artist URL is required',
+    raise ApiError(
+        400,
+        'request.invalid_url',
+        'A Spotify, YouTube Music or Deezer artist URL is required',
     )
 
 
@@ -2615,29 +2617,32 @@ def _song_for_download(url: str) -> dict[str, Any]:
         kind, sid = parsed
         if kind == 'track':
             return spotify.track_from_id(sid, with_album=True)
-        raise HTTPException(
-            status_code=400,
-            detail='Only Spotify track URLs are supported here',
+        raise ApiError(
+            400,
+            'request.unsupported_url',
+            'Only Spotify track URLs are supported here',
         )
     youtube_parsed = providers.parse_youtube_url(url)
     if youtube_parsed is not None:
         kind, yid = youtube_parsed
         if kind == 'track':
             return providers.song_from_video_id(yid)
-        raise HTTPException(
-            status_code=400,
-            detail='Only single YouTube video URLs are supported here',
+        raise ApiError(
+            400,
+            'request.unsupported_url',
+            'Only single YouTube video URLs are supported here',
         )
     deezer_parsed = deezer.parse_deezer_url(url)
     if deezer_parsed is not None:
         kind, did = deezer_parsed
         if kind == 'track':
             return deezer.track_from_id(did)
-        raise HTTPException(
-            status_code=400,
-            detail='Only Deezer track URLs are supported here',
+        raise ApiError(
+            400,
+            'request.unsupported_url',
+            'Only Deezer track URLs are supported here',
         )
-    raise HTTPException(status_code=400, detail='Unsupported URL')
+    raise ApiError(400, 'request.unsupported_url', 'Unsupported URL')
 
 
 def _register_job(song: dict[str, Any], status: str = 'queued') -> str:
@@ -2882,7 +2887,7 @@ async def download_endpoint(
     client_hints: Optional[dict[str, Any]] = Body(None),
 ):
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     # Spotify/YouTube Music network calls: off the event loop, or every
     # other request and WebSocket stalls until they return.
@@ -3857,7 +3862,7 @@ def _missing_tracks_for_playlist(
     spotify_playlist_id: str,
 ) -> tuple[str, str, list[dict[str, Any]]]:
     if state.downloader is None or state.track_index is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     sid = str(spotify_playlist_id or '').strip()
     if not sid:
@@ -3907,7 +3912,7 @@ async def _submit_playlist_batch(
         job_ids.append(song_id)
 
     if not valid_songs:
-        raise HTTPException(status_code=400, detail='No valid songs in batch')
+        raise ApiError(400, 'download.no_songs', 'No valid songs in batch')
 
     # One frame for the whole batch. Per-row ``queued`` events made a
     # large playlist or CSV rebuild the queue once per track.
@@ -3940,7 +3945,7 @@ async def _submit_playlist_batch(
 @router.post('/api/download/batch')
 async def download_batch_endpoint(request: Request) -> dict[str, Any]:
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     try:
         payload = await request.json()
@@ -4024,7 +4029,7 @@ async def download_csv_endpoint(request: Request) -> dict[str, Any]:
     album when the CSV has it.
     """
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     try:
         payload = await request.json()
@@ -4089,9 +4094,10 @@ async def download_csv_endpoint(request: Request) -> dict[str, Any]:
 def _songs_for_album_download(url: str) -> list[dict[str, Any]]:
     youtube_parsed = providers.parse_youtube_url(url)
     if youtube_parsed is None or youtube_parsed[0] != 'album':
-        raise HTTPException(
-            status_code=400,
-            detail='Only YouTube Music album/browse URLs are supported here',
+        raise ApiError(
+            400,
+            'request.unsupported_url',
+            'Only YouTube Music album/browse URLs are supported here',
         )
     _, browse_id = youtube_parsed
     songs = providers.album_tracks_from_browse_id(browse_id)
@@ -4121,7 +4127,7 @@ async def download_album_endpoint(
     that downloaded successfully (failed tracks are omitted, not raised).
     """
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     songs = await asyncio.to_thread(_songs_for_album_download, url)
     first_song = songs[0] if songs else {}
@@ -4166,7 +4172,7 @@ async def reconcile_library_endpoint() -> dict[str, Any]:
     """Detect moved files and refresh playlist M3U / Navidrome."""
 
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
     download_dir = Path(state.downloader.download_dir)
 
     def _run() -> dict[str, Any]:
@@ -4287,9 +4293,10 @@ async def sync_external_library_endpoint(
 
     job = _require_external_sync()
     if not job.try_begin():
-        raise HTTPException(
-            status_code=409,
-            detail='A folder sync is already running',
+        raise ApiError(
+            409,
+            'request.conflict',
+            'A folder sync is already running',
         )
     download_dir = (
         Path(state.downloader.download_dir)
@@ -4432,11 +4439,11 @@ async def replace_track_audio(request: Request) -> dict[str, Any]:
     if not _VIDEO_ID_RE.fullmatch(video_id):
         raise HTTPException(status_code=400, detail='Unknown video')
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
     full, entry = await asyncio.to_thread(_replaceable_track, file)
     if file in _replacing:
-        raise HTTPException(
-            status_code=409, detail='This track is already being replaced'
+        raise ApiError(
+            409, 'request.conflict', 'This track is already being replaced'
         )
     summary = _track_summary(file, entry)
     song = {
@@ -4831,7 +4838,7 @@ async def delete_library_playlist_endpoint(
     """Delete all tracks in a playlist, its M3U, and catalog entry."""
 
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     if is_liked_playlist(playlist_name):
         # Deleting a playlist deletes its tracks from disk. Here that must
@@ -4936,7 +4943,7 @@ async def delete_playlist_batch_endpoint(
             status_code=400, detail='spotify_playlist_id required'
         )
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     meta = _known_spotify_playlist_sources().get(sid)
     if meta is None:
@@ -4988,7 +4995,7 @@ async def download_missing_playlist_tracks_endpoint(
     """Queue only tracks from a Spotify playlist that are not in the library."""
 
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     spotify_playlist_id = str(body.get('spotify_playlist_id') or '').strip()
     playlist_url = str(body.get('playlist_url') or '').strip()
@@ -5143,7 +5150,7 @@ async def write_playlist_m3u_endpoint(request: Request) -> dict[str, Any]:
     """
 
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
     try:
         payload = await request.json()
     except Exception as exc:
@@ -5156,9 +5163,10 @@ async def write_playlist_m3u_endpoint(request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail='Missing playlist_url')
     source_and_id = parse_playlist_url(playlist_url)
     if source_and_id is None:
-        raise HTTPException(
-            status_code=400,
-            detail='Not a Spotify or YouTube Music playlist URL',
+        raise ApiError(
+            400,
+            'request.unsupported_url',
+            'Not a Spotify or YouTube Music playlist URL',
         )
 
     tracks = payload.get('tracks') or []
@@ -5603,9 +5611,10 @@ async def spotify_mirror_authorize_endpoint(request: Request) -> RedirectRespons
 
     client_id = str(_spotify_mirror_block().get('client_id') or '').strip()
     if not client_id:
-        raise HTTPException(
-            status_code=400,
-            detail='Save a Spotify client id before connecting',
+        raise ApiError(
+            400,
+            'spotify.not_connected',
+            'Save a Spotify client id before connecting',
         )
     state_value = secrets.token_urlsafe(16)
     verifier, challenge = spotify_mirror.pkce_pair()
@@ -5669,15 +5678,17 @@ async def spotify_mirror_devices_endpoint() -> dict[str, Any]:
 
     config = spotify_mirror.mirror_credentials(_spotify_mirror_block())
     if config is None:
-        raise HTTPException(
-            status_code=400,
-            detail='Save a Spotify client id before listing devices',
+        raise ApiError(
+            400,
+            'spotify.not_connected',
+            'Save a Spotify client id before listing devices',
         )
     current = await asyncio.to_thread(spotify_mirror.ensure_token, config)
     if current is None:
-        raise HTTPException(
-            status_code=503,
-            detail='Spotify tokens need renewing - connect again',
+        raise ApiError(
+            503,
+            'spotify.not_connected',
+            'Spotify tokens need renewing - connect again',
         )
     if current.get('access_token') != config.get('access_token'):
         _persist_mirror_tokens({
@@ -5721,9 +5732,10 @@ async def spotify_mirror_now_endpoint(request: Request) -> dict[str, Any]:
     )
     config = spotify_mirror.active_mirror_config(state.settings)
     if config is None:
-        raise HTTPException(
-            status_code=400,
-            detail='The Spotify mirror is not configured (or connected)',
+        raise ApiError(
+            400,
+            'spotify.not_connected',
+            'The Spotify mirror is not configured (or connected)',
         )
     result = await asyncio.to_thread(
         spotify_mirror.mirror_track,
@@ -5732,9 +5744,10 @@ async def spotify_mirror_now_endpoint(request: Request) -> dict[str, Any]:
         library=library_stores(),
     )
     if result is None:
-        raise HTTPException(
-            status_code=404,
-            detail='No matching Spotify track for that file',
+        raise ApiError(
+            404,
+            'resource.not_found',
+            'No matching Spotify track for that file',
         )
     if result:
         _persist_mirror_tokens(result)
@@ -6236,14 +6249,16 @@ async def resolve_podcast(request: Request) -> dict[str, Any]:
         try:
             feed = await asyncio.to_thread(fetch_feed, url)
         except Exception as exc:
-            raise HTTPException(
-                status_code=400,
-                detail='Could not read a podcast feed from that link',
+            raise ApiError(
+                400,
+                'podcast.feed_error',
+                'Could not read a podcast feed from that link',
             ) from exc
         if not feed.episodes and not feed.name:
-            raise HTTPException(
-                status_code=400,
-                detail='That link is not a podcast RSS feed',
+            raise ApiError(
+                400,
+                'podcast.feed_error',
+                'That link is not a podcast RSS feed',
             )
 
     existing = await asyncio.to_thread(_podcast_watch, feed.feed_url)
@@ -6284,8 +6299,8 @@ async def subscribe_podcast(request: Request) -> dict[str, Any]:
             status_code=400, detail='feed_url and name are required'
         )
     if await asyncio.to_thread(db.get_by_spotify_id, feed_url) is not None:
-        raise HTTPException(
-            status_code=409, detail='Already subscribed to this podcast'
+        raise ApiError(
+            409, 'request.conflict', 'Already subscribed to this podcast'
         )
     retention = max(0, int(payload.get('retention') or 0))
     interval_minutes = int(payload.get('interval_minutes') or 720)
@@ -6418,7 +6433,7 @@ async def download_podcast_episode(episode_id: int) -> dict[str, Any]:
     if show is None:
         raise HTTPException(status_code=404, detail='Show not found')
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     info = EpisodeInfo(
         guid=episode['guid'],
@@ -6852,7 +6867,7 @@ async def manual_check_playlist(playlist_id: int) -> dict[str, Any]:
             status_code=404, detail='Monitored playlist not found'
         )
     if state.downloader is None:
-        raise HTTPException(status_code=500, detail='Downloader not ready')
+        raise ApiError(500, 'download.not_ready', 'Downloader not ready')
 
     loop = state.loop or asyncio.get_running_loop()
 

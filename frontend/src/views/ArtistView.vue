@@ -245,6 +245,7 @@ import { versionedArtUrl } from '/src/lib/artistArt'
 import { artistFacts } from '/src/lib/artistBio'
 import { artistPlatformLinks, artistSocialLinks } from '/src/lib/artistLinks'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -678,7 +679,7 @@ async function loadTopSongs(force = false) {
     if (res.data?.stale) pollTopSongs(run, name)
   } catch (err) {
     if (run !== topSongsRun) return
-    topSongsError.value = err?.response?.data?.detail || err?.message || ''
+    topSongsError.value = friendlyError(t, err, 'errors.generic')
     // Forget the key so opening the tab again tries again.
     topSongsKey = ''
   } finally {

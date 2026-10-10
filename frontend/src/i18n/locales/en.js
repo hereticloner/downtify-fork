@@ -2,6 +2,49 @@ export default {
   language: {
     name: 'English',
   },
+  errors: {
+    network: "Can't reach the server. Check your connection and try again.",
+    generic: 'Something went wrong. Please try again.',
+    unknown: 'Something went wrong.',
+    request: {
+      invalid: 'That request was not valid.',
+      invalid_url: "That link doesn't look right.",
+      unsupported_url: "That link isn't supported.",
+      missing_field: 'Something required was missing.',
+      conflict: 'That conflicts with the current state. Refresh and try again.',
+      too_large: 'That file is too large.',
+    },
+    resource: {
+      not_found: 'Not found.',
+    },
+    auth: {
+      invalid_credentials: 'Wrong username or password.',
+      rate_limited: 'Too many attempts. Wait a few minutes and try again.',
+      signin_required: 'Please sign in again.',
+      forbidden: 'You do not have permission to do that.',
+      disabled: 'Sign-in is turned off on this server.',
+      not_ready: "Sign-in isn't ready yet. Try again shortly.",
+      pairing_code: 'That pairing code is wrong or has expired.',
+      pairing_not_found: 'That pairing is no longer available.',
+    },
+    server: {
+      starting: 'The server is still starting up. Try again in a moment.',
+      error: 'The server ran into a problem. Please try again.',
+      port_locked: 'The port is fixed by the environment or the command line.',
+      port_in_use: 'That port is already in use. Pick another one.',
+    },
+    download: {
+      not_ready: "The downloader isn't ready yet. Try again in a moment.",
+      failed: 'The download failed. Please try again.',
+      no_songs: 'No downloadable tracks were found.',
+    },
+    spotify: {
+      not_connected: 'Connect Spotify in Settings first.',
+    },
+    podcast: {
+      feed_error: "That link isn't a readable podcast feed.",
+    },
+  },
   common: {
     cancel: 'Cancel',
     confirm: 'Confirm',

@@ -65,6 +65,31 @@ Rebuild the frontend and your language will appear in **Settings → Language** 
 cd frontend && npm run build
 ```
 
+## Error messages
+
+Error text shown in the UI is localized too. A failed request is answered with a stable, machine-readable `code` next to its English `detail` (raised as `downtify.errors.ApiError`, serialized by the exception handler in `main.py`). The web app translates the code, so the user never sees a raw `"Network Error"`, a stack-trace fragment or the backend's English `detail`.
+
+A wrong password, for example, answers:
+
+```json
+{ "detail": "Wrong username or password", "code": "auth.invalid_credentials" }
+```
+
+`detail` is kept unchanged for API clients and logs — only the UI reads `code`. The helper `frontend/src/lib/errors.js` (`friendlyError`) maps the code to an `errors.*` translation key. A response without a code (or with one no language knows) falls back to a generic, localized message, and a request that never reached the server (offline, DNS, CORS) shows `errors.network`. Every error raised by a route carries a code, even when its raise site predates this — a plain `HTTPException` or body-validation failure gets one from its status (`downtify/errors.py`, `STATUS_CODES`). The sign-in middleware's own 401/403 refusals are handled by the app's interceptor before any text is shown.
+
+| Key group | Covers |
+|-----------|--------|
+| `errors.network` | The server could not be reached |
+| `errors.generic`, `errors.unknown` | Last-resort fallbacks |
+| `errors.request.*` | Invalid URL/body, missing field, conflict, too large |
+| `errors.auth.*` | Wrong credentials, rate limit, sign-in required, disabled |
+| `errors.resource.not_found` | A missing resource |
+| `errors.server.*` | Starting up, port locked or in use, internal error |
+| `errors.download.*` | Downloader not ready, failed, no songs |
+| `errors.spotify.*`, `errors.podcast.*` | Feature-specific failures |
+
+Any new language must define the same `errors.*` keys as English: `frontend/src/__tests__/i18n.test.js` enforces the parity, and `frontend/src/__tests__/errors.test.js` covers the code mapping.
+
 ## Tips for translators
 
 - Missing keys fall back to English, so partial translations work fine — submit a PR with what you have.

@@ -179,6 +179,7 @@ import monitorAPI from '/src/model/monitor'
 import { useUi } from '/src/model/ui'
 import { watchKind, watchKindOfUrl, watchReleaseTypes } from '/src/lib/watches'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const props = defineProps({
   // The watch being edited, or null when closed.
@@ -290,7 +291,7 @@ async function save() {
     emit('saved', updated)
     emit('close')
   } catch (err) {
-    error.value = err?.response?.data?.detail || t('toast.actionFailed')
+    error.value = friendlyError(t, err, 'toast.actionFailed')
   } finally {
     saving.value = false
   }

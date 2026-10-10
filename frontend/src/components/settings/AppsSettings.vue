@@ -195,6 +195,7 @@ import { useUi } from '/src/model/ui'
 import { formatCountdown, pairingUri, qrPath } from '/src/lib/auth'
 import { timeAgo } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t, locale } = useI18n()
 const ui = useUi()
@@ -210,7 +211,7 @@ const savingName = ref(false)
 const devices = ref([])
 
 function errorOf(err) {
-  return err?.response?.data?.detail || t('toast.actionFailed')
+  return friendlyError(t, err, 'toast.actionFailed')
 }
 
 async function loadInfo() {

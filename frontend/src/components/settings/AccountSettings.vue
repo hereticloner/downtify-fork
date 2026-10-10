@@ -118,6 +118,7 @@ import API from '/src/model/api'
 import { useAuth } from '/src/model/auth'
 import { useUi } from '/src/model/ui'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t } = useI18n()
 const ui = useUi()
@@ -126,7 +127,7 @@ const user = auth.user
 const minLength = computed(() => auth.status.value?.min_password_length || 8)
 
 function errorOf(err) {
-  return err?.response?.data?.detail || t('toast.actionFailed')
+  return friendlyError(t, err, 'toast.actionFailed')
 }
 
 const username = ref(user.value?.username || '')

@@ -321,6 +321,7 @@ import { classifyInput } from '/src/lib/input'
 import { formatBytes } from '/src/lib/format'
 import { itemTrackCount } from '/src/lib/library'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -369,7 +370,7 @@ async function importCsv(event) {
     })
     router.push({ name: 'Queue', params: { tab: 'queued' } })
   } catch (err) {
-    ui.toast(err?.response?.data?.detail || t('queue.importFailed'), {
+    ui.toast(friendlyError(t, err, 'queue.importFailed'), {
       kind: 'error',
     })
   }

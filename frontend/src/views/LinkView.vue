@@ -270,6 +270,7 @@ import { classifyInput } from '/src/lib/input'
 import { playableQueue } from '/src/lib/topSongs'
 import { formatDuration, splitLength } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -302,7 +303,7 @@ async function resolve() {
     details.value = res.data
     library.lookupSongs(res.data?.tracks || [])
   } catch (err) {
-    error.value = err?.response?.data?.detail || err?.message || ''
+    error.value = friendlyError(t, err, 'link.failed')
   } finally {
     loading.value = false
   }
@@ -451,7 +452,7 @@ async function download(songs) {
       },
     })
   } catch (err) {
-    ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+    ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
       kind: 'error',
     })
   } finally {
@@ -477,7 +478,7 @@ async function watch() {
       },
     })
   } catch (err) {
-    ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+    ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
       kind: 'error',
     })
   } finally {

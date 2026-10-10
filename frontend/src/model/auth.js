@@ -4,7 +4,9 @@
 import { computed, ref } from 'vue'
 
 import API from '/src/model/api'
+import { t } from '/src/i18n'
 import { ROLE_ADMIN, needsSignIn } from '/src/lib/auth'
+import { friendlyError } from '/src/lib/errors'
 
 const status = ref(null)
 const mustSignIn = ref(false)
@@ -40,7 +42,7 @@ async function signIn(username, password) {
   } catch (err) {
     if (err?.response?.status === 429) return 'tooMany'
     if (err?.response?.status === 401) return 'wrongPassword'
-    return err?.response?.data?.detail || err?.message || 'failed'
+    return friendlyError(t, err, 'errors.generic')
   }
   // Every model and the WebSocket start over, now signed in.
   window.location.reload()

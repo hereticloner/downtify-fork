@@ -3,6 +3,8 @@ import { ref } from 'vue'
 
 import API from '/src/model/api'
 import { useAccount } from '/src/model/account'
+import { t } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const query = ref('')
 const songs = ref([])
@@ -37,8 +39,7 @@ async function searchFor(text) {
     songs.value = songRes.value.data || []
   } else {
     songs.value = []
-    error.value =
-      songRes.reason?.response?.data?.detail || songRes.reason?.message || ''
+    error.value = friendlyError(t, songRes.reason, 'search.failed')
   }
   albums.value =
     albumRes.status === 'fulfilled' ? albumRes.value.data || [] : []

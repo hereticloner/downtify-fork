@@ -193,6 +193,7 @@ import { usePlayer } from '/src/model/player'
 import { useUi } from '/src/model/ui'
 import { episodeToTrack, sortEpisodesByDate } from '/src/lib/podcasts'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -245,7 +246,7 @@ async function onFind() {
       if (!searchResults.value.length) findError.value = t('podcasts.noResults')
     }
   } catch (err) {
-    findError.value = err?.response?.data?.detail || t('podcasts.findFailed')
+    findError.value = friendlyError(t, err, 'podcasts.findFailed')
   } finally {
     finding.value = false
   }
@@ -257,7 +258,7 @@ async function pick(feedUrl) {
   try {
     await resolve(feedUrl)
   } catch (err) {
-    findError.value = err?.response?.data?.detail || t('podcasts.findFailed')
+    findError.value = friendlyError(t, err, 'podcasts.findFailed')
   } finally {
     finding.value = false
   }
@@ -289,7 +290,7 @@ async function onSubscribe() {
     preview.value = null
     router.push({ name: 'PodcastShow', query: { id: show.id } })
   } catch (err) {
-    findError.value = err?.response?.data?.detail || t('podcasts.findFailed')
+    findError.value = friendlyError(t, err, 'podcasts.findFailed')
   } finally {
     subscribing.value = false
   }

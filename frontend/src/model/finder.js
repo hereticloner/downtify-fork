@@ -5,6 +5,8 @@ import { reactive, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 
 import API from '/src/model/api'
+import { t } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 import {
   TRACK_COUNT_BATCH,
   addRecent,
@@ -50,7 +52,7 @@ async function run(key, request) {
   } catch (err) {
     if (mine !== serial) return
     clearResults()
-    error.value = err?.response?.data?.detail || err?.message || ''
+    error.value = friendlyError(t, err, 'finder.failed')
   } finally {
     if (mine === serial) loading.value = false
   }

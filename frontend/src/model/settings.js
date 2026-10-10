@@ -2,7 +2,8 @@ import { ref, computed, watch } from 'vue'
 
 import API from '/src/model/api'
 import { useAuth } from '/src/model/auth'
-import { currentLocale } from '/src/i18n'
+import { currentLocale, t } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 import { needsLanguageSync, splitUiLanguage } from '/src/lib/uiLanguage'
 
 const settings = ref({
@@ -316,9 +317,7 @@ async function saveSettings() {
     isSaved.value = true
     return true
   } catch (error) {
-    const detail = error?.response?.data?.detail
-    saveErrorText.value =
-      typeof detail === 'string' && detail.trim() ? detail : ''
+    saveErrorText.value = friendlyError(t, error, 'errors.generic')
     isSaved.value = false
     return false
   } finally {

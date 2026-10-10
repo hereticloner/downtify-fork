@@ -8,12 +8,14 @@ import { ref, shallowRef, watch } from 'vue'
 
 import API from '/src/model/api'
 import { usePlayer } from '/src/model/player'
+import { t } from '/src/i18n'
 import {
   addPlayed,
   appendNew,
   listenArtist,
   listenThreshold,
 } from '/src/lib/discover'
+import { friendlyError } from '/src/lib/errors'
 import { artistKey } from '/src/lib/library'
 
 const items = shallowRef([])
@@ -55,7 +57,7 @@ async function load(library) {
       partial.value = Boolean(res.data?.partial)
       loaded.value = true
     } catch (err) {
-      error.value = err?.response?.data?.detail || err?.message || 'failed'
+      error.value = friendlyError(t, err, 'discover.failed')
     } finally {
       loading.value = false
       pending = null
@@ -65,7 +67,7 @@ async function load(library) {
 }
 
 function errorText(err) {
-  return err?.response?.data?.detail || err?.message || 'failed'
+  return friendlyError(t, err, 'discover.failed')
 }
 
 /**

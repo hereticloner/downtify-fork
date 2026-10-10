@@ -2,6 +2,53 @@ export default {
   language: {
     name: 'Español',
   },
+  errors: {
+    network:
+      'No se puede conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.',
+    generic: 'Algo salió mal. Inténtalo de nuevo.',
+    unknown: 'Algo salió mal.',
+    request: {
+      invalid: 'La solicitud no era válida.',
+      invalid_url: 'Ese enlace no parece correcto.',
+      unsupported_url: 'Ese enlace no es compatible.',
+      missing_field: 'Faltaba algo obligatorio.',
+      conflict:
+        'Eso entra en conflicto con el estado actual. Actualiza e inténtalo de nuevo.',
+      too_large: 'Ese archivo es demasiado grande.',
+    },
+    resource: {
+      not_found: 'No encontrado.',
+    },
+    auth: {
+      invalid_credentials: 'Usuario o contraseña incorrectos.',
+      rate_limited:
+        'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
+      signin_required: 'Vuelve a iniciar sesión.',
+      forbidden: 'No tienes permiso para hacer eso.',
+      disabled: 'El inicio de sesión está desactivado en este servidor.',
+      not_ready: 'El inicio de sesión aún no está listo. Inténtalo en breve.',
+      pairing_code: 'Ese código de vinculación es incorrecto o ha caducado.',
+      pairing_not_found: 'Esa vinculación ya no está disponible.',
+    },
+    server: {
+      starting: 'El servidor aún se está iniciando. Inténtalo en un momento.',
+      error: 'El servidor tuvo un problema. Inténtalo de nuevo.',
+      port_locked: 'El puerto lo fija el entorno o la línea de comandos.',
+      port_in_use: 'Ese puerto ya está en uso. Elige otro.',
+    },
+    download: {
+      not_ready:
+        'El descargador aún no está listo. Inténtalo en un momento.',
+      failed: 'La descarga falló. Inténtalo de nuevo.',
+      no_songs: 'No se encontraron pistas descargables.',
+    },
+    spotify: {
+      not_connected: 'Conecta Spotify en Ajustes primero.',
+    },
+    podcast: {
+      feed_error: 'Ese enlace no es un feed de podcast legible.',
+    },
+  },
   common: {
     cancel: 'Cancelar',
     confirm: 'Confirmar',

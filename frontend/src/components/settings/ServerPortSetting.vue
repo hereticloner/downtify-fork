@@ -104,6 +104,7 @@ import {
   validPort,
 } from '/src/lib/serverPort'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t } = useI18n()
 const ui = useUi()
@@ -132,7 +133,7 @@ async function load() {
 }
 
 function errorOf(err) {
-  return err?.response?.data?.detail || t('toast.actionFailed')
+  return friendlyError(t, err, 'toast.actionFailed')
 }
 
 async function save(restart) {

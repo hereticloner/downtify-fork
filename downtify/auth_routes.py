@@ -11,7 +11,7 @@ import asyncio
 from ipaddress import ip_address
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Request, Response
 from loguru import logger
 
 from . import api
@@ -26,6 +26,7 @@ from .auth import (
     session_cookie,
     trusted_proxies_from_env,
 )
+from .errors import ApiError
 from .server_identity import server_info
 from .server_port import (
     MAX_PORT,
@@ -48,7 +49,7 @@ _TRUSTED = trusted_proxies_from_env()
 
 def _store() -> AuthStore:
     if api.state.auth is None:
-        raise HTTPException(status_code=500, detail='Sign-in is not ready')
+        raise ApiError(500, 'auth.not_ready', 'Sign-in is not ready')
     return api.state.auth
 
 
@@ -66,7 +67,7 @@ def _me(request: Request) -> Principal:
 
     principal = _principal(request)
     if principal is None or not principal.user_id:
-        raise HTTPException(status_code=401, detail='Sign in required')
+        raise ApiError(401, 'auth.signin_required', 'Sign in required')
     return principal
 
 
@@ -81,7 +82,7 @@ def _own_device(request: Request, device_id: str) -> dict[str, Any]:
         or device.get('revoked_at')
         or (not me.is_admin and int(device['user_id']) != me.user_id)
     ):
-        raise HTTPException(status_code=404, detail='Device not found')
+        raise ApiError(404, 'resource.not_found', 'Device not found')
     return device
 
 
@@ -116,10 +117,11 @@ def _set_session(response: Response, request: Request, token: str) -> None:
     )
 
 
-def _too_many(retry_after: int) -> HTTPException:
-    return HTTPException(
-        status_code=429,
-        detail='Too many attempts. Try again later.',
+def _too_many(retry_after: int) -> ApiError:
+    return ApiError(
+        429,
+        'auth.rate_limited',
+        'Too many attempts. Try again later.',
         headers={'Retry-After': str(retry_after)},
     )
 
@@ -142,7 +144,7 @@ def get_server_info() -> dict[str, Any]:
 
     identity = api.state.identity
     if identity is None:
-        raise HTTPException(status_code=503, detail='Starting up')
+        raise ApiError(503, 'server.starting', 'Starting up')
     transcoder = getattr(api.state, 'transcoder', None)
     return server_info(
         identity,
@@ -158,12 +160,12 @@ async def update_server(request: Request) -> dict[str, Any]:
 
     identity = api.state.identity
     if identity is None:
-        raise HTTPException(status_code=503, detail='Starting up')
+        raise ApiError(503, 'server.starting', 'Starting up')
     payload = await _json(request)
     try:
         await asyncio.to_thread(identity.set_name, payload.get('name'))
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise ApiError(400, 'request.invalid', str(exc)) from exc
     announcer = getattr(api.state, 'discovery', None)
     if announcer is not None:
         await announcer.update(identity.name)
@@ -199,7 +201,7 @@ def get_server_port() -> dict[str, Any]:
     (``DOWNTIFY_PORT``, ``PORT`` or ``--port``), ``''`` when nothing."""
 
     if api.state.identity is None:
-        raise HTTPException(status_code=503, detail='Starting up')
+        raise ApiError(503, 'server.starting', 'Starting up')
     return _port_status()
 
 
@@ -212,24 +214,25 @@ async def set_server_port(request: Request) -> dict[str, Any]:
 
     identity = api.state.identity
     if identity is None:
-        raise HTTPException(status_code=503, detail='Starting up')
+        raise ApiError(503, 'server.starting', 'Starting up')
     status = _port_status()
     if status['locked_by']:
-        raise HTTPException(
-            status_code=409,
-            detail=f'The port is set by {status["locked_by"]}',
+        raise ApiError(
+            409,
+            'server.port_locked',
+            f'The port is set by {status["locked_by"]}',
         )
     payload = await _json(request)
     try:
         port = clean_port(payload.get('port'))
     except PortError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise ApiError(400, 'request.invalid', str(exc)) from exc
     host = str((api.state.listen or {}).get('host') or '0.0.0.0')
     if port != status['port'] and not await asyncio.to_thread(
         port_available, host, port
     ):
-        raise HTTPException(
-            status_code=409, detail=f'Port {port} is already in use'
+        raise ApiError(
+            409, 'server.port_in_use', f'Port {port} is already in use'
         )
     await asyncio.to_thread(identity.set_port, port)
     await api.log_activity(
@@ -297,9 +300,10 @@ async def login(request: Request, response: Response) -> dict[str, Any]:
 
     store = _store()
     if store.auth_disabled:
-        raise HTTPException(
-            status_code=409,
-            detail='Sign-in is turned off (DOWNTIFY_DISABLE_AUTH)',
+        raise ApiError(
+            409,
+            'auth.disabled',
+            'Sign-in is turned off (DOWNTIFY_DISABLE_AUTH)',
         )
     ip = _ip(request)
     wait = api.state.login_limiter.retry_after(ip)
@@ -324,8 +328,8 @@ async def login(request: Request, response: Response) -> dict[str, Any]:
                 client=api.client_label(request, None),
                 ip=ip,
             )
-        raise HTTPException(
-            status_code=401, detail='Wrong username or password'
+        raise ApiError(
+            401, 'auth.invalid_credentials', 'Wrong username or password'
         )
     api.state.login_limiter.reset(ip)
     token = await asyncio.to_thread(
@@ -394,7 +398,7 @@ async def rename_device(device_id: str, request: Request) -> dict[str, Any]:
     if not await asyncio.to_thread(
         store.rename_device, device_id, str(payload.get('name') or '')
     ):
-        raise HTTPException(status_code=404, detail='Device not found')
+        raise ApiError(404, 'resource.not_found', 'Device not found')
     return store.get_device(device_id) or {}
 
 
@@ -406,7 +410,7 @@ async def revoke_device(device_id: str, request: Request) -> dict[str, Any]:
     store = _store()
     device = _own_device(request, device_id)
     if not await asyncio.to_thread(store.revoke_device, device_id):
-        raise HTTPException(status_code=404, detail='Device not found')
+        raise ApiError(404, 'resource.not_found', 'Device not found')
     await api.state.connections.close_device(device_id)
     await api.log_activity(
         request,
@@ -439,7 +443,7 @@ def _own_pairing(request: Request, pairing_id: str) -> None:
     me = _me(request)
     owner = api.state.pairing.owner(pairing_id)
     if owner is not None and owner != me.user_id and not me.is_admin:
-        raise HTTPException(status_code=404, detail='Pairing not found')
+        raise ApiError(404, 'auth.pairing_not_found', 'Pairing not found')
 
 
 @router.post('/api/auth/pairing')
@@ -491,8 +495,8 @@ async def pair(request: Request) -> dict[str, Any]:
     if pairing_id is None or user is None:
         api.state.pair_limiter.fail(ip)
         logger.warning('Pairing: wrong or expired code from {}', ip)
-        raise HTTPException(
-            status_code=401, detail='Wrong or expired pairing code'
+        raise ApiError(
+            401, 'auth.pairing_code', 'Wrong or expired pairing code'
         )
     device, token = await asyncio.to_thread(
         store.create_device,

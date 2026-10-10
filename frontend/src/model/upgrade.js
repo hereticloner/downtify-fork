@@ -23,6 +23,8 @@ import {
 } from '/src/lib/upgrade'
 import API from '/src/model/api'
 import { useLibrary } from '/src/model/library'
+import { t } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const status = ref(normalizeStatus(null))
 const jobs = shallowRef([])
@@ -67,7 +69,7 @@ async function load({ force = false } = {}) {
     loaded.value = true
     await refreshJobs()
   } catch (err) {
-    error.value = err?.response?.data?.detail || err?.message || 'failed'
+    error.value = friendlyError(t, err, 'upgrade.loadFailed')
   } finally {
     loading.value = false
   }
@@ -89,7 +91,7 @@ async function run(call) {
     apply(res.data)
     await refreshJobs()
   } catch (err) {
-    error.value = err?.response?.data?.detail || err?.message || 'failed'
+    error.value = friendlyError(t, err, 'upgrade.loadFailed')
   }
 }
 

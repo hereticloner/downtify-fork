@@ -136,6 +136,7 @@ import { jobSongKey, useDownloadManager } from '/src/model/download'
 import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const props = defineProps({
   songs: { type: Array, required: true },
@@ -265,7 +266,7 @@ async function downloadSelected() {
       }
     )
   } catch (err) {
-    ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+    ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
       kind: 'error',
     })
   } finally {

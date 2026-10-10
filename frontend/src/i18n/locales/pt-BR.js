@@ -2,6 +2,52 @@ export default {
   language: {
     name: 'Português (BR)',
   },
+  errors: {
+    network:
+      'Não foi possível alcançar o servidor. Verifique sua conexão e tente de novo.',
+    generic: 'Algo deu errado. Tente de novo.',
+    unknown: 'Algo deu errado.',
+    request: {
+      invalid: 'A solicitação não era válida.',
+      invalid_url: 'Esse link não parece certo.',
+      unsupported_url: 'Esse link não é compatível.',
+      missing_field: 'Faltou algo obrigatório.',
+      conflict: 'Isso conflita com o estado atual. Atualize e tente de novo.',
+      too_large: 'Esse arquivo é grande demais.',
+    },
+    resource: {
+      not_found: 'Não encontrado.',
+    },
+    auth: {
+      invalid_credentials: 'Usuário ou senha incorretos.',
+      rate_limited:
+        'Muitas tentativas. Espere alguns minutos e tente de novo.',
+      signin_required: 'Entre novamente.',
+      forbidden: 'Você não tem permissão para fazer isso.',
+      disabled: 'O login está desativado neste servidor.',
+      not_ready: 'O login ainda não está pronto. Tente em instantes.',
+      pairing_code: 'Esse código de pareamento está errado ou expirou.',
+      pairing_not_found: 'Esse pareamento não está mais disponível.',
+    },
+    server: {
+      starting: 'O servidor ainda está iniciando. Tente daqui a pouco.',
+      error: 'O servidor teve um problema. Tente de novo.',
+      port_locked:
+        'A porta é definida pelo ambiente ou pela linha de comando.',
+      port_in_use: 'Essa porta já está em uso. Escolha outra.',
+    },
+    download: {
+      not_ready: 'O baixador ainda não está pronto. Tente daqui a pouco.',
+      failed: 'O download falhou. Tente de novo.',
+      no_songs: 'Nenhuma faixa para baixar foi encontrada.',
+    },
+    spotify: {
+      not_connected: 'Conecte o Spotify em Configurações primeiro.',
+    },
+    podcast: {
+      feed_error: 'Esse link não é um feed de podcast legível.',
+    },
+  },
   common: {
     cancel: 'Cancelar',
     confirm: 'Confirmar',

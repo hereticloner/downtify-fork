@@ -14,6 +14,7 @@ import { useAuth } from '/src/model/auth'
 import { usePlayer } from '/src/model/player'
 import { useHistory } from '/src/model/history'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 import { itemTrackCount } from '/src/lib/library'
 
 const createOpen = ref(false)
@@ -84,7 +85,7 @@ export function usePlaylistActions() {
       ui.toast(t('playlists.created', { name: created }), { kind: 'success' })
       return created
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
         kind: 'error',
       })
       throw err
@@ -115,7 +116,7 @@ export function usePlaylistActions() {
       ui.toast(t('playlists.renamed', { name: renamed }), { kind: 'success' })
       return renamed
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
         kind: 'error',
       })
       throw err
@@ -140,7 +141,7 @@ export function usePlaylistActions() {
         { kind: 'success' }
       )
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
         kind: 'error',
       })
     }
@@ -157,7 +158,7 @@ export function usePlaylistActions() {
         kind: 'success',
       })
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
         kind: 'error',
       })
     }
@@ -205,7 +206,7 @@ export function usePlaylistActions() {
       }
       library.refreshSoon(500)
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
         kind: 'error',
       })
     }
@@ -225,7 +226,7 @@ export function usePlaylistActions() {
         },
       })
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
         kind: 'error',
       })
     }
@@ -268,7 +269,7 @@ export function usePlaylistActions() {
       )
       return true
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
         kind: 'error',
       })
       return false

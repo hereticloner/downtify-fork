@@ -58,6 +58,7 @@ import CoverArt from '../ui/CoverArt.vue'
 import { useDownloadManager } from '/src/model/download'
 import { useUi } from '/src/model/ui'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -111,7 +112,7 @@ async function download() {
     })
   } catch (err) {
     queued.value = false
-    ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+    ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
       kind: 'error',
     })
   }

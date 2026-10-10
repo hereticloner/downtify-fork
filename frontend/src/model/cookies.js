@@ -1,6 +1,8 @@
 import { ref } from 'vue'
 
 import API from '/src/model/api'
+import { t } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 // Shape mirrors CookiesStore.status() in downtify/cookies.py.
 const status = ref({
@@ -17,8 +19,8 @@ const busy = ref(false)
 const error = ref('')
 const warnings = ref([])
 
-function detailOf(err, fallback) {
-  return err?.response?.data?.detail || fallback
+function detailOf(err) {
+  return friendlyError(t, err, 'errors.generic')
 }
 
 async function refresh() {
@@ -28,7 +30,7 @@ async function refresh() {
     const res = await API.getCookiesStatus()
     status.value = res.data
   } catch (err) {
-    error.value = detailOf(err, 'Could not load the cookie status.')
+    error.value = detailOf(err)
   } finally {
     loading.value = false
   }
@@ -45,7 +47,7 @@ async function upload(file) {
     warnings.value = uploadWarnings || []
     return true
   } catch (err) {
-    error.value = detailOf(err, 'Could not upload the file.')
+    error.value = detailOf(err)
     return false
   } finally {
     busy.value = false
@@ -62,7 +64,7 @@ async function remove() {
     status.value = rest
     return true
   } catch (err) {
-    error.value = detailOf(err, 'Could not delete the file.')
+    error.value = detailOf(err)
     return false
   } finally {
     busy.value = false

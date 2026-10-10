@@ -192,6 +192,7 @@ import { useUi } from '/src/model/ui'
 import { formatDuration } from '/src/lib/format'
 import { lengthDiff, sameLength } from '/src/lib/replaceAudio'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t } = useI18n()
 const ui = useUi()
@@ -211,7 +212,7 @@ const serverLength = ref(0)
 const length = computed(() => serverLength.value || track.value?.duration || 0)
 
 function errorOf(err) {
-  return err?.response?.data?.detail || t('toast.actionFailed')
+  return friendlyError(t, err, 'toast.actionFailed')
 }
 
 async function load(text = '') {

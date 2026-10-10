@@ -156,6 +156,7 @@ import { useAuth } from '/src/model/auth'
 import { useUi } from '/src/model/ui'
 import { timeAgo } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t, locale } = useI18n()
 const ui = useUi()
@@ -169,7 +170,7 @@ const saving = ref(false)
 const formError = ref('')
 
 function errorOf(err) {
-  return err?.response?.data?.detail || t('toast.actionFailed')
+  return friendlyError(t, err, 'toast.actionFailed')
 }
 
 async function load() {

@@ -2,6 +2,52 @@ export default {
   language: {
     name: 'Türkçe',
   },
+  errors: {
+    network:
+      'Sunucuya ulaşılamıyor. Bağlantını kontrol edip tekrar dene.',
+    generic: 'Bir şeyler ters gitti. Lütfen tekrar dene.',
+    unknown: 'Bir şeyler ters gitti.',
+    request: {
+      invalid: 'Bu istek geçerli değildi.',
+      invalid_url: 'Bu bağlantı doğru görünmüyor.',
+      unsupported_url: 'Bu bağlantı desteklenmiyor.',
+      missing_field: 'Zorunlu bir alan eksikti.',
+      conflict: 'Bu, mevcut durumla çakışıyor. Yenileyip tekrar dene.',
+      too_large: 'Bu dosya çok büyük.',
+    },
+    resource: {
+      not_found: 'Bulunamadı.',
+    },
+    auth: {
+      invalid_credentials: 'Kullanıcı adı veya parola yanlış.',
+      rate_limited:
+        'Çok fazla deneme. Birkaç dakika bekleyip tekrar dene.',
+      signin_required: 'Lütfen tekrar giriş yap.',
+      forbidden: 'Bunu yapma iznin yok.',
+      disabled: 'Bu sunucuda giriş kapalı.',
+      not_ready: 'Giriş henüz hazır değil. Birazdan tekrar dene.',
+      pairing_code: 'Bu eşleştirme kodu yanlış veya süresi dolmuş.',
+      pairing_not_found: 'Bu eşleştirme artık mevcut değil.',
+    },
+    server: {
+      starting: 'Sunucu hâlâ başlıyor. Birazdan tekrar dene.',
+      error: 'Sunucu bir sorunla karşılaştı. Lütfen tekrar dene.',
+      port_locked:
+        'Bağlantı noktası ortam veya komut satırı tarafından sabitlenmiş.',
+      port_in_use: 'Bu bağlantı noktası zaten kullanımda. Başka bir tane seç.',
+    },
+    download: {
+      not_ready: 'İndirici henüz hazır değil. Birazdan tekrar dene.',
+      failed: 'İndirme başarısız oldu. Lütfen tekrar dene.',
+      no_songs: 'İndirilebilir parça bulunamadı.',
+    },
+    spotify: {
+      not_connected: 'Önce Ayarlar’dan Spotify’ı bağla.',
+    },
+    podcast: {
+      feed_error: 'Bu bağlantı okunabilir bir podcast akışı değil.',
+    },
+  },
   common: {
     cancel: 'İptal',
     confirm: 'Onayla',

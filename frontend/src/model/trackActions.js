@@ -8,6 +8,7 @@ import { useUi } from '/src/model/ui'
 import { useAuth } from '/src/model/auth'
 import { useReplaceAudio } from '/src/model/replaceAudio'
 import { canReplace } from '/src/lib/replaceAudio'
+import { friendlyError } from '/src/lib/errors'
 import { saveName } from '/src/lib/paths'
 import { useI18n } from '/src/i18n'
 
@@ -65,7 +66,7 @@ export function useTrackActions() {
         kind: 'success',
       })
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.zipFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.zipFailed'), {
         kind: 'error',
       })
     }

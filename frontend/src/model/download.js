@@ -5,6 +5,8 @@ import { isYouTubePlaylistURL, normalizeSpotifyURL } from '/src/model/url'
 
 import API from '/src/model/api'
 import { useSettingsManager } from '/src/model/settings'
+import { t } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const STATUS = {
   QUEUED: 'In Queue',
@@ -352,7 +354,7 @@ export function useDownloadManager() {
       item.setDownloaded()
       return { song, filename: res.data }
     } catch (err) {
-      item.message = err?.response?.data?.detail || item.message
+      item.message = friendlyError(t, err, 'queue.failedGeneric')
       item.setError()
       return { song, filename: null }
     }
@@ -373,7 +375,7 @@ export function useDownloadManager() {
       await API.replaceAudio(song.replace.file, videoId)
     } catch (err) {
       if (item) {
-        item.message = err?.response?.data?.detail || item.message
+        item.message = friendlyError(t, err, 'queue.failedGeneric')
         item.setError()
       }
     }

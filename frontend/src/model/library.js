@@ -14,6 +14,7 @@ import {
   indexTracksBySong,
   songKey,
 } from '/src/lib/library'
+import { friendlyError } from '/src/lib/errors'
 import { coverURL } from '/src/lib/paths'
 import { usePlayer } from '/src/model/player'
 import { useI18n } from '/src/i18n'
@@ -185,7 +186,7 @@ async function load({ force = false } = {}) {
       if (albumsComplete.value) await ensureAlbums({ force: true })
       if (artistsComplete.value) await ensureArtists({ force: true })
     } catch (err) {
-      error.value = err?.message || 'failed'
+      error.value = friendlyError(t, err, 'library.loadFailed')
     } finally {
       loading.value = false
       pending = null

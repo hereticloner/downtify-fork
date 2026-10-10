@@ -21,11 +21,20 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import Body, FastAPI, HTTPException, Query, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    Response,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
+from fastapi.utils import is_body_allowed_for_status_code
 from load_dotenv import load_dotenv
 from loguru import logger
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
 from uvicorn import Config, Server
 
@@ -45,6 +54,7 @@ from downtify.cover_thumbs import CoverThumbs
 from downtify.discover import DiscoverStore
 from downtify.discovery import Announcer, discovery_enabled
 from downtify.downloader import Downloader
+from downtify.errors import code_for
 from downtify.external_sync import ExternalSyncJob
 from downtify.library_archive import (
     MAX_ARCHIVE_FILES,
@@ -540,6 +550,38 @@ def build_app() -> FastAPI:
         ),
         version=__version__,
     )
+
+    # Every HTTP error goes out as ``{"detail": ..., "code": ...}`` - the
+    # human text plus a stable machine code the web UI translates
+    # (downtify/errors.py). ``detail`` keeps its old string value, so API
+    # clients that read it are unaffected.
+    @app.exception_handler(StarletteHTTPException)
+    async def _coded_http_error(
+        request: Request, exc: StarletteHTTPException
+    ) -> Response:
+        headers = getattr(exc, 'headers', None)
+        if not is_body_allowed_for_status_code(exc.status_code):
+            return Response(status_code=exc.status_code, headers=headers)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={'detail': exc.detail, 'code': code_for(exc)},
+            headers=headers,
+        )
+
+    # FastAPI's own body validation errors are not ``HTTPException``s;
+    # give them a code too (the ``detail`` list is left as is).
+    @app.exception_handler(RequestValidationError)
+    async def _coded_validation_error(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={
+                'detail': jsonable_encoder(exc.errors()),
+                'code': 'request.invalid',
+            },
+        )
+
     # Sign-in and paired apps (downtify/auth.py). Added before CORS so
     # CORS stays outermost and answers preflights without credentials.
     api.state.identity = ServerIdentity(DATABASE_DIR)

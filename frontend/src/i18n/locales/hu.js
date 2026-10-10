@@ -2,6 +2,53 @@ export default {
   language: {
     name: 'Magyar',
   },
+  errors: {
+    network:
+      'Nem érhető el a szerver. Ellenőrizd a kapcsolatot, és próbáld újra.',
+    generic: 'Valami hiba történt. Próbáld újra.',
+    unknown: 'Valami hiba történt.',
+    request: {
+      invalid: 'A kérés érvénytelen volt.',
+      invalid_url: 'Ez a hivatkozás nem tűnik helyesnek.',
+      unsupported_url: 'Ez a hivatkozás nem támogatott.',
+      missing_field: 'Hiányzott egy kötelező adat.',
+      conflict:
+        'Ez ütközik a jelenlegi állapottal. Frissíts, és próbáld újra.',
+      too_large: 'Ez a fájl túl nagy.',
+    },
+    resource: {
+      not_found: 'Nem található.',
+    },
+    auth: {
+      invalid_credentials: 'Hibás felhasználónév vagy jelszó.',
+      rate_limited:
+        'Túl sok próbálkozás. Várj néhány percet, és próbáld újra.',
+      signin_required: 'Jelentkezz be újra.',
+      forbidden: 'Ehhez nincs jogosultságod.',
+      disabled: 'A bejelentkezés ki van kapcsolva ezen a szerveren.',
+      not_ready: 'A bejelentkezés még nem kész. Próbáld újra hamarosan.',
+      pairing_code: 'Ez a párosítási kód hibás vagy lejárt.',
+      pairing_not_found: 'Ez a párosítás már nem elérhető.',
+    },
+    server: {
+      starting: 'A szerver még indul. Próbáld újra egy pillanat múlva.',
+      error: 'A szerver hibába ütközött. Próbáld újra.',
+      port_locked: 'A portot a környezet vagy a parancssor rögzíti.',
+      port_in_use: 'Ez a port már használatban van. Válassz másikat.',
+    },
+    download: {
+      not_ready:
+        'A letöltő még nem kész. Próbáld újra egy pillanat múlva.',
+      failed: 'A letöltés nem sikerült. Próbáld újra.',
+      no_songs: 'Nem található letölthető szám.',
+    },
+    spotify: {
+      not_connected: 'Először kösd össze a Spotifyt a Beállításokban.',
+    },
+    podcast: {
+      feed_error: 'Ez a hivatkozás nem olvasható podcast-hírcsatorna.',
+    },
+  },
   common: {
     cancel: 'Mégse',
     confirm: 'Megerősítés',

@@ -263,6 +263,7 @@ import {
 } from '/src/lib/artistArt'
 import { useUi } from '/src/model/ui'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -423,7 +424,7 @@ async function search() {
     const res = await API.searchArtistArt(text)
     results.value = res.data || []
   } catch (err) {
-    errorText.value = err?.response?.data?.detail || t('artistArt.searchFailed')
+    errorText.value = friendlyError(t, err, 'artistArt.searchFailed')
   } finally {
     loading.value = false
   }
@@ -451,7 +452,7 @@ async function choose(candidate) {
     ui.toast(t('artistArt.saved'), { kind: 'success' })
     emit('saved', res.data.url)
   } catch (err) {
-    errorText.value = err?.response?.data?.detail || t('artistArt.saveFailed')
+    errorText.value = friendlyError(t, err, 'artistArt.saveFailed')
   } finally {
     saving.value = false
   }
@@ -473,7 +474,7 @@ async function onUploadChange(event) {
     ui.toast(t('artistArt.saved'), { kind: 'success' })
     emit('saved', res.data.url)
   } catch (err) {
-    errorText.value = err?.response?.data?.detail || t('artistArt.saveFailed')
+    errorText.value = friendlyError(t, err, 'artistArt.saveFailed')
   } finally {
     saving.value = false
   }
@@ -497,7 +498,7 @@ async function removeArt() {
     ui.toast(t('artistArt.removed'), { kind: 'success' })
     emit('saved')
   } catch (err) {
-    errorText.value = err?.response?.data?.detail || t('artistArt.removeFailed')
+    errorText.value = friendlyError(t, err, 'artistArt.removeFailed')
   } finally {
     saving.value = false
   }
@@ -519,7 +520,7 @@ async function fetchBio(source) {
     bioDraft.value = res.data.bio
     ui.toast(t('artistBio.loaded'), { kind: 'success' })
   } catch (err) {
-    errorText.value = err?.response?.data?.detail || t('artistBio.fetchFailed')
+    errorText.value = friendlyError(t, err, 'artistBio.fetchFailed')
   } finally {
     bioFetching.value = ''
   }
@@ -533,8 +534,7 @@ async function saveBio() {
     ui.toast(t('artistArt.bioSaved'), { kind: 'success' })
     emit('saved')
   } catch (err) {
-    errorText.value =
-      err?.response?.data?.detail || t('artistArt.bioSaveFailed')
+    errorText.value = friendlyError(t, err, 'artistArt.bioSaveFailed')
   } finally {
     savingBio.value = false
   }
@@ -548,8 +548,7 @@ async function saveSocial() {
     ui.toast(t('artistArt.socialSaved'), { kind: 'success' })
     emit('saved')
   } catch (err) {
-    errorText.value =
-      err?.response?.data?.detail || t('artistArt.socialSaveFailed')
+    errorText.value = friendlyError(t, err, 'artistArt.socialSaveFailed')
   } finally {
     savingSocial.value = false
   }

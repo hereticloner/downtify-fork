@@ -159,6 +159,8 @@ See **[Troubleshooting](https://henriquesebastiao.github.io/downtify/troubleshoo
 
 The interface is available in English, Spanish, Brazilian Portuguese, French, Turkish, Hungarian, Greek and Bulgarian. Switch language in **Settings → Language**; the choice is saved in the browser and applies without a reload.
 
+Error messages are translated too: the backend sends a machine-readable `code` alongside its English `detail`, and the UI shows a localized, user-safe message instead of raw network errors or backend text ([details](https://henriquesebastiao.github.io/downtify/features/internationalization/#error-messages)).
+
 ### Contributing translations
 
 Adding a language is a small change and needs no tooling beyond the existing Vite setup:

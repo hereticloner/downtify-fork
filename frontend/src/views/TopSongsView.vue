@@ -116,6 +116,7 @@ import { useTopSongs } from '/src/model/topSongs'
 import { classifyInput } from '/src/lib/input'
 import { splitLength } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -141,7 +142,7 @@ async function load() {
     artist.value = res.data
     topSongs.reset()
   } catch (err) {
-    error.value = err?.response?.data?.detail || err?.message || ''
+    error.value = friendlyError(t, err, 'errors.generic')
   } finally {
     loading.value = false
   }

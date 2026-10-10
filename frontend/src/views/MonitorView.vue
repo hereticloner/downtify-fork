@@ -344,6 +344,7 @@ import {
   watchKindOfUrl,
 } from '/src/lib/watches'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t, locale } = useI18n()
 const ui = useUi()
@@ -693,7 +694,7 @@ async function add() {
     // A link the page couldn't classify turned out to be the other kind.
     if (watchKind(res.data) !== kind) router.push(tabRoute(watchKind(res.data)))
   } catch (err) {
-    addError[kind] = err?.response?.data?.detail || t('monitor.addFailed')
+    addError[kind] = friendlyError(t, err, 'monitor.addFailed')
   } finally {
     adding.value = false
   }

@@ -627,6 +627,7 @@ import { deezerImage } from '/src/lib/deezerImage'
 import { splitLength } from '/src/lib/format'
 import { playableQueue } from '/src/lib/topSongs'
 import { useI18n } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const { t, locale } = useI18n()
 
@@ -782,7 +783,7 @@ function useColumn(fetch, peek) {
       if (mine === serial) data.value = value
     } catch (err) {
       if (mine === serial) {
-        error.value = err?.response?.data?.detail || err?.message || ''
+        error.value = friendlyError(t, err, 'finder.failed')
       }
     } finally {
       if (mine === serial) loading.value = false
@@ -1066,7 +1067,7 @@ async function downloadAlbum() {
       },
     })
   } catch (err) {
-    ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+    ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
       kind: 'error',
     })
   } finally {

@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 import { jobSongKey, useDownloadManager, useProgressTracker } from './download'
 import { useLibrary } from './library'
 import { useUi } from './ui'
+import { friendlyError } from '/src/lib/errors'
 import { topSongsBatchOptions, topSongsPlaylistName } from '/src/lib/topSongs'
 import { useI18n } from '/src/i18n'
 
@@ -152,7 +153,7 @@ export function useTopSongs(artist) {
         },
       })
     } catch (err) {
-      ui.toast(err?.response?.data?.detail || t('toast.actionFailed'), {
+      ui.toast(friendlyError(t, err, 'toast.actionFailed'), {
         kind: 'error',
       })
     } finally {

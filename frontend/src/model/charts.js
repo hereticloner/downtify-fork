@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 
 import API from '/src/model/api'
+import { t } from '/src/i18n'
+import { friendlyError } from '/src/lib/errors'
 
 const tracks = ref([])
 const albums = ref([])
@@ -23,7 +25,7 @@ async function load({ force = false } = {}) {
     playlists.value = res.data?.playlists || []
     loaded = true
   } catch (err) {
-    error.value = err?.response?.data?.detail || err?.message || ''
+    error.value = friendlyError(t, err, 'charts.failed')
   } finally {
     loading.value = false
   }
