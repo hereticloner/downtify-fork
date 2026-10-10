@@ -211,15 +211,15 @@ const retention = ref(0)
 const interval = ref(360)
 const subscribing = ref(false)
 
-const retentionOptions = [
+const retentionOptions = computed(() => [
   { value: 0, label: t('podcasts.retentionAll') },
   { value: 1, label: t('podcasts.retentionCount', { count: 1 }) },
   { value: 3, label: t('podcasts.retentionCount', { count: 3 }) },
   { value: 5, label: t('podcasts.retentionCount', { count: 5 }) },
   { value: 10, label: t('podcasts.retentionCount', { count: 10 }) },
   { value: 25, label: t('podcasts.retentionCount', { count: 25 }) },
-]
-const intervalChoices = intervalOptions(t, interval.value)
+])
+const intervalChoices = computed(() => intervalOptions(t, interval.value))
 
 function showSubtitle(show) {
   return show.author || t('common.tracks', { count: show.episode_count })

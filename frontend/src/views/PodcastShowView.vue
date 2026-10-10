@@ -159,14 +159,14 @@ const retention = ref(0)
 
 const showId = computed(() => String(route.query.id || ''))
 
-const retentionOptions = [
+const retentionOptions = computed(() => [
   { value: 0, label: t('podcasts.retentionAll') },
   { value: 1, label: t('podcasts.retentionCount', { count: 1 }) },
   { value: 3, label: t('podcasts.retentionCount', { count: 3 }) },
   { value: 5, label: t('podcasts.retentionCount', { count: 5 }) },
   { value: 10, label: t('podcasts.retentionCount', { count: 10 }) },
   { value: 25, label: t('podcasts.retentionCount', { count: 25 }) },
-]
+])
 
 const downloadedEpisodes = computed(() =>
   episodes.value.filter((e) => e.filename)
