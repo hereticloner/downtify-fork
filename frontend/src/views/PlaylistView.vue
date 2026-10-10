@@ -167,6 +167,7 @@ import { usePlayer } from '/src/model/player'
 import { useAuth } from '/src/model/auth'
 import { usePlaylistActions } from '/src/model/playlistActions'
 import { useTrackActions } from '/src/model/trackActions'
+import { useUi } from '/src/model/ui'
 import { splitLength } from '/src/lib/format'
 import { sortItems } from '/src/lib/library'
 import { useLocalStorage } from '@vueuse/core'
@@ -180,6 +181,7 @@ const player = usePlayer()
 const auth = useAuth()
 const actions = useTrackActions()
 const playlistActions = usePlaylistActions()
+const ui = useUi()
 
 const playlist = computed(() =>
   library.findPlaylist(String(route.query.name || ''))
@@ -255,6 +257,8 @@ async function loadMissing() {
       ...song,
       downtify_playlist_url: batch.value.playlist_url,
     }))
+  } catch {
+    ui.toast(t('toast.actionFailed'), { kind: 'error' })
   } finally {
     loadingMissing.value = false
   }
