@@ -39,6 +39,7 @@ async function signIn(username, password) {
     await API.login(username, password)
   } catch (err) {
     if (err?.response?.status === 429) return 'tooMany'
+    if (err?.response?.status === 401) return 'wrongPassword'
     return err?.response?.data?.detail || err?.message || 'failed'
   }
   // Every model and the WebSocket start over, now signed in.

@@ -116,7 +116,7 @@ async function submit() {
   error.value = ''
   const result = await auth.signIn(username.value.trim(), password.value)
   if (result !== true) {
-    if (result === 'Wrong username or password')
+    if (result === 'wrongPassword')
       error.value = t('auth.wrongPassword')
     else if (result === 'tooMany') error.value = t('auth.tooMany')
     else error.value = String(result)
