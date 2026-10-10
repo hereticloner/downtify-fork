@@ -20,15 +20,13 @@ export default {
       not_found: 'Introuvable.',
     },
     auth: {
-      invalid_credentials:
-        "Nom d'utilisateur ou mot de passe incorrect.",
+      invalid_credentials: "Nom d'utilisateur ou mot de passe incorrect.",
       rate_limited:
         'Trop de tentatives. Attendez quelques minutes et réessayez.',
       signin_required: 'Veuillez vous reconnecter.',
       forbidden: "Vous n'avez pas la permission de faire cela.",
       disabled: 'La connexion est désactivée sur ce serveur.',
-      not_ready:
-        "La connexion n'est pas encore prête. Réessayez bientôt.",
+      not_ready: "La connexion n'est pas encore prête. Réessayez bientôt.",
       pairing_code: "Ce code d'appairage est erroné ou a expiré.",
       pairing_not_found: "Cet appairage n'est plus disponible.",
     },
@@ -370,6 +368,9 @@ export default {
     selectTrack: 'Sélectionner {title}',
     select: 'Sélectionner',
     deselect: 'Désélectionner',
+    menuForTrack: 'Plus d’actions pour {title}',
+    keyboardHint:
+      'Utilisez les flèches pour parcourir les morceaux. Appuyez sur Entrée pour lire le morceau en surbrillance, ou sur Maj+F10 pour son menu.',
     selectedCount: {
       one: '{count} sélectionné',
       other: '{count} sélectionnés',
@@ -657,7 +658,8 @@ export default {
     sleepEndOfTrackShort: 'Fin du titre',
     sleepOff: 'Désactiver la minuterie',
     autoDj: 'Auto-DJ',
-    autoDjOn: 'Continuer la lecture depuis la bibliothèque quand la file se termine',
+    autoDjOn:
+      'Continuer la lecture depuis la bibliothèque quand la file se termine',
     minutesLeft: '{count} min',
     equalizer: 'Égaliseur',
     equalizerOn: 'Activé',
@@ -887,10 +889,12 @@ export default {
     pacingGroup: 'Cadence',
     ytGroup: 'Fiabilité YouTube',
     ytClients: 'Clients player',
-    ytClientsHint: 'Liste de player_client séparés par des virgules. Vide = défaut.',
+    ytClientsHint:
+      'Liste de player_client séparés par des virgules. Vide = défaut.',
     ytClientsPlaceholder: 'tv, mweb',
     ytPoTokens: 'Jetons PO',
-    ytPoTokensHint: 'Jetons séparés par des virgules au format <client>.<context>+<token>. Vide = aucun.',
+    ytPoTokensHint:
+      'Jetons séparés par des virgules au format <client>.<context>+<token>. Vide = aucun.',
     ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Téléchargements simultanés',
     parallelHint: 'Nombre de titres téléchargés ou synchronisés en même temps.',
@@ -935,7 +939,8 @@ export default {
     notificationsHint:
       'Envoie un message quand quelque chose se passe en arrière-plan, comme une surveillance qui télécharge de nouveaux titres.',
     notificationsEnabled: 'Activer les notifications',
-    notificationsEnabledHint: 'Interrupteur principal pour tous les canaux de notification.',
+    notificationsEnabledHint:
+      'Interrupteur principal pour tous les canaux de notification.',
     telegramEnabled: 'Telegram',
     telegramEnabledHint: 'Envoie des messages via un bot Telegram.',
     telegramBotToken: 'Jeton du bot',
@@ -950,8 +955,7 @@ export default {
     notificationFailed: 'Impossible d’envoyer le message test.',
     storage: 'Stockage',
     storageTitle: 'Stockage',
-    storageHint:
-      'Espace disque et titres en double dans votre bibliothèque.',
+    storageHint: 'Espace disque et titres en double dans votre bibliothèque.',
     diskUsage: 'Utilisation du disque',
     diskUsed: 'Utilisé',
     diskFree: 'Libre',
@@ -974,26 +978,33 @@ export default {
 
     spotifyMirror: 'Spotify Mirror',
     spotifyMirrorTitle: 'Spotify Mirror',
-    spotifyMirrorHint: 'Les lectures dans Downtify lancent le même titre sur votre appareil Spotify Connect (ce serveur en fournit un silencieux), pour que votre écoute apparaisse sur Spotify.',
+    spotifyMirrorHint:
+      'Les lectures dans Downtify lancent le même titre sur votre appareil Spotify Connect (ce serveur en fournit un silencieux), pour que votre écoute apparaisse sur Spotify.',
     spotifyMirrorEnabled: 'Activer Spotify Mirror',
-    spotifyMirrorEnabledHint: 'Interrupteur principal pour refléter les lectures.',
+    spotifyMirrorEnabledHint:
+      'Interrupteur principal pour refléter les lectures.',
     spotifyMirrorClientId: 'Identifiant (client id) Spotify',
-    spotifyMirrorClientIdHint: 'Depuis developer.spotify.com - votre propre app, avec la Web API.',
+    spotifyMirrorClientIdHint:
+      'Depuis developer.spotify.com - votre propre app, avec la Web API.',
     spotifyMirrorRedirect: 'Redirect URI',
-    spotifyMirrorRedirectHint: "Doit correspondre exactement à l'app Spotify, ex. {suggest}",
+    spotifyMirrorRedirectHint:
+      "Doit correspondre exactement à l'app Spotify, ex. {suggest}",
     spotifyMirrorLoadDevices: 'Charger les appareils',
     spotifyMirrorDevice: 'Appareil Spotify Connect',
-    spotifyMirrorNoDevices: "Aucun appareil Spotify Connect n'est en ligne actuellement.",
+    spotifyMirrorNoDevices:
+      "Aucun appareil Spotify Connect n'est en ligne actuellement.",
     spotifyMirrorConnect: 'Se connecter à Spotify',
     spotifyMirrorOk: 'Connecté sous {username} - appareil {device}',
     spotifyMirrorFailed: 'Le test a échoué - reconnectez-vous.',
     spotifyMirrorConnected: 'Spotify connecté.',
     spotifyMirrorError: "La connexion à Spotify ne s'est pas terminée.",
     spotifyMirrorSilent: 'Reflet silencieux',
-    spotifyMirrorSilentHint: "Garde l'appareil au volume 0, pour n'entendre que Downtify.",    scrobbling: 'Scrobbling',
+    spotifyMirrorSilentHint:
+      "Garde l'appareil au volume 0, pour n'entendre que Downtify.",
+    scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
-      'Envoyez les lectures à last.fm. Vous avez besoin d\'un compte API last.fm (gratuit) et de connecter votre profil last.fm via la procédure ci-dessous.',
+      "Envoyez les lectures à last.fm. Vous avez besoin d'un compte API last.fm (gratuit) et de connecter votre profil last.fm via la procédure ci-dessous.",
     scrobblingEnabled: 'Activer le scrobbling',
     scrobblingEnabledHint: 'Interrupteur principal pour tout le scrobbling.',
     lastfmEnabled: 'last.fm',
@@ -1009,7 +1020,8 @@ export default {
     scrobblingOk: 'Connexion OK.',
     scrobblingFailed: 'Connexion échouée.',
     scrobbleNowPlaying: 'Mettre à jour en cours de lecture',
-    scrobbleNowPlayingHint: 'Dire à last.fm ce qui est en lecture (ne scrobble pas).',
+    scrobbleNowPlayingHint:
+      'Dire à last.fm ce qui est en lecture (ne scrobble pas).',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Reproduit les playlists téléchargées dans Navidrome. Son dossier musical doit inclure les téléchargements de Downtify.',

@@ -3,8 +3,7 @@ export default {
     name: 'Türkçe',
   },
   errors: {
-    network:
-      'Sunucuya ulaşılamıyor. Bağlantını kontrol edip tekrar dene.',
+    network: 'Sunucuya ulaşılamıyor. Bağlantını kontrol edip tekrar dene.',
     generic: 'Bir şeyler ters gitti. Lütfen tekrar dene.',
     unknown: 'Bir şeyler ters gitti.',
     request: {
@@ -20,8 +19,7 @@ export default {
     },
     auth: {
       invalid_credentials: 'Kullanıcı adı veya parola yanlış.',
-      rate_limited:
-        'Çok fazla deneme. Birkaç dakika bekleyip tekrar dene.',
+      rate_limited: 'Çok fazla deneme. Birkaç dakika bekleyip tekrar dene.',
       signin_required: 'Lütfen tekrar giriş yap.',
       forbidden: 'Bunu yapma iznin yok.',
       disabled: 'Bu sunucuda giriş kapalı.',
@@ -361,6 +359,9 @@ export default {
     selectTrack: '{title} seç',
     select: 'Seç',
     deselect: 'Seçimi kaldır',
+    menuForTrack: '{title} için diğer işlemler',
+    keyboardHint:
+      'Şarkılar arasında gezinmek için ok tuşlarını kullanın. Vurgulanan şarkıyı çalmak için Enter’a, menüsü için Shift+F10’a basın.',
     selectedCount: { one: '{count} seçildi', other: '{count} seçildi' },
     clearSelection: 'Seçimi temizle',
     downloadZip: 'ZIP olarak indir',
@@ -869,10 +870,12 @@ export default {
     pacingGroup: 'Hız',
     ytGroup: 'YouTube güvenilirliği',
     ytClients: 'Player istemcileri',
-    ytClientsHint: 'Virgülle ayrılmış yt-dlp player_client listesi. Boş = varsayılan.',
+    ytClientsHint:
+      'Virgülle ayrılmış yt-dlp player_client listesi. Boş = varsayılan.',
     ytClientsPlaceholder: 'tv, mweb',
-    ytPoTokens: 'PO token\'ları',
-    ytPoTokensHint: '<client>.<context>+<token> biçiminde virgülle ayrılmış token\'lar. Boş = yok.',
+    ytPoTokens: "PO token'ları",
+    ytPoTokensHint:
+      "<client>.<context>+<token> biçiminde virgülle ayrılmış token'lar. Boş = yok.",
     ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Eşzamanlı indirmeler',
     parallelHint: 'Aynı anda kaç şarkı indirileceği veya eşitleneceği.',
@@ -931,8 +934,7 @@ export default {
     notificationFailed: 'Test mesajı gönderilemedi.',
     storage: 'Depolama',
     storageTitle: 'Depolama',
-    storageHint:
-      'Disk kullanımı ve kitaplığınızdaki yinelenen şarkılar.',
+    storageHint: 'Disk kullanımı ve kitaplığınızdaki yinelenen şarkılar.',
     diskUsage: 'Disk kullanımı',
     diskUsed: 'Kullanılan',
     diskFree: 'Boş',
@@ -955,13 +957,16 @@ export default {
 
     spotifyMirror: 'Spotify Mirror',
     spotifyMirrorTitle: 'Spotify Mirror',
-    spotifyMirrorHint: "Downtify'de çalan şarkılar Spotify Connect cihazında da çalınır (bu sunucu sessiz bir tane gönderir), böylece dinledikleriniz Spotify'da görünür.",
+    spotifyMirrorHint:
+      "Downtify'de çalan şarkılar Spotify Connect cihazında da çalınır (bu sunucu sessiz bir tane gönderir), böylece dinledikleriniz Spotify'da görünür.",
     spotifyMirrorEnabled: "Spotify Mirror'ı etkinleştir",
     spotifyMirrorEnabledHint: 'Yansıtmanın ana anahtarı.',
     spotifyMirrorClientId: 'Spotify client id',
-    spotifyMirrorClientIdHint: "developer.spotify.com'dan - kendi uygulamanız, Web API ile.",
+    spotifyMirrorClientIdHint:
+      "developer.spotify.com'dan - kendi uygulamanız, Web API ile.",
     spotifyMirrorRedirect: 'Redirect URI',
-    spotifyMirrorRedirectHint: 'Spotify uygulamasıyla birebir aynı olmalı, örn. {suggest}',
+    spotifyMirrorRedirectHint:
+      'Spotify uygulamasıyla birebir aynı olmalı, örn. {suggest}',
     spotifyMirrorLoadDevices: 'Cihazları getir',
     spotifyMirrorDevice: 'Spotify Connect cihazı',
     spotifyMirrorNoDevices: 'Şu anda çevrimiçi Spotify Connect cihazı yok.',
@@ -971,26 +976,28 @@ export default {
     spotifyMirrorConnected: 'Spotify bağlandı.',
     spotifyMirrorError: 'Spotify bağlantısı tamamlanmadı.',
     spotifyMirrorSilent: 'Sessiz yansıtma',
-    spotifyMirrorSilentHint: "Yansıtan cihazı ses 0'da tutar, yalnız Downtify duyulur.",    scrobbling: 'Scrobbling',
+    spotifyMirrorSilentHint:
+      "Yansıtan cihazı ses 0'da tutar, yalnız Downtify duyulur.",
+    scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
-      'Oynatmaları last.fm\'e gönder. last.fm API hesabına (ücretsiz) ve last.fm profilini aşağıdaki akışla bağlamana ihtiyacın var.',
-    scrobblingEnabled: 'Scrobbling\'i etkinleştir',
+      "Oynatmaları last.fm'e gönder. last.fm API hesabına (ücretsiz) ve last.fm profilini aşağıdaki akışla bağlamana ihtiyacın var.",
+    scrobblingEnabled: "Scrobbling'i etkinleştir",
     scrobblingEnabledHint: 'Tüm scrobbling için ana anahtar.',
     lastfmEnabled: 'last.fm',
-    lastfmEnabledHint: 'last.fm\'e scrobble yap.',
+    lastfmEnabledHint: "last.fm'e scrobble yap.",
     lastfmApiKey: 'API anahtarı',
     lastfmApiSecret: 'API gizli anahtarı',
-    connectLastfm: 'last.fm\'e bağlan',
-    authorizeLastfm: 'last.fm\'de yetkilendir &rarr;',
+    connectLastfm: "last.fm'e bağlan",
+    authorizeLastfm: "last.fm'de yetkilendir &rarr;",
     finishLastfm: 'Bağlantıyı bitir',
     lastfmConnected: '{username} olarak bağlı',
     disconnectLastfm: 'Bağlantıyı kes',
     testConnection: 'Bağlantıyı test et',
     scrobblingOk: 'Bağlantı tam.',
     scrobblingFailed: 'Bağlantı başarısız.',
-    scrobbleNowPlaying: 'Şimdi çalınıyor\'u güncelle',
-    scrobbleNowPlayingHint: 'last.fm\'e ne çalındığını söyle (scrobble yapmaz).',
+    scrobbleNowPlaying: "Şimdi çalınıyor'u güncelle",
+    scrobbleNowPlayingHint: "last.fm'e ne çalındığını söyle (scrobble yapmaz).",
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'İndirilen çalma listelerini Navidrome’a yansıt. Müzik klasörü Downtify indirmelerini içermeli.',

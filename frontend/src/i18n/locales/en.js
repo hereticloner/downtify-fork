@@ -351,6 +351,9 @@ export default {
     selectTrack: 'Select {title}',
     select: 'Select',
     deselect: 'Deselect',
+    menuForTrack: 'More actions for {title}',
+    keyboardHint:
+      'Use the arrow keys to move between songs. Press Enter to play the highlighted song, or Shift+F10 for its menu.',
     selectedCount: { one: '{count} selected', other: '{count} selected' },
     clearSelection: 'Clear selection',
     downloadZip: 'Download as ZIP',
@@ -848,10 +851,12 @@ export default {
     pacingGroup: 'Pacing',
     ytGroup: 'YouTube reliability',
     ytClients: 'Player clients',
-    ytClientsHint: 'Comma-separated yt-dlp player_client list. Empty = built-in default.',
+    ytClientsHint:
+      'Comma-separated yt-dlp player_client list. Empty = built-in default.',
     ytClientsPlaceholder: 'tv, mweb',
     ytPoTokens: 'PO tokens',
-    ytPoTokensHint: 'Comma-separated tokens in <client>.<context>+<token> form. Empty = none.',
+    ytPoTokensHint:
+      'Comma-separated tokens in <client>.<context>+<token> form. Empty = none.',
     ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Parallel downloads',
     parallelHint: 'How many songs download or sync at the same time.',
@@ -909,8 +914,7 @@ export default {
     notificationFailed: 'Could not send the test message.',
     storage: 'Storage',
     storageTitle: 'Storage',
-    storageHint:
-      'Disk usage and duplicate songs in your library.',
+    storageHint: 'Disk usage and duplicate songs in your library.',
     diskUsage: 'Disk usage',
     diskUsed: 'Used',
     diskFree: 'Free',
@@ -944,8 +948,7 @@ export default {
       'Must match the Spotify app exactly, e.g. {suggest}',
     spotifyMirrorLoadDevices: 'Load devices',
     spotifyMirrorDevice: 'Spotify Connect device',
-    spotifyMirrorNoDevices:
-      'No Spotify Connect device is online right now.',
+    spotifyMirrorNoDevices: 'No Spotify Connect device is online right now.',
     spotifyMirrorConnect: 'Connect with Spotify',
     spotifyMirrorOk: 'Connected as {username} - device {device}',
     spotifyMirrorFailed: 'The test failed - connect again.',
@@ -973,8 +976,7 @@ export default {
     scrobblingOk: 'Connection OK.',
     scrobblingFailed: 'Connection failed.',
     scrobbleNowPlaying: 'Update now playing',
-    scrobbleNowPlayingHint:
-      'Tell last.fm what is playing (does not scrobble).',
+    scrobbleNowPlayingHint: 'Tell last.fm what is playing (does not scrobble).',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Mirror downloaded playlists into Navidrome. Its music folder must include Downtify’s downloads.',

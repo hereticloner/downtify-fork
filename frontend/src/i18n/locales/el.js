@@ -25,8 +25,7 @@ export default {
         'Πολλές προσπάθειες. Περιμένετε λίγα λεπτά και δοκιμάστε ξανά.',
       signin_required: 'Συνδεθείτε ξανά.',
       forbidden: 'Δεν έχετε άδεια για αυτό.',
-      disabled:
-        'Η σύνδεση είναι απενεργοποιημένη σε αυτόν τον διακομιστή.',
+      disabled: 'Η σύνδεση είναι απενεργοποιημένη σε αυτόν τον διακομιστή.',
       not_ready: 'Η σύνδεση δεν είναι ακόμη έτοιμη. Δοκιμάστε σε λίγο.',
       pairing_code: 'Ο κωδικός σύζευξης είναι λάθος ή έληξε.',
       pairing_not_found: 'Αυτή η σύζευξη δεν είναι πλέον διαθέσιμη.',
@@ -34,13 +33,11 @@ export default {
     server: {
       starting: 'Ο διακομιστής ξεκινά ακόμη. Δοκιμάστε σε μια στιγμή.',
       error: 'Ο διακομιστής αντιμετώπισε πρόβλημα. Δοκιμάστε ξανά.',
-      port_locked:
-        'Η θύρα ορίζεται από το περιβάλλον ή τη γραμμή εντολών.',
+      port_locked: 'Η θύρα ορίζεται από το περιβάλλον ή τη γραμμή εντολών.',
       port_in_use: 'Η θύρα χρησιμοποιείται ήδη. Επιλέξτε άλλη.',
     },
     download: {
-      not_ready:
-        'Ο λήπτης δεν είναι ακόμη έτοιμος. Δοκιμάστε σε μια στιγμή.',
+      not_ready: 'Ο λήπτης δεν είναι ακόμη έτοιμος. Δοκιμάστε σε μια στιγμή.',
       failed: 'Η λήψη απέτυχε. Δοκιμάστε ξανά.',
       no_songs: 'Δεν βρέθηκαν κομμάτια για λήψη.',
     },
@@ -363,6 +360,9 @@ export default {
     selectTrack: 'Επιλογή {title}',
     select: 'Επιλογή',
     deselect: 'Αποεπιλογή',
+    menuForTrack: 'Περισσότερες ενέργειες για {title}',
+    keyboardHint:
+      'Χρησιμοποιήστε τα βέλη για να μετακινηθείτε ανάμεσα στα τραγούδια. Πατήστε Enter για αναπαραγωγή του επισημασμένου τραγουδιού ή Shift+F10 για το μενού του.',
     selectedCount: { one: '{count} επιλεγμένο', other: '{count} επιλεγμένα' },
     clearSelection: 'Εκκαθάριση επιλογής',
     downloadZip: 'Λήψη ως ZIP',
@@ -879,7 +879,8 @@ export default {
     ytClientsHint: 'Λίστα player_client με κόμματα. Κενό = προεπιλογή.',
     ytClientsPlaceholder: 'tv, mweb',
     ytPoTokens: 'Tokens PO',
-    ytPoTokensHint: 'Tokens με κόμματα σε μορφή <client>.<context>+<token>. Κενό = κανένα.',
+    ytPoTokensHint:
+      'Tokens με κόμματα σε μορφή <client>.<context>+<token>. Κενό = κανένα.',
     ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Ταυτόχρονες λήψεις',
     parallelHint: 'Πόσα τραγούδια κατεβαίνουν ή συγχρονίζονται ταυτόχρονα.',
@@ -936,11 +937,11 @@ export default {
       'Ειδοποιεί όταν μια παρακολούθηση λίστας ή καλλιτέχνη κατεβάζει νέα κομμάτια.',
     testNotification: 'Αποστολή δοκιμαστικού μηνύματος',
     notificationSent: 'Το δοκιμαστικό μήνυμα στάλθηκε.',
-    notificationFailed: 'Δεν ήταν δυνατή η αποστολή του δοκιμαστικού μηνύματος.',
+    notificationFailed:
+      'Δεν ήταν δυνατή η αποστολή του δοκιμαστικού μηνύματος.',
     storage: 'Αποθήκευση',
     storageTitle: 'Αποθήκευση',
-    storageHint:
-      'Χρήση δίσκου και διπλότυπα τραγούδια στη βιβλιοθήκη σας.',
+    storageHint: 'Χρήση δίσκου και διπλότυπα τραγούδια στη βιβλιοθήκη σας.',
     diskUsage: 'Χρήση δίσκου',
     diskUsed: 'Σε χρήση',
     diskFree: 'Ελεύθερο',
@@ -963,23 +964,29 @@ export default {
 
     spotifyMirror: 'Spotify Mirror',
     spotifyMirrorTitle: 'Spotify Mirror',
-    spotifyMirrorHint: 'Οι αναπαραγωγές στο Downtify ξεκινούν το ίδιο κομμάτι στη συσκευή Spotify Connect σας (ο διακομιστής παρέχει μια αθόρυβη), ώστε η ακρόασή σας να εμφανίζεται στο Spotify.',
+    spotifyMirrorHint:
+      'Οι αναπαραγωγές στο Downtify ξεκινούν το ίδιο κομμάτι στη συσκευή Spotify Connect σας (ο διακομιστής παρέχει μια αθόρυβη), ώστε η ακρόασή σας να εμφανίζεται στο Spotify.',
     spotifyMirrorEnabled: 'Ενεργοποίηση Spotify Mirror',
     spotifyMirrorEnabledHint: 'Διακόπτης για την απεικόνιση αναπαραγωγών.',
     spotifyMirrorClientId: 'Spotify client id',
-    spotifyMirrorClientIdHint: 'Από developer.spotify.com - τη δική σας εφαρμογή με το Web API.',
+    spotifyMirrorClientIdHint:
+      'Από developer.spotify.com - τη δική σας εφαρμογή με το Web API.',
     spotifyMirrorRedirect: 'Redirect URI',
-    spotifyMirrorRedirectHint: 'Πρέπει να ταιριάζει ακριβώς με την εφαρμογή στο Spotify, π.χ. {suggest}',
+    spotifyMirrorRedirectHint:
+      'Πρέπει να ταιριάζει ακριβώς με την εφαρμογή στο Spotify, π.χ. {suggest}',
     spotifyMirrorLoadDevices: 'Φόρτωση συσκευών',
     spotifyMirrorDevice: 'Συσκευή Spotify Connect',
-    spotifyMirrorNoDevices: 'Δεν υπάρχει διαθέσιμη συσκευή Spotify Connectτώρα.',
+    spotifyMirrorNoDevices:
+      'Δεν υπάρχει διαθέσιμη συσκευή Spotify Connectτώρα.',
     spotifyMirrorConnect: 'Σύνδεση με Spotify',
     spotifyMirrorOk: 'Συνδεθήκατε ως {username} - συσκευή {device}',
     spotifyMirrorFailed: 'Ο έλεγχος απέτυχε - συνδεθείτε ξανά.',
     spotifyMirrorConnected: 'Συνδέθηκε το Spotify.',
     spotifyMirrorError: 'Η σύνδεση με το Spotify δεν ολοκληρώθηκε.',
     spotifyMirrorSilent: 'Αθόρυβη απεικόνιση',
-    spotifyMirrorSilentHint: 'Κρατά τη συσκευή απεικόνισης σε ένταση 0, ώστε να ακούτε μόνο το Downtify.',    scrobbling: 'Scrobbling',
+    spotifyMirrorSilentHint:
+      'Κρατά τη συσκευή απεικόνισης σε ένταση 0, ώστε να ακούτε μόνο το Downtify.',
+    scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
       'Στείλτε αναπαραγωγές στο last.fm. Χρειάζεστε δωρεάν λογαριασμό last.fm API και να συνδέσετε το προφίλ σας στο last.fm μέσω της παρακάτω διαδικασίας.',

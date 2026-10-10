@@ -37,8 +37,7 @@ export default {
       port_in_use: 'Ese puerto ya está en uso. Elige otro.',
     },
     download: {
-      not_ready:
-        'El descargador aún no está listo. Inténtalo en un momento.',
+      not_ready: 'El descargador aún no está listo. Inténtalo en un momento.',
       failed: 'La descarga falló. Inténtalo de nuevo.',
       no_songs: 'No se encontraron pistas descargables.',
     },
@@ -360,6 +359,9 @@ export default {
     selectTrack: 'Seleccionar {title}',
     select: 'Seleccionar',
     deselect: 'Deseleccionar',
+    menuForTrack: 'Más acciones para {title}',
+    keyboardHint:
+      'Usa las flechas para moverte entre canciones. Pulsa Enter para reproducir la canción resaltada o Mayús+F10 para su menú.',
     selectedCount: {
       one: '{count} seleccionada',
       other: '{count} seleccionadas',
@@ -872,10 +874,12 @@ export default {
     pacingGroup: 'Ritmo',
     ytGroup: 'Fiabilidad de YouTube',
     ytClients: 'Clientes de reproductor',
-    ytClientsHint: 'Lista separada por comas de player_client. Vacío = predeterminado.',
+    ytClientsHint:
+      'Lista separada por comas de player_client. Vacío = predeterminado.',
     ytClientsPlaceholder: 'tv, mweb',
     ytPoTokens: 'Tokens PO',
-    ytPoTokensHint: 'Tokens separados por comas en formato <client>.<context>+<token>. Vacío = ninguno.',
+    ytPoTokensHint:
+      'Tokens separados por comas en formato <client>.<context>+<token>. Vacío = ninguno.',
     ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Descargas simultáneas',
     parallelHint: 'Cuántas canciones se descargan o sincronizan a la vez.',
@@ -920,7 +924,8 @@ export default {
     notificationsHint:
       'Envía un mensaje cuando algo ocurre en segundo plano, como una vigilancia que descarga nuevas pistas.',
     notificationsEnabled: 'Activar notificaciones',
-    notificationsEnabledHint: 'Interruptor principal para todos los canales de notificación.',
+    notificationsEnabledHint:
+      'Interruptor principal para todos los canales de notificación.',
     telegramEnabled: 'Telegram',
     telegramEnabledHint: 'Envía mensajes a través de un bot de Telegram.',
     telegramBotToken: 'Token del bot',
@@ -935,8 +940,7 @@ export default {
     notificationFailed: 'No se pudo enviar el mensaje de prueba.',
     storage: 'Almacenamiento',
     storageTitle: 'Almacenamiento',
-    storageHint:
-      'Uso del disco y canciones duplicadas en tu biblioteca.',
+    storageHint: 'Uso del disco y canciones duplicadas en tu biblioteca.',
     diskUsage: 'Uso del disco',
     diskUsed: 'Usado',
     diskFree: 'Libre',
@@ -959,23 +963,30 @@ export default {
 
     spotifyMirror: 'Spotify Mirror',
     spotifyMirrorTitle: 'Spotify Mirror',
-    spotifyMirrorHint: 'Las reproducciones de Downtify inician la misma canción en tu dispositivo Spotify Connect (este servidor incluye uno silencioso), para que tu historial aparezca en Spotify.',
+    spotifyMirrorHint:
+      'Las reproducciones de Downtify inician la misma canción en tu dispositivo Spotify Connect (este servidor incluye uno silencioso), para que tu historial aparezca en Spotify.',
     spotifyMirrorEnabled: 'Activar Spotify Mirror',
-    spotifyMirrorEnabledHint: 'Interruptor maestro para replicar reproducciones.',
+    spotifyMirrorEnabledHint:
+      'Interruptor maestro para replicar reproducciones.',
     spotifyMirrorClientId: 'Identificador (client id) de Spotify',
-    spotifyMirrorClientIdHint: 'De developer.spotify.com - tu propia app, con la Web API.',
+    spotifyMirrorClientIdHint:
+      'De developer.spotify.com - tu propia app, con la Web API.',
     spotifyMirrorRedirect: 'Redirect URI',
-    spotifyMirrorRedirectHint: 'Debe coincidir con la app de Spotify, p. ej. {suggest}',
+    spotifyMirrorRedirectHint:
+      'Debe coincidir con la app de Spotify, p. ej. {suggest}',
     spotifyMirrorLoadDevices: 'Cargar dispositivos',
     spotifyMirrorDevice: 'Dispositivo Spotify Connect',
-    spotifyMirrorNoDevices: 'No hay un dispositivo Spotify Connect en línea ahora mismo.',
+    spotifyMirrorNoDevices:
+      'No hay un dispositivo Spotify Connect en línea ahora mismo.',
     spotifyMirrorConnect: 'Conectar con Spotify',
     spotifyMirrorOk: 'Conectado como {username} - dispositivo {device}',
     spotifyMirrorFailed: 'La prueba falló - conecta de nuevo.',
     spotifyMirrorConnected: 'Spotify conectado.',
     spotifyMirrorError: 'No se completó la conexión con Spotify.',
     spotifyMirrorSilent: 'Replicación silenciosa',
-    spotifyMirrorSilentHint: 'Mantiene el dispositivo en volumen 0, para que solo oigas Downtify.',    scrobbling: 'Scrobbling',
+    spotifyMirrorSilentHint:
+      'Mantiene el dispositivo en volumen 0, para que solo oigas Downtify.',
+    scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
       'Envía reproducciones a last.fm. Necesitas una cuenta API de last.fm (gratis) y conectar tu perfil de last.fm a través del proceso de abajo.',
@@ -994,7 +1005,8 @@ export default {
     scrobblingOk: 'Conexión OK.',
     scrobblingFailed: 'Conexión fallida.',
     scrobbleNowPlaying: 'Actualizar reproduciendo ahora',
-    scrobbleNowPlayingHint: 'Dile a last.fm qué se está reproduciendo (no hace scrobble).',
+    scrobbleNowPlayingHint:
+      'Dile a last.fm qué se está reproduciendo (no hace scrobble).',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Replica las playlists descargadas en Navidrome. Su carpeta de música debe incluir las descargas de Downtify.',

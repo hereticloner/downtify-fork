@@ -123,6 +123,20 @@ Shortcuts are ignored while you type in a field or while a dialog is open.
 
 The player also reports the current track to the operating system (Media Session), so lock-screen controls, headset buttons and keyboard media keys work, with the cover shown where the system supports it.
 
+## Track list keyboard navigation
+
+Every track list — the Library's Tracks tab, and the albums, artists, playlists and liked songs lists — is one Tab stop you can drive entirely from the keyboard. Tab into the list and the focused row is outlined; the play control and row number swap on focus as well as hover, so the primary action never needs a mouse.
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Previous / next song |
+| `Home` / `End` | First / last song |
+| `Enter` or `Space` | Play the focused song |
+| `Context Menu` or `Shift` + `F10` | Open the focused song's actions menu |
+| `Tab` | Step into the row's own controls (select, like, ⋯), then on to the next row |
+
+Only the focused row is in the Tab order, so a long list doesn't cost a Tab press per song; the arrow keys move within it. Right-click still opens a row's menu with the mouse, and playing with a double-click or a tap is unchanged.
+
 ## How it works
 
 Tracks come from the library listing (`GET /tracks`), which reads title, artist, album, track number, year and length from each file's tags. Files are served from the `/downloads` static mount; library paths outside it (`slskd/…`, `ext/…`) are played through `/media/…`. Cover art comes from `/cover` and lyrics from `/lyrics` — see the [API reference](../api-reference.md#file-management).

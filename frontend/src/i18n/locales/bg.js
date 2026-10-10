@@ -3,8 +3,7 @@ export default {
     name: 'Български',
   },
   errors: {
-    network:
-      'Сървърът не е достъпен. Проверете връзката си и опитайте отново.',
+    network: 'Сървърът не е достъпен. Проверете връзката си и опитайте отново.',
     generic: 'Нещо се обърка. Опитайте отново.',
     unknown: 'Нещо се обърка.',
     request: {
@@ -354,6 +353,9 @@ export default {
     selectTrack: 'Избери {title}',
     select: 'Избери',
     deselect: 'Отмени избора',
+    menuForTrack: 'Още действия за {title}',
+    keyboardHint:
+      'Използвайте стрелките, за да се движите между песните. Натиснете Enter, за да пуснете осветената песен, или Shift+F10 за менюто ѝ.',
     selectedCount: { one: '{count} избрана', other: '{count} избрани' },
     clearSelection: 'Изчисти избора',
     downloadZip: 'Изтегли като ZIP',
@@ -862,10 +864,12 @@ export default {
     pacingGroup: 'Темпо',
     ytGroup: 'Надеждност на YouTube',
     ytClients: 'Player клиенти',
-    ytClientsHint: 'Списък с player_client, разделени със запетаи. Празно = по подразбиране.',
+    ytClientsHint:
+      'Списък с player_client, разделени със запетаи. Празно = по подразбиране.',
     ytClientsPlaceholder: 'tv, mweb',
     ytPoTokens: 'PO токени',
-    ytPoTokensHint: 'Токени, разделени със запетаи, във вид <client>.<context>+<token>. Празно = без.',
+    ytPoTokensHint:
+      'Токени, разделени със запетаи, във вид <client>.<context>+<token>. Празно = без.',
     ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Едновременни изтегляния',
     parallelHint: 'Колко песни се изтеглят или синхронизират едновременно.',
@@ -909,7 +913,8 @@ export default {
     notificationsHint:
       'Изпраща съобщение, когато нещо се случи във фонов режим, например проследяване, което изтегля нови песни.',
     notificationsEnabled: 'Включи известията',
-    notificationsEnabledHint: 'Главен превключвател за всички канали за известия.',
+    notificationsEnabledHint:
+      'Главен превключвател за всички канали за известия.',
     telegramEnabled: 'Telegram',
     telegramEnabledHint: 'Изпраща съобщения чрез Telegram бот.',
     telegramBotToken: 'Токен на бота',
@@ -924,8 +929,7 @@ export default {
     notificationFailed: 'Тестовото съобщение не можа да бъде изпратено.',
     storage: 'Хранилище',
     storageTitle: 'Хранилище',
-    storageHint:
-      'Използвано дисково място и дублирани песни в библиотеката.',
+    storageHint: 'Използвано дисково място и дублирани песни в библиотеката.',
     diskUsage: 'Дисково място',
     diskUsed: 'Използвано',
     diskFree: 'Свободно',
@@ -948,13 +952,16 @@ export default {
 
     spotifyMirror: 'Spotify Mirror',
     spotifyMirrorTitle: 'Spotify Mirror',
-    spotifyMirrorHint: 'Пусканията в Downtify стартират същата песен на вашето Spotify Connect устройство (сървърът доставя такова тихо), така че слушането ви се вижда в Spotify.',
+    spotifyMirrorHint:
+      'Пусканията в Downtify стартират същата песен на вашето Spotify Connect устройство (сървърът доставя такова тихо), така че слушането ви се вижда в Spotify.',
     spotifyMirrorEnabled: 'Включване на Spotify Mirror',
     spotifyMirrorEnabledHint: 'Главен ключ за отразяването на пускания.',
     spotifyMirrorClientId: 'Spotify client id',
-    spotifyMirrorClientIdHint: 'От developer.spotify.com - вашето приложение с Web API.',
+    spotifyMirrorClientIdHint:
+      'От developer.spotify.com - вашето приложение с Web API.',
     spotifyMirrorRedirect: 'Redirect URI',
-    spotifyMirrorRedirectHint: 'Трябва да съвпада точно с приложението в Spotify, напр. {suggest}',
+    spotifyMirrorRedirectHint:
+      'Трябва да съвпада точно с приложението в Spotify, напр. {suggest}',
     spotifyMirrorLoadDevices: 'Заредете устройства',
     spotifyMirrorDevice: 'Spotify Connect устройство',
     spotifyMirrorNoDevices: 'Няма онлайн Spotify Connect устройство в момента.',
@@ -964,7 +971,9 @@ export default {
     spotifyMirrorConnected: 'Spotify е свързан.',
     spotifyMirrorError: 'Връзката със Spotify не завърши.',
     spotifyMirrorSilent: 'Тихо огледало',
-    spotifyMirrorSilentHint: 'Държи отразяващото устройство на звук 0, така че чувате само Downtify.',    scrobbling: 'Скроблинг',
+    spotifyMirrorSilentHint:
+      'Държи отразяващото устройство на звук 0, така че чувате само Downtify.',
+    scrobbling: 'Скроблинг',
     scrobblingTitle: 'Скроблинг',
     scrobblingHint:
       'Изпращайте възпроизвеждания към last.fm. Вие имате нужда от безплатен last.fm API акаунт и да свържете своя last.fm профил чрез по-долния процес.',

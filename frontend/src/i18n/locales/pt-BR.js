@@ -20,8 +20,7 @@ export default {
     },
     auth: {
       invalid_credentials: 'Usuário ou senha incorretos.',
-      rate_limited:
-        'Muitas tentativas. Espere alguns minutos e tente de novo.',
+      rate_limited: 'Muitas tentativas. Espere alguns minutos e tente de novo.',
       signin_required: 'Entre novamente.',
       forbidden: 'Você não tem permissão para fazer isso.',
       disabled: 'O login está desativado neste servidor.',
@@ -32,8 +31,7 @@ export default {
     server: {
       starting: 'O servidor ainda está iniciando. Tente daqui a pouco.',
       error: 'O servidor teve um problema. Tente de novo.',
-      port_locked:
-        'A porta é definida pelo ambiente ou pela linha de comando.',
+      port_locked: 'A porta é definida pelo ambiente ou pela linha de comando.',
       port_in_use: 'Essa porta já está em uso. Escolha outra.',
     },
     download: {
@@ -358,6 +356,9 @@ export default {
     selectTrack: 'Selecionar {title}',
     select: 'Selecionar',
     deselect: 'Desmarcar',
+    menuForTrack: 'Mais ações para {title}',
+    keyboardHint:
+      'Use as setas para navegar entre as faixas. Pressione Enter para reproduzir a faixa destacada ou Shift+F10 para o menu dela.',
     selectedCount: {
       one: '{count} selecionada',
       other: '{count} selecionadas',
@@ -869,10 +870,12 @@ export default {
     pacingGroup: 'Ritmo',
     ytGroup: 'Confiabilidade do YouTube',
     ytClients: 'Clientes de player',
-    ytClientsHint: 'Lista separada por vírgulas de player_client. Vazio = padrão.',
+    ytClientsHint:
+      'Lista separada por vírgulas de player_client. Vazio = padrão.',
     ytClientsPlaceholder: 'tv, mweb',
     ytPoTokens: 'Tokens PO',
-    ytPoTokensHint: 'Tokens separados por vírgula no formato <client>.<context>+<token>. Vazio = nenhum.',
+    ytPoTokensHint:
+      'Tokens separados por vírgula no formato <client>.<context>+<token>. Vazio = nenhum.',
     ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Downloads simultâneos',
     parallelHint:
@@ -917,7 +920,8 @@ export default {
     notificationsHint:
       'Envia uma mensagem quando algo acontece em segundo plano, como um monitoramento que baixa novas faixas.',
     notificationsEnabled: 'Ativar notificações',
-    notificationsEnabledHint: 'Interruptor principal de todos os canais de notificação.',
+    notificationsEnabledHint:
+      'Interruptor principal de todos os canais de notificação.',
     telegramEnabled: 'Telegram',
     telegramEnabledHint: 'Envia mensagens por um bot do Telegram.',
     telegramBotToken: 'Token do bot',
@@ -932,8 +936,7 @@ export default {
     notificationFailed: 'Não foi possível enviar a mensagem de teste.',
     storage: 'Armazenamento',
     storageTitle: 'Armazenamento',
-    storageHint:
-      'Uso do disco e músicas duplicadas na sua biblioteca.',
+    storageHint: 'Uso do disco e músicas duplicadas na sua biblioteca.',
     diskUsage: 'Uso do disco',
     diskUsed: 'Usado',
     diskFree: 'Livre',
@@ -956,23 +959,29 @@ export default {
 
     spotifyMirror: 'Spotify Mirror',
     spotifyMirrorTitle: 'Spotify Mirror',
-    spotifyMirrorHint: 'Reproduções no Downtify iniciam a mesma faixa no seu dispositivo Spotify Connect (este servidor entrega um silencioso), para que sua escuta apareça no Spotify.',
+    spotifyMirrorHint:
+      'Reproduções no Downtify iniciam a mesma faixa no seu dispositivo Spotify Connect (este servidor entrega um silencioso), para que sua escuta apareça no Spotify.',
     spotifyMirrorEnabled: 'Ativar Spotify Mirror',
     spotifyMirrorEnabledHint: 'Chave principal para replicar reproduções.',
     spotifyMirrorClientId: 'Client id do Spotify',
-    spotifyMirrorClientIdHint: 'De developer.spotify.com - seu próprio app, com a Web API.',
+    spotifyMirrorClientIdHint:
+      'De developer.spotify.com - seu próprio app, com a Web API.',
     spotifyMirrorRedirect: 'Redirect URI',
-    spotifyMirrorRedirectHint: 'Deve corresponder exatamente ao app do Spotify, ex. {suggest}',
+    spotifyMirrorRedirectHint:
+      'Deve corresponder exatamente ao app do Spotify, ex. {suggest}',
     spotifyMirrorLoadDevices: 'Carregar dispositivos',
     spotifyMirrorDevice: 'Dispositivo Spotify Connect',
-    spotifyMirrorNoDevices: 'Nenhum dispositivo Spotify Connect está online agora.',
+    spotifyMirrorNoDevices:
+      'Nenhum dispositivo Spotify Connect está online agora.',
     spotifyMirrorConnect: 'Conectar com o Spotify',
     spotifyMirrorOk: 'Conectado como {username} - dispositivo {device}',
     spotifyMirrorFailed: 'O teste falhou - conecte-se novamente.',
     spotifyMirrorConnected: 'Spotify conectado.',
     spotifyMirrorError: 'A conexão com o Spotify não foi concluída.',
     spotifyMirrorSilent: 'Replicação silenciosa',
-    spotifyMirrorSilentHint: 'Mantém o dispositivo no volume 0, para você ouvir só o Downtify.',    scrobbling: 'Scrobbling',
+    spotifyMirrorSilentHint:
+      'Mantém o dispositivo no volume 0, para você ouvir só o Downtify.',
+    scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
       'Envie reproduções para o last.fm. Você precisa de uma conta API do last.fm (gratuita) e conectar seu perfil do last.fm pelo fluxo abaixo.',
@@ -991,7 +1000,8 @@ export default {
     scrobblingOk: 'Conexão OK.',
     scrobblingFailed: 'Conexão falhou.',
     scrobbleNowPlaying: 'Atualizar tocando agora',
-    scrobbleNowPlayingHint: 'Diga ao last.fm o que está tocando (não faz scrobble).',
+    scrobbleNowPlayingHint:
+      'Diga ao last.fm o que está tocando (não faz scrobble).',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Espelha as playlists baixadas no Navidrome. A pasta de músicas dele precisa incluir os downloads do Downtify.',

@@ -12,8 +12,7 @@ export default {
       invalid_url: 'Ez a hivatkozás nem tűnik helyesnek.',
       unsupported_url: 'Ez a hivatkozás nem támogatott.',
       missing_field: 'Hiányzott egy kötelező adat.',
-      conflict:
-        'Ez ütközik a jelenlegi állapottal. Frissíts, és próbáld újra.',
+      conflict: 'Ez ütközik a jelenlegi állapottal. Frissíts, és próbáld újra.',
       too_large: 'Ez a fájl túl nagy.',
     },
     resource: {
@@ -21,8 +20,7 @@ export default {
     },
     auth: {
       invalid_credentials: 'Hibás felhasználónév vagy jelszó.',
-      rate_limited:
-        'Túl sok próbálkozás. Várj néhány percet, és próbáld újra.',
+      rate_limited: 'Túl sok próbálkozás. Várj néhány percet, és próbáld újra.',
       signin_required: 'Jelentkezz be újra.',
       forbidden: 'Ehhez nincs jogosultságod.',
       disabled: 'A bejelentkezés ki van kapcsolva ezen a szerveren.',
@@ -37,8 +35,7 @@ export default {
       port_in_use: 'Ez a port már használatban van. Válassz másikat.',
     },
     download: {
-      not_ready:
-        'A letöltő még nem kész. Próbáld újra egy pillanat múlva.',
+      not_ready: 'A letöltő még nem kész. Próbáld újra egy pillanat múlva.',
       failed: 'A letöltés nem sikerült. Próbáld újra.',
       no_songs: 'Nem található letölthető szám.',
     },
@@ -360,6 +357,9 @@ export default {
     selectTrack: '{title} kijelölése',
     select: 'Kijelölés',
     deselect: 'Kijelölés megszüntetése',
+    menuForTrack: 'További műveletek: {title}',
+    keyboardHint:
+      'A nyílbillentyűkkel lépkedhetsz a dalok között. Az Enter lejátssza a kijelölt dalt, a Shift+F10 pedig megnyitja a menüjét.',
     selectedCount: { one: '{count} kijelölve', other: '{count} kijelölve' },
     clearSelection: 'Kijelölés törlése',
     downloadZip: 'Letöltés ZIP-ként',
@@ -871,10 +871,12 @@ export default {
     pacingGroup: 'Ütemezés',
     ytGroup: 'YouTube megbízhatóság',
     ytClients: 'Lejátszó kliensek',
-    ytClientsHint: 'Vesszővel elválasztott player_client lista. Üres = alapértelmezett.',
+    ytClientsHint:
+      'Vesszővel elválasztott player_client lista. Üres = alapértelmezett.',
     ytClientsPlaceholder: 'tv, mweb',
     ytPoTokens: 'PO tokenek',
-    ytPoTokensHint: 'Vesszővel elválasztott tokenek <client>.<context>+<token> formában. Üres = nincs.',
+    ytPoTokensHint:
+      'Vesszővel elválasztott tokenek <client>.<context>+<token> formában. Üres = nincs.',
     ytPoTokensPlaceholder: 'mweb.gvs+abc123',
     parallel: 'Párhuzamos letöltések',
     parallelHint: 'Hány dal töltődik le vagy szinkronizálódik egyszerre.',
@@ -933,8 +935,7 @@ export default {
     notificationFailed: 'A tesztüzenetet nem sikerült elküldeni.',
     storage: 'Tárolás',
     storageTitle: 'Tárolás',
-    storageHint:
-      'Lemezhasználat és duplikált dalok a könyvtárban.',
+    storageHint: 'Lemezhasználat és duplikált dalok a könyvtárban.',
     diskUsage: 'Lemezhasználat',
     diskUsed: 'Használt',
     diskFree: 'Szabad',
@@ -957,13 +958,16 @@ export default {
 
     spotifyMirror: 'Spotify Mirror',
     spotifyMirrorTitle: 'Spotify Mirror',
-    spotifyMirrorHint: 'A Downtify lejátszásai ugyanazt a számot indítják el a Spotify Connect eszközén (a szerver csendeset szállít), így a hallgatás megjelenik a Spotify-n.',
+    spotifyMirrorHint:
+      'A Downtify lejátszásai ugyanazt a számot indítják el a Spotify Connect eszközén (a szerver csendeset szállít), így a hallgatás megjelenik a Spotify-n.',
     spotifyMirrorEnabled: 'Spotify Mirror engedélyezése',
     spotifyMirrorEnabledHint: 'Főkapcsoló a lejátszások tükrözéséhez.',
     spotifyMirrorClientId: 'Spotify client id',
-    spotifyMirrorClientIdHint: 'A developer.spotify.com-ról - a saját alkalmazása, Web API-val.',
+    spotifyMirrorClientIdHint:
+      'A developer.spotify.com-ról - a saját alkalmazása, Web API-val.',
     spotifyMirrorRedirect: 'Redirect URI',
-    spotifyMirrorRedirectHint: 'Pontosan egyezzen a Spotify alkalmazással, pl. {suggest}',
+    spotifyMirrorRedirectHint:
+      'Pontosan egyezzen a Spotify alkalmazással, pl. {suggest}',
     spotifyMirrorLoadDevices: 'Eszközök betöltése',
     spotifyMirrorDevice: 'Spotify Connect eszköz',
     spotifyMirrorNoDevices: 'Jelenleg egy Spotify Connect eszköz sincs online.',
@@ -973,7 +977,9 @@ export default {
     spotifyMirrorConnected: 'Spotify csatlakoztatva.',
     spotifyMirrorError: 'A Spotify-kapcsolat nem fejeződött be.',
     spotifyMirrorSilent: 'Csendes tükrözés',
-    spotifyMirrorSilentHint: 'A tükröző eszközt 0 hangerőn tartja, így csak a Downtifyt hallja.',    scrobbling: 'Scrobbling',
+    spotifyMirrorSilentHint:
+      'A tükröző eszközt 0 hangerőn tartja, így csak a Downtifyt hallja.',
+    scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
       'Küldje a lejátszásokat a last.fm-be. Szüksége van egy ingyenes last.fm API fiókra, és a last.fm profiljának összekötésére az alábbi folyamaton keresztül.',
@@ -992,7 +998,8 @@ export default {
     scrobblingOk: 'Kapcsolat OK.',
     scrobblingFailed: 'Kapcsolat sikertelen.',
     scrobbleNowPlaying: 'Jelenlegi lejátszás frissítése',
-    scrobbleNowPlayingHint: 'Jelezze a last.fm-nek, mi játszik épp (nem scrobble-ol).',
+    scrobbleNowPlayingHint:
+      'Jelezze a last.fm-nek, mi játszik épp (nem scrobble-ol).',
     navidromeTitle: 'Navidrome',
     navidromeHint:
       'Tükrözi a letöltött listákat a Navidrome-ba. A zenemappájának tartalmaznia kell a Downtify letöltéseit.',

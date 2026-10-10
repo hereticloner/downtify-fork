@@ -1,5 +1,11 @@
 <template>
-  <div ref="root" role="table" :aria-rowcount="tracks.length">
+  <div
+    ref="root"
+    role="table"
+    :aria-rowcount="tracks.length"
+    :aria-describedby="hintId"
+  >
+    <p :id="hintId" class="sr-only">{{ t('library.keyboardHint') }}</p>
     <!-- Column headings (desktop) -->
     <div
       v-if="header"
@@ -66,8 +72,11 @@
       <div
         v-for="row in rows"
         :key="row.track.file"
+        :ref="(el) => setRowEl(row.index, el)"
         role="row"
-        class="group grid h-14 items-center gap-3 rounded-[10px] px-3 transition-colors select-none"
+        :tabindex="roving.tabindexFor(row.index)"
+        :aria-selected="selectable ? String(isSelected(row.track)) : undefined"
+        class="group grid h-14 items-center gap-3 rounded-[10px] px-3 transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         :class="[
           gridClass,
           virtual ? 'absolute inset-x-0 top-0' : '',
@@ -80,6 +89,8 @@
         :style="
           virtual ? { transform: `translateY(${row.start}px)` } : undefined
         "
+        @focus="onRowFocus(row)"
+        @keydown="roving.onRowKeydown($event, row.index)"
         @click="onRowClick($event, row)"
         @dblclick="playRow(row)"
         @contextmenu="openMenu($event, row)"
@@ -100,14 +111,17 @@
             :playing="player.isPlaying.value"
           />
           <template v-else>
-            <span class="tabular group-hover:hidden">{{
-              numbering === 'track'
-                ? row.track.trackNumber || '–'
-                : row.index + 1
-            }}</span>
+            <span
+              class="tabular group-hover:hidden group-focus-within:hidden"
+              >{{
+                numbering === 'track'
+                  ? row.track.trackNumber || '–'
+                  : row.index + 1
+              }}</span
+            >
             <button
               type="button"
-              class="hidden text-fg group-hover:block"
+              class="hidden text-fg group-hover:block group-focus-within:block"
               :aria-label="t('actions.playItem', { name: row.track.title })"
               @click.stop="playRow(row)"
             >
@@ -196,7 +210,7 @@
           <UiMenu
             :ref="(el) => (menus[row.track.file] = el)"
             :items="menuItems(row)"
-            :label="t('common.more')"
+            :label="t('library.menuForTrack', { title: row.track.title })"
             size="sm"
           />
         </span>
@@ -206,7 +220,16 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
+import {
+  computed,
+  defineComponent,
+  h,
+  nextTick,
+  onMounted,
+  ref,
+  useId,
+  watch,
+} from 'vue'
 import { useWindowVirtualizer } from '@tanstack/vue-virtual'
 import AppIcon from '../ui/AppIcon.vue'
 import CoverArt from '../ui/CoverArt.vue'
@@ -216,6 +239,7 @@ import LikeButton from '../player/LikeButton.vue'
 import { usePlayer } from '/src/model/player'
 import { useTrackActions } from '/src/model/trackActions'
 import { usePlaylistActions } from '/src/model/playlistActions'
+import { useRovingFocus } from '/src/model/rovingFocus'
 import { formatDuration, timeAgo } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
 
@@ -242,6 +266,51 @@ const root = ref(null)
 const menus = {}
 const scrollMargin = ref(0)
 let anchor = -1
+
+// Roving tabindex: the list is one Tab stop, and the arrow keys move it.
+// `hintId` labels the table with the keyboard instructions below.
+const hintId = useId()
+const rowEls = new Map()
+let movingFocus = false
+
+function setRowEl(index, el) {
+  if (el) rowEls.set(index, el)
+  else rowEls.delete(index)
+}
+
+function focusRow(index) {
+  movingFocus = true
+  if (virtual.value) virtualizer.value.scrollToIndex?.(index, { align: 'auto' })
+  nextTick(() => {
+    rowEls.get(index)?.focus()
+    movingFocus = false
+  })
+}
+
+const roving = useRovingFocus({
+  count: () => props.tracks.length,
+  onActivate: (index) => {
+    const row = rows.value.find((item) => item.index === index)
+    if (row) playRow(row)
+  },
+  onMenu: (index) => {
+    const track = props.tracks[index]
+    if (track) menus[track.file]?.toggle?.()
+  },
+  onFocus: focusRow,
+})
+
+// Mouse/touch focusing a row moves the tab stop there too; the flag keeps a
+// keyboard-driven focus (set just before it happens) from looping back.
+function onRowFocus(row) {
+  if (movingFocus) return
+  roving.setActive(row.index)
+}
+
+watch(
+  () => props.tracks.length,
+  () => roving.setActive(roving.active.value)
+)
 
 const selectable = computed(() => props.selected !== null)
 const selectionMode = computed(() => (props.selected?.size || 0) > 0)

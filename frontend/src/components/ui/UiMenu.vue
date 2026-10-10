@@ -152,5 +152,5 @@ function onKeydown(event) {
 
 onBeforeUnmount(hide)
 
-defineExpose({ openAt, hide })
+defineExpose({ openAt, hide, toggle })
 </script>
