@@ -541,8 +541,6 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         'telegram_chat_id': '',
         # Announce a watch (playlist/artist monitor) that pulled in new
         # tracks. Other events can join this block later.
-        # Announce a watch (playlist/artist monitor) that pulled in new
-        # tracks. Other events can join this block later.
         'notify_watch_downloads': True,
     },
     # Scrobble plays to last.fm (see downtify.scrobbling). Off until the

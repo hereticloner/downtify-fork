@@ -355,11 +355,6 @@ function seek(seconds) {
   currentTime.value = clamped
 }
 
-function seekRatio(ratio) {
-  if (!duration.value) return
-  seek(duration.value * Math.max(0, Math.min(1, ratio)))
-}
-
 function seekBy(delta) {
   seek(currentTime.value + delta)
 }
@@ -721,14 +716,6 @@ if (typeof window !== 'undefined' && typeof Audio !== 'undefined') {
 }
 
 // ── Public API ───────────────────────────────────────────────────────
-export function formatTime(seconds) {
-  if (!isFinite(seconds) || seconds < 0) return '0:00'
-  const total = Math.floor(seconds)
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
 export function trackInfoFromFile(file) {
   return normalizeTrack(file)
 }
@@ -767,7 +754,6 @@ export function usePlayer() {
     pause,
     toggle,
     seek,
-    seekRatio,
     seekBy,
     setVolume,
     toggleMute,
