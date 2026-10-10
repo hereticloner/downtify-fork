@@ -53,8 +53,23 @@
         </template>
       </CollectionHero>
 
-      <section class="mx-auto max-w-[1680px] px-4 sm:px-6 lg:px-10">
+      <section
+        class="mx-auto flex max-w-[1680px] flex-col gap-4 px-4 sm:px-6 lg:px-10"
+      >
+        <SelectionBar
+          :count="selectedCount"
+          :total="total"
+          :zipping="zipping"
+          @select-all="selectAll"
+          @clear="clear"
+          @play="playSelected"
+          @enqueue="enqueueSelected"
+          @zip="zipSelected"
+          @delete="deleteSelected"
+          @add-to-playlist="addSelectedToPlaylist"
+        />
         <TrackList
+          v-model:selected="selected"
           :tracks="album.tracks"
           :context="context"
           :show-album="false"
@@ -112,11 +127,13 @@ import CollectionHero from '/src/components/library/CollectionHero.vue'
 import DetailState from '/src/components/library/DetailState.vue'
 import MediaTile from '/src/components/library/MediaTile.vue'
 import PlayButton from '/src/components/library/PlayButton.vue'
+import SelectionBar from '/src/components/library/SelectionBar.vue'
 import TrackList from '/src/components/library/TrackList.vue'
 import { useLibrary } from '/src/model/library'
 import { usePlayer } from '/src/model/player'
 import { usePlaylistActions } from '/src/model/playlistActions'
 import { useTrackActions } from '/src/model/trackActions'
+import { useTrackSelection } from '/src/model/selection'
 import { albumKey } from '/src/lib/library'
 import { formatBytes, splitLength } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
@@ -161,6 +178,25 @@ function albumContext(item) {
 }
 
 const context = computed(() => (album.value ? albumContext(album.value) : null))
+
+const selection = useTrackSelection({
+  tracks: () => album.value?.tracks || [],
+  resetKey: () => [route.query.artist, route.query.title],
+  context: () => context.value,
+})
+const {
+  selected,
+  count: selectedCount,
+  total,
+  zipping,
+  selectAll,
+  clear,
+  playSelected,
+  enqueueSelected,
+  zipSelected,
+  deleteSelected,
+  addSelectedToPlaylist,
+} = selection
 
 const facts = computed(() => {
   const a = album.value

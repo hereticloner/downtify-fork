@@ -84,8 +84,22 @@
       <div
         class="mx-auto flex max-w-[1680px] flex-col gap-10 px-4 sm:px-6 lg:px-10"
       >
+        <SelectionBar
+          v-if="playlist.tracks.length"
+          :count="selectedCount"
+          :total="total"
+          :zipping="zipping"
+          @select-all="selectAll"
+          @clear="clear"
+          @play="playSelected"
+          @enqueue="enqueueSelected"
+          @zip="zipSelected"
+          @delete="deleteSelected"
+          @add-to-playlist="addSelectedToPlaylist"
+        />
         <TrackList
           v-if="playlist.tracks.length"
+          v-model:selected="selected"
           v-model:sort="trackSort"
           :tracks="sortedTracks"
           :context="playlistActions.contextFor(playlist)"
@@ -159,6 +173,7 @@ import CollectionHero from '/src/components/library/CollectionHero.vue'
 import DetailState from '/src/components/library/DetailState.vue'
 import PlayButton from '/src/components/library/PlayButton.vue'
 import PlaylistStatus from '/src/components/library/PlaylistStatus.vue'
+import SelectionBar from '/src/components/library/SelectionBar.vue'
 import TrackList from '/src/components/library/TrackList.vue'
 import DownloadState from '/src/components/search/DownloadState.vue'
 import API from '/src/model/api'
@@ -167,6 +182,7 @@ import { usePlayer } from '/src/model/player'
 import { useAuth } from '/src/model/auth'
 import { usePlaylistActions } from '/src/model/playlistActions'
 import { useTrackActions } from '/src/model/trackActions'
+import { useTrackSelection } from '/src/model/selection'
 import { useUi } from '/src/model/ui'
 import { splitLength } from '/src/lib/format'
 import { sortItems } from '/src/lib/library'
@@ -200,6 +216,26 @@ const sortedTracks = computed(() => {
   if (!trackSort.value.key) return tracks
   return sortItems(tracks, trackSort.value.key, trackSort.value.dir)
 })
+
+const selection = useTrackSelection({
+  tracks: () => sortedTracks.value,
+  resetKey: () => String(route.query.name || ''),
+  context: () =>
+    playlist.value ? playlistActions.contextFor(playlist.value) : null,
+})
+const {
+  selected,
+  count: selectedCount,
+  total,
+  zipping,
+  selectAll,
+  clear,
+  playSelected,
+  enqueueSelected,
+  zipSelected,
+  deleteSelected,
+  addSelectedToPlaylist,
+} = selection
 
 const facts = computed(() => {
   const p = playlist.value

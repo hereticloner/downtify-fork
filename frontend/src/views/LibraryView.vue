@@ -121,16 +121,16 @@
     <!-- Tracks -->
     <template v-else-if="tab === 'tracks'">
       <SelectionBar
-        :count="selected.size"
+        :count="selectedCount"
         :total="items.length"
         :zipping="zipping"
-        @select-all="selected = new Set(items.map((track) => track.file))"
-        @clear="selected = new Set()"
-        @play="actions.play(selectedTracks, 0, libraryContext)"
-        @enqueue="actions.enqueue(selectedTracks)"
+        @select-all="selectAll"
+        @clear="clear"
+        @play="playSelected"
+        @enqueue="enqueueSelected"
         @zip="zipSelected"
         @delete="deleteSelected"
-        @add-to-playlist="playlistActions.openCreate(selectedTracks)"
+        @add-to-playlist="addSelectedToPlaylist"
       />
       <div class="flex flex-wrap items-center gap-2">
         <UiButton
@@ -236,6 +236,7 @@ import { usePlayer } from '/src/model/player'
 import { useAuth } from '/src/model/auth'
 import { useTrackActions } from '/src/model/trackActions'
 import { usePlaylistActions } from '/src/model/playlistActions'
+import { useTrackSelection } from '/src/model/selection'
 import { useUi } from '/src/model/ui'
 import {
   albumKey,
@@ -357,12 +358,26 @@ const trackSort = useLocalStorage('downtify-library-track-sort', {
 
 const filter = ref('')
 const format = ref('all')
-const selected = ref(new Set())
-const zipping = ref(false)
+const selection = useTrackSelection({
+  tracks: () => items.value,
+  resetKey: () => tab.value,
+  context: () => libraryContext.value,
+})
+const {
+  selected,
+  count: selectedCount,
+  zipping,
+  selectAll,
+  clear,
+  playSelected,
+  enqueueSelected,
+  zipSelected,
+  deleteSelected,
+  addSelectedToPlaylist,
+} = selection
 watch(tab, () => {
   filter.value = ''
   format.value = 'all'
-  selected.value = new Set()
 })
 
 const tabs = computed(() => [
@@ -460,10 +475,6 @@ const items = computed(() => {
     sortKey.value
   )
 })
-
-const selectedTracks = computed(() =>
-  items.value.filter((track) => selected.value.has(track.file))
-)
 
 const libraryContext = computed(() => ({
   type: 'library',
@@ -594,21 +605,5 @@ function playlistMenu(item) {
 function clearFilters() {
   filter.value = ''
   format.value = 'all'
-}
-
-async function zipSelected() {
-  zipping.value = true
-  await actions.downloadZip(selectedTracks.value)
-  zipping.value = false
-}
-
-async function deleteSelected() {
-  const deleted = await actions.remove(selectedTracks.value)
-  if (deleted.length) {
-    const gone = new Set(deleted)
-    selected.value = new Set(
-      [...selected.value].filter((file) => !gone.has(file))
-    )
-  }
 }
 </script>

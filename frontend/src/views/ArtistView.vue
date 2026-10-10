@@ -184,13 +184,27 @@
           :social="socialLinks"
         />
 
-        <TrackList
-          v-else
-          :tracks="allTracks"
-          :context="context"
-          :show-added="false"
-          :hide-menu="['artist']"
-        />
+        <template v-else>
+          <SelectionBar
+            :count="selectedCount"
+            :total="total"
+            :zipping="zipping"
+            @select-all="selectAll"
+            @clear="clear"
+            @play="playSelected"
+            @enqueue="enqueueSelected"
+            @zip="zipSelected"
+            @delete="deleteSelected"
+            @add-to-playlist="addSelectedToPlaylist"
+          />
+          <TrackList
+            v-model:selected="selected"
+            :tracks="allTracks"
+            :context="context"
+            :show-added="false"
+            :hide-menu="['artist']"
+          />
+        </template>
       </div>
     </DetailState>
 
@@ -230,6 +244,7 @@ import CollectionHero from '/src/components/library/CollectionHero.vue'
 import DetailState from '/src/components/library/DetailState.vue'
 import MediaTile from '/src/components/library/MediaTile.vue'
 import PlayButton from '/src/components/library/PlayButton.vue'
+import SelectionBar from '/src/components/library/SelectionBar.vue'
 import TopSongsShelf from '/src/components/library/TopSongsShelf.vue'
 import TrackList from '/src/components/library/TrackList.vue'
 import API from '/src/model/api'
@@ -237,6 +252,7 @@ import { useLibrary } from '/src/model/library'
 import { usePlayer } from '/src/model/player'
 import { usePlaylistActions } from '/src/model/playlistActions'
 import { useTrackActions } from '/src/model/trackActions'
+import { useTrackSelection } from '/src/model/selection'
 import { useUi } from '/src/model/ui'
 import { sortItems } from '/src/lib/library'
 import { splitLength } from '/src/lib/format'
@@ -296,6 +312,25 @@ const context = computed(() => ({
   cover: artist.value?.cover,
   route: { name: 'Artist', query: { name: artist.value?.name } },
 }))
+
+const selection = useTrackSelection({
+  tracks: () => allTracks.value,
+  resetKey: () => [route.query.name, String(route.query.tab || '')],
+  context: () => context.value,
+})
+const {
+  selected,
+  count: selectedCount,
+  total,
+  zipping,
+  selectAll,
+  clear,
+  playSelected,
+  enqueueSelected,
+  zipSelected,
+  deleteSelected,
+  addSelectedToPlaylist,
+} = selection
 
 const facts = computed(() => {
   const a = artist.value
