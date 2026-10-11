@@ -625,6 +625,10 @@ export default {
     goToArtist: 'Изпълнител',
     clearUpcoming: 'Изчисти',
     removeFromQueue: 'Премахни от опашката',
+    moveUp: 'Премести нагоре',
+    moveDown: 'Премести надолу',
+    reorderHint:
+      'Натиснете Alt със стрелка нагоре или надолу, за да преместите песен в опашката.',
     queueEnds: 'Опашката свършва след тази песен.',
     noLyrics: 'Няма текст за тази песен',
     noLyricsHint:

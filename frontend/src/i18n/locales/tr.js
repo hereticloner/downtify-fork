@@ -630,6 +630,10 @@ export default {
     goToArtist: 'Sanatçı',
     clearUpcoming: 'Temizle',
     removeFromQueue: 'Kuyruktan kaldır',
+    moveUp: 'Yukarı taşı',
+    moveDown: 'Aşağı taşı',
+    reorderHint:
+      'Sıradaki bir parçayı taşımak için Alt ile yukarı veya aşağı ok tuşuna basın.',
     queueEnds: 'Kuyruk bu parçadan sonra bitiyor.',
     noLyrics: 'Bu parçanın sözleri yok',
     noLyricsHint:

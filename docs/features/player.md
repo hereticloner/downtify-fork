@@ -28,7 +28,7 @@ A full-screen view tinted with colours picked from the current album cover:
 Four panels sit next to the cover on wide screens, or replace it on phones:
 
 - **Lyrics** — time-synced lyrics highlight the current line and scroll with the song; click a line to jump there. Plain lyrics are shown as-is. Lyrics come from the `.lrc` file next to the track, or those embedded in its tags — see [Lyrics](lyrics.md). You can hide this panel — see [Hiding the lyrics](#hiding-the-lyrics).
-- **Up next** — the play queue. Drag tracks to reorder them, remove single tracks, or clear everything after the current one.
+- **Up next** — the play queue. Reorder tracks — drag them, use each row's **move up**/**move down** buttons, or focus a row and press `Alt` + `↑`/`↓`; remove single tracks, or clear everything after the current one.
 - **Details** — title, artist, album, track number, year, length, format, size, date added and file path.
 - **Equalizer** — shape the sound with ten frequency bands; see [Equalizer](#equalizer).
 
@@ -87,6 +87,10 @@ Every track's menu (the **⋯** button, or right-click on desktop) has:
 The same actions apply to a multi-track selection in the Library.
 
 The queue, the current track, its position, shuffle and repeat are remembered, so reopening Downtify resumes where you left off (queues of more than 2000 tracks aren't remembered). Deleted files drop out of the queue automatically.
+
+## Reordering the queue
+
+**Up next** can be reordered without a mouse. Every queued track has **move up** and **move down** buttons, and with a row focused `Alt` + `↑` / `↓` moves it one step. The first queued track can't move above the one playing, and the last can't move past the end, so a track can never leave the queue this way. Dragging a row (by its handle, on a desktop) works too. With **Shuffle** on the order is random, so reordering is hidden.
 
 ## Auto-DJ
 

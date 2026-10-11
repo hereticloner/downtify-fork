@@ -646,6 +646,10 @@ export default {
     goToArtist: 'Artiste',
     clearUpcoming: 'Effacer',
     removeFromQueue: 'Retirer de la file',
+    moveUp: 'Monter',
+    moveDown: 'Descendre',
+    reorderHint:
+      'Appuyez sur Alt avec la flèche haut ou bas pour déplacer un titre dans la file.',
     queueEnds: 'La file se termine après ce titre.',
     noLyrics: 'Pas de paroles pour ce titre',
     noLyricsHint:

@@ -54,9 +54,9 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
+import { ref, useId } from 'vue'
 import UiIconButton from './UiIconButton.vue'
-import { useUi } from '/src/model/ui'
+import { useDialogFocus } from '/src/model/dialogFocus'
 import { useI18n } from '/src/i18n'
 
 const props = defineProps({
@@ -68,83 +68,32 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const { t } = useI18n()
-const ui = useUi()
 const titleId = `modal-${useId()}`
 const panel = ref(null)
 // Only a click that also started on the backdrop closes the dialog, so
 // selecting text in a field and releasing outside doesn't.
 const pressedBackdrop = ref(false)
-let modalId = null
-let returnFocus = null
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
-function focusables() {
-  return [...(panel.value?.querySelectorAll(FOCUSABLE) || [])].filter(
-    (el) => el.offsetParent !== null
+function initialFocus(panelEl, items) {
+  // On touch screens focus the dialog itself, so the keyboard doesn't
+  // pop up; otherwise the first field, else the first button after the
+  // close button.
+  const touch = window.matchMedia?.('(pointer: coarse)').matches
+  if (touch) return panelEl
+  return (
+    panelEl?.querySelector('input, select, textarea') || items[1] || items[0]
   )
 }
+
+const { onKeydown } = useDialogFocus({
+  open: () => props.open,
+  panel,
+  onClose: () => emit('close'),
+  initialFocus,
+})
 
 function onBackdrop() {
   if (pressedBackdrop.value) emit('close')
   pressedBackdrop.value = false
 }
-
-function onKeydown(event) {
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation()
-    emit('close')
-    return
-  }
-  if (event.key !== 'Tab') return
-  const items = focusables()
-  if (!items.length) return
-  const first = items[0]
-  const last = items.at(-1)
-  if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
-
-function release() {
-  if (modalId === null) return
-  ui.popModal(modalId)
-  modalId = null
-  document.documentElement.style.overflow = ''
-  returnFocus?.focus?.()
-  returnFocus = null
-}
-
-watch(
-  () => props.open,
-  async (open) => {
-    if (!open) {
-      release()
-      return
-    }
-    returnFocus = document.activeElement
-    modalId = ui.pushModal(() => emit('close'))
-    document.documentElement.style.overflow = 'hidden'
-    await nextTick()
-    // First field, else the first button after the close button. On touch
-    // screens focus the dialog itself, so the keyboard doesn't pop up.
-    const touch = window.matchMedia?.('(pointer: coarse)').matches
-    const items = focusables()
-    const target = touch
-      ? panel.value
-      : panel.value?.querySelector('input, select, textarea') ||
-        items[1] ||
-        items[0]
-    target?.focus()
-  },
-  { immediate: true }
-)
-
-onBeforeUnmount(release)
 </script>

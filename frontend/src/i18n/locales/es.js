@@ -633,6 +633,10 @@ export default {
     goToArtist: 'Artista',
     clearUpcoming: 'Limpiar',
     removeFromQueue: 'Quitar de la cola',
+    moveUp: 'Subir',
+    moveDown: 'Bajar',
+    reorderHint:
+      'Pulsa Alt con la flecha arriba o abajo para mover una pista en cola.',
     queueEnds: 'La cola termina después de esta canción.',
     noLyrics: 'Esta canción no tiene letra',
     noLyricsHint:

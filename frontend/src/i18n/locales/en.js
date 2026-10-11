@@ -618,6 +618,9 @@ export default {
     goToArtist: 'Artist',
     clearUpcoming: 'Clear',
     removeFromQueue: 'Remove from queue',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    reorderHint: 'Press Alt with the up or down arrow to move a queued track.',
     queueEnds: 'The queue ends after this track.',
     noLyrics: 'No lyrics for this track',
     noLyricsHint:

@@ -630,6 +630,10 @@ export default {
     goToArtist: 'Előadó',
     clearUpcoming: 'Törlés',
     removeFromQueue: 'Eltávolítás a sorból',
+    moveUp: 'Feljebb',
+    moveDown: 'Lejjebb',
+    reorderHint:
+      'Nyomd meg az Alt billentyűt a fel vagy le nyílbillentyűvel egy sorban lévő szám áthelyezéséhez.',
     queueEnds: 'A sor ezzel a számmal véget ér.',
     noLyrics: 'Ehhez a számhoz nincs dalszöveg',
     noLyricsHint:

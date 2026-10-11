@@ -52,90 +52,7 @@
       </button>
     </div>
 
-    <Teleport to="body">
-      <Transition name="fade">
-        <div
-          v-if="sheet"
-          class="fixed inset-0 z-[70] flex items-end bg-black/50 md:hidden"
-          @click.self="sheet = false"
-        >
-          <div
-            class="w-full animate-rise rounded-t-[22px] border-t border-line-3 bg-surface px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
-          >
-            <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-line-3" />
-            <a
-              v-if="hasUpdate"
-              :href="update.release_url"
-              target="_blank"
-              rel="noopener"
-              class="mb-1 flex h-14 items-center gap-4 rounded-control px-2 text-[15px] font-semibold text-accent"
-            >
-              <span
-                class="flex size-9 items-center justify-center rounded-[10px] bg-accent/12"
-              >
-                <AppIcon name="sparkle" :size="18" />
-              </span>
-              {{ t('nav.updateAvailable', { version: update.latest_version }) }}
-              <AppIcon name="arrow-up-right" :size="16" class="ml-auto" />
-            </a>
-            <RouterLink
-              v-for="link in moreLinks"
-              :key="link.name"
-              :to="{ name: link.name }"
-              class="flex h-14 items-center gap-4 rounded-control px-2 text-[15px] font-medium"
-              @click="sheet = false"
-            >
-              <span
-                class="flex size-9 items-center justify-center rounded-[10px] bg-surface-2 text-fg-3"
-              >
-                <AppIcon :name="link.icon" :size="18" />
-              </span>
-              {{ t(link.label) }}
-              <AppIcon
-                name="chevron-right"
-                :size="18"
-                class="ml-auto text-faint"
-              />
-            </RouterLink>
-            <button
-              type="button"
-              class="flex h-14 w-full items-center gap-4 rounded-control px-2 text-[15px] font-medium"
-              @click="theme.toggle()"
-            >
-              <span
-                class="flex size-9 items-center justify-center rounded-[10px] bg-surface-2 text-fg-3"
-              >
-                <AppIcon
-                  :name="theme.resolved.value === 'dark' ? 'sun' : 'moon'"
-                  :size="18"
-                />
-              </span>
-              {{
-                theme.resolved.value === 'dark'
-                  ? t('settings.themeLight')
-                  : t('settings.themeDark')
-              }}
-            </button>
-            <button
-              v-if="auth.user.value && !auth.authDisabled.value"
-              type="button"
-              class="flex h-14 w-full items-center gap-4 rounded-control px-2 text-[15px] font-medium"
-              @click="auth.signOut"
-            >
-              <span
-                class="flex size-9 items-center justify-center rounded-[10px] bg-surface-2 text-fg-3"
-              >
-                <AppIcon name="log-out" :size="18" />
-              </span>
-              {{ t('nav.signOut') }}
-              <span class="ml-auto truncate text-[13px] text-faint">{{
-                auth.user.value.username
-              }}</span>
-            </button>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <MoreSheet :open="sheet" :links="moreLinks" @close="sheet = false" />
   </nav>
 </template>
 
@@ -143,16 +60,13 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppIcon from '../ui/AppIcon.vue'
+import MoreSheet from './MoreSheet.vue'
 import { useI18n } from '/src/i18n'
-import { useAuth } from '/src/model/auth'
-import { useTheme } from '/src/model/theme'
 import { useUpdateCheck } from '/src/model/updateCheck'
 import { usePendingCount } from './navState'
 
 const { t } = useI18n()
 const route = useRoute()
-const theme = useTheme()
-const auth = useAuth()
 const pending = usePendingCount()
 const sheet = ref(false)
 const update = useUpdateCheck().status

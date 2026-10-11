@@ -629,6 +629,10 @@ export default {
     goToArtist: 'Artista',
     clearUpcoming: 'Limpar',
     removeFromQueue: 'Remover da fila',
+    moveUp: 'Mover para cima',
+    moveDown: 'Mover para baixo',
+    reorderHint:
+      'Pressione Alt com a seta para cima ou para baixo para mover uma faixa na fila.',
     queueEnds: 'A fila termina após esta faixa.',
     noLyrics: 'Sem letra para esta faixa',
     noLyricsHint:

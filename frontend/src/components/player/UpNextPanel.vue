@@ -41,13 +41,21 @@
         <EqBars :size="12" :playing="player.isPlaying.value" />
       </div>
 
-      <TransitionGroup name="list" tag="ol">
+      <TransitionGroup
+        name="list"
+        tag="ol"
+        :aria-label="t('player.upNext')"
+        :aria-describedby="
+          upcoming.length && !player.shuffle.value ? reorderHintId : undefined
+        "
+      >
         <li
           v-for="(item, position) in upcoming"
           :key="`${item.track.file}-${item.index}`"
           class="group flex h-14 items-center gap-3 rounded-[10px] px-2.5 transition-colors hover:bg-white/8"
           :class="dragOver === position ? 'bg-white/12' : ''"
           :draggable="!player.shuffle.value"
+          @keydown="onRowKeydown($event, item.index)"
           @dragstart="onDragStart($event, item.index)"
           @dragover.prevent="dragOver = position"
           @dragleave="dragOver = -1"
@@ -79,6 +87,29 @@
           <span class="tabular text-xs text-white/45 group-hover:hidden">
             {{ item.track.duration ? formatDuration(item.track.duration) : '' }}
           </span>
+          <div
+            v-if="!player.shuffle.value"
+            class="hidden items-center group-hover:flex group-focus-within:flex max-sm:flex"
+          >
+            <button
+              type="button"
+              class="flex size-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30"
+              :aria-label="t('player.moveUp')"
+              :disabled="!reorder.canMove(item.index, -1)"
+              @click="reorder.move(item.index, -1)"
+            >
+              <AppIcon name="chevron-up" :size="16" />
+            </button>
+            <button
+              type="button"
+              class="flex size-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30"
+              :aria-label="t('player.moveDown')"
+              :disabled="!reorder.canMove(item.index, 1)"
+              @click="reorder.move(item.index, 1)"
+            >
+              <AppIcon name="chevron-down" :size="16" />
+            </button>
+          </div>
           <button
             type="button"
             class="hidden size-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white group-hover:flex"
@@ -97,6 +128,14 @@
       </TransitionGroup>
 
       <p
+        v-if="upcoming.length && !player.shuffle.value"
+        :id="reorderHintId"
+        class="sr-only"
+      >
+        {{ t('player.reorderHint') }}
+      </p>
+
+      <p
         v-if="!upcoming.length"
         class="px-2 py-8 text-center text-sm text-white/50"
       >
@@ -107,10 +146,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, useId } from 'vue'
 import AppIcon from '../ui/AppIcon.vue'
 import CoverArt from '../ui/CoverArt.vue'
 import EqBars from '../ui/EqBars.vue'
+import { createQueueReorder } from '/src/lib/queueReorder'
 import { usePlayer } from '/src/model/player'
 import { formatDuration, splitLength } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
@@ -123,6 +163,15 @@ let dragFrom = -1
 const current = computed(() => player.currentTrack.value)
 // Long queues render the first stretch only; the rest is still queued.
 const upcoming = computed(() => player.upcoming.value.slice(0, 200))
+
+// The first queued track sits right after the current one: it can't move
+// above it, so `min` is the playing index + 1.
+const reorderHintId = `reorder-hint-${useId()}`
+const reorder = createQueueReorder({
+  onMove: (from, to) => player.moveTrack(from, to),
+  min: () => player.currentIndex.value + 1,
+  max: () => player.playlist.value.length - 1,
+})
 
 const summary = computed(() => {
   const rest = player.upcoming.value
@@ -149,5 +198,11 @@ function onDrop(index) {
   if (dragFrom >= 0 && dragFrom !== index) player.moveTrack(dragFrom, index)
   dragFrom = -1
   dragOver.value = -1
+}
+
+// A shuffled queue has no stable order to move within, so the arrow
+// shortcut is off then too (the buttons are hidden, drag is disabled).
+function onRowKeydown(event, index) {
+  if (!player.shuffle.value) reorder.onRowKeydown(event, index)
 }
 </script>
