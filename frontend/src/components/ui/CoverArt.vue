@@ -4,13 +4,9 @@
     :class="[round ? 'rounded-full' : rounded, shadow ? 'shadow-cover' : '']"
     :style="{ background: placeholder }"
   >
-    <div
-      v-if="mosaic.length >= 2"
-      class="grid size-full"
-      :class="mosaic.length === 2 ? 'grid-cols-2' : 'grid-cols-2 grid-rows-2'"
-    >
+    <div v-if="mosaic.length >= 2" class="grid size-full" :class="gridClass">
       <img
-        v-for="(url, i) in mosaic.slice(0, 4)"
+        v-for="(url, i) in mosaic.slice(0, MAX_MOSAIC)"
         :key="i"
         :src="url"
         alt=""
@@ -56,6 +52,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import AppIcon from './AppIcon.vue'
+import { MAX_MOSAIC, mosaicGrid } from '/src/lib/mosaic'
 import { hueFor, initials } from '/src/lib/format'
 
 const props = defineProps({
@@ -104,6 +101,18 @@ function onImageError() {
 const mosaic = computed(() =>
   props.symbol || props.src ? [] : props.covers.filter(Boolean)
 )
+// Written out (not built from a template literal) so Tailwind sees the
+// classes in the source and generates them.
+const COLUMN_CLASSES = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+}
+const ROW_CLASSES = { 1: 'grid-rows-1', 2: 'grid-rows-2', 3: 'grid-rows-3' }
+const gridClass = computed(() => {
+  const { columns, rows } = mosaicGrid(mosaic.value.length)
+  return `${COLUMN_CLASSES[columns]} ${ROW_CLASSES[rows]}`
+})
 const imageSrc = computed(() => {
   if (props.symbol) return ''
   if (usingFallback.value) return props.fallback

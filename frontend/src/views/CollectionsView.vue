@@ -33,6 +33,15 @@
     <div v-else class="flex flex-col gap-3">
       <UiPanel v-for="col in collections" :key="col.name" class="p-4">
         <div class="flex flex-wrap items-center gap-3">
+          <CoverArt
+            :covers="collectionCoversFor(col)"
+            :name="col.name"
+            icon="playlist"
+            rounded="rounded-[10px]"
+            :letter-size="20"
+            :icon-size="22"
+            class="size-12 shrink-0"
+          />
           <h2 class="text-lg font-medium">{{ col.name }}</h2>
           <span class="text-sm text-faint">
             {{ col.playlists.length }}
@@ -215,6 +224,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '/src/i18n'
 import PageHeader from '/src/components/library/PageHeader.vue'
+import CoverArt from '/src/components/ui/CoverArt.vue'
 import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
 import UiBadge from '/src/components/ui/UiBadge.vue'
@@ -235,6 +245,7 @@ import {
   saveCollectionRules,
 } from '/src/model/collections'
 import { RULE_TYPES, blankRule, cleanRules } from '/src/lib/collectionRules'
+import { collectionCovers } from '/src/lib/mosaic'
 import { friendlyError } from '/src/lib/errors'
 import { canSubmitRename } from '/src/lib/rename'
 
@@ -264,6 +275,13 @@ const playlistNames = computed(() =>
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b))
 )
+
+// The card's mosaic: one cover per member playlist, in the collection's
+// order, so a collection reads as the artwork it groups. Empty when
+// nothing is showable — CoverArt then falls back to the name's initials.
+function collectionCoversFor(col) {
+  return collectionCovers(col.playlists, library.playlists.value)
+}
 
 function failed(err) {
   ui.toast(friendlyError(t, err, 'toast.actionFailed'), { kind: 'error' })

@@ -33,6 +33,10 @@ Click the pencil button on a collection, type the new name and confirm. Only the
 
 Each playlist in a collection is shown as a chip, and every chip is a link: click it to open that playlist's page (the built-in player's playlist view, with its tracks).
 
+## Cover art
+
+Each collection card shows a mosaic built from its member playlists: a playlist's own artwork when it has one, otherwise its first track's cover. Up to four covers make a 2×2 tile, up to nine a 3×3 one. When no member has a cover — or the collection is still empty — the card falls back to the collection name's initials, so it always has an image.
+
 ## Smart collections
 
 A collection can also carry **rules**, which turns it into a smart collection: its members are the playlists you added by hand unioned with the ones the rules select — recomputed on every read. Open a collection's rule editor with the sliders button; see [Smart Collections](smart-collections.md) for the rule types and how they combine.
