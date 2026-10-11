@@ -2,7 +2,7 @@
   <div
     class="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-6 sm:px-6 md:pt-8 lg:px-10"
   >
-    <h1 class="text-2xl font-semibold">{{ t('stats.title') }}</h1>
+    <PageHeader :title="t('stats.title')" />
 
     <div v-if="loading" class="grid grid-cols-2 gap-4 md:grid-cols-4">
       <UiSkeleton v-for="n in 4" :key="n" class="h-20 !rounded-panel" />
@@ -106,6 +106,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '/src/i18n'
+import PageHeader from '/src/components/library/PageHeader.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiPanel from '/src/components/ui/UiPanel.vue'
