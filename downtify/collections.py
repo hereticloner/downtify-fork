@@ -4,6 +4,12 @@ Minimal storage: one JSON file per collection under
 ``Playlists/.collections/``. No sqlite, no migration; the folder rides
 every existing backup/sync of the downloads volume. Deletion of a
 collection never touches the playlists or audio it groups.
+
+A collection may also carry ``rules`` (see ``downtify.collection_rules``)
+and then become a *smart* collection: its members are the playlists it
+was given by hand, unioned with the ones the rules select on every read.
+The field is optional, so a collection written before rules existed is
+still just as valid, and a rule-less collection behaves exactly as before.
 """
 
 from __future__ import annotations
@@ -13,10 +19,25 @@ from pathlib import Path
 from typing import Any
 
 from . import m3u
+from .collection_rules import RuleError, normalize_rules, resolve_collection
 from .manual_playlists import ManualPlaylistError
 
 COLLECTIONS_DIR = '.collections'
 FORMAT_VERSION = 1
+
+__all__ = [
+    'CollectionError',
+    'RuleError',
+    'add_to_collection',
+    'create_collection',
+    'delete_collection',
+    'get_collection',
+    'list_collections',
+    'remove_from_collection',
+    'rename_collection',
+    'resolve_collection',
+    'set_rules',
+]
 
 
 def _dir(download_dir: Path) -> Path:
@@ -36,18 +57,42 @@ def _read(download_dir: Path, path: Path) -> dict[str, Any]:
         data = json.loads(path.read_text(encoding='utf-8'))
     except (OSError, ValueError) as exc:
         raise CollectionError(f'Broken collection file {path.name}') from exc
-    return {
+    out = {
         'version': int(data.get('version') or FORMAT_VERSION),
         'name': str(data.get('name') or path.stem),
         'playlists': [str(p) for p in data.get('playlists') or []],
     }
+    # Rules saved by hand can be malformed; drop them rather than make the
+    # whole collection unreadable. An empty list is the same as no rules.
+    raw_rules = data.get('rules')
+    if raw_rules:
+        try:
+            rules = normalize_rules(raw_rules)
+        except RuleError:
+            rules = []
+        if rules:
+            out['rules'] = rules
+    return out
+
+
+def _document(data: dict[str, Any]) -> dict[str, Any]:
+    doc: dict[str, Any] = {
+        'version': int(data.get('version') or FORMAT_VERSION),
+        'name': str(data['name']),
+        'playlists': [str(p) for p in data.get('playlists') or []],
+    }
+    rules = data.get('rules')
+    if rules:
+        doc['rules'] = rules
+    return doc
 
 
 def _write(download_dir: Path, data: dict[str, Any]) -> None:
     path = _path(download_dir, data['name'])
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8'
+        json.dumps(_document(data), ensure_ascii=False, indent=2),
+        encoding='utf-8',
     )
 
 
@@ -94,6 +139,27 @@ def _require(download_dir: Path, name: str) -> dict[str, Any]:
     if not path.exists():
         raise _err(f'Collection {name!r} was not found', status_code=404)
     return _read(download_dir, path)
+
+
+def get_collection(download_dir: Path, name: str) -> dict[str, Any]:
+    """The stored collection document (rules included when it has any)."""
+
+    return _require(download_dir, name)
+
+
+def set_rules(
+    download_dir: Path, name: str, rules: Any
+) -> dict[str, Any]:
+    """Replace a collection's rules; an empty list makes it static again."""
+
+    data = _require(download_dir, name)
+    normalized = normalize_rules(rules)
+    if normalized:
+        data['rules'] = normalized
+    else:
+        data.pop('rules', None)
+    _write(download_dir, data)
+    return dict(data)
 
 
 def add_to_collection(

@@ -12,14 +12,17 @@ from pathlib import Path
 
 import pytest
 
+from downtify.collection_rules import RuleError
 from downtify.collections import (
     CollectionError,
     add_to_collection,
     create_collection,
     delete_collection,
+    get_collection,
     list_collections,
     remove_from_collection,
     rename_collection,
+    set_rules,
 )
 
 
@@ -83,3 +86,90 @@ def test_storage_format_is_marker_json(downloads: Path) -> None:
     assert data['name'] == 'Format'
     assert data['playlists'] == []
     assert data.get('version') == 1
+
+
+# ── Smart rules (backward compatible) ───────────────────────────────
+
+
+def test_static_collection_list_output_is_unchanged(downloads: Path) -> None:
+    create_collection(downloads, 'Plain')
+    assert list_collections(downloads) == [
+        {'version': 1, 'name': 'Plain', 'playlists': []}
+    ]
+
+
+def test_set_rules_persists_the_rule_list(downloads: Path) -> None:
+    create_collection(downloads, 'Smart')
+    set_rules(downloads, 'Smart', [{'type': 'genre', 'value': 'Rock'}])
+    listed = list_collections(downloads)
+    assert listed == [
+        {
+            'version': 1,
+            'name': 'Smart',
+            'playlists': [],
+            'rules': [{'type': 'genre', 'value': 'Rock'}],
+        }
+    ]
+
+
+def test_set_rules_normalizes_before_storing(downloads: Path) -> None:
+    create_collection(downloads, 'Smart')
+    set_rules(downloads, 'Smart', [{'type': 'plays', 'min': '2'}])
+    marker = downloads / 'Playlists' / '.collections' / 'Smart.json'
+    data = json.loads(marker.read_text(encoding='utf-8'))
+    assert data['rules'] == [{'type': 'plays', 'min': 2, 'max': None}]
+
+
+def test_set_rules_rejects_an_invalid_rule(downloads: Path) -> None:
+    create_collection(downloads, 'Smart')
+    with pytest.raises(RuleError) as exc:
+        set_rules(downloads, 'Smart', [{'type': 'bpm', 'value': 120}])
+    assert exc.value.status_code == 400
+
+
+def test_set_rules_clears_with_an_empty_list(downloads: Path) -> None:
+    create_collection(downloads, 'Smart')
+    set_rules(downloads, 'Smart', [{'type': 'genre', 'value': 'Rock'}])
+    set_rules(downloads, 'Smart', [])
+    # Back to the static shape: no rules key, nothing computed.
+    assert list_collections(downloads) == [
+        {'version': 1, 'name': 'Smart', 'playlists': []}
+    ]
+
+
+def test_get_collection_returns_the_stored_document(downloads: Path) -> None:
+    create_collection(downloads, 'Smart')
+    set_rules(downloads, 'Smart', [{'type': 'genre', 'value': 'Rock'}])
+    got = get_collection(downloads, 'Smart')
+    assert got['name'] == 'Smart'
+    assert got['rules'] == [{'type': 'genre', 'value': 'Rock'}]
+    with pytest.raises(CollectionError) as exc:
+        get_collection(downloads, 'Yok')
+    assert exc.value.status_code == 404
+
+
+def test_rename_keeps_the_rules(downloads: Path) -> None:
+    create_collection(downloads, 'Smart')
+    set_rules(downloads, 'Smart', [{'type': 'genre', 'value': 'Rock'}])
+    rename_collection(downloads, 'Smart', 'Smarter')
+    listed = list_collections(downloads)
+    assert listed == [
+        {
+            'version': 1,
+            'name': 'Smarter',
+            'playlists': [],
+            'rules': [{'type': 'genre', 'value': 'Rock'}],
+        }
+    ]
+
+
+def test_hand_written_broken_rules_do_not_crash_the_listing(
+    downloads: Path,
+) -> None:
+    create_collection(downloads, 'Smart')
+    marker = downloads / 'Playlists' / '.collections' / 'Smart.json'
+    raw = json.loads(marker.read_text(encoding='utf-8'))
+    raw['rules'] = [{'type': 'bpm', 'value': 120}]
+    marker.write_text(json.dumps(raw), encoding='utf-8')
+    # Unknown rules saved by hand are skipped at read time, not fatal.
+    assert list_collections(downloads)[0].get('rules') is None

@@ -10,6 +10,7 @@ from starlette.testclient import TestClient
 
 import main
 from downtify import api
+from downtify import collections_api as capi
 
 
 @pytest.fixture
@@ -72,3 +73,122 @@ def test_collections_rename_and_unknown_playlist(client):
         '/api/collections/Yeni/items', json={'add': ['Olmayan']}
     )
     assert resp.status_code == 404
+
+
+# ── Smart collections over HTTP ─────────────────────────────────────
+
+
+def _playlist(name, files, added=0):
+    return {'name': name, 'files': files, 'added': added}
+
+
+def _track(file, **fields):
+    return {'file': file, **fields}
+
+
+def _library(monkeypatch):
+    playlists = [
+        _playlist('Rocky', ['rock/one.mp3']),
+        _playlist('Blue', ['jazz/two.flac']),
+    ]
+    tracks = {
+        'rock/one.mp3': _track(
+            'rock/one.mp3',
+            genre='Rock',
+            artist='AC/DC',
+            album='Back in Black',
+            codec='mp3',
+        ),
+        'jazz/two.flac': _track(
+            'jazz/two.flac',
+            genre='Jazz',
+            artist='Miles Davis',
+            album='Kind of Blue',
+            codec='flac',
+        ),
+    }
+    plays = {'rock/one.mp3': 4, 'jazz/two.flac': 0}
+    monkeypatch.setattr(
+        capi, '_library_view', lambda: (playlists, tracks, plays)
+    )
+    return playlists
+
+
+def test_collection_detail_static_still_works(client):
+    client.post('/api/collections', json={'name': 'Plain'})
+    resp = client.get('/api/collections/Plain')
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body['name'] == 'Plain'
+    assert body['playlists'] == []
+    assert body['rules'] == []
+
+
+def test_collection_detail_missing_returns_404(client):
+    assert client.get('/api/collections/Yok').status_code == 404
+
+
+def test_save_rules_then_detail_computes_union(client, monkeypatch):
+    _library(monkeypatch)
+    client.downloads.mkdir(parents=True, exist_ok=True)
+    (client.downloads / 'Rocky.m3u').write_text('#EXTM3U\n')
+    client.post('/api/collections', json={'name': 'Smart'})
+    client.post(
+        '/api/collections/Smart/items', json={'add': ['Rocky']}
+    )
+    resp = client.post(
+        '/api/collections/Smart/rules',
+        json={'rules': [{'type': 'genre', 'value': 'Jazz'}]},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()['rules'] == [{'type': 'genre', 'value': 'Jazz'}]
+
+    body = client.get('/api/collections/Smart').json()
+    assert body['playlists'] == ['Rocky', 'Blue']
+    assert body['computed'] == ['Blue']
+
+
+def test_save_rules_rejects_bad_payload(client):
+    client.post('/api/collections', json={'name': 'Smart'})
+    resp = client.post(
+        '/api/collections/Smart/rules',
+        json={'rules': [{'type': 'bpm', 'value': 120}]},
+    )
+    assert resp.status_code == 400
+
+
+def test_save_rules_unknown_collection_returns_404(client):
+    resp = client.post(
+        '/api/collections/Yok/rules',
+        json={'rules': [{'type': 'genre', 'value': 'Rock'}]},
+    )
+    assert resp.status_code == 404
+
+
+def test_list_computes_only_when_a_collection_has_rules(client, monkeypatch):
+    _library(monkeypatch)
+    client.post('/api/collections', json={'name': 'Plain'})
+    listed = client.get('/api/collections').json()
+    assert listed == [{'version': 1, 'name': 'Plain', 'playlists': []}]
+
+    client.post(
+        '/api/collections/Plain/rules',
+        json={'rules': [{'type': 'genre', 'value': 'Rock'}]},
+    )
+    listed = client.get('/api/collections').json()
+    assert listed[0]['playlists'] == ['Rocky']
+    assert listed[0]['rules'] == [{'type': 'genre', 'value': 'Rock'}]
+
+
+def test_smart_collection_reads_a_real_empty_library(client):
+    # No monkeypatched view: this exercises the real library helpers
+    # against the fixture's (empty) downloads folder.
+    client.post('/api/collections', json={'name': 'Smart'})
+    resp = client.post(
+        '/api/collections/Smart/rules',
+        json={'rules': [{'type': 'genre', 'value': 'Rock'}]},
+    )
+    assert resp.status_code == 200, resp.text
+    body = client.get('/api/collections/Smart').json()
+    assert body['playlists'] == []
+    assert body['rules'] == [{'type': 'genre', 'value': 'Rock'}]

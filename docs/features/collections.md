@@ -33,6 +33,10 @@ Click the pencil button on a collection, type the new name and confirm. Only the
 
 Each playlist in a collection is shown as a chip, and every chip is a link: click it to open that playlist's page (the built-in player's playlist view, with its tracks).
 
+## Smart collections
+
+A collection can also carry **rules**, which turns it into a smart collection: its members are the playlists you added by hand unioned with the ones the rules select — recomputed on every read. Open a collection's rule editor with the sliders button; see [Smart Collections](smart-collections.md) for the rule types and how they combine.
+
 ## Deleting a collection
 
 Click the trash button on a collection and confirm. Only the collection is deleted — its playlists, their M3U files and their audio all stay exactly where they were.
@@ -56,6 +60,8 @@ Each collection is one JSON file under the downloads folder:
   "playlists": ["Chill", "Drive"]
 }
 ```
+
+A smart collection adds an optional `rules` list next to those keys (see [Smart Collections](smart-collections.md)); a collection without rules keeps exactly the document above.
 
 There is no database and no migration: the file is read when the page opens and rewritten on every change. Because it lives inside the downloads volume, it is included in whatever backup or sync covers that volume. Downtify only reads the playlist **names** — the playlists themselves, their M3U files and media servers such as [Navidrome](slskd-navidrome.md) are not affected by collections at all.
 

@@ -434,6 +434,16 @@ function deleteCollection(name) {
   return API.delete(`/api/collections/${encodeURIComponent(name)}`)
 }
 
+function getCollection(name) {
+  return API.get(`/api/collections/${encodeURIComponent(name)}`)
+}
+
+function saveCollectionRules(name, rules) {
+  return API.post(`/api/collections/${encodeURIComponent(name)}/rules`, {
+    rules,
+  })
+}
+
 function reconcileLibrary() {
   return API.post('/api/library/reconcile')
 }
@@ -883,6 +893,8 @@ export default {
   renameCollection,
   editCollectionItems,
   deleteCollection,
+  getCollection,
+  saveCollectionRules,
   prepareLibraryArchive,
   libraryArchiveURL,
   reconcileLibrary,

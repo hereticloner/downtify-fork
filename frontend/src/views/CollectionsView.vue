@@ -37,6 +37,9 @@
           <span class="text-sm text-faint">
             {{ col.playlists.length }}
           </span>
+          <UiBadge v-if="col.rules?.length" tone="accent">
+            {{ t('collections.smart') }}
+          </UiBadge>
           <div class="ml-auto flex items-center gap-2">
             <input
               v-model="col._add"
@@ -45,6 +48,13 @@
               :placeholder="t('collections.addPlaylist')"
               class="h-9 min-w-0 flex-1 rounded-control border border-line-2 bg-surface px-3 text-sm outline-none placeholder:text-faint sm:max-w-[16rem]"
               @keyup.enter="add(col)"
+            />
+            <UiButton
+              variant="ghost"
+              icon="sliders"
+              :title="t('collections.rules')"
+              :class="col.rules?.length ? 'text-accent' : ''"
+              @click="openRules(col)"
             />
             <UiButton
               variant="ghost"
@@ -114,6 +124,90 @@
         </UiButton>
       </template>
     </UiModal>
+
+    <UiModal
+      :open="rulesOpen"
+      :title="t('collections.rulesTitle')"
+      :description="t('collections.rulesHint')"
+      width="sm:max-w-xl"
+      @close="closeRules"
+    >
+      <div class="flex flex-col gap-3">
+        <div
+          v-for="(rule, index) in rulesDraft"
+          :key="index"
+          class="flex flex-col gap-2 rounded-panel border border-line-2 p-3 sm:flex-row sm:items-end"
+        >
+          <UiSelect
+            :model-value="rule.type"
+            :options="rulesTypeOptions"
+            :label="t('collections.ruleType')"
+            block
+            class="sm:w-40"
+            @update:model-value="onTypeChange(rule, $event)"
+          />
+          <template v-if="rule.type === 'added'">
+            <UiInput
+              v-model="rule.from"
+              type="date"
+              :label="t('collections.ruleFrom')"
+            />
+            <UiInput
+              v-model="rule.to"
+              type="date"
+              :label="t('collections.ruleTo')"
+            />
+          </template>
+          <template v-else-if="rule.type === 'plays'">
+            <UiInput
+              v-model="rule.min"
+              type="number"
+              min="0"
+              inputmode="numeric"
+              :label="t('collections.ruleMin')"
+            />
+            <UiInput
+              v-model="rule.max"
+              type="number"
+              min="0"
+              inputmode="numeric"
+              :label="t('collections.ruleMax')"
+            />
+          </template>
+          <UiInput
+            v-else
+            v-model="rule.value"
+            :label="t('collections.ruleValue')"
+            :placeholder="t('collections.ruleValuePlaceholder')"
+          />
+          <UiIconButton
+            icon="trash"
+            :label="t('common.delete')"
+            class="self-end"
+            @click="removeRule(index)"
+          />
+        </div>
+        <p v-if="!rulesDraft.length" class="text-sm text-faint">
+          {{ t('collections.noRules') }}
+        </p>
+        <UiButton variant="ghost" icon="plus" @click="addRule">
+          {{ t('collections.addRule') }}
+        </UiButton>
+      </div>
+      <template #footer>
+        <UiButton variant="ghost" @click="closeRules">{{
+          t('common.cancel')
+        }}</UiButton>
+        <UiButton
+          variant="primary"
+          icon="check"
+          :loading="savingRules"
+          @click="submitRules"
+        >
+          {{ t('collections.saveRules') }}
+        </UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
@@ -123,11 +217,14 @@ import { useI18n } from '/src/i18n'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
+import UiBadge from '/src/components/ui/UiBadge.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
+import UiIconButton from '/src/components/ui/UiIconButton.vue'
 import UiInput from '/src/components/ui/UiInput.vue'
 import UiModal from '/src/components/ui/UiModal.vue'
 import UiPanel from '/src/components/ui/UiPanel.vue'
+import UiSelect from '/src/components/ui/UiSelect.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import {
   createCollection,
@@ -135,9 +232,21 @@ import {
   editCollectionItems,
   listCollections,
   renameCollection,
+  saveCollectionRules,
 } from '/src/model/collections'
+import { RULE_TYPES, blankRule, cleanRules } from '/src/lib/collectionRules'
 import { friendlyError } from '/src/lib/errors'
 import { canSubmitRename } from '/src/lib/rename'
+
+// Label keys for the rule-type picker, one per type the API understands.
+const RULE_LABEL_KEYS = {
+  added: 'collections.ruleAdded',
+  plays: 'collections.rulePlays',
+  genre: 'collections.ruleGenre',
+  artist: 'collections.ruleArtist',
+  album: 'collections.ruleAlbum',
+  format: 'collections.ruleFormat',
+}
 
 const { t } = useI18n()
 const library = useLibrary()
@@ -246,6 +355,65 @@ async function submitRename() {
     failed(err)
   } finally {
     renaming.value = false
+  }
+}
+
+// Smart rules: the editor holds a draft row per rule; saving replaces the
+// collection's whole rule list, so clearing every row makes it static.
+const rulesOpen = ref(false)
+const rulesTarget = ref(null)
+const rulesDraft = ref([])
+const savingRules = ref(false)
+
+const rulesTypeOptions = computed(() =>
+  RULE_TYPES.map((type) => ({
+    value: type,
+    label: t(RULE_LABEL_KEYS[type]),
+  }))
+)
+
+function openRules(col) {
+  rulesTarget.value = col
+  rulesDraft.value = (col.rules || []).map((rule) => ({ ...rule }))
+  rulesOpen.value = true
+}
+
+function closeRules() {
+  rulesOpen.value = false
+  rulesTarget.value = null
+  rulesDraft.value = []
+}
+
+function addRule() {
+  rulesDraft.value.push(blankRule())
+}
+
+function removeRule(index) {
+  rulesDraft.value.splice(index, 1)
+}
+
+// Switching a row's type resets its fields to the new type's blanks, so a
+// leftover value can't leak into an unrelated rule.
+function onTypeChange(rule, type) {
+  if (rule.type === type) return
+  const fresh = blankRule(type)
+  for (const key of Object.keys(rule)) delete rule[key]
+  Object.assign(rule, fresh)
+}
+
+async function submitRules() {
+  const col = rulesTarget.value
+  if (!col) return
+  savingRules.value = true
+  try {
+    await saveCollectionRules(col.name, cleanRules(rulesDraft.value))
+    ui.toast(t('collections.rulesSaved'), { kind: 'success' })
+    closeRules()
+    await load()
+  } catch (err) {
+    failed(err)
+  } finally {
+    savingRules.value = false
   }
 }
 

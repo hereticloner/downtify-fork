@@ -1590,13 +1590,31 @@ Drop the rest of the queue. Tracks already upgraded stay upgraded.
 
 ## Collections
 
-Named groups of library playlists — see [Collections](features/collections.md). Stored as one JSON file per collection under `<downloads>/Playlists/.collections/`; there is no database.
+Named groups of library playlists — see [Collections](features/collections.md) and [Smart Collections](features/smart-collections.md). Stored as one JSON file per collection under `<downloads>/Playlists/.collections/`; there is no database. A collection may also carry `rules`; its `playlists` are then the static members unioned with the rule matches.
 
 ### `GET /api/collections`
 
-List every collection, sorted by name.
+List every collection, sorted by name. When any collection has rules, every listed collection's `playlists` are resolved against the library first, and smart ones also carry `rules` and `computed` (the rule-derived members that weren't added by hand).
 
 **Response:** array of collection objects, e.g. `{ "version": 1, "name": "Road trip", "playlists": ["Chill", "Drive"] }`.
+
+---
+
+### `GET /api/collections/{name}`
+
+One collection, with its members computed from its rules (if any) and unioned with the static ones.
+
+**Response:** the collection object plus `rules` (empty when static) and, for a smart collection, `computed`. `404` when `name` doesn't exist.
+
+---
+
+### `POST /api/collections/{name}/rules`
+
+Replace a collection's rules. An empty list (`{ "rules": [] }`) makes the collection static again.
+
+**Body:** `{ "rules": [{ "type": "genre", "value": "Rock" }] }`. A rule is `added` (`{type, from?, to?}`), `plays` (`{type, min?, max?}`), or `genre`/`artist`/`album`/`format` (`{type, value}`); rules combine with AND.
+
+**Response:** the updated collection. `400` when a rule is malformed; `404` when `name` doesn't exist.
 
 ---
 

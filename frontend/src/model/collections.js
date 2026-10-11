@@ -33,3 +33,16 @@ export async function deleteCollection(name) {
   const res = await API.deleteCollection(name)
   return res.data
 }
+
+/** One collection with its static members unioned with its rule-derived
+ *  ones (the smart-collection view). */
+export async function getCollection(name) {
+  const res = await API.getCollection(name)
+  return res.data
+}
+
+/** Replace a collection's rule list; an empty list makes it static again. */
+export async function saveCollectionRules(name, rules) {
+  const res = await API.saveCollectionRules(name, rules)
+  return res.data
+}

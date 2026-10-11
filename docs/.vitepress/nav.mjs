@@ -37,6 +37,7 @@ export const NAV = [
       { title: 'Navidrome', page: 'features/slskd-navidrome.md' },
       { title: 'Library Catalog', page: 'features/library-catalog.md' },
       { title: 'Collections', page: 'features/collections.md' },
+      { title: 'Smart Collections', page: 'features/smart-collections.md' },
       { title: 'Stats', page: 'features/stats.md' },
       { title: 'Notifications', page: 'features/notifications.md' },
       { title: 'Scrobbling', page: 'features/scrobbling.md' },
