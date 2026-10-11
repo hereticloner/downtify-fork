@@ -46,3 +46,20 @@ export async function saveCollectionRules(name, rules) {
   const res = await API.saveCollectionRules(name, rules)
   return res.data
 }
+
+/**
+ * Queue the missing tracks of each member playlist (from
+ * `collectionMissingPlaylists`) through the existing per-playlist
+ * endpoint. Returns the total number of tracks queued.
+ */
+export async function downloadCollectionMissing(members) {
+  let count = 0
+  for (const member of members || []) {
+    const res = await API.downloadMissingPlaylistTracks({
+      spotify_playlist_id: member.spotify_playlist_id,
+      playlist_url: member.playlist_url,
+    })
+    count += Number(res.data?.missing_count ?? res.data?.count ?? 0)
+  }
+  return count
+}

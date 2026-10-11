@@ -6,7 +6,7 @@ icon: lucide/layers
 
 Collections are named groups of the playlists already in your library — a level above the playlist. Where a playlist holds songs, a collection holds playlists, so a library that has grown to dozens of downloaded playlists can be sorted into a handful of groups like *Road trip*, *Dinner party* or *2024 albums*.
 
-A collection only groups: it never copies or moves a song, never rewrites a playlist and never touches the audio. Deleting a collection removes the group and nothing else.
+A collection only groups: it never copies or moves a song and never rewrites a playlist. The only download it can start is the [missing-tracks](#downloading-missing-tracks) one, which behaves exactly like downloading from the playlist page. Deleting a collection removes the group and nothing else.
 
 ## Opening the page
 
@@ -32,6 +32,12 @@ Click the pencil button on a collection, type the new name and confirm. Only the
 ## Opening a playlist
 
 Each playlist in a collection is shown as a chip, and every chip is a link: click it to open that playlist's page (the built-in player's playlist view, with its tracks).
+
+## Downloading missing tracks
+
+If a member playlist is still missing tracks from its Spotify source (the same state the [Queue](queue.md) page and the playlist page report), the collection card shows a **Download N missing** button. Clicking it queues only the tracks the member playlists are still missing, through the same download-missing flow those pages use: nothing already in the library is downloaded again, and the collection's own data is untouched. A collection with nothing missing shows no button.
+
+The queued tracks are ordinary download jobs — progress, retries and the completion toast all come from the [Queue](queue.md) page.
 
 ## Cover art
 

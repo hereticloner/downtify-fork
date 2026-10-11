@@ -332,6 +332,10 @@ export default {
       'Csak a gyűjtemény neve változik; a listái megtartják a sajátjukat.',
     name: 'Név',
     namePlaceholder: 'Saját gyűjteményem',
+    downloadMissing: {
+      one: '{count} hiányzó letöltése',
+      other: '{count} hiányzó letöltése',
+    },
     renamed: 'Átnevezve: „{name}”',
     smart: 'Okos',
     rules: 'Szabályok',

@@ -330,6 +330,10 @@ export default {
     renameHint: 'Só a coleção muda de nome; suas playlists mantêm as delas.',
     name: 'Nome',
     namePlaceholder: 'Minha coleção',
+    downloadMissing: {
+      one: 'Baixar {count} faltante',
+      other: 'Baixar {count} faltantes',
+    },
     renamed: 'Renomeada para “{name}”',
     smart: 'Inteligente',
     rules: 'Regras',

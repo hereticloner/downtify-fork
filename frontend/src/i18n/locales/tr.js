@@ -334,6 +334,10 @@ export default {
       'Yalnızca koleksiyonun adı değişir; içindeki listeler kendi adını korur.',
     name: 'Ad',
     namePlaceholder: 'Koleksiyonum',
+    downloadMissing: {
+      one: '{count} eksiği indir',
+      other: '{count} eksiği indir',
+    },
     renamed: 'Yeni ad: “{name}”',
     smart: 'Akıllı',
     rules: 'Kurallar',

@@ -59,6 +59,17 @@
               @keyup.enter="add(col)"
             />
             <UiButton
+              v-if="missingMembers(col).length"
+              variant="ghost"
+              icon="download"
+              :loading="downloadingCollection === col.name"
+              @click="downloadMissing(col)"
+            >
+              {{
+                t('collections.downloadMissing', { count: missingCount(col) })
+              }}
+            </UiButton>
+            <UiButton
               variant="ghost"
               icon="sliders"
               :title="t('collections.rules')"
@@ -222,6 +233,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from '/src/i18n'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import CoverArt from '/src/components/ui/CoverArt.vue'
@@ -239,12 +251,17 @@ import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import {
   createCollection,
   deleteCollection,
+  downloadCollectionMissing,
   editCollectionItems,
   listCollections,
   renameCollection,
   saveCollectionRules,
 } from '/src/model/collections'
 import { RULE_TYPES, blankRule, cleanRules } from '/src/lib/collectionRules'
+import {
+  collectionMissingCount,
+  collectionMissingPlaylists,
+} from '/src/lib/collectionMissing'
 import { collectionCovers } from '/src/lib/mosaic'
 import { friendlyError } from '/src/lib/errors'
 import { canSubmitRename } from '/src/lib/rename'
@@ -262,10 +279,12 @@ const RULE_LABEL_KEYS = {
 const { t } = useI18n()
 const library = useLibrary()
 const ui = useUi()
+const router = useRouter()
 const collections = ref([])
 const newName = ref('')
 const error = ref(false)
 const loading = ref(true)
+const downloadingCollection = ref('')
 
 // Names offered by the "add a playlist" box's native autocomplete - the
 // same playlist list the Library page shows, so a name can't be typo'd.
@@ -281,6 +300,43 @@ const playlistNames = computed(() =>
 // nothing is showable — CoverArt then falls back to the name's initials.
 function collectionCoversFor(col) {
   return collectionCovers(col.playlists, library.playlists.value)
+}
+
+// The member playlists that still have tracks to download. A collection
+// with none hides the "download missing" action entirely.
+function missingMembers(col) {
+  return collectionMissingPlaylists(col.playlists, library.playlists.value)
+}
+
+function missingCount(col) {
+  return collectionMissingCount(col.playlists, library.playlists.value)
+}
+
+// Queue every missing member through the existing per-playlist endpoint
+// and report the total once, using the same toast the Queue page shows.
+async function downloadMissing(col) {
+  const members = missingMembers(col)
+  if (!members.length) return
+  downloadingCollection.value = col.name
+  try {
+    const count = await downloadCollectionMissing(members)
+    if (count) {
+      ui.toast(t('toast.queuedMissing', { count }), {
+        kind: 'success',
+        action: {
+          label: t('nav.queue'),
+          run: () => router.push({ name: 'Queue' }),
+        },
+      })
+    } else {
+      ui.toast(t('toast.playlistComplete'), { kind: 'success' })
+    }
+    library.refreshSoon(500)
+  } catch (err) {
+    failed(err)
+  } finally {
+    downloadingCollection.value = ''
+  }
 }
 
 function failed(err) {

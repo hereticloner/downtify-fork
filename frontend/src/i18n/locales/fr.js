@@ -343,6 +343,10 @@ export default {
       'Seule la collection change de nom ; ses listes de lecture gardent le leur.',
     name: 'Nom',
     namePlaceholder: 'Ma collection',
+    downloadMissing: {
+      one: 'Télécharger {count} manquant',
+      other: 'Télécharger {count} manquants',
+    },
     renamed: 'Renommée en « {name} »',
     smart: 'Intelligente',
     rules: 'Règles',

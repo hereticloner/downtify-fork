@@ -335,6 +335,10 @@ export default {
       'Μόνο η συλλογή αλλάζει όνομα· οι λίστες της κρατούν τις δικές τους.',
     name: 'Όνομα',
     namePlaceholder: 'Η συλλογή μου',
+    downloadMissing: {
+      one: 'Λήψη {count} που λείπει',
+      other: 'Λήψη {count} που λείπουν',
+    },
     renamed: 'Μετονομάστηκε σε «{name}»',
     smart: 'Έξυπνη',
     rules: 'Κανόνες',

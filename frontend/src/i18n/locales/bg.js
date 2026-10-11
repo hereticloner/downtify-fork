@@ -327,6 +327,10 @@ export default {
     renameHint: 'Само колекцията сменя името си; плейлистите запазват своите.',
     name: 'Име',
     namePlaceholder: 'Моята колекция',
+    downloadMissing: {
+      one: 'Изтегли {count} липсваща',
+      other: 'Изтегли {count} липсващи',
+    },
     renamed: 'Преименувано на „{name}“',
     smart: 'Умна',
     rules: 'Правила',

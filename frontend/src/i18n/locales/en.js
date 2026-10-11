@@ -325,6 +325,10 @@ export default {
     renameHint: 'Only the collection changes name; its playlists keep theirs.',
     name: 'Name',
     namePlaceholder: 'My collection',
+    downloadMissing: {
+      one: 'Download {count} missing',
+      other: 'Download {count} missing',
+    },
     renamed: 'Renamed to “{name}”',
     smart: 'Smart',
     rules: 'Rules',

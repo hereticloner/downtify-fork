@@ -333,6 +333,10 @@ export default {
       'Solo la colección cambia de nombre; sus listas conservan el suyo.',
     name: 'Nombre',
     namePlaceholder: 'Mi colección',
+    downloadMissing: {
+      one: 'Descargar {count} faltante',
+      other: 'Descargar {count} faltantes',
+    },
     renamed: 'Renombrada a «{name}»',
     smart: 'Inteligente',
     rules: 'Reglas',
