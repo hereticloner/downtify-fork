@@ -297,6 +297,9 @@ export default {
     useLink: 'Link használata',
     invalidYoutube: 'Ez nem tűnik YouTube videólinknek.',
     playlistDownloads: 'Lejátszásilista-letöltések',
+    incompleteTitle: 'Befejezetlen listák',
+    incompleteHint:
+      'Követett listák, amelyekből még hiányoznak számok — egy kattintással befejezheted.',
     sources: 'Letöltési forrás',
     noSourcesYet: 'A kész letöltések forrása itt jelenik meg.',
     importTitle: 'Könyvtár importálása',
@@ -323,6 +326,13 @@ export default {
     empty: 'Ebben a gyűjteményben még nincsenek listák',
     none: 'Még nincsenek gyűjtemények',
     confirmDelete: 'Törlöd a(z) "{name}" gyűjteményt?',
+    rename: 'Átnevezés',
+    renameTitle: 'Gyűjtemény átnevezése',
+    renameHint:
+      'Csak a gyűjtemény neve változik; a listái megtartják a sajátjukat.',
+    name: 'Név',
+    namePlaceholder: 'Saját gyűjteményem',
+    renamed: 'Átnevezve: „{name}”',
   },
   library: {
     title: 'Könyvtár',
@@ -499,6 +509,9 @@ export default {
     save: 'Mentés',
     bioSaved: 'Életrajz elmentve',
     bioSaveFailed: 'Nem sikerült elmenteni az életrajzot',
+    clearBio: 'Életrajz törlése',
+    bioCleared: 'Életrajz törölve',
+    bioClearFailed: 'Az életrajzot nem sikerült törölni',
     socialSaved: 'Közösségimédia-linkek elmentve',
     socialSaveFailed: 'Nem sikerült elmenteni a közösségimédia-linkeket',
     socialTwitter: 'Twitter / X',
@@ -557,6 +570,12 @@ export default {
     complete: 'Teljes',
     watch: 'Új számok figyelése',
     openSource: 'Eredeti lista megnyitása',
+    writeM3u: 'M3U-fájl írása',
+    m3uWritten: {
+      one: 'M3U írva {count} számmal',
+      other: 'M3U írva {count} számmal',
+    },
+    m3uFailed: 'Nem sikerült az M3U-fájl írása',
     delete: 'Lista törlése',
     create: 'Új lista',
     createTitle: 'Lista létrehozása',
@@ -815,6 +834,8 @@ export default {
     showLyrics: 'Dalszövegek megjelenítése a lejátszóban',
     showLyricsHint:
       'Kikapcsolva elrejti a dalszöveg panelt, a gombját és a billentyűparancsát. A fájlok megtartják a dalszövegeket, a letöltések pedig továbbra is lekérik őket.',
+    miniPlayer: 'Mini lejátszó megjelenítése',
+    miniPlayerHint: 'Az alsó sáv fölött rögzített kompakt lejátszó.',
     searchGroup: 'Keresés',
     searchAlbums: 'Albumok a találatok között',
     searchAlbumsHint:
@@ -983,6 +1004,12 @@ export default {
     spotifyMirrorSilent: 'Csendes tükrözés',
     spotifyMirrorSilentHint:
       'A tükröző eszközt 0 hangerőn tartja, így csak a Downtifyt hallja.',
+    spotifyMirrorNow: 'Tükrözés most',
+    spotifyMirrorNowHint:
+      'Indítsd el az itt játszott számot a Spotify-eszközödön is — gyors kapcsolatteszt.',
+    spotifyMirrorNowNothing: 'Most semmi sem szól.',
+    spotifyMirrorNowDone: 'Tükrözve a Spotifyon.',
+    spotifyMirrorNowFailed: 'Ezt a számot nem sikerült tükrözni.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
@@ -1049,6 +1076,12 @@ export default {
     navidromeSyncHint:
       'Listaletöltések és figyelő-ellenőrzések után azonos nevű listát tart fenn a Navidrome-ban.',
     navidromePublic: 'Navidrome listák nyilvánossá tétele',
+    navidromeScanAfterDownload: 'Navidrome szkennelése letöltés után',
+    navidromeScanAfterDownloadHint:
+      'A Navidrome nézze át újra a könyvtárát, amint új számok érkeznek, hogy hamarabb jelenjenek meg.',
+    navidromeClientName: 'Kliens neve',
+    navidromeClientNameHint:
+      'A név, amellyel a Downtify bejelentkezik a Navidrome-ba.',
     libraryGroup: 'Könyvtár',
     coverCache: 'Borítók gyorsítótárazása',
     coverCacheHint:
@@ -1196,6 +1229,11 @@ export default {
     revoke: 'Párosítás bontása',
     revokeTitle: 'Bontja a párosítást: {name}?',
     revokeBody: 'Azonnal leáll, amíg újra nem párosítják.',
+    rename: 'Átnevezés',
+    renameTitle: '{name} átnevezése',
+    renameHint: 'Adj ennek az alkalmazásnak egy felismerhető nevet.',
+    renameDevice: 'Név',
+    renamed: 'Átnevezve: „{name}”',
     lastSeen: 'látva {when}',
     signOutEverywhere: 'Kijelentkezés mindenhol',
     signOutEverywhereButton: 'Kijelentkezés mindenhol',
@@ -1510,6 +1548,9 @@ export default {
     removeArtistBannerTitle: '{name} bannerének eltávolítása?',
     removeArtistArtBody:
       'Ez csak a mentett képfájlt távolítja el — semmi mást nem érint.',
+    clearArtistBioTitle: 'Törli {name} életrajzát?',
+    clearArtistBioBody:
+      'Csak a mentett életrajz-szöveg törlődik. A fotó, a banner és a közösségi linkek maradnak.',
   },
   toast: {
     playingNext: {

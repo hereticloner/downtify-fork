@@ -300,6 +300,9 @@ export default {
     useLink: 'Χρήση συνδέσμου',
     invalidYoutube: 'Αυτό δεν μοιάζει με σύνδεσμο βίντεο YouTube.',
     playlistDownloads: 'Λήψεις λιστών',
+    incompleteTitle: 'Ημιτελείς λίστες',
+    incompleteHint:
+      'Οι λίστες που παρακολουθούνται και τους λείπουν ακόμα κομμάτια — ολοκλήρωσέ τις με ένα κλικ.',
     sources: 'Πηγή λήψης',
     noSourcesYet: 'Οι ολοκληρωμένες λήψεις δείχνουν εδώ την πηγή τους.',
     importTitle: 'Εισαγωγή βιβλιοθήκης',
@@ -326,6 +329,13 @@ export default {
     empty: 'Δεν υπάρχουν playlists σε αυτή τη συλλογή ακόμη',
     none: 'Δεν υπάρχουν συλλογές ακόμη',
     confirmDelete: 'Διαγραφή της συλλογής "{name}";',
+    rename: 'Μετονομασία',
+    renameTitle: 'Μετονομασία συλλογής',
+    renameHint:
+      'Μόνο η συλλογή αλλάζει όνομα· οι λίστες της κρατούν τις δικές τους.',
+    name: 'Όνομα',
+    namePlaceholder: 'Η συλλογή μου',
+    renamed: 'Μετονομάστηκε σε «{name}»',
   },
   library: {
     title: 'Βιβλιοθήκη',
@@ -503,6 +513,9 @@ export default {
     save: 'Αποθήκευση',
     bioSaved: 'Το βιογραφικό αποθηκεύτηκε',
     bioSaveFailed: 'Δεν ήταν δυνατή η αποθήκευση του βιογραφικού',
+    clearBio: 'Καθαρισμός βιογραφικού',
+    bioCleared: 'Το βιογραφικό καθαρίστηκε',
+    bioClearFailed: 'Δεν ήταν δυνατός ο καθαρισμός του βιογραφικού',
     socialSaved: 'Τα κοινωνικά δίκτυα αποθηκεύτηκαν',
     socialSaveFailed: 'Δεν ήταν δυνατή η αποθήκευση των κοινωνικών δικτύων',
     socialTwitter: 'Twitter / X',
@@ -558,6 +571,12 @@ export default {
     complete: 'Πλήρης',
     watch: 'Παρακολούθηση νέων κομματιών',
     openSource: 'Άνοιγμα αρχικής λίστας',
+    writeM3u: 'Εγγραφή αρχείου M3U',
+    m3uWritten: {
+      one: 'Το M3U γράφτηκε με {count} κομμάτι',
+      other: 'Το M3U γράφτηκε με {count} κομμάτια',
+    },
+    m3uFailed: 'Δεν ήταν δυνατή η εγγραφή του M3U',
     delete: 'Διαγραφή λίστας',
     create: 'Νέα λίστα',
     createTitle: 'Δημιουργία λίστας',
@@ -820,6 +839,8 @@ export default {
     showLyrics: 'Εμφάνιση στίχων στο πρόγραμμα αναπαραγωγής',
     showLyricsHint:
       'Απενεργοποιήστε για να κρυφτεί ο πίνακας στίχων, το κουμπί και η συντόμευσή του. Τα αρχεία σας κρατούν τους στίχους και οι λήψεις συνεχίζουν να τους ψάχνουν.',
+    miniPlayer: 'Εμφάνιση μίνι αναπαραγωγέα',
+    miniPlayerHint: 'Ο συμπαγής αναπαραγωγέας πάνω από την κάτω γραμμή.',
     searchGroup: 'Αναζήτηση',
     searchAlbums: 'Εμφάνιση άλμπουμ στα αποτελέσματα',
     searchAlbumsHint:
@@ -990,6 +1011,13 @@ export default {
     spotifyMirrorSilent: 'Αθόρυβη απεικόνιση',
     spotifyMirrorSilentHint:
       'Κρατά τη συσκευή απεικόνισης σε ένταση 0, ώστε να ακούτε μόνο το Downtify.',
+    spotifyMirrorNow: 'Κατοπτρισμός τώρα',
+    spotifyMirrorNowHint:
+      'Ξεκίνα το κομμάτι που παίζει εδώ και στη συσκευή Spotify σου — ένα γρήγορο τεστ της σύνδεσης.',
+    spotifyMirrorNowNothing: 'Δεν παίζει κάτι αυτή τη στιγμή.',
+    spotifyMirrorNowDone: 'Κατοπτρίστηκε στο Spotify.',
+    spotifyMirrorNowFailed:
+      'Δεν ήταν δυνατός ο κατοπτρισμός αυτού του κομματιού.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
@@ -1057,6 +1085,12 @@ export default {
     navidromeSyncHint:
       'Μετά από λήψεις λιστών και ελέγχους, διατηρεί λίστα με το ίδιο όνομα στο Navidrome.',
     navidromePublic: 'Δημόσιες λίστες Navidrome',
+    navidromeScanAfterDownload: 'Σάρωση του Navidrome μετά τις λήψεις',
+    navidromeScanAfterDownloadHint:
+      'Ζήτα από το Navidrome να σαρώσει ξανά τη βιβλιοθήκη του μόλις φτάσουν νέα τραγούδια, ώστε να εμφανίζονται νωρίτερα.',
+    navidromeClientName: 'Όνομα πελάτη',
+    navidromeClientNameHint:
+      'Το όνομα με το οποίο το Downtify συνδέεται στο Navidrome.',
     libraryGroup: 'Βιβλιοθήκη',
     coverCache: 'Προσωρινή μνήμη εξωφύλλων',
     coverCacheHint:
@@ -1206,6 +1240,11 @@ export default {
     revoke: 'Αποσύζευξη',
     revokeTitle: 'Αποσύζευξη {name};',
     revokeBody: 'Σταματά να λειτουργεί αμέσως, μέχρι να συζευχθεί ξανά.',
+    rename: 'Μετονομασία',
+    renameTitle: 'Μετονομασία {name}',
+    renameHint: 'Δώσε σε αυτή την εφαρμογή ένα όνομα που θα αναγνωρίζεις.',
+    renameDevice: 'Όνομα',
+    renamed: 'Μετονομάστηκε σε «{name}»',
     lastSeen: 'είδε {when}',
     signOutEverywhere: 'Αποσύνδεση παντού',
     signOutEverywhereButton: 'Αποσύνδεση παντού',
@@ -1522,6 +1561,9 @@ export default {
     removeArtistBannerTitle: 'Αφαίρεση του banner του {name};',
     removeArtistArtBody:
       'Αυτό αφαιρεί μόνο το αποθηκευμένο αρχείο εικόνας — τίποτα άλλο δεν επηρεάζεται.',
+    clearArtistBioTitle: 'Καθαρισμός του βιογραφικού του/της {name};',
+    clearArtistBioBody:
+      'Αφαιρείται μόνο το αποθηκευμένο κείμενο. Η φωτογραφία, το banner και οι σύνδεσμοι παραμένουν.',
   },
   toast: {
     playingNext: { one: 'Παίζει επόμενο', other: '{count} κομμάτια επόμενα' },

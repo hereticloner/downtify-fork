@@ -10,7 +10,8 @@ Mirror the playlists you download into [Navidrome](https://www.navidrome.org/), 
 
 1. Make sure Navidrome's music folder includes Downtify's downloads folder. Navidrome can only add tracks to a playlist once it has scanned them.
 2. In **Settings → Navidrome**, enable Navidrome and enter its URL, username and password.
-3. Optionally, add an **admin** username and password. Downtify then asks Navidrome to scan the library before matching new tracks, instead of waiting for Navidrome's own scheduled scan.
+3. Optionally, add an **admin** username and password. Downtify then asks Navidrome to scan the library before matching new tracks, instead of waiting for Navidrome's own scheduled scan. With **Scan Navidrome after downloads** on (the default), that scan also runs once new songs land, so they show up sooner; turn it off to rely on Navidrome's own schedule.
+4. Optionally, change **Client name** — the name Downtify signs in to Navidrome as (default `Downtify`). It is what Navidrome's own logs show for Downtify's requests.
 
 ## Testing the connection
 

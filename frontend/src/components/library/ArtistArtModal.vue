@@ -191,14 +191,21 @@
           <p v-if="errorText" class="text-[13px] text-danger">
             {{ errorText }}
           </p>
-          <UiButton
-            variant="primary"
-            class="self-end"
-            :loading="savingBio"
-            @click="saveBio"
-          >
-            {{ t('artistArt.save') }}
-          </UiButton>
+          <div class="flex items-center justify-between gap-3">
+            <button
+              v-if="bioDraft"
+              type="button"
+              class="flex w-fit items-center gap-1.5 text-[13px] text-danger hover:text-danger/80 disabled:opacity-50"
+              :disabled="clearingBio"
+              @click="clearBio"
+            >
+              <AppIcon name="trash" :size="14" />{{ t('artistArt.clearBio') }}
+            </button>
+            <span v-else />
+            <UiButton variant="primary" :loading="savingBio" @click="saveBio">
+              {{ t('artistArt.save') }}
+            </UiButton>
+          </div>
         </template>
 
         <template v-else-if="activeTab === 'social'">
@@ -255,6 +262,7 @@ import UiButton from '../ui/UiButton.vue'
 import UiInput from '../ui/UiInput.vue'
 import UiModal from '../ui/UiModal.vue'
 import API from '/src/model/api'
+import { clearArtistBio } from '/src/model/artistProfile'
 import {
   artCandidates,
   isImageUrlQuery,
@@ -350,6 +358,7 @@ const socialDraft = ref({
   youtube: '',
 })
 const savingBio = ref(false)
+const clearingBio = ref(false)
 const savingSocial = ref(false)
 // Which service's biography is being fetched right now (its source id), or
 // '' - both links are disabled while one is running.
@@ -537,6 +546,31 @@ async function saveBio() {
     errorText.value = friendlyError(t, err, 'artistArt.bioSaveFailed')
   } finally {
     savingBio.value = false
+  }
+}
+
+// Clears just the saved bio text; the button only shows when there is
+// something to clear.
+async function clearBio() {
+  if (clearingBio.value) return
+  const ok = await ui.confirm({
+    title: t('confirm.clearArtistBioTitle', { name: props.artistName }),
+    body: t('confirm.clearArtistBioBody'),
+    confirmLabel: t('artistArt.clearBio'),
+    danger: true,
+  })
+  if (!ok) return
+  clearingBio.value = true
+  errorText.value = ''
+  try {
+    await clearArtistBio(props.artistName)
+    bioDraft.value = ''
+    ui.toast(t('artistArt.bioCleared'), { kind: 'success' })
+    emit('saved')
+  } catch (err) {
+    errorText.value = friendlyError(t, err, 'artistArt.bioClearFailed')
+  } finally {
+    clearingBio.value = false
   }
 }
 

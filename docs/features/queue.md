@@ -6,6 +6,10 @@ icon: lucide/list-checks
 
 The **Queue** page (`/queue`) shows every download Downtify is working on or has finished, split across tabs — **In progress**, **Waiting**, **Done**, **Failed** and **All** — with retry, remove and clear actions and, on the side, the playlist batches currently downloading and a CSV import box. This page also holds the global **pause**.
 
+## Unfinished playlists
+
+When a tracked Spotify playlist is still missing tracks — some failed, or were added to the playlist later — an **Unfinished playlists** panel shows it in the side column, with how many are missing and a **Download missing** button that queues exactly those. The playlist name links to its page for the full breakdown.
+
 ## Pausing and resuming the queue
 
 While anything is waiting, a **Pause all** button sits in the page header (on a phone it collapses to just its icon). Click it to pause, and it becomes **Resume all**:

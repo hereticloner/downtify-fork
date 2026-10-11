@@ -103,6 +103,14 @@
           <UiButton
             size="sm"
             variant="ghost"
+            icon="pencil"
+            @click="openRename(device)"
+          >
+            {{ t('apps.rename') }}
+          </UiButton>
+          <UiButton
+            size="sm"
+            variant="ghost"
             icon="trash"
             @click="revoke(device)"
           >
@@ -175,6 +183,39 @@
         </template>
       </div>
     </UiModal>
+
+    <!-- Rename a paired app -->
+    <UiModal
+      :open="renameOpen"
+      :title="t('apps.renameTitle', { name: renameTarget?.name || '' })"
+      :description="t('apps.renameHint')"
+      @close="closeRename"
+    >
+      <form
+        class="flex flex-col gap-4 px-5 py-5 sm:px-6"
+        @submit.prevent="submitRename"
+      >
+        <UiInput
+          v-model="renameDraft"
+          :label="t('apps.renameDevice')"
+          icon="monitor"
+        />
+      </form>
+      <template #footer>
+        <UiButton variant="ghost" @click="closeRename">{{
+          t('common.cancel')
+        }}</UiButton>
+        <UiButton
+          variant="primary"
+          icon="pencil"
+          :disabled="!canRename"
+          :loading="renaming"
+          @click="submitRename"
+        >
+          {{ t('apps.rename') }}
+        </UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
@@ -190,9 +231,11 @@ import UiModal from '../ui/UiModal.vue'
 import SettingGroup from './SettingGroup.vue'
 import SettingRow from './SettingRow.vue'
 import API from '/src/model/api'
+import { renameDevice } from '/src/model/devices'
 import { useAuth } from '/src/model/auth'
 import { useUi } from '/src/model/ui'
 import { formatCountdown, pairingUri, qrPath } from '/src/lib/auth'
+import { canSubmitRename } from '/src/lib/rename'
 import { timeAgo } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
 import { friendlyError } from '/src/lib/errors'
@@ -274,6 +317,43 @@ async function revoke(device) {
     devices.value = devices.value.filter((d) => d.id !== device.id)
   } catch (err) {
     ui.toast(errorOf(err), { kind: 'error' })
+  }
+}
+
+// ── Renaming a paired app ───────────────────────────────────────────
+const renameOpen = ref(false)
+const renameTarget = ref(null)
+const renameDraft = ref('')
+const renaming = ref(false)
+const canRename = computed(() =>
+  canSubmitRename(renameTarget.value?.name, renameDraft.value, renaming.value)
+)
+
+function openRename(device) {
+  renameTarget.value = device
+  renameDraft.value = device.name || ''
+  renameOpen.value = true
+}
+
+function closeRename() {
+  renameOpen.value = false
+  renameTarget.value = null
+}
+
+async function submitRename() {
+  const device = renameTarget.value
+  const name = renameDraft.value.trim()
+  if (!device || !name || !canRename.value) return
+  renaming.value = true
+  try {
+    await renameDevice(device.id, name)
+    device.name = name
+    ui.toast(t('apps.renamed', { name }), { kind: 'success' })
+    closeRename()
+  } catch (err) {
+    ui.toast(errorOf(err), { kind: 'error' })
+  } finally {
+    renaming.value = false
   }
 }
 

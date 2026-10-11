@@ -299,6 +299,9 @@ export default {
     useLink: 'Bu bağlantıyı kullan',
     invalidYoutube: 'Bu bir YouTube video bağlantısına benzemiyor.',
     playlistDownloads: 'Çalma listesi indirmeleri',
+    incompleteTitle: 'Yarım kalan listeler',
+    incompleteHint:
+      'Hâlâ eksik parçaları olan izlenen listeler — tek tıkla tamamla.',
     sources: 'İndirme kaynağı',
     noSourcesYet: 'Tamamlanan indirmeler kaynaklarını burada gösterir.',
     importTitle: 'Kitaplık içe aktar',
@@ -325,6 +328,13 @@ export default {
     empty: 'Bu koleksiyonda henüz playlist yok',
     none: 'Henüz koleksiyon yok',
     confirmDelete: '"{name}" koleksiyonu silinsin mi?',
+    rename: 'Yeniden adlandır',
+    renameTitle: 'Koleksiyonu yeniden adlandır',
+    renameHint:
+      'Yalnızca koleksiyonun adı değişir; içindeki listeler kendi adını korur.',
+    name: 'Ad',
+    namePlaceholder: 'Koleksiyonum',
+    renamed: 'Yeni ad: “{name}”',
   },
   library: {
     title: 'Kitaplık',
@@ -502,6 +512,9 @@ export default {
     save: 'Kaydet',
     bioSaved: 'Biyografi kaydedildi',
     bioSaveFailed: 'Biyografi kaydedilemedi',
+    clearBio: 'Biyografiyi temizle',
+    bioCleared: 'Biyografi temizlendi',
+    bioClearFailed: 'Biyografi temizlenemedi',
     socialSaved: 'Sosyal medya bağlantıları kaydedildi',
     socialSaveFailed: 'Sosyal medya bağlantıları kaydedilemedi',
     socialTwitter: 'Twitter / X',
@@ -557,6 +570,12 @@ export default {
     complete: 'Tamamlandı',
     watch: 'Yeni parçaları izle',
     openSource: 'Orijinal çalma listesini aç',
+    writeM3u: 'M3U dosyasını yaz',
+    m3uWritten: {
+      one: 'M3U {count} parçayla yazıldı',
+      other: 'M3U {count} parçayla yazıldı',
+    },
+    m3uFailed: 'M3U dosyası yazılamadı',
     delete: 'Çalma listesini sil',
     create: 'Yeni çalma listesi',
     createTitle: 'Çalma listesi oluştur',
@@ -816,6 +835,8 @@ export default {
     showLyrics: 'Oynatıcıda şarkı sözlerini göster',
     showLyricsHint:
       'Şarkı sözü panelini, düğmesini ve kısayolunu gizlemek için kapatın. Dosyalarınız sözlerini korur ve indirmeler onları getirmeye devam eder.',
+    miniPlayer: 'Mini oynatıcıyı göster',
+    miniPlayerHint: 'Alt çubuğun üzerinde duran kompakt oynatıcı.',
     searchGroup: 'Arama',
     searchAlbums: 'Arama sonuçlarında albümleri göster',
     searchAlbumsHint:
@@ -982,6 +1003,12 @@ export default {
     spotifyMirrorSilent: 'Sessiz yansıtma',
     spotifyMirrorSilentHint:
       "Yansıtan cihazı ses 0'da tutar, yalnız Downtify duyulur.",
+    spotifyMirrorNow: 'Şimdi yansıt',
+    spotifyMirrorNowHint:
+      'Burada çalan parçayı Spotify cihazında da başlat — bağlantının hızlı bir sınaması.',
+    spotifyMirrorNowNothing: 'Şu anda çalan bir şey yok.',
+    spotifyMirrorNowDone: 'Spotify’da yansıtıldı.',
+    spotifyMirrorNowFailed: 'Bu parça yansıtılamadı.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
@@ -1046,6 +1073,11 @@ export default {
     navidromeSyncHint:
       'Çalma listesi indirmeleri ve izleyici kontrollerinden sonra Navidrome’da aynı adlı bir liste tut.',
     navidromePublic: 'Navidrome çalma listelerini herkese açık yap',
+    navidromeScanAfterDownload: 'İndirmelerden sonra Navidrome’u tara',
+    navidromeScanAfterDownloadHint:
+      'Yeni şarkılar geldiğinde Navidrome’dan kitaplığını yeniden taramasını iste, böylece daha çabuk görünürler.',
+    navidromeClientName: 'İstemci adı',
+    navidromeClientNameHint: 'Downtify’nin Navidrome’a giriş yaptığı ad.',
     libraryGroup: 'Kitaplık',
     coverCache: 'Kapakları önbelleğe al',
     coverCacheHint:
@@ -1190,6 +1222,11 @@ export default {
     revoke: 'Eşleştirmeyi kaldır',
     revokeTitle: '{name} eşleştirmesi kaldırılsın mı?',
     revokeBody: 'Yeniden eşleştirilene kadar hemen çalışmayı durdurur.',
+    rename: 'Yeniden adlandır',
+    renameTitle: '{name} adını değiştir',
+    renameHint: 'Bu uygulamaya tanıyacağın bir ad ver.',
+    renameDevice: 'Ad',
+    renamed: 'Yeni ad: “{name}”',
     lastSeen: 'görüldü {when}',
     signOutEverywhere: 'Her yerden çıkış yap',
     signOutEverywhereButton: 'Her yerden çıkış yap',
@@ -1502,6 +1539,9 @@ export default {
     removeArtistBannerTitle: '{name} afişi kaldırılsın mı?',
     removeArtistArtBody:
       'Bu yalnızca kaydedilen görsel dosyasını kaldırır — başka hiçbir şeyi etkilemez.',
+    clearArtistBioTitle: '{name} adlı sanatçının biyografisi temizlensin mi?',
+    clearArtistBioBody:
+      'Yalnızca kayıtlı biyografi metni kaldırılır. Fotoğraf, banner ve sosyal bağlantılar kalır.',
   },
   toast: {
     playingNext: {

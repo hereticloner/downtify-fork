@@ -50,6 +50,10 @@ This only changes what the player shows. Your files keep the lyrics Downtify emb
 
 Like the theme and the equalizer, the choice is saved in the browser (`localStorage`), so it is per device and per browser, not per Downtify server — you can hide the lyrics on a phone and keep them on a desktop.
 
+## Hiding the mini player
+
+The small player bar docked above the bottom of every page is controlled by **Settings → General → Player → Show the mini player**. It is a server setting (an admin's): turn it off and the bar — and the space it reserves on phones — is gone, while Now playing and the queue keep working as before. Turn it back on to bring it back.
+
 ## Equalizer
 
 A ten-band graphic equalizer, in the **Equalizer** panel of Now playing (or press `E`). It's marked **Experimental**: it may still change, and it may misbehave in some browsers (see [Browser support](#browser-support)).

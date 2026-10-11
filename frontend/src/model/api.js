@@ -222,6 +222,11 @@ function deleteArtistArt(name, kind) {
   return API.delete('/api/artists/art', { params: { name, kind } })
 }
 
+// Clear only the saved bio text; photo, banner and social links stay.
+function deleteArtistBio(name) {
+  return API.delete('/api/artists/profile/bio', { params: { name } })
+}
+
 // ── Artist profile: bio, social links, related artists, platform ids ──
 function getArtistProfile(name) {
   return API.get('/api/artists/profile', { params: { name } })
@@ -401,6 +406,32 @@ function renameLibraryPlaylist(name, newName) {
     name,
     new_name: newName,
   })
+}
+
+// ── Collections: named groups of library playlists ───────────────────
+function listCollections() {
+  return API.get('/api/collections')
+}
+
+function createCollection(name) {
+  return API.post('/api/collections', { name })
+}
+
+function renameCollection(name, newName) {
+  return API.post(`/api/collections/${encodeURIComponent(name)}`, {
+    name: newName,
+  })
+}
+
+function editCollectionItems(name, { add = [], remove = [] } = {}) {
+  return API.post(`/api/collections/${encodeURIComponent(name)}/items`, {
+    add,
+    remove,
+  })
+}
+
+function deleteCollection(name) {
+  return API.delete(`/api/collections/${encodeURIComponent(name)}`)
 }
 
 function reconcileLibrary() {
@@ -810,6 +841,7 @@ export default {
   setArtistArtFromUrl,
   uploadArtistArt,
   deleteArtistArt,
+  deleteArtistBio,
   getArtistProfile,
   ensureArtistProfile,
   fetchArtistBio,
@@ -846,6 +878,11 @@ export default {
   createLibraryPlaylist,
   editLibraryPlaylistTracks,
   renameLibraryPlaylist,
+  listCollections,
+  createCollection,
+  renameCollection,
+  editCollectionItems,
+  deleteCollection,
   prepareLibraryArchive,
   libraryArchiveURL,
   reconcileLibrary,

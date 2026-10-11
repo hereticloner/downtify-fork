@@ -25,6 +25,10 @@ Every collection has an **Add a playlist by name** box. Type a name and press **
 
 The box is checked against the library: a name that isn't a playlist Downtify knows about gives an error and nothing is added. The same playlist can be in several collections; adding it to one doesn't remove it from another.
 
+## Renaming a collection
+
+Click the pencil button on a collection, type the new name and confirm. Only the collection's own name changes — its file is renamed too, and the playlists inside keep their names and order. A name already in use is rejected, exactly like creating one.
+
 ## Opening a playlist
 
 Each playlist in a collection is shown as a chip, and every chip is a link: click it to open that playlist's page (the built-in player's playlist view, with its tracks).
@@ -34,7 +38,7 @@ Each playlist in a collection is shown as a chip, and every chip is a link: clic
 Click the trash button on a collection and confirm. Only the collection is deleted — its playlists, their M3U files and their audio all stay exactly where they were.
 
 ::: info Removing one playlist vs. deleting the collection
-To drop a single playlist from a collection without deleting the group, use the [API](#api) (`POST /api/collections/{name}/items` with a `remove` list). The page itself offers adding playlists and deleting a whole collection.
+To drop a single playlist from a collection without deleting the group, use the [API](#api) (`POST /api/collections/{name}/items` with a `remove` list). The page itself offers adding playlists, renaming and deleting a whole collection.
 :::
 
 ## Where collections are stored

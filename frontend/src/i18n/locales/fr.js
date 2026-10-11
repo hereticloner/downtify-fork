@@ -308,6 +308,9 @@ export default {
     useLink: 'Utiliser ce lien',
     invalidYoutube: 'Ceci ne ressemble pas à un lien de vidéo YouTube.',
     playlistDownloads: 'Téléchargements de playlists',
+    incompleteTitle: 'Listes inachevées',
+    incompleteHint:
+      'Des listes suivies auxquelles il manque encore des titres — terminez-les en un clic.',
     sources: 'Téléchargé depuis',
     noSourcesYet: 'Les téléchargements terminés indiquent leur source ici.',
     importTitle: 'Importer une bibliothèque',
@@ -334,6 +337,13 @@ export default {
     empty: 'Pas encore de playlists dans cette collection',
     none: 'Pas encore de collections',
     confirmDelete: 'Supprimer la collection « {name} » ?',
+    rename: 'Renommer',
+    renameTitle: 'Renommer la collection',
+    renameHint:
+      'Seule la collection change de nom ; ses listes de lecture gardent le leur.',
+    name: 'Nom',
+    namePlaceholder: 'Ma collection',
+    renamed: 'Renommée en « {name} »',
   },
   library: {
     title: 'Bibliothèque',
@@ -514,6 +524,9 @@ export default {
     save: 'Enregistrer',
     bioSaved: 'Biographie enregistrée',
     bioSaveFailed: "Impossible d'enregistrer la biographie",
+    clearBio: 'Effacer la bio',
+    bioCleared: 'Bio effacée',
+    bioClearFailed: 'Impossible d’effacer la bio',
     socialSaved: 'Réseaux sociaux enregistrés',
     socialSaveFailed: "Impossible d'enregistrer les réseaux sociaux",
     socialTwitter: 'Twitter / X',
@@ -572,6 +585,12 @@ export default {
     complete: 'Complète',
     watch: 'Surveiller les nouveaux titres',
     openSource: 'Ouvrir la playlist d’origine',
+    writeM3u: 'Écrire le fichier M3U',
+    m3uWritten: {
+      one: 'M3U écrit avec {count} titre',
+      other: 'M3U écrit avec {count} titres',
+    },
+    m3uFailed: 'Impossible d’écrire le fichier M3U',
     delete: 'Supprimer la playlist',
     create: 'Nouvelle playlist',
     createTitle: 'Créer une playlist',
@@ -832,6 +851,8 @@ export default {
     showLyrics: 'Afficher les paroles dans le lecteur',
     showLyricsHint:
       'Désactivez pour masquer le panneau des paroles, son bouton et son raccourci. Vos fichiers conservent leurs paroles et les téléchargements continuent de les chercher.',
+    miniPlayer: 'Afficher le mini-lecteur',
+    miniPlayerHint: 'Le lecteur compact ancré au-dessus de la barre du bas.',
     searchGroup: 'Recherche',
     searchAlbums: 'Afficher les albums dans les résultats',
     searchAlbumsHint:
@@ -1005,6 +1026,12 @@ export default {
     spotifyMirrorSilent: 'Reflet silencieux',
     spotifyMirrorSilentHint:
       "Garde l'appareil au volume 0, pour n'entendre que Downtify.",
+    spotifyMirrorNow: 'Refléter maintenant',
+    spotifyMirrorNowHint:
+      'Lancez aussi sur votre appareil Spotify le titre joué ici — un test rapide de la connexion.',
+    spotifyMirrorNowNothing: 'Rien ne joue pour le moment.',
+    spotifyMirrorNowDone: 'Reflété sur Spotify.',
+    spotifyMirrorNowFailed: 'Impossible de refléter ce titre.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
@@ -1073,6 +1100,12 @@ export default {
     navidromeSyncHint:
       'Après les téléchargements de playlists et les vérifications, maintient une playlist du même nom dans Navidrome.',
     navidromePublic: 'Rendre publiques les playlists Navidrome',
+    navidromeScanAfterDownload: 'Scanner Navidrome après les téléchargements',
+    navidromeScanAfterDownloadHint:
+      'Demandez à Navidrome de réanalyser sa bibliothèque dès que de nouveaux titres arrivent, pour qu’ils apparaissent plus vite.',
+    navidromeClientName: 'Nom du client',
+    navidromeClientNameHint:
+      'Le nom sous lequel Downtify se connecte à Navidrome.',
     libraryGroup: 'Bibliothèque',
     coverCache: 'Cache des pochettes',
     coverCacheHint:
@@ -1222,6 +1255,11 @@ export default {
     revokeTitle: 'Dissocier {name} ?',
     revokeBody:
       'Il cesse de fonctionner immédiatement, jusqu’à une nouvelle association.',
+    rename: 'Renommer',
+    renameTitle: 'Renommer {name}',
+    renameHint: 'Donnez à cette appli un nom que vous reconnaîtrez.',
+    renameDevice: 'Nom',
+    renamed: 'Renommée en « {name} »',
     lastSeen: 'vu {when}',
     signOutEverywhere: 'Se déconnecter partout',
     signOutEverywhereButton: 'Se déconnecter partout',
@@ -1535,6 +1573,9 @@ export default {
     removeArtistBannerTitle: 'Retirer la bannière de « {name} » ?',
     removeArtistArtBody:
       "Cela ne supprime que le fichier image enregistré — rien d'autre n'est affecté.",
+    clearArtistBioTitle: 'Effacer la bio de {name} ?',
+    clearArtistBioBody:
+      'Seul le texte enregistré est supprimé. La photo, la bannière et les liens sociaux restent.',
   },
   toast: {
     playingNext: { one: 'Lu ensuite', other: '{count} titres lus ensuite' },

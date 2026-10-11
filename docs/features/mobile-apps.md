@@ -22,7 +22,7 @@ The phone is paired to **your account**: it plays as you, and it shows up in you
 
 A code works **once**, for **five minutes**, and trying wrong codes is rate-limited. The phone gets a key of its own that it keeps; the server only stores a hash of it.
 
-**Paired apps** lists your phones (an admin sees everyone's, with whose each is) with their platform, when it was last seen and from which address. **Unpair** stops a phone at once — its next request fails, an open connection is closed, and links it shared (see [Casting](#casting)) stop working. To use it again, pair it again.
+**Paired apps** lists your phones (an admin sees everyone's, with whose each is) with their platform, when it was last seen and from which address. **Rename** gives a phone a name you'll recognize; the device keeps working. **Unpair** stops a phone at once — its next request fails, an open connection is closed, and links it shared (see [Casting](#casting)) stop working. To use it again, pair it again.
 
 ## What a paired app may do
 

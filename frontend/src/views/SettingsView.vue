@@ -102,6 +102,18 @@
                   :aria-label="t('settings.showLyrics')"
                 />
               </SettingRow>
+              <!-- Server-wide: the mini player is shown in every browser
+                   once the server has loaded this setting (admins). -->
+              <SettingRow
+                v-if="auth.isAdmin.value"
+                :label="t('settings.miniPlayer')"
+                :description="t('settings.miniPlayerHint')"
+              >
+                <UiSwitch
+                  v-model="s.mini_player_enabled"
+                  :aria-label="t('settings.miniPlayer')"
+                />
+              </SettingRow>
             </SettingGroup>
             <SettingGroup :title="t('settings.searchGroup')">
               <SettingRow
@@ -543,6 +555,25 @@
                     :aria-label="t('settings.navidromePublic')"
                   />
                 </SettingRow>
+                <SettingRow
+                  :label="t('settings.navidromeScanAfterDownload')"
+                  :description="t('settings.navidromeScanAfterDownloadHint')"
+                >
+                  <UiSwitch
+                    v-model="s.navidrome.scan_after_download"
+                    :aria-label="t('settings.navidromeScanAfterDownload')"
+                  />
+                </SettingRow>
+                <SettingRow
+                  :label="t('settings.navidromeClientName')"
+                  :description="t('settings.navidromeClientNameHint')"
+                  stacked
+                >
+                  <UiInput
+                    v-model.trim="s.navidrome.client_name"
+                    :placeholder="t('settings.navidromeClientName')"
+                  />
+                </SettingRow>
               </template>
             </SettingGroup>
           </template>
@@ -959,6 +990,22 @@
                     :aria-label="t('settings.spotifyMirrorSilent')"
                   />
                 </SettingRow>
+                <!-- Mirrors the track that is playing right now, so the
+                     connection can be checked without waiting for one. -->
+                <SettingRow
+                  :label="t('settings.spotifyMirrorNow')"
+                  :description="t('settings.spotifyMirrorNowHint')"
+                >
+                  <UiButton
+                    variant="ghost"
+                    icon="play"
+                    :disabled="!currentTrack || mirroring"
+                    :loading="mirroring"
+                    @click="mirrorCurrent"
+                  >
+                    {{ t('settings.spotifyMirrorNow') }}
+                  </UiButton>
+                </SettingRow>
               </template>
             </SettingGroup>
           </template>
@@ -1151,6 +1198,7 @@ import SettingRow from '/src/components/settings/SettingRow.vue'
 import SourceOrder from '/src/components/settings/SourceOrder.vue'
 import LyricsOrder from '/src/components/settings/LyricsOrder.vue'
 import API from '/src/model/api'
+import { mirrorNow } from '/src/model/spotifyMirror'
 import {
   clampCoverResolution,
   clampDownloadDelaySeconds,
@@ -1343,6 +1391,27 @@ const spotifyRedirectSuggest = `${window.location.origin}/integrations/spotify/c
 // Connected (refresh token from the callback flow present) disables the
 // connect button: reconnect only makes sense after a disconnect.
 const spotifyConnected = computed(() => !!s.value.spotify_mirror.refresh_token)
+
+// Mirror the track playing right now - the quickest way to prove the
+// connection without waiting for the next play.
+const currentTrack = computed(() => player.currentTrack.value)
+const mirroring = ref(false)
+async function mirrorCurrent() {
+  const track = player.currentTrack.value
+  if (!track) {
+    ui.toast(t('settings.spotifyMirrorNowNothing'), { kind: 'info' })
+    return
+  }
+  mirroring.value = true
+  try {
+    await mirrorNow(track)
+    ui.toast(t('settings.spotifyMirrorNowDone'), { kind: 'success' })
+  } catch {
+    ui.toast(t('settings.spotifyMirrorNowFailed'), { kind: 'error' })
+  } finally {
+    mirroring.value = false
+  }
+}
 
 // The callback lands on /settings/apps with a result flag.
 onMounted(() => {

@@ -47,6 +47,8 @@ Tracks downloaded by an earlier run stay in the M3U throughout — they're inclu
 
 The M3U is regenerated fresh on every run — re-pasting the same playlist URL produces a complete, in-order file including any tracks that were missing on earlier runs.
 
+You can also write it again by hand: a downloaded playlist's `⋯` menu has **Write M3U file**, which rewrites the `.m3u` from the tracks already in your library. Handy when *Write M3U playlists* was off at download time, or the file was deleted — it writes nothing when no track resolves to a file on disk.
+
 Tracks that failed to download or had no YouTube Music match are silently skipped.
 
 ## Compatibility

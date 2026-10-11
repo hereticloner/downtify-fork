@@ -122,6 +122,41 @@
           </ul>
         </UiPanel>
 
+        <UiPanel
+          v-if="incomplete.length"
+          :title="t('queue.incompleteTitle')"
+          :description="t('queue.incompleteHint')"
+        >
+          <ul class="flex flex-col gap-3">
+            <li
+              v-for="pl in incomplete"
+              :key="pl.spotify_playlist_id"
+              class="flex items-center gap-3"
+            >
+              <RouterLink
+                :to="{ name: 'Playlist', query: { name: pl.playlist_name } }"
+                class="min-w-0 flex-1 truncate text-sm font-semibold hover:underline"
+              >
+                {{ pl.playlist_name }}
+              </RouterLink>
+              <span class="tabular shrink-0 text-xs text-warn">
+                {{ t('playlists.missingShort', { count: pl.missing_count }) }}
+              </span>
+              <UiButton
+                size="sm"
+                variant="ghost"
+                icon="download"
+                :loading="incompleteDownloading === pl.spotify_playlist_id"
+                @click="downloadMissing(pl)"
+              >
+                {{
+                  t('playlists.downloadMissing', { count: pl.missing_count })
+                }}
+              </UiButton>
+            </li>
+          </ul>
+        </UiPanel>
+
         <UiPanel v-if="queue.length" :title="t('queue.sources')">
           <ul class="flex flex-col gap-2.5">
             <li
@@ -168,8 +203,13 @@ import {
   syncQueueFromServer,
 } from '/src/model/download'
 import { useLibrary } from '/src/model/library'
+import {
+  downloadMissingPlaylistTracks,
+  loadIncompletePlaylists,
+} from '/src/model/incompletePlaylists'
 import { useUi } from '/src/model/ui'
 import { queueRowEstimate } from '/src/lib/queueList'
+import { friendlyError } from '/src/lib/errors'
 import { useI18n } from '/src/i18n'
 import API from '/src/model/api'
 
@@ -178,9 +218,7 @@ const route = useRoute()
 const paused = ref(false)
 
 async function togglePause() {
-  const resp = paused.value
-    ? await API.resumeQueue()
-    : await API.pauseQueue()
+  const resp = paused.value ? await API.resumeQueue() : await API.pauseQueue()
   paused.value = Boolean(resp.paused)
 }
 
@@ -325,11 +363,52 @@ const activeBatches = computed(() =>
   )
 )
 
+// Tracked playlists that are still missing tracks, with a one-click way
+// to finish them (see `GET /api/playlists/incomplete`).
+const incomplete = ref([])
+const incompleteDownloading = ref('')
+
+async function loadIncomplete() {
+  try {
+    // Only playlists with something to do that isn't already downloading
+    // (those are shown by the Playlist downloads panel above).
+    incomplete.value = (await loadIncompletePlaylists()).filter(
+      (pl) => Number(pl.missing_count) > 0 && !pl.active_in_queue
+    )
+  } catch {
+    incomplete.value = []
+  }
+}
+
+async function downloadMissing(pl) {
+  incompleteDownloading.value = pl.spotify_playlist_id
+  try {
+    const res = await downloadMissingPlaylistTracks(pl)
+    const count = Number(res?.missing_count ?? res?.count ?? 0)
+    if (count) {
+      ui.toast(t('toast.queuedMissing', { count }), { kind: 'success' })
+      syncQueueFromServer().catch(() => {})
+    } else {
+      ui.toast(t('toast.playlistComplete'), { kind: 'success' })
+    }
+    await loadIncomplete()
+  } catch (err) {
+    ui.toast(friendlyError(t, err, 'toast.actionFailed'), { kind: 'error' })
+  } finally {
+    incompleteDownloading.value = ''
+  }
+}
+
 // Keep playlist progress fresh while something is downloading.
 watch(
   () => counts.value.done,
-  () => library.refreshSoon(1500)
+  () => {
+    library.refreshSoon(1500)
+    loadIncomplete()
+  }
 )
+
+onMounted(loadIncomplete)
 
 async function clearAll() {
   const ok = await ui.confirm({

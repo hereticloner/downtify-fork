@@ -24,7 +24,7 @@ On an artist's Library page (`/library/artist?name=…`), hover the round photo 
   - **Remove photo / Remove banner** — only shown once the active tab's image is saved; asks for confirmation, then deletes the sidecar file.
 
   Every search result card is badged with where it came from. Picking one downloads and saves it immediately. The card whose image is the one currently saved is marked with a green border and a check, on the Profile and Banner tabs separately - so you can see at a glance which of the candidates you're using. A photo you uploaded, or one saved before Downtify started remembering this, has no card to mark.
-- **Bio** — a plain text box with whatever bio is currently saved (blank if none), for writing or editing it yourself. Saving overwrites the current text directly. A ⚡ **Fetch bio from Streams** button above the box can fill it in from Apple Music/Deezer instead of typing it by hand — see [Fetching a bio automatically](#fetching-a-bio-automatically) below.
+- **Bio** — a plain text box with whatever bio is currently saved (blank if none), for writing or editing it yourself. Saving overwrites the current text directly, and a **Clear bio** button next to Save removes just the saved text. A ⚡ **Fetch bio from Streams** button above the box can fill it in from Apple Music/Deezer instead of typing it by hand — see [Fetching a bio automatically](#fetching-a-bio-automatically) below.
 - **Social** — Twitter/X, Instagram, Facebook, YouTube and website links, editable directly. Saving always replaces all five fields with what the form has, even a field you leave blank. Fetching a bio never touches a link you've filled in: Deezer's social links only fill fields that are still empty (Deezer doesn't know every network, so complete the rest by hand and it stays that way).
 
 ## The first time you open a new artist
@@ -74,7 +74,7 @@ A bio is stored in the artist's JSON as plain text - no HTML tags and no bullet 
 
 Re-fetching like this only runs when you click the button - it won't overwrite anything on its own past the automatic first visit described above. Only the first time (whether that's the automatic seed or a manual click) does it need to search by name: the resolved Apple Music and Deezer artist ids are cached in the artist's profile file afterwards, so fetching again just re-reads the same artists directly.
 
-To clear a saved bio, open the Bio tab, empty the text box and Save - origin, formation year, genre, group flag, social links, related artists and the cached platform ids are left untouched.
+To clear a saved bio, open the Bio tab and press **Clear bio** (shown once there is text) and confirm - or empty the text box and Save. Either way only the bio text goes: origin, formation year, genre, group flag, social links, related artists and the cached platform ids are left untouched.
 
 ## Choosing the source
 

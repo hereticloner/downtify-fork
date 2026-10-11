@@ -50,6 +50,10 @@ In **Settings → Spotify Mirror**:
    **Downtify Mirror** is the usual choice.
 6. **Test connection** — shows your Spotify username and the chosen
    device when everything is in place.
+7. Optional: with a track playing in this browser, **Mirror now** starts
+   that same track on the device immediately — a full end-to-end check
+   without waiting for the next play. It is a manual test, so it skips
+   the dedupe tracker; the button is disabled while nothing is playing.
 
 **Silent mirror** keeps the targeted device at volume 0: you listen in
 Downtify; Spotify only gets to count.
@@ -135,5 +139,5 @@ The JSON endpoints (see the [API reference](../api-reference.md)):
 * `POST /api/spotify-mirror/test` — `{ok, username, device}` or
   `{ok: false, error: "auth_failed"|"device_missing"}`.
 * `POST /api/spotify-mirror/mirror-now` — body `{track: {file, artist,
-  title, ...}}`: starts that file's play on the device (an admin's
-  test, outside the dedupe tracker).
+  title, ...}}`: starts that file's play on the device (the
+  **Mirror now** button; an admin's test, outside the dedupe tracker).

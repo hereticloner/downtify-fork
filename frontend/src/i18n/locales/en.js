@@ -291,6 +291,9 @@ export default {
     useLink: 'Use this link',
     invalidYoutube: "That doesn't look like a YouTube video link.",
     playlistDownloads: 'Playlist downloads',
+    incompleteTitle: 'Unfinished playlists',
+    incompleteHint:
+      'Tracked playlists still missing tracks — finish them with one click.',
     sources: 'Downloaded from',
     noSourcesYet: 'Finished downloads show their source here.',
     importTitle: 'Import a library',
@@ -317,6 +320,12 @@ export default {
     empty: 'No playlists in this collection yet',
     none: 'No collections yet',
     confirmDelete: 'Delete collection "{name}"?',
+    rename: 'Rename',
+    renameTitle: 'Rename collection',
+    renameHint: 'Only the collection changes name; its playlists keep theirs.',
+    name: 'Name',
+    namePlaceholder: 'My collection',
+    renamed: 'Renamed to “{name}”',
   },
   library: {
     title: 'Library',
@@ -492,6 +501,9 @@ export default {
     save: 'Save',
     bioSaved: 'Bio saved',
     bioSaveFailed: 'Could not save the bio',
+    clearBio: 'Clear bio',
+    bioCleared: 'Bio cleared',
+    bioClearFailed: 'Could not clear the bio',
     socialSaved: 'Social links saved',
     socialSaveFailed: 'Could not save social links',
     socialTwitter: 'Twitter / X',
@@ -546,6 +558,12 @@ export default {
     complete: 'Complete',
     watch: 'Watch for new tracks',
     openSource: 'Open original playlist',
+    writeM3u: 'Write M3U file',
+    m3uWritten: {
+      one: 'M3U written with {count} track',
+      other: 'M3U written with {count} tracks',
+    },
+    m3uFailed: 'Could not write the M3U file',
     delete: 'Delete playlist',
     create: 'New playlist',
     createTitle: 'Create a playlist',
@@ -796,6 +814,8 @@ export default {
     showLyrics: 'Show lyrics in the player',
     showLyricsHint:
       'Turn off to hide the lyrics panel, its button and its shortcut. Your files keep their lyrics, and downloads still fetch them.',
+    miniPlayer: 'Show the mini player',
+    miniPlayerHint: 'The compact player docked above the bottom bar.',
     searchGroup: 'Search',
     searchAlbums: 'Show albums in search results',
     searchAlbumsHint:
@@ -960,6 +980,12 @@ export default {
     spotifyMirrorSilent: 'Silent mirror',
     spotifyMirrorSilentHint:
       'Keep the mirrored device at volume 0, so you hear only Downtify.',
+    spotifyMirrorNow: 'Mirror now',
+    spotifyMirrorNowHint:
+      'Start the track playing here on your Spotify device too — a quick test of the connection.',
+    spotifyMirrorNowNothing: 'Nothing is playing right now.',
+    spotifyMirrorNowDone: 'Mirrored on Spotify.',
+    spotifyMirrorNowFailed: 'Could not mirror that track.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
@@ -1023,6 +1049,11 @@ export default {
     navidromeSyncHint:
       'After playlist downloads and monitor checks, keep a Navidrome playlist with the same name.',
     navidromePublic: 'Make Navidrome playlists public',
+    navidromeScanAfterDownload: 'Scan Navidrome after downloads',
+    navidromeScanAfterDownloadHint:
+      'Ask Navidrome to rescan its library once new songs land, so they show up sooner.',
+    navidromeClientName: 'Client name',
+    navidromeClientNameHint: 'The name Downtify signs in to Navidrome as.',
     libraryGroup: 'Library',
     coverCache: 'Cache cover art',
     coverCacheHint:
@@ -1165,6 +1196,11 @@ export default {
     revoke: 'Unpair',
     revokeTitle: 'Unpair {name}?',
     revokeBody: 'It stops working right away, until it’s paired again.',
+    rename: 'Rename',
+    renameTitle: 'Rename {name}',
+    renameHint: 'Give this app a name you will recognize.',
+    renameDevice: 'Name',
+    renamed: 'Renamed to “{name}”',
     lastSeen: 'seen {when}',
     signOutEverywhere: 'Sign out everywhere',
     signOutEverywhereButton: 'Sign out everywhere',
@@ -1474,6 +1510,9 @@ export default {
     removeArtistBannerTitle: 'Remove {name}’s banner?',
     removeArtistArtBody:
       'This only removes the saved image file — nothing else is affected.',
+    clearArtistBioTitle: 'Clear {name}’s bio?',
+    clearArtistBioBody:
+      'Only the saved bio text is removed. Photo, banner and social links stay.',
   },
   toast: {
     playingNext: { one: 'Playing next', other: '{count} tracks play next' },

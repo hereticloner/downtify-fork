@@ -298,6 +298,9 @@ export default {
     useLink: 'Usar este enlace',
     invalidYoutube: 'Eso no parece un enlace de vídeo de YouTube.',
     playlistDownloads: 'Descargas de playlists',
+    incompleteTitle: 'Listas sin terminar',
+    incompleteHint:
+      'Listas seguidas a las que aún les faltan canciones — termínalas con un clic.',
     sources: 'Descargado desde',
     noSourcesYet: 'Las descargas completadas muestran su origen aquí.',
     importTitle: 'Importar una biblioteca',
@@ -324,6 +327,13 @@ export default {
     empty: 'Aún no hay playlists en esta colección',
     none: 'Aún no hay colecciones',
     confirmDelete: '¿Eliminar la colección "{name}"?',
+    rename: 'Renombrar',
+    renameTitle: 'Renombrar colección',
+    renameHint:
+      'Solo la colección cambia de nombre; sus listas conservan el suyo.',
+    name: 'Nombre',
+    namePlaceholder: 'Mi colección',
+    renamed: 'Renombrada a «{name}»',
   },
   library: {
     title: 'Biblioteca',
@@ -504,6 +514,9 @@ export default {
     save: 'Guardar',
     bioSaved: 'Biografía guardada',
     bioSaveFailed: 'No se pudo guardar la biografía',
+    clearBio: 'Borrar la bio',
+    bioCleared: 'Bio borrada',
+    bioClearFailed: 'No se pudo borrar la bio',
     socialSaved: 'Redes sociales guardadas',
     socialSaveFailed: 'No se pudieron guardar las redes sociales',
     socialTwitter: 'Twitter / X',
@@ -559,6 +572,12 @@ export default {
     complete: 'Completa',
     watch: 'Vigilar canciones nuevas',
     openSource: 'Abrir playlist original',
+    writeM3u: 'Escribir archivo M3U',
+    m3uWritten: {
+      one: 'M3U escrito con {count} canción',
+      other: 'M3U escrito con {count} canciones',
+    },
+    m3uFailed: 'No se pudo escribir el archivo M3U',
     delete: 'Eliminar playlist',
     create: 'Nueva playlist',
     createTitle: 'Crear una playlist',
@@ -818,6 +837,8 @@ export default {
     showLyrics: 'Mostrar letras en el reproductor',
     showLyricsHint:
       'Desactívalo para ocultar el panel de letras, su botón y su atajo. Tus archivos conservan las letras y las descargas siguen buscándolas.',
+    miniPlayer: 'Mostrar el minirreproductor',
+    miniPlayerHint: 'El reproductor compacto anclado sobre la barra inferior.',
     searchGroup: 'Búsqueda',
     searchAlbums: 'Mostrar álbumes en los resultados',
     searchAlbumsHint:
@@ -990,6 +1011,12 @@ export default {
     spotifyMirrorSilent: 'Replicación silenciosa',
     spotifyMirrorSilentHint:
       'Mantiene el dispositivo en volumen 0, para que solo oigas Downtify.',
+    spotifyMirrorNow: 'Reflejar ahora',
+    spotifyMirrorNowHint:
+      'Inicia también en tu dispositivo de Spotify la canción que suena aquí — una prueba rápida de la conexión.',
+    spotifyMirrorNowNothing: 'No suena nada ahora mismo.',
+    spotifyMirrorNowDone: 'Reflejado en Spotify.',
+    spotifyMirrorNowFailed: 'No se pudo reflejar esa canción.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
@@ -1057,6 +1084,12 @@ export default {
     navidromeSyncHint:
       'Tras descargar playlists y comprobaciones del monitor, mantiene una playlist con el mismo nombre en Navidrome.',
     navidromePublic: 'Hacer públicas las playlists de Navidrome',
+    navidromeScanAfterDownload: 'Escanear Navidrome tras las descargas',
+    navidromeScanAfterDownloadHint:
+      'Pide a Navidrome que vuelva a analizar su biblioteca cuando lleguen canciones nuevas, para que aparezcan antes.',
+    navidromeClientName: 'Nombre del cliente',
+    navidromeClientNameHint:
+      'El nombre con el que Downtify inicia sesión en Navidrome.',
     libraryGroup: 'Biblioteca',
     coverCache: 'Caché de portadas',
     coverCacheHint:
@@ -1204,6 +1237,11 @@ export default {
     revokeTitle: '¿Desvincular {name}?',
     revokeBody:
       'Deja de funcionar al instante, hasta que se vuelva a vincular.',
+    rename: 'Renombrar',
+    renameTitle: 'Renombrar {name}',
+    renameHint: 'Dale a esta app un nombre que reconozcas.',
+    renameDevice: 'Nombre',
+    renamed: 'Renombrada a «{name}»',
     lastSeen: 'visto {when}',
     signOutEverywhere: 'Cerrar sesión en todas partes',
     signOutEverywhereButton: 'Cerrar sesión en todas partes',
@@ -1518,6 +1556,9 @@ export default {
     removeArtistBannerTitle: '¿Quitar el banner de {name}?',
     removeArtistArtBody:
       'Esto solo elimina el archivo de imagen guardado — nada más se ve afectado.',
+    clearArtistBioTitle: '¿Borrar la bio de {name}?',
+    clearArtistBioBody:
+      'Solo se elimina el texto guardado de la bio. La foto, el banner y los enlaces sociales se quedan.',
   },
   toast: {
     playingNext: {

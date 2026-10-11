@@ -4,6 +4,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import API from '/src/model/api'
+import { writePlaylistM3u } from '/src/model/m3u'
 import monitorAPI from '/src/model/monitor'
 import { syncQueueFromServer } from '/src/model/download'
 import { useLibrary } from '/src/model/library'
@@ -212,6 +213,23 @@ export function usePlaylistActions() {
     }
   }
 
+  // Write the playlist's .m3u again on demand - useful when it was
+  // missed (M3U export off at download time) or the file was deleted.
+  async function writeM3u(playlist) {
+    const url = playlist.batch?.playlist_url
+    if (!url) return
+    try {
+      const data = await writePlaylistM3u(url, playlist.tracks)
+      ui.toast(t('playlists.m3uWritten', { count: data?.count || 0 }), {
+        kind: 'success',
+      })
+    } catch (err) {
+      ui.toast(friendlyError(t, err, 'playlists.m3uFailed'), {
+        kind: 'error',
+      })
+    }
+  }
+
   async function watch(playlist) {
     const url = playlist.batch?.playlist_url
     if (!url) return
@@ -324,6 +342,12 @@ export function usePlaylistActions() {
         action: () => window.open(batch.playlist_url, '_blank', 'noopener'),
       },
       {
+        label: t('playlists.writeM3u'),
+        icon: 'list',
+        hidden: !batch?.playlist_url || empty,
+        action: () => writeM3u(playlist),
+      },
+      {
         label: t('playlists.addSongs'),
         icon: 'plus',
         hidden: !playlist.manual || !auth.isAdmin.value,
@@ -356,6 +380,7 @@ export function usePlaylistActions() {
     play,
     downloadMissing,
     watch,
+    writeM3u,
     remove,
     menuFor,
     manuals,

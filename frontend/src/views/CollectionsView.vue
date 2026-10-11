@@ -48,6 +48,12 @@
             />
             <UiButton
               variant="ghost"
+              icon="pencil"
+              :title="t('collections.rename')"
+              @click="openRename(col)"
+            />
+            <UiButton
+              variant="ghost"
               icon="trash"
               :title="t('common.delete')"
               @click="remove(col)"
@@ -78,6 +84,36 @@
     <datalist id="collection-playlist-names">
       <option v-for="name in playlistNames" :key="name" :value="name" />
     </datalist>
+
+    <UiModal
+      :open="renameOpen"
+      :title="t('collections.renameTitle')"
+      :description="t('collections.renameHint')"
+      @close="closeRename"
+    >
+      <form class="flex flex-col gap-4" @submit.prevent="submitRename">
+        <UiInput
+          v-model="renameDraft"
+          :label="t('collections.name')"
+          :placeholder="t('collections.namePlaceholder')"
+          icon="playlist"
+        />
+      </form>
+      <template #footer>
+        <UiButton variant="ghost" @click="closeRename">{{
+          t('common.cancel')
+        }}</UiButton>
+        <UiButton
+          variant="primary"
+          icon="pencil"
+          :disabled="!canRename"
+          :loading="renaming"
+          @click="submitRename"
+        >
+          {{ t('collections.rename') }}
+        </UiButton>
+      </template>
+    </UiModal>
   </div>
 </template>
 
@@ -89,8 +125,19 @@ import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
+import UiInput from '/src/components/ui/UiInput.vue'
+import UiModal from '/src/components/ui/UiModal.vue'
 import UiPanel from '/src/components/ui/UiPanel.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
+import {
+  createCollection,
+  deleteCollection,
+  editCollectionItems,
+  listCollections,
+  renameCollection,
+} from '/src/model/collections'
+import { friendlyError } from '/src/lib/errors'
+import { canSubmitRename } from '/src/lib/rename'
 
 const { t } = useI18n()
 const library = useLibrary()
@@ -109,22 +156,18 @@ const playlistNames = computed(() =>
     .sort((a, b) => a.localeCompare(b))
 )
 
-/** The backend's message for a failed request, or a generic one. */
-async function failure(resp) {
-  try {
-    return (await resp.json()).detail || t('toast.actionFailed')
-  } catch {
-    return t('toast.actionFailed')
-  }
+function failed(err) {
+  ui.toast(friendlyError(t, err, 'toast.actionFailed'), { kind: 'error' })
 }
 
 async function load() {
   loading.value = true
   error.value = false
   try {
-    const resp = await fetch('/api/collections')
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-    collections.value = (await resp.json()).map((c) => ({ ...c, _add: '' }))
+    collections.value = (await listCollections()).map((c) => ({
+      ...c,
+      _add: '',
+    }))
   } catch {
     error.value = true
   } finally {
@@ -134,35 +177,24 @@ async function load() {
 
 async function create() {
   if (!newName.value.trim()) return
-  const resp = await fetch('/api/collections', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: newName.value }),
-  })
-  if (!resp.ok) {
-    ui.toast(await failure(resp), { kind: 'error' })
-    return
+  try {
+    await createCollection(newName.value)
+    newName.value = ''
+    await load()
+  } catch (err) {
+    failed(err)
   }
-  newName.value = ''
-  await load()
 }
 
 async function add(col) {
   if (!col._add.trim()) return
-  const resp = await fetch(
-    `/api/collections/${encodeURIComponent(col.name)}/items`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ add: [col._add] }),
-    }
-  )
-  if (!resp.ok) {
-    ui.toast(await failure(resp), { kind: 'error' })
-    return
+  try {
+    await editCollectionItems(col.name, { add: [col._add] })
+    col._add = ''
+    await load()
+  } catch (err) {
+    failed(err)
   }
-  col._add = ''
-  await load()
 }
 
 async function remove(col) {
@@ -172,15 +204,49 @@ async function remove(col) {
     danger: true,
   })
   if (!confirmed) return
-  const resp = await fetch(
-    `/api/collections/${encodeURIComponent(col.name)}`,
-    { method: 'DELETE' }
-  )
-  if (!resp.ok) {
-    ui.toast(await failure(resp), { kind: 'error' })
-    return
+  try {
+    await deleteCollection(col.name)
+    await load()
+  } catch (err) {
+    failed(err)
   }
-  await load()
+}
+
+// Renaming keeps the playlists: it is the collection's own name only.
+const renameOpen = ref(false)
+const renameTarget = ref(null)
+const renameDraft = ref('')
+const renaming = ref(false)
+const canRename = computed(() =>
+  canSubmitRename(renameTarget.value?.name, renameDraft.value, renaming.value)
+)
+
+function openRename(col) {
+  renameTarget.value = col
+  renameDraft.value = col.name
+  renameOpen.value = true
+}
+
+function closeRename() {
+  renameOpen.value = false
+  renameTarget.value = null
+}
+
+async function submitRename() {
+  const col = renameTarget.value
+  const name = renameDraft.value.trim()
+  if (!col || !name || !canRename.value) return
+  renaming.value = true
+  try {
+    await renameCollection(col.name, name)
+    ui.toast(t('collections.renamed', { name }), { kind: 'success' })
+    closeRename()
+    await load()
+  } catch (err) {
+    failed(err)
+  } finally {
+    renaming.value = false
+  }
 }
 
 onMounted(() => {

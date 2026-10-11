@@ -296,6 +296,9 @@ export default {
     useLink: 'Usar este link',
     invalidYoutube: 'Isso não parece um link de vídeo do YouTube.',
     playlistDownloads: 'Downloads de playlists',
+    incompleteTitle: 'Playlists incompletas',
+    incompleteHint:
+      'Playlists acompanhadas que ainda estão sem músicas — termine-as com um clique.',
     sources: 'Baixado de',
     noSourcesYet: 'Downloads concluídos mostram a origem aqui.',
     importTitle: 'Importar uma biblioteca',
@@ -322,6 +325,12 @@ export default {
     empty: 'Ainda não há playlists nesta coleção',
     none: 'Ainda não há coleções',
     confirmDelete: 'Excluir a coleção "{name}"?',
+    rename: 'Renomear',
+    renameTitle: 'Renomear coleção',
+    renameHint: 'Só a coleção muda de nome; suas playlists mantêm as delas.',
+    name: 'Nome',
+    namePlaceholder: 'Minha coleção',
+    renamed: 'Renomeada para “{name}”',
   },
   library: {
     title: 'Biblioteca',
@@ -501,6 +510,9 @@ export default {
     save: 'Salvar',
     bioSaved: 'Biografia salva',
     bioSaveFailed: 'Não foi possível salvar a biografia',
+    clearBio: 'Limpar a bio',
+    bioCleared: 'Bio limpa',
+    bioClearFailed: 'Não foi possível limpar a bio',
     socialSaved: 'Redes sociais salvas',
     socialSaveFailed: 'Não foi possível salvar as redes sociais',
     socialTwitter: 'Twitter / X',
@@ -556,6 +568,12 @@ export default {
     complete: 'Completa',
     watch: 'Monitorar novas faixas',
     openSource: 'Abrir playlist original',
+    writeM3u: 'Gravar arquivo M3U',
+    m3uWritten: {
+      one: 'M3U gravado com {count} música',
+      other: 'M3U gravado com {count} músicas',
+    },
+    m3uFailed: 'Não foi possível gravar o arquivo M3U',
     delete: 'Excluir playlist',
     create: 'Nova playlist',
     createTitle: 'Criar uma playlist',
@@ -814,6 +832,8 @@ export default {
     showLyrics: 'Mostrar letras no player',
     showLyricsHint:
       'Desative para esconder o painel de letras, o botão e o atalho. Seus arquivos mantêm as letras, e os downloads continuam buscando.',
+    miniPlayer: 'Mostrar o miniplayer',
+    miniPlayerHint: 'O player compacto fixado acima da barra inferior.',
     searchGroup: 'Busca',
     searchAlbums: 'Mostrar álbuns nos resultados',
     searchAlbumsHint:
@@ -985,6 +1005,12 @@ export default {
     spotifyMirrorSilent: 'Replicação silenciosa',
     spotifyMirrorSilentHint:
       'Mantém o dispositivo no volume 0, para você ouvir só o Downtify.',
+    spotifyMirrorNow: 'Espelhar agora',
+    spotifyMirrorNowHint:
+      'Comece também no seu dispositivo do Spotify a música que toca aqui — um teste rápido da conexão.',
+    spotifyMirrorNowNothing: 'Nada está tocando agora.',
+    spotifyMirrorNowDone: 'Espelhado no Spotify.',
+    spotifyMirrorNowFailed: 'Não foi possível espelhar essa música.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:
@@ -1051,6 +1077,11 @@ export default {
     navidromeSyncHint:
       'Após downloads de playlists e verificações do monitor, mantém uma playlist com o mesmo nome no Navidrome.',
     navidromePublic: 'Tornar públicas as playlists do Navidrome',
+    navidromeScanAfterDownload: 'Escanear o Navidrome após os downloads',
+    navidromeScanAfterDownloadHint:
+      'Peça ao Navidrome para reescanear a biblioteca quando chegarem músicas novas, para que apareçam antes.',
+    navidromeClientName: 'Nome do cliente',
+    navidromeClientNameHint: 'O nome com o qual o Downtify entra no Navidrome.',
     libraryGroup: 'Biblioteca',
     coverCache: 'Cache de capas',
     coverCacheHint:
@@ -1194,6 +1225,11 @@ export default {
     revoke: 'Desparear',
     revokeTitle: 'Desparear {name}?',
     revokeBody: 'Ele para de funcionar na hora, até ser pareado de novo.',
+    rename: 'Renomear',
+    renameTitle: 'Renomear {name}',
+    renameHint: 'Dê a este app um nome que você reconheça.',
+    renameDevice: 'Nome',
+    renamed: 'Renomeado para “{name}”',
     lastSeen: 'visto {when}',
     signOutEverywhere: 'Sair de todos os lugares',
     signOutEverywhereButton: 'Sair de todos os lugares',
@@ -1506,6 +1542,9 @@ export default {
     removeArtistBannerTitle: 'Remover o banner de {name}?',
     removeArtistArtBody:
       'Isso só remove o arquivo de imagem salvo — nada mais é afetado.',
+    clearArtistBioTitle: 'Limpar a bio de {name}?',
+    clearArtistBioBody:
+      'Apenas o texto salvo da bio é removido. A foto, o banner e os links sociais ficam.',
   },
   toast: {
     playingNext: { one: 'Tocará a seguir', other: '{count} faixas a seguir' },

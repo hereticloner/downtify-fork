@@ -294,6 +294,9 @@ export default {
     useLink: 'Използвай този линк',
     invalidYoutube: 'Това не прилича на линк към видео в YouTube.',
     playlistDownloads: 'Изтегляния на плейлисти',
+    incompleteTitle: 'Незавършени плейлисти',
+    incompleteHint:
+      'Следените плейлисти, на които все още липсват песни — довърши ги с едно кликване.',
     sources: 'Изтеглено от',
     noSourcesYet: 'Завършените изтегляния показват източника си тук.',
     importTitle: 'Импортиране на библиотека',
@@ -319,6 +322,12 @@ export default {
     empty: 'Все още няма плейлисти в тази колекция',
     none: 'Все още няма колекции',
     confirmDelete: 'Да се изтрие ли колекцията "{name}"?',
+    rename: 'Преименувай',
+    renameTitle: 'Преименувай колекцията',
+    renameHint: 'Само колекцията сменя името си; плейлистите запазват своите.',
+    name: 'Име',
+    namePlaceholder: 'Моята колекция',
+    renamed: 'Преименувано на „{name}“',
   },
   library: {
     title: 'Библиотека',
@@ -496,6 +505,9 @@ export default {
     save: 'Запазване',
     bioSaved: 'Биографията е запазена',
     bioSaveFailed: 'Неуспешно запазване на биографията',
+    clearBio: 'Изчисти биографията',
+    bioCleared: 'Биографията е изчистена',
+    bioClearFailed: 'Биографията не можа да се изчисти',
     socialSaved: 'Социалните мрежи са запазени',
     socialSaveFailed: 'Неуспешно запазване на социалните мрежи',
     socialTwitter: 'Twitter / X',
@@ -552,6 +564,12 @@ export default {
     complete: 'Пълен',
     watch: 'Следи за нови песни',
     openSource: 'Отвори оригиналния плейлист',
+    writeM3u: 'Запиши M3U файл',
+    m3uWritten: {
+      one: 'M3U записан с {count} песен',
+      other: 'M3U записан с {count} песни',
+    },
+    m3uFailed: 'M3U файлът не можа да се запише',
     delete: 'Изтрий плейлиста',
     create: 'Нов плейлист',
     createTitle: 'Създай плейлист',
@@ -809,6 +827,8 @@ export default {
     showLyrics: 'Показвай текстовете в плейъра',
     showLyricsHint:
       'Изключете, за да се скрият панелът с текстове, бутонът му и клавишната му комбинация. Файловете запазват текстовете си, а изтеглянията продължават да ги търсят.',
+    miniPlayer: 'Покажи мини плейъра',
+    miniPlayerHint: 'Компактният плейър, закрепен над долната лента.',
     searchGroup: 'Търсене',
     searchAlbums: 'Показвай албуми в резултатите',
     searchAlbumsHint:
@@ -977,6 +997,12 @@ export default {
     spotifyMirrorSilent: 'Тихо огледало',
     spotifyMirrorSilentHint:
       'Държи отразяващото устройство на звук 0, така че чувате само Downtify.',
+    spotifyMirrorNow: 'Огледай сега',
+    spotifyMirrorNowHint:
+      'Пусни и на твоето Spotify устройство песента, която свири тук — бърз тест на връзката.',
+    spotifyMirrorNowNothing: 'В момента нищо не свири.',
+    spotifyMirrorNowDone: 'Огледано в Spotify.',
+    spotifyMirrorNowFailed: 'Тази песен не можа да се огледа.',
     scrobbling: 'Скроблинг',
     scrobblingTitle: 'Скроблинг',
     scrobblingHint:
@@ -1043,6 +1069,11 @@ export default {
     navidromeSyncHint:
       'След изтегляния на плейлисти и проверки поддържа плейлист със същото име в Navidrome.',
     navidromePublic: 'Направи плейлистите в Navidrome публични',
+    navidromeScanAfterDownload: 'Сканирай Navidrome след изтегляния',
+    navidromeScanAfterDownloadHint:
+      'Помоли Navidrome да прегледа библиотеката си, щом пристигнат нови песни, за да се появят по-бързо.',
+    navidromeClientName: 'Име на клиента',
+    navidromeClientNameHint: 'Името, с което Downtify влиза в Navidrome.',
     libraryGroup: 'Библиотека',
     coverCache: 'Кеш за обложки',
     coverCacheHint:
@@ -1190,6 +1221,11 @@ export default {
     revoke: 'Разкачване',
     revokeTitle: 'Да се разкачи ли {name}?',
     revokeBody: 'Спира да работи веднага, докато не бъде сдвоено отново.',
+    rename: 'Преименувай',
+    renameTitle: 'Преименувай {name}',
+    renameHint: 'Дай на приложението име, което ще разпознаеш.',
+    renameDevice: 'Име',
+    renamed: 'Преименувано на „{name}“',
     lastSeen: 'видяно {when}',
     signOutEverywhere: 'Изход навсякъде',
     signOutEverywhereButton: 'Изход навсякъде',
@@ -1505,6 +1541,9 @@ export default {
     removeArtistBannerTitle: 'Премахване на банера на {name}?',
     removeArtistArtBody:
       'Това само премахва запазения файл с изображение — нищо друго не се засяга.',
+    clearArtistBioTitle: 'Изчисти биографията на {name}?',
+    clearArtistBioBody:
+      'Премахва се само запазеният текст на биографията. Снимката, банерът и социалните връзки остават.',
   },
   toast: {
     playingNext: { one: 'Ще звучи следваща', other: '{count} песни следват' },
