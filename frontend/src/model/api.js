@@ -803,6 +803,14 @@ function spotifyMirrorNow(track) {
   return API.post('/api/spotify-mirror/mirror-now', { track })
 }
 
+function getSpotifySync() {
+  return API.get('/api/spotify-sync')
+}
+
+function runSpotifySync() {
+  return API.post('/api/spotify-sync/run')
+}
+
 function testScrobbling(config) {
   return API.post('/api/scrobbling/test', config)
 }
@@ -979,6 +987,8 @@ export default {
   spotifyMirrorDevices,
   testSpotifyMirror,
   spotifyMirrorNow,
+  getSpotifySync,
+  runSpotifySync,
   testScrobbling,
   startLastfmAuth,
   finishLastfmAuth,

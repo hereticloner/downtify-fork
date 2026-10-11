@@ -1035,6 +1035,25 @@ export default {
     spotifyMirrorNowNothing: 'Şu anda çalan bir şey yok.',
     spotifyMirrorNowDone: 'Spotify’da yansıtıldı.',
     spotifyMirrorNowFailed: 'Bu parça yansıtılamadı.',
+    spotifySyncTitle: 'Spotify Senkronu',
+    spotifySyncHint:
+      'İndirilen Spotify çalma listelerini Spotify ile eşitler. Spotify Mirror bağlantısını kullanır; açılana kadar hiçbir şey getirilmez.',
+    spotifySyncEnabled: 'Spotify Senkronunu aç',
+    spotifySyncEnabledHint:
+      'Çalma listelerini aralıklarla denetle ve parça değişikliklerini uygula.',
+    spotifySyncInterval: 'Senkron aralığı',
+    spotifySyncIntervalHint:
+      'Her çalma listesinin ne sıklıkla denetleneceği. Uzun aralık API için daha nazik.',
+    spotifySyncNow: 'Şimdi eşitle',
+    spotifySyncNowHint: 'Aralığa bakmadan hemen bir tarama çalıştır.',
+    spotifySyncNotConnected:
+      'Eşitlemek için Spotify (Spotify Mirror) bağlayın.',
+    spotifySyncNever: 'Henüz hiçbir çalma listesi eşitlenmedi.',
+    spotifySyncLast: 'Son eşitleme {when} · {count} çalma listesi',
+    spotifySyncDone: 'Eşitlendi: {added} eklendi, {removed} çıkarıldı.',
+    spotifySyncNoChange: 'Her şey zaten güncel.',
+    spotifySyncPartial: 'Eşitleme {count} hatayla bitti.',
+    spotifySyncFailed: 'Eşitleme çalıştırılamadı.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:

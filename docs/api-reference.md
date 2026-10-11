@@ -960,6 +960,71 @@ The connect flow's two redirects (browser): authorize sends the browser to Spoti
 
 ---
 
+## Spotify Sync
+
+Backs **Settings → Spotify Sync** (see [Spotify Sync](features/spotify-sync.md)): keeps a downloaded playlist's membership in step with its Spotify source, reusing the Spotify Mirror's OAuth tokens. Admin-only. The switch and interval live in the `spotify_sync` settings block.
+
+### `GET /api/spotify-sync`
+
+The switch, the interval and each known playlist's last snapshot.
+
+**Response:**
+
+```json
+{
+  "enabled": true,
+  "interval_minutes": 60,
+  "connected": true,
+  "playlist_count": 1,
+  "last_synced": "2026-10-11T20:00:00+00:00",
+  "playlists": [
+    {
+      "name": "Road trip",
+      "spotify_id": "37i9dQ…",
+      "track_count": 42,
+      "known_tracks": 42,
+      "synced_at": "2026-10-11T20:00:00+00:00"
+    }
+  ]
+}
+```
+
+`connected` is `false` until the Spotify Mirror has a client id and tokens; `known_tracks` is `0` until the first baseline fetch.
+
+### `POST /api/spotify-sync/run`
+
+Run one sweep now, ignoring the interval **and** the switch, so the connection can be tested before enabling it. `400` with `code: "spotify.not_connected"` when no Spotify client id is saved; `503` while the sync store is still opening.
+
+**Response:** a summary of what the sweep did.
+
+```json
+{
+  "enabled": false,
+  "interval_minutes": 60,
+  "playlists": [
+    {
+      "playlist_id": "37i9dQ…",
+      "name": "Road trip",
+      "added": ["4uLU…"],
+      "removed": [],
+      "changed": true,
+      "first_run": false,
+      "error": ""
+    }
+  ],
+  "added": 1,
+  "removed": 0,
+  "changed": 1,
+  "errors": 0,
+  "skipped": 0,
+  "error": ""
+}
+```
+
+`first_run` is `true` on a playlist's first sweep — it records the baseline and applies nothing. A token the sweep renewed is saved server-side and never returned in the response.
+
+---
+
 ## YouTube cookies
 
 Backs the **Settings → YouTube cookies** screen. The uploaded file lives in the data directory (`/data/cookies.txt`) so it survives container updates. See [YouTube Cookies](features/youtube-cookies.md).

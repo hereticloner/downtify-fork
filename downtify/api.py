@@ -325,6 +325,7 @@ from . import (
     scrobbling,
     spotify,
     spotify_mirror,
+    spotify_sync,
     storage,
 )
 from .activity import ActivityLog, NowPlaying, describe_user_agent
@@ -573,6 +574,14 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         'silent_on_target': True,
         'mirror_manual_checks': False,
     },
+    # Keep downloaded Spotify playlists in step with their Spotify source
+    # (see downtify.spotify_sync). It reuses the Spotify Mirror's OAuth
+    # connection - no second sign-in - and is off by default so no
+    # surprise requests go out until the user turns it on.
+    'spotify_sync': {
+        'enabled': False,
+        'interval_minutes': spotify_sync.DEFAULT_INTERVAL_MINUTES,
+    },
 }
 
 # Settings stored as nested objects: saved values are merged over the
@@ -585,6 +594,7 @@ _NESTED_SETTINGS = (
     'notifications',
     'scrobbling',
     'spotify_mirror',
+    'spotify_sync',
 )
 
 
@@ -811,6 +821,37 @@ def _validate_spotify_mirror_settings(mirror: dict[str, Any]) -> None:
         raise HTTPException(status_code=400, detail=detail)
 
 
+def _clean_spotify_sync(value: Any) -> dict[str, Any]:
+    """Coerce a spotify_sync block to the stored shape."""
+
+    return spotify_sync.clean_settings(value)
+
+
+def _validate_spotify_sync_settings(
+    sync: dict[str, Any], *, mirror: Optional[dict[str, Any]] = None
+) -> None:
+    """Reject enabling live sync without a Spotify connection.
+
+    Sync rides the Mirror's OAuth flow, so it needs the same client id
+    that flow starts from. Everything else (the tokens) can arrive later;
+    the runtime reports ``not_connected`` until then.
+    """
+
+    if not sync.get('enabled'):
+        return
+    effective = (
+        mirror
+        if isinstance(mirror, dict)
+        else state.settings.get('spotify_mirror') or {}
+    )
+    if not effective.get('client_id'):
+        detail = (
+            'Connect Spotify (Settings -> Spotify Mirror) before '
+            'enabling live sync'
+        )
+        raise HTTPException(status_code=400, detail=detail)
+
+
 def _organize_enabled() -> bool:
     """True when tracks are routed into per-artist/per-album folders.
 
@@ -973,6 +1014,9 @@ class AppState:
     playlist_catalog: Optional[PlaylistCatalog] = None
     playlist_batch_store: Optional[PlaylistBatchStore] = None
     playlist_spotify_cache: Optional[PlaylistSpotifyCache] = None
+    # Last-known Spotify track ids per playlist, for the live sync
+    # (downtify.spotify_sync); opened at startup.
+    playlist_sync_store: Optional[spotify_sync.SyncSnapshotStore] = None
     lyrics_cache: Optional[LyricsLookupCache] = None
     upgrade_runner: Optional[library_upgrade.LibraryUpgradeRunner] = None
     external_sync: Optional[ExternalSyncJob] = None
@@ -5336,6 +5380,18 @@ async def update_settings_endpoint(
         _validate_spotify_mirror_settings(
             pending_spotify_mirror if 'spotify_mirror' in payload else {}
         )
+        pending_spotify_sync = _clean_spotify_sync({
+            **(state.settings.get('spotify_sync') or {}),
+            **(
+                payload.get('spotify_sync')
+                if isinstance(payload.get('spotify_sync'), dict)
+                else {}
+            ),
+        })
+        _validate_spotify_sync_settings(
+            pending_spotify_sync if 'spotify_sync' in payload else {},
+            mirror=pending_spotify_mirror,
+        )
         for key, raw_value in payload.items():
             if key not in DEFAULT_SETTINGS:
                 continue
@@ -5377,6 +5433,8 @@ async def update_settings_endpoint(
                 state.settings[key] = pending_scrobbling
             elif key == 'spotify_mirror':
                 state.settings[key] = pending_spotify_mirror
+            elif key == 'spotify_sync':
+                state.settings[key] = pending_spotify_sync
             else:
                 state.settings[key] = raw_value
         if 'audio_providers' in payload:

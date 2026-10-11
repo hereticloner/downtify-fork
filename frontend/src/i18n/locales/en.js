@@ -1012,6 +1012,24 @@ export default {
     spotifyMirrorNowNothing: 'Nothing is playing right now.',
     spotifyMirrorNowDone: 'Mirrored on Spotify.',
     spotifyMirrorNowFailed: 'Could not mirror that track.',
+    spotifySyncTitle: 'Spotify Sync',
+    spotifySyncHint:
+      'Keep downloaded Spotify playlists in step with Spotify. Uses the Spotify Mirror connection; nothing is fetched until this is on.',
+    spotifySyncEnabled: 'Enable Spotify Sync',
+    spotifySyncEnabledHint:
+      'Check the playlists on an interval and apply track changes.',
+    spotifySyncInterval: 'Sync interval',
+    spotifySyncIntervalHint:
+      'How often each playlist is checked. Longer is gentler on the API.',
+    spotifySyncNow: 'Sync now',
+    spotifySyncNowHint: 'Run one sweep right away, whatever the interval says.',
+    spotifySyncNotConnected: 'Connect Spotify (Spotify Mirror) to sync.',
+    spotifySyncNever: 'No playlist has been synced yet.',
+    spotifySyncLast: 'Last synced {when} · {count} playlist(s)',
+    spotifySyncDone: 'Synced: {added} added, {removed} removed.',
+    spotifySyncNoChange: 'Everything is already up to date.',
+    spotifySyncPartial: 'The sync finished with {count} error(s).',
+    spotifySyncFailed: 'The sync could not run.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:

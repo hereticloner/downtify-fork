@@ -1008,6 +1008,67 @@
                 </SettingRow>
               </template>
             </SettingGroup>
+
+            <!-- Spotify Sync: keeps downloaded playlists in step -->
+            <SettingGroup
+              :title="t('settings.spotifySyncTitle')"
+              :description="t('settings.spotifySyncHint')"
+            >
+              <SettingRow
+                :label="t('settings.spotifySyncEnabled')"
+                :description="t('settings.spotifySyncEnabledHint')"
+              >
+                <UiSwitch
+                  v-model="s.spotify_sync.enabled"
+                  :aria-label="t('settings.spotifySyncEnabled')"
+                />
+              </SettingRow>
+              <SettingRow
+                v-if="s.spotify_sync.enabled"
+                :label="t('settings.spotifySyncInterval')"
+                :description="t('settings.spotifySyncIntervalHint')"
+                stacked
+              >
+                <PresetPicker
+                  :model-value="s.spotify_sync.interval_minutes"
+                  :presets="sm.settingsOptions.spotify_sync_interval_presets"
+                  :min="sm.settingsOptions.spotify_sync_interval_min"
+                  :max="sm.settingsOptions.spotify_sync_interval_max"
+                  unit="min"
+                  :custom-label="t('settings.custom')"
+                  @update:model-value="
+                    (v) =>
+                      (s.spotify_sync.interval_minutes =
+                        clampSyncIntervalMinutes(v))
+                  "
+                />
+              </SettingRow>
+              <SettingRow
+                :label="t('settings.spotifySyncNow')"
+                :description="t('settings.spotifySyncNowHint')"
+              >
+                <UiButton
+                  variant="ghost"
+                  icon="refresh"
+                  :disabled="!spotifySyncConnected"
+                  :loading="spotifySync.running.value"
+                  @click="runSpotifySyncNow"
+                >
+                  {{ t('settings.spotifySyncNow') }}
+                </UiButton>
+              </SettingRow>
+              <div class="px-5 pb-4 text-sm">
+                <span v-if="!spotifySyncConnected" class="text-muted">{{
+                  t('settings.spotifySyncNotConnected')
+                }}</span>
+                <span v-else-if="spotifySyncLastLabel" class="text-muted">
+                  {{ spotifySyncLastLabel }}
+                </span>
+                <span v-else class="text-muted">
+                  {{ t('settings.spotifySyncNever') }}
+                </span>
+              </div>
+            </SettingGroup>
           </template>
 
           <!-- Library -->
@@ -1199,11 +1260,14 @@ import SourceOrder from '/src/components/settings/SourceOrder.vue'
 import LyricsOrder from '/src/components/settings/LyricsOrder.vue'
 import API from '/src/model/api'
 import { mirrorNow } from '/src/model/spotifyMirror'
+import { useSpotifySync } from '/src/model/spotifySync'
+import { friendlyError } from '/src/lib/errors'
 import {
   clampCoverResolution,
   clampDownloadDelaySeconds,
   clampExternalSyncDelaySeconds,
   clampParallelDownloads,
+  clampSyncIntervalMinutes,
   useSettingsManager,
 } from '/src/model/settings'
 import { usePlayer } from '/src/model/player'
@@ -1413,8 +1477,56 @@ async function mirrorCurrent() {
   }
 }
 
+// Spotify Sync: keeps the downloaded playlists' membership in step with
+// their Spotify source, reusing the Mirror's connection. The status is
+// read from the server on load; "Sync now" runs one sweep out of band.
+const spotifySync = useSpotifySync()
+const spotifySyncConnected = computed(
+  () => !!spotifySync.status.value?.connected
+)
+const spotifySyncLastLabel = computed(() => {
+  const last = spotifySync.status.value?.last_synced
+  if (!last) return ''
+  const when = new Date(last)
+  if (Number.isNaN(when.getTime())) return ''
+  return t('settings.spotifySyncLast', {
+    when: when.toLocaleString(),
+    count: spotifySync.status.value?.playlist_count ?? 0,
+  })
+})
+
+async function runSpotifySyncNow() {
+  try {
+    const summary = await spotifySync.run()
+    if (summary?.error === 'not_connected') {
+      ui.toast(t('settings.spotifySyncNotConnected'), { kind: 'error' })
+    } else if (summary?.errors) {
+      ui.toast(t('settings.spotifySyncPartial', { count: summary.errors }), {
+        kind: 'error',
+      })
+    } else if (summary?.changed) {
+      ui.toast(
+        t('settings.spotifySyncDone', {
+          added: summary.added,
+          removed: summary.removed,
+        }),
+        { kind: 'success' }
+      )
+    } else {
+      ui.toast(t('settings.spotifySyncNoChange'), { kind: 'info' })
+    }
+  } catch (err) {
+    ui.toast(friendlyError(t, err, 'settings.spotifySyncFailed'), {
+      kind: 'error',
+    })
+  } finally {
+    await spotifySync.load()
+  }
+}
+
 // The callback lands on /settings/apps with a result flag.
 onMounted(() => {
+  spotifySync.load()
   const flag = route.query.spotify
   if (flag === 'connected') {
     ui.toast(t('settings.spotifyMirrorConnected'))

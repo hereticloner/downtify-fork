@@ -65,6 +65,10 @@ const settings = ref({
     silent_on_target: true,
     mirror_manual_checks: false,
   },
+  spotify_sync: {
+    enabled: false,
+    interval_minutes: 60,
+  },
   organize_by_artist: true,
   cache_cover_art: false,
   organize_by_album: true,
@@ -87,6 +91,10 @@ const MAX_DOWNLOAD_DELAY_SECONDS = 300
 const MIN_COVER_RESOLUTION = 300
 const MAX_COVER_RESOLUTION = 1200
 
+// Spotify live sync interval, in minutes (see downtify/spotify_sync.py).
+const MIN_SYNC_INTERVAL_MINUTES = 5
+const MAX_SYNC_INTERVAL_MINUTES = 7 * 24 * 60
+
 const settingsOptions = {
   audio_providers: ['youtube', 'youtube-music'],
   lyrics_providers: ['lrclib', 'genius', 'musixmatch', 'azlyrics'],
@@ -104,6 +112,9 @@ const settingsOptions = {
   cover_resolution_presets: [300, 600, 800, 1000, 1200],
   cover_resolution_min: MIN_COVER_RESOLUTION,
   cover_resolution_max: MAX_COVER_RESOLUTION,
+  spotify_sync_interval_presets: [15, 60, 360, 1440],
+  spotify_sync_interval_min: MIN_SYNC_INTERVAL_MINUTES,
+  spotify_sync_interval_max: MAX_SYNC_INTERVAL_MINUTES,
   output: '{artists} - {title}.{output-ext}',
 }
 
@@ -146,6 +157,17 @@ export function clampCoverResolution(value) {
     return MIN_COVER_RESOLUTION
   }
   return Math.min(MAX_COVER_RESOLUTION, Math.max(MIN_COVER_RESOLUTION, parsed))
+}
+
+export function clampSyncIntervalMinutes(value) {
+  const parsed = Number.parseInt(value, 10)
+  if (Number.isNaN(parsed)) {
+    return 60
+  }
+  return Math.min(
+    MAX_SYNC_INTERVAL_MINUTES,
+    Math.max(MIN_SYNC_INTERVAL_MINUTES, parsed)
+  )
 }
 
 // Last state the server confirmed — the settings page compares against
@@ -211,6 +233,10 @@ function loadServerSettings() {
           redirect_uri:
             (rest.spotify_mirror || {}).redirect_uri ||
             `${browserOrigin}/integrations/spotify/callback`,
+        },
+        spotify_sync: {
+          ...settings.value.spotify_sync,
+          ...(rest.spotify_sync || {}),
         },
         external_library: {
           ...settings.value.external_library,
@@ -304,6 +330,10 @@ async function saveSettings() {
         redirect_uri:
           (rest.spotify_mirror || {}).redirect_uri ||
           `${browserOrigin}/integrations/spotify/callback`,
+      },
+      spotify_sync: {
+        ...settings.value.spotify_sync,
+        ...(rest.spotify_sync || {}),
       },
       external_library: {
         ...settings.value.external_library,

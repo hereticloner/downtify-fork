@@ -44,6 +44,8 @@ from downtify import (
     api,
     auth_routes,
     mobile_routes,
+    spotify_sync,
+    spotify_sync_api,
 )
 from downtify.activity import ActivityLog
 from downtify.auth import AuthMiddleware, AuthStore, auth_disabled_from_env
@@ -347,6 +349,9 @@ def _open_library_stores(monitor_db_path: Path) -> None:
     api.state.playlist_catalog = PlaylistCatalog(library_db)
     api.state.playlist_batch_store = PlaylistBatchStore(library_db)
     api.state.playlist_spotify_cache = PlaylistSpotifyCache(library_db)
+    api.state.playlist_sync_store = spotify_sync.SyncSnapshotStore(
+        DATABASE_DIR / 'downtify_spotify_sync.json'
+    )
     api.state.lyrics_cache = LyricsLookupCache(library_db)
     api.state.likes = LikedTracks(library_db)
     api.state.podcasts = PodcastStore(library_db)
@@ -499,6 +504,20 @@ def build_app() -> FastAPI:
                 get_downloader=lambda: api.state.downloader,
             ),
             name='reconcile-loop',
+        )
+        # Keeps downloaded Spotify playlists in step with their Spotify
+        # source (see downtify/spotify_sync.py). Off by default; the loop
+        # idles whenever the switch is off.
+        api.spawn_task(
+            spotify_sync.spotify_sync_loop(
+                get_settings=lambda: api.state.settings,
+                get_playlists=spotify_sync_api.sync_playlists,
+                get_credentials=spotify_sync_api.sync_credentials,
+                get_store=lambda: api.state.playlist_sync_store,
+                apply=spotify_sync_api.apply_sync_diff,
+                broadcast=api.state.connections.broadcast,
+            ),
+            name='spotify-sync-loop',
         )
         # Hourly check against GitHub Releases (see
         # downtify/update_check.py) so the footer can tell the user a
@@ -679,6 +698,7 @@ def build_app() -> FastAPI:
     )
 
     app.include_router(collections_router)
+    app.include_router(spotify_sync_api.router)
 
     @app.get('/list')
     def list_downloads(refresh: bool = False) -> list[str]:

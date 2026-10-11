@@ -1043,6 +1043,26 @@ export default {
     spotifyMirrorNowNothing: 'No suena nada ahora mismo.',
     spotifyMirrorNowDone: 'Reflejado en Spotify.',
     spotifyMirrorNowFailed: 'No se pudo reflejar esa canción.',
+    spotifySyncTitle: 'Sincronización de Spotify',
+    spotifySyncHint:
+      'Mantiene las listas de Spotify descargadas al día con Spotify. Usa la conexión de Spotify Mirror; no se consulta nada hasta activarlo.',
+    spotifySyncEnabled: 'Activar la sincronización de Spotify',
+    spotifySyncEnabledHint:
+      'Revisa las listas cada cierto intervalo y aplica los cambios de pistas.',
+    spotifySyncInterval: 'Intervalo de sincronización',
+    spotifySyncIntervalHint:
+      'Con qué frecuencia se revisa cada lista. Más largo es más amable con la API.',
+    spotifySyncNow: 'Sincronizar ahora',
+    spotifySyncNowHint:
+      'Ejecuta una pasada ahora mismo, sin importar el intervalo.',
+    spotifySyncNotConnected:
+      'Conecta Spotify (Spotify Mirror) para sincronizar.',
+    spotifySyncNever: 'Aún no se ha sincronizado ninguna lista.',
+    spotifySyncLast: 'Última sincronización {when} · {count} lista(s)',
+    spotifySyncDone: 'Sincronizado: {added} añadidas, {removed} quitadas.',
+    spotifySyncNoChange: 'Todo ya está al día.',
+    spotifySyncPartial: 'La sincronización terminó con {count} error(es).',
+    spotifySyncFailed: 'No se pudo ejecutar la sincronización.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:

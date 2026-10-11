@@ -1036,6 +1036,27 @@ export default {
     spotifyMirrorNowNothing: 'Most semmi sem szól.',
     spotifyMirrorNowDone: 'Tükrözve a Spotifyon.',
     spotifyMirrorNowFailed: 'Ezt a számot nem sikerült tükrözni.',
+    spotifySyncTitle: 'Spotify szinkron',
+    spotifySyncHint:
+      'A letöltött Spotify-lejátszási listákat szinkronban tartja a Spotify-jal. A Spotify Mirror kapcsolatát használja; bekapcsolásig semmit nem kér le.',
+    spotifySyncEnabled: 'Spotify szinkron bekapcsolása',
+    spotifySyncEnabledHint:
+      'Rendszeres időközönként ellenőrzi a listákat és alkalmazza a számváltozásokat.',
+    spotifySyncInterval: 'Szinkron időköz',
+    spotifySyncIntervalHint:
+      'Milyen gyakran legyen ellenőrizve minden lista. A hosszabb kíméletesebb az API-hoz.',
+    spotifySyncNow: 'Szinkron most',
+    spotifySyncNowHint:
+      'Azonnal lefuttat egy ellenőrzést, az időköztől függetlenül.',
+    spotifySyncNotConnected:
+      'A szinkronhoz kapcsold össze a Spotify-t (Spotify Mirror).',
+    spotifySyncNever: 'Még egyetlen lista sincs szinkronizálva.',
+    spotifySyncLast: 'Utolsó szinkron: {when} · {count} lista',
+    spotifySyncDone:
+      'Szinkronizálva: {added} hozzáadva, {removed} eltávolítva.',
+    spotifySyncNoChange: 'Minden már naprakész.',
+    spotifySyncPartial: 'A szinkron {count} hibával fejeződött be.',
+    spotifySyncFailed: 'A szinkront nem sikerült lefuttatni.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:

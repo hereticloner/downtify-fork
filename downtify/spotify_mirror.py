@@ -18,9 +18,11 @@ playback that triggered it.
 OAuth is Authorization Code + PKCE (no client secret needed): the user
 creates their own Spotify app, points its redirect URI at this server,
 connects in Settings → Spotify Mirror, and the tokens are stored in the
-``spotify_mirror`` settings block. Scopes are playback ones only:
-``user-read-playback-state``, ``user-modify-playback-state``,
-``user-read-currently-playing``.
+``spotify_mirror`` settings block. Scopes are playback ones, plus the two
+playlist-read ones the live sync (``downtify.spotify_sync``) reuses the
+same connection for: ``user-read-playback-state``,
+``user-modify-playback-state``, ``user-read-currently-playing``,
+``playlist-read-private``, ``playlist-read-collaborative``.
 """
 
 from __future__ import annotations
@@ -45,7 +47,8 @@ TIMEOUT_SECONDS = 6.0
 TOKEN_REFRESH_MARGIN = 30
 SCOPES = (
     'user-read-playback-state user-modify-playback-state '
-    'user-read-currently-playing'
+    'user-read-currently-playing playlist-read-private '
+    'playlist-read-collaborative'
 )
 
 #: Request seam: tests inject a fake; the default is a plain httpx call.

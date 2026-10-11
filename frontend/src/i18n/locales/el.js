@@ -1044,6 +1044,27 @@ export default {
     spotifyMirrorNowDone: 'Κατοπτρίστηκε στο Spotify.',
     spotifyMirrorNowFailed:
       'Δεν ήταν δυνατός ο κατοπτρισμός αυτού του κομματιού.',
+    spotifySyncTitle: 'Συγχρονισμός Spotify',
+    spotifySyncHint:
+      'Κρατά τις ληφθείσες λίστες Spotify συγχρονισμένες με το Spotify. Χρησιμοποιεί τη σύνδεση Spotify Mirror· τίποτα δεν ανακτάται μέχρι να ενεργοποιηθεί.',
+    spotifySyncEnabled: 'Ενεργοποίηση συγχρονισμού Spotify',
+    spotifySyncEnabledHint:
+      'Ελέγχει τις λίστες ανά τακτά διαστήματα και εφαρμόζει τις αλλαγές κομματιών.',
+    spotifySyncInterval: 'Διάστημα συγχρονισμού',
+    spotifySyncIntervalHint:
+      'Πόσο συχνά ελέγχεται κάθε λίστα. Μεγαλύτερο είναι πιο ευγενικό για το API.',
+    spotifySyncNow: 'Συγχρονισμός τώρα',
+    spotifySyncNowHint:
+      'Εκτελεί αμέσως έναν έλεγχο, ανεξάρτητα από το διάστημα.',
+    spotifySyncNotConnected:
+      'Συνδέστε το Spotify (Spotify Mirror) για συγχρονισμό.',
+    spotifySyncNever: 'Δεν έχει συγχρονιστεί ακόμη καμία λίστα.',
+    spotifySyncLast: 'Τελευταίος συγχρονισμός {when} · {count} λίστα(-ες)',
+    spotifySyncDone:
+      'Συγχρονίστηκε: {added} προστέθηκαν, {removed} αφαιρέθηκαν.',
+    spotifySyncNoChange: 'Όλα είναι ήδη ενημερωμένα.',
+    spotifySyncPartial: 'Ο συγχρονισμός ολοκληρώθηκε με {count} σφάλμα(τα).',
+    spotifySyncFailed: 'Ο συγχρονισμός δεν μπόρεσε να εκτελεστεί.',
     scrobbling: 'Scrobbling',
     scrobblingTitle: 'Scrobbling',
     scrobblingHint:

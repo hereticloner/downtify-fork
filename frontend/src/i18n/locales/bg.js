@@ -1029,6 +1029,25 @@ export default {
     spotifyMirrorNowNothing: 'В момента нищо не свири.',
     spotifyMirrorNowDone: 'Огледано в Spotify.',
     spotifyMirrorNowFailed: 'Тази песен не можа да се огледа.',
+    spotifySyncTitle: 'Синхронизация на Spotify',
+    spotifySyncHint:
+      'Поддържа изтеглените Spotify плейлисти в синхрон със Spotify. Използва връзката на Spotify Mirror; нищо не се извлича, докато не се включи.',
+    spotifySyncEnabled: 'Включи синхронизацията на Spotify',
+    spotifySyncEnabledHint:
+      'Проверява плейлистите през интервал и прилага промените по песните.',
+    spotifySyncInterval: 'Интервал на синхронизация',
+    spotifySyncIntervalHint:
+      'Колко често се проверява всеки плейлист. По-дълъг е по-щадящ за API-то.',
+    spotifySyncNow: 'Синхронизирай сега',
+    spotifySyncNowHint: 'Изпълнява проверка веднага, независимо от интервала.',
+    spotifySyncNotConnected:
+      'Свържи Spotify (Spotify Mirror), за да се синхронизира.',
+    spotifySyncNever: 'Все още няма синхронизиран плейлист.',
+    spotifySyncLast: 'Последна синхронизация {when} · {count} плейлист(а)',
+    spotifySyncDone: 'Синхронизирано: {added} добавени, {removed} премахнати.',
+    spotifySyncNoChange: 'Всичко вече е актуално.',
+    spotifySyncPartial: 'Синхронизацията завърши с {count} грешка(и).',
+    spotifySyncFailed: 'Синхронизацията не можа да се изпълни.',
     scrobbling: 'Скроблинг',
     scrobblingTitle: 'Скроблинг',
     scrobblingHint:

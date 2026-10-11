@@ -42,6 +42,7 @@ export const NAV = [
       { title: 'Notifications', page: 'features/notifications.md' },
       { title: 'Scrobbling', page: 'features/scrobbling.md' },
       { title: 'Spotify Mirror', page: 'features/spotify-mirror.md' },
+      { title: 'Spotify Sync', page: 'features/spotify-sync.md' },
       { title: 'Storage', page: 'features/storage.md' },
       {
         title: 'Existing music folders',

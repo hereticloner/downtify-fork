@@ -879,6 +879,7 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_ALL, r'^/api/notifications/', ADMIN),
         (_ALL, r'^/api/scrobbling/', ADMIN),
         (_ALL, r'^/api/spotify-mirror/', ADMIN),
+        (_ALL, r'^/api/spotify-sync(/|$)', ADMIN),
         (_ALL, r'^/api/storage/', ADMIN),
         (_ALL, r'^/integrations/spotify/', USER),
         (_ALL, r'^/api/queue/(status|pause|resume)$', ADMIN),
