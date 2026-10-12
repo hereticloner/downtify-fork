@@ -13,6 +13,8 @@ from __future__ import annotations
 import json
 import sqlite3
 
+import pytest
+
 import main
 
 
@@ -37,18 +39,30 @@ def _monitor_db(path, filenames=('Artist - Song.mp3',)):
     return path
 
 
-def test_marker_roundtrip(tmp_path, monkeypatch):
+@pytest.fixture
+def data_dir(tmp_path, monkeypatch):
+    """``/data`` with the library file the import fills, and the marker in it."""
+
+    data = tmp_path / 'data'
+    data.mkdir()
+    (data / 'downtify_library.db').write_bytes(b'')
+    monkeypatch.setattr(main, 'DATABASE_DIR', data)
+    monkeypatch.setattr(
+        main, '_BACKFILL_MARKER', data / 'downtify_backfill.json'
+    )
+    return data
+
+
+def test_marker_roundtrip(tmp_path, data_dir):
     monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
-    monkeypatch.setattr(main, '_BACKFILL_MARKER', tmp_path / 'marker.json')
 
     assert main._backfill_done(monitor_db) is False
     main._mark_backfill_done(monitor_db)
     assert main._backfill_done(monitor_db) is True
 
 
-def test_import_repeats_when_tracks_arrive(tmp_path, monkeypatch):
+def test_import_repeats_when_tracks_arrive(tmp_path, data_dir):
     monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
-    monkeypatch.setattr(main, '_BACKFILL_MARKER', tmp_path / 'marker.json')
     main._mark_backfill_done(monitor_db)
 
     # A watch found a new track: the import has to look again.
@@ -60,9 +74,8 @@ def test_import_repeats_when_tracks_arrive(tmp_path, monkeypatch):
     assert main._backfill_done(monitor_db) is False
 
 
-def test_import_repeats_when_a_file_name_is_fixed(tmp_path, monkeypatch):
+def test_import_repeats_when_a_file_name_is_fixed(tmp_path, data_dir):
     monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
-    monkeypatch.setattr(main, '_BACKFILL_MARKER', tmp_path / 'marker.json')
     main._mark_backfill_done(monitor_db)
 
     with sqlite3.connect(monitor_db) as conn:
@@ -73,9 +86,21 @@ def test_import_repeats_when_a_file_name_is_fixed(tmp_path, monkeypatch):
     assert main._backfill_done(monitor_db) is False
 
 
-def test_missing_db_and_old_version_import_again(tmp_path, monkeypatch):
-    marker = tmp_path / 'marker.json'
-    monkeypatch.setattr(main, '_BACKFILL_MARKER', marker)
+def test_import_repeats_when_the_library_file_is_gone(tmp_path, data_dir):
+    """A wiped /data must import again even though the marker survived."""
+
+    monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
+    main._mark_backfill_done(monitor_db)
+    assert main._backfill_done(monitor_db) is True
+
+    (data_dir / 'downtify_library.db').unlink()
+    assert main._backfill_done(monitor_db) is False
+
+
+def test_missing_db_and_old_version_import_again(
+    tmp_path, data_dir, monkeypatch
+):
+    marker = data_dir / 'downtify_backfill.json'
     monkeypatch.setattr(main, '_BACKFILL_VERSION', 2)
     assert main._backfill_done(tmp_path / 'missing.db') is False
 
@@ -96,7 +121,9 @@ def test_signature_of_a_file_that_is_not_a_database(tmp_path):
     assert not main._backfill_signature(broken)
 
 
-def test_an_unwritable_marker_does_not_break_the_import(tmp_path, monkeypatch):
+def test_an_unwritable_marker_does_not_break_the_import(
+    tmp_path, data_dir, monkeypatch
+):
     """Writing the marker is best effort: a read-only /data still imports."""
 
     monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
@@ -119,7 +146,7 @@ def _app(tmp_path, monkeypatch):
     monkeypatch.setattr(main, 'DATABASE_DIR', tmp_path / 'data')
     monkeypatch.setattr(main, 'WEB_GUI_LOCATION', str(web))
     monkeypatch.setattr(
-        main, '_BACKFILL_MARKER', tmp_path / 'data' / 'marker.json'
+        main, '_BACKFILL_MARKER', tmp_path / 'data' / 'downtify_backfill.json'
     )
     main.build_app()
     return downloads

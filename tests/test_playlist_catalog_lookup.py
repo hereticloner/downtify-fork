@@ -150,3 +150,55 @@ def test_backfill_from_monitor_db_twice_keeps_one_row(tmp_path: Path) -> None:
     )
     rows = catalog.list_tracks('Old Mix')
     assert [row['filename'] for row in rows] == ['Artist - Song.mp3']
+
+
+def test_backfill_from_monitor_db_skips_ids_that_are_not_spotify(
+    tmp_path: Path,
+) -> None:
+    """``upsert_track`` used to drop them, so the batched insert must too."""
+
+    download_dir = tmp_path / 'downloads'
+    download_dir.mkdir()
+    for name in ('Artist - Song.mp3', 'Artist - Youtube.mp3'):
+        (download_dir / name).write_bytes(b'audio')
+
+    monitor_db = tmp_path / 'monitor.db'
+    with sqlite3.connect(monitor_db) as conn:
+        conn.executescript("""
+            CREATE TABLE monitored_playlists (
+                id INTEGER PRIMARY KEY,
+                spotify_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                url TEXT NOT NULL,
+                interval_minutes INTEGER DEFAULT 60,
+                enabled INTEGER DEFAULT 1,
+                last_checked TEXT,
+                last_track_count INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+            CREATE TABLE downloaded_tracks (
+                id INTEGER PRIMARY KEY,
+                playlist_id INTEGER NOT NULL,
+                track_spotify_id TEXT NOT NULL,
+                downloaded_at TEXT NOT NULL,
+                filename TEXT
+            );
+            INSERT INTO monitored_playlists VALUES (
+                1, 'playlist12345678901234567890', 'Old Mix', 'http://x', 60, 1,
+                NULL, 0, 'now'
+            );
+            INSERT INTO downloaded_tracks VALUES (
+                1, 1, '4uLU6hMCjMI75M1A2tKUQC', 'now', 'Artist - Song.mp3'
+            );
+            INSERT INTO downloaded_tracks VALUES (
+                2, 1, 'dQw4w9WgXcQ', 'now', 'Artist - Youtube.mp3'
+            );
+        """)
+
+    catalog = PlaylistCatalog(tmp_path / 'library.db')
+    linked = catalog.backfill_from_monitor_db(
+        monitor_db, download_dir=download_dir
+    )
+    assert linked == 1
+    rows = catalog.list_tracks('Old Mix')
+    assert [row['filename'] for row in rows] == ['Artist - Song.mp3']

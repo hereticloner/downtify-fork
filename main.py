@@ -387,6 +387,10 @@ def _backfill_done(monitor_db_path: Path) -> bool:
     signature = _backfill_signature(monitor_db_path)
     if not signature:
         return False
+    # The import fills the stores in /data/downtify_library.db: with that file
+    # gone (a wiped or replaced volume) the marker says nothing about them.
+    if not (DATABASE_DIR / 'downtify_library.db').is_file():
+        return False
     try:
         data = json.loads(_BACKFILL_MARKER.read_text(encoding='utf-8'))
     except (OSError, ValueError):

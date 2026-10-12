@@ -173,7 +173,9 @@ class PlaylistCatalog:
         for row in rows:
             pl_name = str(row[0] or '').strip()
             spotify_id = str(row[1] or '').strip() or None
-            tid = str(row[2] or '').strip()
+            # ``upsert_track`` used to drop rows whose id is not a Spotify
+            # track (a YouTube id, a broken import): keep that filter.
+            tid = normalize_spotify_track_id({'song_id': str(row[2] or '')})
             filename = _norm_path(str(row[3] or ''))
             if not pl_name or not tid or not filename:
                 continue
