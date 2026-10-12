@@ -25,6 +25,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -211,10 +213,18 @@ class SyncSnapshotStore:
     Lives next to the other Downtify databases (``/data``), not in the
     downloads volume: it is a cache of what Spotify said last time, not
     library data, and losing it only means one baseline re-fetch.
+
+    Writers serialize on a lock and the file is replaced atomically. Both
+    matter: the periodic loop and a manual "Sync now" write the same file,
+    and every write is a read-modify-write of the whole map - without the
+    lock the slower writer's entries disappear, and a write interrupted
+    halfway used to leave JSON that ``_load`` reads as empty, losing every
+    baseline at once.
     """
 
     def __init__(self, path: Path) -> None:
         self._path = Path(path)
+        self._lock = threading.RLock()
 
     def _load(self) -> dict[str, Any]:
         try:
@@ -228,10 +238,21 @@ class SyncSnapshotStore:
 
     def _write(self, data: dict[str, Any]) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        self._path.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2),
-            encoding='utf-8',
-        )
+        text = json.dumps(data, ensure_ascii=False, indent=2)
+        # Same directory, so os.replace stays atomic on the same filesystem.
+        tmp = self._path.with_name(f'{self._path.name}.tmp')
+        try:
+            with open(tmp, 'w', encoding='utf-8') as handle:
+                handle.write(text)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp, self._path)
+        except OSError:
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+            raise
 
     def all(self) -> dict[str, Any]:
         return self._load()['playlists']
@@ -269,22 +290,24 @@ class SyncSnapshotStore:
         sid = str(playlist_id or '').strip()
         if not sid:
             return
-        data = self._load()
-        data['playlists'][sid] = {
-            'name': str(name or ''),
-            'track_ids': normalize_snapshot(track_ids),
-            'synced_at': synced_at or _now_iso(),
-        }
-        self._write(data)
+        with self._lock:
+            data = self._load()
+            data['playlists'][sid] = {
+                'name': str(name or ''),
+                'track_ids': normalize_snapshot(track_ids),
+                'synced_at': synced_at or _now_iso(),
+            }
+            self._write(data)
 
     def forget(self, playlist_id: str) -> bool:
         sid = str(playlist_id or '').strip()
         if not sid:
             return False
-        data = self._load()
-        if data['playlists'].pop(sid, None) is None:
-            return False
-        self._write(data)
+        with self._lock:
+            data = self._load()
+            if data['playlists'].pop(sid, None) is None:
+                return False
+            self._write(data)
         return True
 
 

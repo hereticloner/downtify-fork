@@ -8,6 +8,8 @@ token-refresh contract and the "nothing changed -> nothing done" rule.
 from __future__ import annotations
 
 import asyncio
+import threading
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -211,6 +213,70 @@ def test_store_survives_a_broken_file(tmp_path: Path):
     assert store.all() == {}
     store.save('p1', ['a'])
     assert store.track_ids('p1') == ['a']
+
+
+def test_a_failed_write_keeps_the_previous_file(tmp_path: Path, monkeypatch):
+    """A write that cannot finish must not truncate what is already stored."""
+
+    path = tmp_path / 'sync.json'
+    store = SyncSnapshotStore(path)
+    store.save('p1', ['a'], name='Mix')
+    before = path.read_text(encoding='utf-8')
+
+    def boom(*_args, **_kwargs):
+        raise OSError('disk went away')
+
+    monkeypatch.setattr(spotify_sync.os, 'replace', boom)
+    with pytest.raises(OSError, match='disk went away'):
+        store.save('p1', ['a', 'b'])
+
+    assert path.read_text(encoding='utf-8') == before
+    assert store.track_ids('p1') == ['a']
+    assert list(tmp_path.glob('*.tmp')) == []
+
+
+def test_a_write_leaves_no_temporary_file_behind(tmp_path: Path):
+    path = tmp_path / 'sync.json'
+    store = SyncSnapshotStore(path)
+    store.save('p1', ['a'])
+    store.save('p2', ['b'])
+    store.forget('p1')
+    assert list(tmp_path.glob('*.tmp')) == []
+    assert sorted(store.all()) == ['p2']
+
+
+def test_concurrent_writers_do_not_lose_entries(tmp_path: Path, monkeypatch):
+    """The periodic loop and a manual "Sync now" write the same file.
+
+    Every save is a read-modify-write of the whole map, so without the lock
+    the slower writer's entry disappears. ``_write`` is slowed here so the
+    writers are all inside their read-modify-write at the same time.
+    """
+
+    path = tmp_path / 'sync.json'
+    store = SyncSnapshotStore(path)
+    real_write = SyncSnapshotStore._write
+
+    def slow_write(self, data):
+        time.sleep(0.05)
+        real_write(self, data)
+
+    monkeypatch.setattr(SyncSnapshotStore, '_write', slow_write)
+
+    def save(playlist_id: str, track: str) -> None:
+        store.save(playlist_id, [track], name=playlist_id)
+
+    threads = [
+        threading.Thread(target=save, args=(f'p{i}', f't{i}'))
+        for i in range(4)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert sorted(store.all()) == ['p0', 'p1', 'p2', 'p3']
+    assert store.track_ids('p3') == ['t3']
 
 
 # ── fetch_snapshot (OAuth) ───────────────────────────────────────────
