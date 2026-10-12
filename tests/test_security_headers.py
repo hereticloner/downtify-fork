@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
@@ -71,3 +73,20 @@ def test_a_route_can_set_its_own_value():
     assert response.headers['Referrer-Policy'] == (
         'strict-origin-when-cross-origin'
     )
+
+
+def test_a_websocket_scope_is_passed_through():
+    """The app streams over WebSockets; they must not be touched here."""
+
+    seen = []
+
+    async def app(scope, receive, send):
+        seen.append(scope['type'])
+
+    async def receive():
+        return {'type': 'websocket.connect'}
+
+    asyncio.run(
+        SecurityHeadersMiddleware(app)({'type': 'websocket'}, receive, None)
+    )
+    assert seen == ['websocket']

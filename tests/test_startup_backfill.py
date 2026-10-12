@@ -94,3 +94,77 @@ def test_signature_of_a_file_that_is_not_a_database(tmp_path):
     broken = tmp_path / 'broken.db'
     broken.write_bytes(b'not sqlite')
     assert not main._backfill_signature(broken)
+
+
+def test_an_unwritable_marker_does_not_break_the_import(tmp_path, monkeypatch):
+    """Writing the marker is best effort: a read-only /data still imports."""
+
+    monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
+    monkeypatch.setattr(
+        main, '_BACKFILL_MARKER', tmp_path / 'missing-dir' / 'marker.json'
+    )
+    main._mark_backfill_done(monitor_db)  # must not raise
+    assert main._backfill_done(monitor_db) is False
+
+
+def _app(tmp_path, monkeypatch):
+    """``build_app`` with /data, /downloads and the marker under *tmp_path*."""
+
+    web = tmp_path / 'web'
+    web.mkdir()
+    (web / 'index.html').write_text('<html>Downtify</html>')
+    downloads = tmp_path / 'downloads'
+    downloads.mkdir()
+    monkeypatch.setattr(main, 'DOWNLOAD_DIR', downloads)
+    monkeypatch.setattr(main, 'DATABASE_DIR', tmp_path / 'data')
+    monkeypatch.setattr(main, 'WEB_GUI_LOCATION', str(web))
+    monkeypatch.setattr(
+        main, '_BACKFILL_MARKER', tmp_path / 'data' / 'marker.json'
+    )
+    main.build_app()
+    return downloads
+
+
+def test_open_library_stores_imports_once(tmp_path, monkeypatch):
+    """The real startup function: one import, then nothing on the next start."""
+
+    downloads = _app(tmp_path, monkeypatch)
+    (downloads / 'Artist - Song.mp3').write_bytes(b'audio')
+    monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
+    with sqlite3.connect(monitor_db) as conn:
+        conn.execute(
+            """CREATE TABLE monitored_playlists (
+                   id INTEGER PRIMARY KEY,
+                   spotify_id TEXT NOT NULL,
+                   name TEXT NOT NULL,
+                   url TEXT NOT NULL,
+                   interval_minutes INTEGER DEFAULT 60,
+                   enabled INTEGER DEFAULT 1,
+                   last_checked TEXT,
+                   last_track_count INTEGER DEFAULT 0,
+                   created_at TEXT NOT NULL
+               )"""
+        )
+        conn.execute(
+            'INSERT INTO monitored_playlists VALUES '
+            "(1, 'playlist0000000000000001', 'Old Mix', 'http://x', 60, 1, "
+            "NULL, 0, 'now')"
+        )
+
+    imported = []
+    original = main.TrackIndex.backfill_from_monitor_db
+
+    def spy(self, path):
+        imported.append(path)
+        return original(self, path)
+
+    monkeypatch.setattr(main.TrackIndex, 'backfill_from_monitor_db', spy)
+
+    main._open_library_stores(monitor_db)
+    assert len(imported) == 1
+    assert main._backfill_done(monitor_db) is True
+    assert main.api.state.playlist_catalog.list_tracks('Old Mix')
+
+    # Same history on the next start: the import is skipped, not repeated.
+    main._open_library_stores(monitor_db)
+    assert len(imported) == 1
