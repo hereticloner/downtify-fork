@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import logging
 import mimetypes
 import os
+import sqlite3
 import sys
 import threading
 import time
@@ -345,14 +347,31 @@ _BACKFILL_MARKER = DATABASE_DIR / 'downtify_backfill.json'
 _BACKFILL_VERSION = 1
 
 
-def _backfill_signature(path: Path) -> str:
-    """``size:mtime_ns`` of the monitor DB, or ``''`` when it is missing."""
+def _backfill_signature(monitor_db_path: Path) -> str:
+    """What the history import covers: the downloaded-track rows.
 
-    try:
-        stat = path.stat()
-    except OSError:
+    The monitor writes ``last_checked`` into its database on every check, so
+    its mtime says nothing about new tracks - only these rows do. Added or
+    removed tracks change the signature and the import runs again.
+    """
+
+    path = Path(monitor_db_path)
+    if not path.is_file():
         return ''
-    return f'{stat.st_size}:{stat.st_mtime_ns}'
+    digest = hashlib.sha1()
+    count = 0
+    last_id = 0
+    try:
+        with sqlite3.connect(str(path)) as conn:
+            for row_id, filename in conn.execute(
+                'SELECT id, filename FROM downloaded_tracks ORDER BY id'
+            ):
+                count += 1
+                last_id = int(row_id or 0)
+                digest.update(f'{row_id}:{filename or 0}\n'.encode())
+    except (sqlite3.Error, OSError, TypeError, ValueError):
+        return ''
+    return f'{count}:{last_id}:{digest.hexdigest()[:12]}'
 
 
 def _backfill_done(monitor_db_path: Path) -> bool:
@@ -360,9 +379,8 @@ def _backfill_done(monitor_db_path: Path) -> bool:
 
     The import used to run on every start, re-scanning every track in the
     monitor history - one SQLite connection per row - which took minutes
-    on a library of a few hundred rows. The monitor DB only changes when a
-    watch finds tracks, so its size and mtime are enough to know the import
-    has nothing new to do.
+    on a library of a few hundred rows. The signature covers the downloaded
+    tracks the import reads, so a start that finds nothing new skips it.
     """
 
     signature = _backfill_signature(monitor_db_path)
