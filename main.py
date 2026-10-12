@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import logging
 import mimetypes
 import os
 import sys
 import threading
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Optional
@@ -336,6 +338,64 @@ def _warm_library_listing() -> None:
         logger.opt(exception=True).debug('Library listing warm failed')
 
 
+# The monitor-history import runs once per monitor DB state; the marker
+# records which state was imported. Bump the version to force one more
+# import (see :func:`_backfill_done`).
+_BACKFILL_MARKER = DATABASE_DIR / 'downtify_backfill.json'
+_BACKFILL_VERSION = 1
+
+
+def _backfill_signature(path: Path) -> str:
+    """``size:mtime_ns`` of the monitor DB, or ``''`` when it is missing."""
+
+    try:
+        stat = path.stat()
+    except OSError:
+        return ''
+    return f'{stat.st_size}:{stat.st_mtime_ns}'
+
+
+def _backfill_done(monitor_db_path: Path) -> bool:
+    """True when this monitor history was already imported into /data.
+
+    The import used to run on every start, re-scanning every track in the
+    monitor history - one SQLite connection per row - which took minutes
+    on a library of a few hundred rows. The monitor DB only changes when a
+    watch finds tracks, so its size and mtime are enough to know the import
+    has nothing new to do.
+    """
+
+    signature = _backfill_signature(monitor_db_path)
+    if not signature:
+        return False
+    try:
+        data = json.loads(_BACKFILL_MARKER.read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(data, dict):
+        return False
+    return (
+        str(data.get('monitor_db') or '') == signature
+        and int(data.get('version') or 0) == _BACKFILL_VERSION
+    )
+
+
+def _mark_backfill_done(monitor_db_path: Path) -> None:
+    signature = _backfill_signature(monitor_db_path)
+    if not signature:
+        return
+    try:
+        _BACKFILL_MARKER.write_text(
+            json.dumps({
+                'version': _BACKFILL_VERSION,
+                'monitor_db': signature,
+            }),
+            encoding='utf-8',
+        )
+    except OSError:
+        logger.debug('Could not write the library backfill marker')
+
+
 def _open_library_stores(monitor_db_path: Path) -> None:
     """Open the library catalog/index/cache stores in /data and backfill the
     track index and playlist catalog from Playlist Monitor history."""
@@ -376,31 +436,42 @@ def _open_library_stores(monitor_db_path: Path) -> None:
         DATABASE_DIR / 'external_sync.json'
     )
     ctx = api.library_context()
-    try:
-        imported = api.state.track_index.backfill_from_monitor_db(
-            monitor_db_path
+    if _backfill_done(monitor_db_path):
+        logger.debug(
+            'Library backfill: monitor history unchanged, nothing imported'
         )
-        if imported:
+    else:
+        started = time.perf_counter()
+        try:
+            imported = api.state.track_index.backfill_from_monitor_db(
+                monitor_db_path
+            )
             logger.info(
                 'Track library index: imported {} path(s) from monitor '
-                'history',
+                'history in {:.1f}s',
                 imported,
+                time.perf_counter() - started,
             )
-    except Exception:
-        logger.exception('Track library backfill from monitor db failed')
-    try:
-        linked = api.state.playlist_catalog.backfill_from_monitor_db(
-            monitor_db_path,
-            download_dir=ctx.download_dir,
-            slskd_dir=ctx.slskd_dir,
-        )
-        if linked:
+        except Exception:
+            logger.exception('Track library backfill from monitor db failed')
+        started = time.perf_counter()
+        try:
+            linked = api.state.playlist_catalog.backfill_from_monitor_db(
+                monitor_db_path,
+                download_dir=ctx.download_dir,
+                slskd_dir=ctx.slskd_dir,
+            )
             logger.info(
-                'Playlist catalog: linked {} track(s) from monitor history',
+                'Playlist catalog: linked {} track(s) from monitor history '
+                'in {:.1f}s',
                 linked,
+                time.perf_counter() - started,
             )
-    except Exception:
-        logger.exception('Playlist catalog backfill from monitor db failed')
+        except Exception:
+            logger.exception(
+                'Playlist catalog backfill from monitor db failed'
+            )
+        _mark_backfill_done(monitor_db_path)
     try:
         registered = ensure_batch_records(
             api.state.playlist_batch_store,

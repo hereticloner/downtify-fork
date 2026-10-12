@@ -21,11 +21,17 @@ def _norm_path(filename: str) -> str:
     return str(filename or '').strip().replace('\\', '/')
 
 
-def _chunked(values: list[str], size: int):
+def _chunked(values: list, size: int):
     for index in range(0, len(values), size):
         chunk = values[index : index + size]
         if chunk:
             yield chunk
+
+
+# Rows per INSERT ... executemany call: 5 bound values each, well under the
+# oldest SQLite variable limit, and the whole import still runs in one
+# transaction.
+_CHUNK = 100
 
 
 class PlaylistCatalog:
@@ -140,7 +146,13 @@ class PlaylistCatalog:
         download_dir: Path,
         slskd_dir: Optional[Path] = None,
     ) -> int:
-        """Import playlist membership from monitor history (older downloads)."""
+        """Import playlist membership from monitor history (older downloads).
+
+        The whole import runs in one connection and one transaction: the
+        per-row ``ensure_playlist``/``upsert_track`` pair used to open - and
+        commit - two connections per track, which took minutes on a library
+        of a few hundred rows.
+        """
 
         path = Path(monitor_db_path)
         if not path.is_file():
@@ -156,7 +168,8 @@ class PlaylistCatalog:
         except sqlite3.Error:
             return 0
 
-        linked = 0
+        playlists: dict[str, Optional[str]] = {}
+        tracks: list[tuple[str, str, Optional[str], str, int]] = []
         for row in rows:
             pl_name = str(row[0] or '').strip()
             spotify_id = str(row[1] or '').strip() or None
@@ -167,10 +180,35 @@ class PlaylistCatalog:
             full = locate_library_file(filename, download_dir, slskd_dir)
             if full is None:
                 continue
-            self.ensure_playlist(pl_name, spotify_id=spotify_id)
-            self.upsert_track(pl_name, {'song_id': tid}, filename, full)
-            linked += 1
-        return linked
+            playlists.setdefault(pl_name, spotify_id)
+            tracks.append((pl_name, tid, file_content_key(full), filename, 0))
+        if not tracks:
+            return 0
+
+        now = _now_iso()
+        with self._connect() as conn:
+            for chunk in _chunked(list(playlists.items()), _CHUNK):
+                conn.executemany(
+                    """INSERT INTO playlists (name, spotify_id, updated_at)
+                       VALUES (?, ?, ?)
+                       ON CONFLICT(name) DO UPDATE SET
+                       spotify_id=COALESCE(excluded.spotify_id, playlists.spotify_id),
+                       updated_at=excluded.updated_at""",
+                    [(name, sid, now) for name, sid in chunk],
+                )
+            for chunk in _chunked(tracks, _CHUNK):
+                conn.executemany(
+                    """INSERT INTO playlist_tracks
+                       (playlist_name, track_spotify_id, content_key, filename,
+                        track_order)
+                       VALUES (?, ?, ?, ?, ?)
+                       ON CONFLICT(playlist_name, track_spotify_id) DO UPDATE SET
+                       content_key=excluded.content_key,
+                       filename=excluded.filename,
+                       track_order=excluded.track_order""",
+                    chunk,
+                )
+        return len(tracks)
 
     def list_playlist_names(self) -> list[str]:
         with self._connect() as conn:

@@ -20,6 +20,17 @@ _SPOTIFY_TRACK_URL = re.compile(
     r'(?:open\.spotify\.com|spotify\.com)/track/([a-zA-Z0-9]{22})'
 )
 
+# Rows per INSERT ... executemany call: 4 bound values each, under the
+# oldest SQLite variable limit.
+_UPSERT_CHUNK = 200
+_UPSERT_SQL = """INSERT INTO library_tracks
+    (spotify_track_id, filename, content_key, registered_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(spotify_track_id) DO UPDATE SET
+    filename=excluded.filename,
+    content_key=COALESCE(excluded.content_key, library_tracks.content_key),
+    registered_at=excluded.registered_at"""
+
 
 def normalize_spotify_track_id(song: dict[str, Any]) -> Optional[str]:
     """Return a 22-char Spotify track id when ``song`` has one, else ``None``."""
@@ -233,12 +244,16 @@ class TrackIndex:
             )
 
     def backfill_from_monitor_db(self, monitor_db_path: Path) -> int:
-        """Import rows from monitored-playlist history (best-effort, idempotent)."""
+        """Import rows from monitored-playlist history (best-effort, idempotent).
+
+        One connection and one transaction for the whole history: the old
+        ``lookup`` + ``register`` pair opened - and committed - two
+        connections per row, which dominated startup on a long history.
+        """
 
         path = Path(monitor_db_path)
         if not path.is_file():
             return 0
-        imported = 0
         with sqlite3.connect(str(path)) as src:
             try:
                 rows = src.execute(
@@ -248,15 +263,35 @@ class TrackIndex:
                 ).fetchall()
             except sqlite3.Error:
                 return 0
+        wanted: dict[str, str] = {}
         for track_id, filename in rows:
             tid = str(track_id or '').strip()
             if not _SPOTIFY_TRACK_ID.fullmatch(tid):
                 continue
-            before = self.lookup(tid)
-            self.register(tid, str(filename))
-            if before != str(filename):
-                imported += 1
-        return imported
+            name = str(filename or '').strip().replace('\\', '/')
+            if name:
+                wanted[tid] = name
+        if not wanted:
+            return 0
+
+        now = _now_iso()
+        with self._connect() as conn:
+            known = {
+                str(row['spotify_track_id']): str(row['filename'])
+                for row in conn.execute(
+                    'SELECT spotify_track_id, filename FROM library_tracks'
+                )
+            }
+            pending = [
+                (tid, name, None, now)
+                for tid, name in wanted.items()
+                if known.get(tid) != name
+            ]
+            for start in range(0, len(pending), _UPSERT_CHUNK):
+                conn.executemany(
+                    _UPSERT_SQL, pending[start : start + _UPSERT_CHUNK]
+                )
+        return len(pending)
 
 
 def resolve_existing_download(

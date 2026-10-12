@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sqlite3
+
 from downtify.downloader import Downloader
 from downtify.library_paths import library_stored_path
 from downtify.track_index import (
@@ -75,3 +77,38 @@ def test_register_updates_path_for_same_track(tmp_path):
     index.register(SPOTIFY_ID, 'first/path.mp3', full_path=first)
     index.register(SPOTIFY_ID, 'second/path.mp3', full_path=second)
     assert index.lookup(SPOTIFY_ID) == 'second/path.mp3'
+
+
+def _monitor_db(path, rows):
+    with sqlite3.connect(path) as conn:
+        conn.execute(
+            """CREATE TABLE downloaded_tracks (
+                   id INTEGER PRIMARY KEY,
+                   playlist_id INTEGER NOT NULL,
+                   track_spotify_id TEXT NOT NULL,
+                   downloaded_at TEXT NOT NULL,
+                   filename TEXT
+               )"""
+        )
+        conn.executemany(
+            'INSERT INTO downloaded_tracks VALUES (?, 1, ?, ?, ?)', rows
+        )
+    return path
+
+
+def test_backfill_from_monitor_db_imports_once(tmp_path):
+    other_id = '0VjIjW4GlUZAMYd2vXMi3b'
+    monitor_db = _monitor_db(
+        tmp_path / 'monitor.db',
+        [
+            (1, SPOTIFY_ID, 'now', 'Artist - Song.mp3'),
+            (2, other_id, 'now', 'Artist - Other.mp3'),
+        ],
+    )
+    index = TrackIndex(tmp_path / 'library.db')
+
+    assert index.backfill_from_monitor_db(monitor_db) == 2
+    assert index.lookup(SPOTIFY_ID) == 'Artist - Song.mp3'
+    # Nothing left to import on the next start.
+    assert index.backfill_from_monitor_db(monitor_db) == 0
+    assert index.lookup(other_id) == 'Artist - Other.mp3'
