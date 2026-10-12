@@ -102,6 +102,7 @@ from downtify.playlist_spotify_cache import (
     playlist_spotify_cache_loop,
 )
 from downtify.podcasts import PodcastStore
+from downtify.security_headers import SecurityHeadersMiddleware
 from downtify.server_identity import ServerIdentity
 from downtify.server_port import (
     DEFAULT_PORT,
@@ -723,6 +724,9 @@ def build_app() -> FastAPI:
     )
     # Compress large JSON listings (``GET /tracks``) for the web UI.
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+    # Outermost: every response leaves with the baseline headers, including
+    # the auth middleware's own 401s and the media routes.
+    app.add_middleware(SecurityHeadersMiddleware)
 
     settings_path = DATABASE_DIR / 'settings.json'
     api.state.settings_path = settings_path
