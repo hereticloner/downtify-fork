@@ -36,7 +36,7 @@ Build the address from the resolved host + `port`. Discovery is a convenience: a
   "require_sign_in": true,
   "capabilities": {
     "transcoding": { "available": true, "formats": ["aac", "mp3", "opus"], "bitrates": [96, 128, 160, 192, 256, 320] },
-    "signed_urls": true, "pairing": true, "podcasts": true, "discover": true, "lyrics": true, "library_sync": true
+    "signed_urls": true, "pairing": true, "discover": true, "lyrics": true, "library_sync": true
   }
 }
 ```
@@ -76,7 +76,7 @@ Content-Type: application/json
 
 **Unpaired / revoked:** any request answers `401` with `{"detail": "Invalid or revoked token"}` and the WebSocket closes with code `4401`. Drop the token and send the user back to pairing.
 
-**What a device may do:** everything below, plus the web API's read endpoints, searching and previews (`/api/songs/search`, `/api/url/resolve`, `/api/preview`), asking the server to download (`POST /api/download/url|batch|album`), likes, listens and podcast episode playback/downloads. Settings, credentials, deleting files and managing devices answer `403` for a device. An account being deleted, or its owner choosing **Sign out everywhere**, unpairs the device (`401`).
+**What a device may do:** everything below, plus the web API's read endpoints, searching and previews (`/api/songs/search`, `/api/url/resolve`, `/api/preview`), asking the server to download (`POST /api/download/url|batch|album`), likes and listens. Settings, credentials, deleting files and managing devices answer `403` for a device. An account being deleted, or its owner choosing **Sign out everywhere**, unpairs the device (`401`).
 
 ## 4. Sync the library
 
@@ -172,7 +172,6 @@ Messages the app can rely on:
 | `{ "type": "likes", "count": 3 }` | Likes changed somewhere — refetch `GET /api/v1/likes` |
 | `{ "type": "queue_reload" }` | Many downloads were queued at once — refetch `GET /api/queue` |
 | `{ "song": {…}, "progress": 42.5, "status": "downloading"\|"done"\|"error", "message", "filename", "provider" }` | A server download's progress (no `type`) |
-| `{ "type": "podcasts" }` / `{ "type": "podcast_progress", … }` | Podcast episodes downloaded / progress |
 | `{ "type": "device_paired", … }` | A device was paired (for the web page; ignore) |
 
 "The server is downloading N songs": `GET /api/queue` (count rows with `status` `queued` or `downloading`), kept fresh by the progress messages. Close code `4401` = unpaired.
@@ -198,8 +197,6 @@ POST /api/activity/playback
 
 - Send it when a song starts, on pause/resume (`state: "paused"`/`"playing"`), on stop (`"stopped"`, `track` may be `{}`), and about every 30 s while playing. Only while online; don't queue these.
 - `player` is any id stable for this install. The app shows up by its device name.
-
-Podcast episodes: `PUT /api/podcasts/episodes/{id}/playback` with `{ "position_seconds", "played" }` (see the API reference), roughly every 10 s while playing and on pause.
 
 ## Error handling summary
 

@@ -98,7 +98,7 @@ The queue, the current track, its position, shuffle and repeat are remembered, s
 
 ## Auto-DJ
 
-When the queue runs out and **Auto-DJ** is on, the music doesn't stop: 15 tracks from your library are added and play on, and when those run out the next batch follows. The Now playing menu (the timer button) has the toggle under an **Auto-DJ** heading — it stays off for podcasts.
+When the queue runs out and **Auto-DJ** is on, the music doesn't stop: 15 tracks from your library are added and play on, and when those run out the next batch follows. The Now playing menu (the timer button) has the toggle under an **Auto-DJ** heading.
 
 What gets added:
 

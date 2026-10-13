@@ -44,9 +44,6 @@ export default {
     spotify: {
       not_connected: 'Συνδέστε το Spotify στις Ρυθμίσεις πρώτα.',
     },
-    podcast: {
-      feed_error: 'Ο σύνδεσμος δεν είναι αναγνώσιμη ροή podcast.',
-    },
   },
   common: {
     cancel: 'Ακύρωση',
@@ -75,7 +72,6 @@ export default {
     queue: 'Ουρά',
     monitor: 'Παρακολούθηση',
     discover: 'Ανακάλυψη',
-    podcasts: 'Podcast',
     charts: 'Λίστες επιτυχιών',
     collections: 'Συλλογές',
     settings: 'Ρυθμίσεις',
@@ -673,8 +669,6 @@ export default {
       artist: 'Αναπαραγωγή από καλλιτέχνη',
       library: 'Αναπαραγωγή από τη βιβλιοθήκη σου',
       search: 'Αναπαραγωγή από αναζήτηση',
-
-      podcast: 'Αναπαραγωγή από podcast',
     },
     goToAlbum: 'Άλμπουμ',
     goToArtist: 'Καλλιτέχνης',
@@ -1547,48 +1541,6 @@ export default {
     poweredBy:
       'Οι καλλιτέχνες προέρχονται από τους παρόμοιους καλλιτέχνες του Deezer· τα άλμπουμ από το Deezer και το Spotify· οι playlist από το καθένα.',
   },
-  podcasts: {
-    title: 'Podcast',
-    subtitle:
-      'Εγγραφείτε σε μια εκπομπή και τα νέα επεισόδιά της κατεβαίνουν μόνα τους.',
-    addTitle: 'Προσθήκη podcast',
-    addBody:
-      'Επικολλήστε ένα URL RSS feed, έναν σύνδεσμο εκπομπής ή επεισοδίου Spotify, ή πληκτρολογήστε ένα όνομα για αναζήτηση.',
-    findPlaceholder: 'RSS feed, σύνδεσμος Spotify, ή όνομα εκπομπής',
-    find: 'Αναζήτηση',
-    noResults: 'Δεν βρέθηκαν εκπομπές',
-    findFailed:
-      'Αυτός ο σύνδεσμος ή η αναζήτηση δεν λειτούργησε — δοκιμάστε ξανά',
-    alreadySubscribed: 'Είστε ήδη εγγεγραμμένοι σε αυτή την εκπομπή',
-    keep: 'Διατήρηση',
-    retentionAll: 'Κάθε νέο επεισόδιο',
-    retentionCount: {
-      one: 'Τελευταίο επεισόδιο',
-      other: 'Τελευταία {count} επεισόδια',
-    },
-    subscribe: 'Εγγραφή',
-    subscribed: 'Εγγραφήκατε στο {name}',
-    emptyTitle: 'Δεν υπάρχουν podcast ακόμα',
-    emptyBody:
-      'Εγγραφείτε σε μια εκπομπή παραπάνω και τα επεισόδιά της θα εμφανιστούν εδώ.',
-    kicker: 'Podcast',
-    notFound: 'Δεν είστε πλέον εγγεγραμμένοι σε αυτή την εκπομπή',
-    noEpisodesTitle: 'Δεν υπάρχουν επεισόδια ακόμα',
-    noEpisodesBody: 'Το Downtify ελέγχει αυτό το feed στο δικό του πρόγραμμα.',
-    download: 'Λήψη επεισοδίου',
-    downloadFailed: 'Δεν ήταν δυνατή η λήψη του επεισοδίου',
-    played: 'Ακούστηκε',
-    markPlayed: 'Σήμανση ως ακουσμένο',
-    markUnplayed: 'Σήμανση ως μη ακουσμένο',
-    removeDownload: 'Αφαίρεση λήψης',
-    resumeAt: 'Συνέχεια από {time}',
-    unsubscribe: 'Κατάργηση εγγραφής',
-    unsubscribeKeepFiles:
-      'Κατάργηση εγγραφής, διατήρηση κατεβασμένων επεισοδίων',
-    skipBack: 'Πίσω 15 δευτερόλεπτα',
-    skipForward: 'Μπροστά 30 δευτερόλεπτα',
-    playbackSpeed: 'Ταχύτητα αναπαραγωγής',
-  },
   confirm: {
     deleteTrackTitle: 'Διαγραφή «{title}»;',
     deleteTracksTitle: 'Διαγραφή {count} κομματιών;',
@@ -1604,13 +1556,6 @@ export default {
       'Τα στοιχεία σε αναμονή και τα ολοκληρωμένα αφαιρούνται. Τα αρχεία που κατέβηκαν παραμένουν.',
     stopWatchingTitle: 'Διακοπή παρακολούθησης «{name}»;',
     stopWatchingBody: 'Τα κομμάτια που κατέβηκαν μένουν στη βιβλιοθήκη σου.',
-    removeEpisodeTitle: 'Αφαίρεση της λήψης του «{name}»;',
-    removeEpisodeBody:
-      'Δεν θα ξαναγίνει λήψη αυτόματα — κατέβασέ το ξανά όποτε θέλεις από τη σελίδα της εκπομπής.',
-    unsubscribeTitle: 'Κατάργηση εγγραφής από το «{name}»;',
-    unsubscribeBody: 'Τα κατεβασμένα επεισόδιά του αφαιρούνται επίσης.',
-    unsubscribeKeepBody:
-      'Τα κατεβασμένα επεισόδια παραμένουν· αφαιρείται μόνο η εγγραφή.',
     removeArtistPhotoTitle: 'Αφαίρεση της φωτογραφίας του {name};',
     removeArtistBannerTitle: 'Αφαίρεση του banner του {name};',
     removeArtistArtBody:

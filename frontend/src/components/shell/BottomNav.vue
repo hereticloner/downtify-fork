@@ -96,7 +96,6 @@ const moreLinks = [
     match: ['FinderBrowse'],
   },
   { name: 'Monitor', icon: 'radar', label: 'nav.monitor' },
-  { name: 'Podcasts', icon: 'mic', label: 'nav.podcasts' },
   { name: 'Charts', icon: 'trending', label: 'nav.charts' },
   { name: 'Collections', icon: 'list', label: 'collections.title' },
   { name: 'Stats', icon: 'gauge', label: 'stats.title' },

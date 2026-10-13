@@ -42,9 +42,6 @@ export default {
     spotify: {
       not_connected: 'Conecte o Spotify em Configurações primeiro.',
     },
-    podcast: {
-      feed_error: 'Esse link não é um feed de podcast legível.',
-    },
   },
   common: {
     cancel: 'Cancelar',
@@ -73,7 +70,6 @@ export default {
     queue: 'Fila',
     monitor: 'Monitor',
     discover: 'Descobrir',
-    podcasts: 'Podcasts',
     charts: 'Paradas de sucesso',
     collections: 'Coleções',
     settings: 'Configurações',
@@ -670,8 +666,6 @@ export default {
       artist: 'Tocando do artista',
       library: 'Tocando da sua biblioteca',
       search: 'Tocando da busca',
-
-      podcast: 'Tocando do podcast',
     },
     goToAlbum: 'Álbum',
     goToArtist: 'Artista',
@@ -1531,45 +1525,6 @@ export default {
     poweredBy:
       'Os artistas vêm dos artistas semelhantes do Deezer; os álbuns, do Deezer e do Spotify; as playlists, de cada um.',
   },
-  podcasts: {
-    title: 'Podcasts',
-    subtitle:
-      'Inscreva-se em um programa e os novos episódios são baixados sozinhos.',
-    addTitle: 'Adicionar um podcast',
-    addBody:
-      'Cole a URL de um feed RSS, um link de programa ou episódio do Spotify, ou digite um nome para buscar.',
-    findPlaceholder: 'Feed RSS, link do Spotify ou nome de um programa',
-    find: 'Buscar',
-    noResults: 'Nenhum programa encontrado',
-    findFailed: 'Esse link ou busca não funcionou — tente de novo',
-    alreadySubscribed: 'Você já está inscrito neste programa',
-    keep: 'Manter',
-    retentionAll: 'Todo episódio novo',
-    retentionCount: {
-      one: 'Último episódio',
-      other: 'Últimos {count} episódios',
-    },
-    subscribe: 'Inscrever-se',
-    subscribed: 'Inscrito em {name}',
-    emptyTitle: 'Nenhum podcast ainda',
-    emptyBody: 'Inscreva-se em um programa acima e os episódios aparecem aqui.',
-    kicker: 'Podcast',
-    notFound: 'Você não está mais inscrito neste programa',
-    noEpisodesTitle: 'Nenhum episódio ainda',
-    noEpisodesBody: 'O Downtify verifica esse feed no próprio horário dele.',
-    download: 'Baixar episódio',
-    downloadFailed: 'Não foi possível baixar o episódio',
-    played: 'Reproduzido',
-    markPlayed: 'Marcar como reproduzido',
-    markUnplayed: 'Marcar como não reproduzido',
-    removeDownload: 'Remover download',
-    resumeAt: 'Continuar em {time}',
-    unsubscribe: 'Cancelar inscrição',
-    unsubscribeKeepFiles: 'Cancelar inscrição, manter episódios baixados',
-    skipBack: 'Voltar 15 segundos',
-    skipForward: 'Avançar 30 segundos',
-    playbackSpeed: 'Velocidade de reprodução',
-  },
   confirm: {
     deleteTrackTitle: 'Excluir “{title}”?',
     deleteTracksTitle: 'Excluir {count} faixas?',
@@ -1585,13 +1540,6 @@ export default {
       'Itens aguardando e concluídos saem da lista. Os arquivos baixados permanecem.',
     stopWatchingTitle: 'Parar de monitorar “{name}”?',
     stopWatchingBody: 'As faixas baixadas continuam na biblioteca.',
-    removeEpisodeTitle: 'Remover o download de "{name}"?',
-    removeEpisodeBody:
-      'Ele não será baixado de novo automaticamente — baixe novamente quando quiser na página do programa.',
-    unsubscribeTitle: 'Cancelar a inscrição em "{name}"?',
-    unsubscribeBody: 'Os episódios baixados também são removidos.',
-    unsubscribeKeepBody:
-      'Os episódios baixados continuam; só a inscrição é removida.',
     removeArtistPhotoTitle: 'Remover a foto de {name}?',
     removeArtistBannerTitle: 'Remover o banner de {name}?',
     removeArtistArtBody:

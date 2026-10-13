@@ -86,7 +86,7 @@ A wrong password, for example, answers:
 | `errors.resource.not_found` | A missing resource |
 | `errors.server.*` | Starting up, port locked or in use, internal error |
 | `errors.download.*` | Downloader not ready, failed, no songs |
-| `errors.spotify.*`, `errors.podcast.*` | Feature-specific failures |
+| `errors.spotify.*` | Feature-specific failures |
 
 Any new language must define the same `errors.*` keys as English: `frontend/src/__tests__/i18n.test.js` enforces the parity, and `frontend/src/__tests__/errors.test.js` covers the code mapping.
 

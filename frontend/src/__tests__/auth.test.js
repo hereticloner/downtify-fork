@@ -78,10 +78,8 @@ describe('playbackReport', () => {
     })
   })
 
-  it('skips podcasts and nothing, but always reports a stop', () => {
-    expect(
-      playbackReport({ ...track, isPodcast: true }, { state: 'playing' })
-    ).toBeNull()
+  it('reports nothing without a track, but always reports a stop', () => {
+    expect(playbackReport(null, { state: 'playing' })).toBeNull()
     expect(playbackReport(null, { state: 'paused' })).toBeNull()
     expect(playbackReport(null, { player: 'tab', state: 'stopped' })).toEqual({
       player: 'tab',

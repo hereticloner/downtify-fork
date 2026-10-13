@@ -46,9 +46,6 @@ export default {
     spotify: {
       not_connected: "Connectez Spotify dans les paramètres d'abord.",
     },
-    podcast: {
-      feed_error: "Ce lien n'est pas un flux de podcast lisible.",
-    },
   },
   common: {
     cancel: 'Annuler',
@@ -77,7 +74,6 @@ export default {
     queue: 'File',
     monitor: 'Surveillance',
     discover: 'Découvrir',
-    podcasts: 'Podcasts',
     charts: 'Classements',
     collections: 'Collections',
     settings: 'Paramètres',
@@ -688,8 +684,6 @@ export default {
       artist: 'Lecture de l’artiste',
       library: 'Lecture de votre bibliothèque',
       search: 'Lecture depuis la recherche',
-
-      podcast: 'Lecture du podcast',
     },
     goToAlbum: 'Album',
     goToArtist: 'Artiste',
@@ -1561,46 +1555,6 @@ export default {
     poweredBy:
       'Les artistes viennent des artistes similaires de Deezer ; les albums, de Deezer et Spotify ; les playlists, de chacun.',
   },
-  podcasts: {
-    title: 'Podcasts',
-    subtitle:
-      'Abonnez-vous à une émission et ses nouveaux épisodes se téléchargent seuls.',
-    addTitle: 'Ajouter un podcast',
-    addBody:
-      "Collez l'URL d'un flux RSS, un lien d'émission ou d'épisode Spotify, ou tapez un nom pour rechercher.",
-    findPlaceholder: 'Flux RSS, lien Spotify, ou le nom d’une émission',
-    find: 'Rechercher',
-    noResults: 'Aucune émission trouvée',
-    findFailed: "Ce lien ou cette recherche n'a pas fonctionné — réessayez",
-    alreadySubscribed: 'Vous êtes déjà abonné à cette émission',
-    keep: 'Garder',
-    retentionAll: 'Chaque nouvel épisode',
-    retentionCount: {
-      one: 'Dernier épisode',
-      other: '{count} derniers épisodes',
-    },
-    subscribe: "S'abonner",
-    subscribed: 'Abonné à {name}',
-    emptyTitle: 'Aucun podcast pour le moment',
-    emptyBody:
-      'Abonnez-vous à une émission ci-dessus et ses épisodes apparaîtront ici.',
-    kicker: 'Podcast',
-    notFound: "Vous n'êtes plus abonné à cette émission",
-    noEpisodesTitle: "Aucun épisode pour l'instant",
-    noEpisodesBody: 'Downtify vérifie ce flux selon son propre calendrier.',
-    download: "Télécharger l'épisode",
-    downloadFailed: "L'épisode n'a pas pu être téléchargé",
-    played: 'Écouté',
-    markPlayed: 'Marquer comme écouté',
-    markUnplayed: 'Marquer comme non écouté',
-    removeDownload: 'Retirer le téléchargement',
-    resumeAt: 'Reprendre à {time}',
-    unsubscribe: 'Se désabonner',
-    unsubscribeKeepFiles: 'Se désabonner, garder les épisodes téléchargés',
-    skipBack: 'Reculer de 15 secondes',
-    skipForward: 'Avancer de 30 secondes',
-    playbackSpeed: 'Vitesse de lecture',
-  },
   confirm: {
     deleteTrackTitle: 'Supprimer « {title} » ?',
     deleteTracksTitle: 'Supprimer {count} titres ?',
@@ -1616,13 +1570,6 @@ export default {
       'Les éléments en attente et terminés sont retirés de la liste. Les fichiers téléchargés restent.',
     stopWatchingTitle: 'Arrêter de surveiller « {name} » ?',
     stopWatchingBody: 'Les titres téléchargés restent dans votre bibliothèque.',
-    removeEpisodeTitle: 'Retirer le téléchargement de « {name} » ?',
-    removeEpisodeBody:
-      "Il ne sera pas retéléchargé automatiquement — retéléchargez-le à tout moment depuis la page de l'émission.",
-    unsubscribeTitle: 'Se désabonner de « {name} » ?',
-    unsubscribeBody: 'Ses épisodes téléchargés sont aussi supprimés.',
-    unsubscribeKeepBody:
-      'Les épisodes téléchargés restent ; seul l’abonnement est supprimé.',
     removeArtistPhotoTitle: 'Retirer la photo de « {name} » ?',
     removeArtistBannerTitle: 'Retirer la bannière de « {name} » ?',
     removeArtistArtBody:

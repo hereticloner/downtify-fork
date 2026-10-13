@@ -17,6 +17,6 @@ export function sameLength(seconds) {
 
 /** Whether `track` (a library track) can have its audio replaced. */
 export function canReplace(track) {
-  if (!track?.file || track.isPodcast) return false
+  if (!track?.file) return false
   return /\.(mp3|flac|m4a|ogg|opus)$/i.test(track.file)
 }

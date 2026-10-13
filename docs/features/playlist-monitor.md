@@ -181,7 +181,7 @@ A playlist that never changes shouldn't be swept at its full interval forever. S
 
 It snaps back on its own: the moment a check finds something to do — a new track, or a track that is already in your library and gets linked to the playlist — the quiet count is cleared, and the following check runs at the configured interval again. Each watch keeps its own count, so a busy playlist never relaxes because a different one is idle.
 
-Only **playlist** watches use quiet passes. Artist and podcast watches keep their configured interval.
+Only **playlist** watches use quiet passes. Artist watches keep their configured interval.
 
 ## Per-track metadata enrichment
 

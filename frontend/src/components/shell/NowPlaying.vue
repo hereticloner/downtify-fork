@@ -116,7 +116,7 @@
                     {{ track.title }}
                   </h2>
                   <RouterLink
-                    v-if="track.albumArtist && !track.isPodcast"
+                    v-if="track.albumArtist"
                     :to="{ name: 'Artist', query: { name: track.albumArtist } }"
                     class="mt-1 block truncate text-base text-white/70 hover:text-white hover:underline"
                     @click="nowPlaying.close()"
@@ -127,11 +127,7 @@
                   </p>
                 </div>
                 <div class="flex shrink-0 items-center gap-1">
-                  <LikeButton
-                    v-if="!track?.isPodcast"
-                    :file="track.file"
-                    size="lg"
-                  />
+                  <LikeButton :file="track.file" size="lg" />
                   <UiMenu
                     :items="trackMenu"
                     :label="t('common.more')"
@@ -218,16 +214,6 @@
                 class="flex flex-1 items-center justify-between lg:flex-none lg:justify-center lg:gap-7"
               >
                 <button
-                  v-if="track?.isPodcast"
-                  type="button"
-                  class="flex size-11 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10"
-                  :aria-label="t('podcasts.skipBack')"
-                  @click="player.seekBy(-15)"
-                >
-                  <AppIcon name="skip-back" :size="22" />
-                </button>
-                <button
-                  v-else
                   type="button"
                   class="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
                   :class="
@@ -276,16 +262,6 @@
                   <AppIcon name="next" :size="28" />
                 </button>
                 <button
-                  v-if="track?.isPodcast"
-                  type="button"
-                  class="flex size-11 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10"
-                  :aria-label="t('podcasts.skipForward')"
-                  @click="player.seekBy(30)"
-                >
-                  <AppIcon name="skip-forward" :size="22" />
-                </button>
-                <button
-                  v-else
                   type="button"
                   class="relative flex size-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
                   :class="
@@ -309,22 +285,6 @@
               </div>
 
               <div class="hidden flex-1 items-center justify-end gap-2 lg:flex">
-                <UiMenu
-                  v-if="track?.isPodcast"
-                  :items="speedMenu"
-                  :label="t('podcasts.playbackSpeed')"
-                >
-                  <template #trigger>
-                    <button
-                      type="button"
-                      class="flex h-10 items-center gap-2 rounded-full px-3 text-xs font-semibold text-white/75 transition-colors hover:bg-white/10"
-                      :aria-label="t('podcasts.playbackSpeed')"
-                    >
-                      <AppIcon name="gauge" :size="20" />
-                      <span class="tabular">{{ speedLabel }}</span>
-                    </button>
-                  </template>
-                </UiMenu>
                 <UiMenu :items="sleepMenu" :label="t('player.sleepTimer')">
                   <template #trigger>
                     <button
@@ -355,23 +315,6 @@
             <!-- Phone extras -->
             <div class="mt-4 flex items-center justify-between lg:hidden">
               <div class="flex items-center gap-1">
-                <UiMenu
-                  v-if="track?.isPodcast"
-                  :items="speedMenu"
-                  :label="t('podcasts.playbackSpeed')"
-                  align="start"
-                >
-                  <template #trigger>
-                    <button
-                      type="button"
-                      class="flex h-10 items-center gap-2 rounded-full px-3 text-xs font-semibold text-white/75"
-                      :aria-label="t('podcasts.playbackSpeed')"
-                    >
-                      <AppIcon name="gauge" :size="20" />
-                      <span class="tabular">{{ speedLabel }}</span>
-                    </button>
-                  </template>
-                </UiMenu>
                 <UiMenu
                   :items="sleepMenu"
                   :label="t('player.sleepTimer')"
@@ -470,10 +413,7 @@ const PANEL_TABS = {
 }
 
 const panels = computed(() =>
-  availablePanels({
-    lyrics: showLyrics.value,
-    isPodcast: track.value?.isPodcast,
-  }).map((id) => ({
+  availablePanels({ lyrics: showLyrics.value }).map((id) => ({
     id,
     icon: PANEL_TABS[id].icon,
     label: t(PANEL_TABS[id].label),
@@ -492,7 +432,6 @@ const panel = computed(
     requested.value ||
     defaultPanel({
       lyrics: showLyrics.value,
-      isPodcast: track.value?.isPodcast,
     })
 )
 const mobilePanel = computed(() => isMobile.value && !!requested.value)
@@ -537,16 +476,6 @@ const sleepLabel = computed(() => {
   return t('player.minutesLeft', { count: minutes })
 })
 
-const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2]
-const speedLabel = computed(() => `${player.playbackRate.value}×`)
-const speedMenu = computed(() =>
-  SPEEDS.map((rate) => ({
-    label: `${rate}×`,
-    checked: player.playbackRate.value === rate,
-    action: () => player.setPlaybackRate(rate),
-  }))
-)
-
 const sleepMenu = computed(() => [
   { heading: t('player.sleepTimer') },
   ...[15, 30, 45, 60, 90].map((minutes) => ({
@@ -567,12 +496,12 @@ const sleepMenu = computed(() => [
   },
   {
     heading: t('player.autoDj'),
-    hidden: !track.value || track.value.isPodcast,
+    hidden: !track.value,
   },
   {
     label: t('player.autoDjOn'),
     checked: player.autoDj.value,
-    hidden: !track.value || track.value.isPodcast,
+    hidden: !track.value,
     action: () => player.setAutoDj(!player.autoDj.value),
   },
 ])
@@ -584,7 +513,7 @@ const trackMenu = computed(() => {
     {
       label: t('player.goToAlbum'),
       icon: 'disc',
-      hidden: !tr.album || tr.isPodcast,
+      hidden: !tr.album,
       action: () =>
         navigate({
           name: 'Album',
@@ -594,7 +523,7 @@ const trackMenu = computed(() => {
     {
       label: t('player.goToArtist'),
       icon: 'user',
-      hidden: !tr.albumArtist || tr.isPodcast,
+      hidden: !tr.albumArtist,
       action: () =>
         navigate({ name: 'Artist', query: { name: tr.albumArtist } }),
     },

@@ -56,10 +56,7 @@ describe('listenArtist', () => {
     )
   })
 
-  it('ignores podcasts and anything that is not a library file', () => {
-    expect(
-      listenArtist(track('p.mp3', { isPodcast: true, artists: ['Show'] }))
-    ).toBe('')
+  it('ignores anything that is not a library file', () => {
     expect(listenArtist({ artists: ['Air'] })).toBe('')
     expect(listenArtist(null)).toBe('')
   })

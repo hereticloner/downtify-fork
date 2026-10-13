@@ -33,11 +33,11 @@ Browsers signed in before the upgrade sign in again. Phones paired before it sta
 
 | | Admin | User |
 |---|---|---|
-| Listen, search, download, like, Discover, Charts, Finder, podcasts | ✓ | ✓ |
+| Listen, search, download, like, Discover, Charts, Finder | ✓ | ✓ |
 | Pair phone apps (to their own account) | ✓ | ✓ |
 | Settings → General (their own account and preferences), Apps, About | ✓ | ✓ |
 | Every other setting (sources, files, tags, Navidrome, library, server), renaming the server | ✓ | |
-| Delete files and playlists, replace a track's audio, change playlist watches and podcast subscriptions, edit artist photos | ✓ | |
+| Delete files and playlists, replace a track's audio, change playlist watches, edit artist photos | ✓ | |
 | Manage users, see the activity log | ✓ | |
 
 A user who tries something that needs an admin gets a message saying so.

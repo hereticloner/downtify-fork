@@ -35,7 +35,7 @@ describe('classifyInput', () => {
     ).toBe('https://open.spotify.com/album/2dZMT4gp')
   })
 
-  it('rejects Spotify podcasts', () => {
+  it('rejects a Spotify show link', () => {
     expect(
       classifyInput('https://open.spotify.com/show/4rOoJ6Egrf8K2IrywzwOMk')
     ).toMatchObject({ type: 'unsupported', kind: 'show' })

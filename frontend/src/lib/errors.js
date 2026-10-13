@@ -23,7 +23,6 @@ export const ERROR_KEYS = {
   'download.failed': 'errors.download.failed',
   'download.no_songs': 'errors.download.no_songs',
   'download.not_ready': 'errors.download.not_ready',
-  'podcast.feed_error': 'errors.podcast.feed_error',
   'request.conflict': 'errors.request.conflict',
   'request.invalid': 'errors.request.invalid',
   'request.invalid_url': 'errors.request.invalid_url',

@@ -42,9 +42,6 @@ export default {
     spotify: {
       not_connected: 'Először kösd össze a Spotifyt a Beállításokban.',
     },
-    podcast: {
-      feed_error: 'Ez a hivatkozás nem olvasható podcast-hírcsatorna.',
-    },
   },
   common: {
     cancel: 'Mégse',
@@ -73,7 +70,6 @@ export default {
     queue: 'Sor',
     monitor: 'Figyelő',
     discover: 'Felfedezés',
-    podcasts: 'Podcastok',
     charts: 'Toplisták',
     collections: 'Gyűjtemények',
     settings: 'Beállítások',
@@ -672,8 +668,6 @@ export default {
       artist: 'Lejátszás előadótól',
       library: 'Lejátszás a könyvtáradból',
       search: 'Lejátszás a keresésből',
-
-      podcast: 'Lejátszás podcastról',
     },
     goToAlbum: 'Album',
     goToArtist: 'Előadó',
@@ -1535,47 +1529,6 @@ export default {
     poweredBy:
       'Az előadók a Deezer hasonló előadóiból, az albumok a Deezerről és a Spotifyról, a listák mindkettőről származnak.',
   },
-  podcasts: {
-    title: 'Podcastok',
-    subtitle:
-      'Iratkozz fel egy műsorra, és az új epizódjai maguktól letöltődnek.',
-    addTitle: 'Podcast hozzáadása',
-    addBody:
-      'Illessz be egy RSS-hírcsatorna URL-t, egy Spotify műsor- vagy epizódlinket, vagy írj be egy nevet a kereséshez.',
-    findPlaceholder: 'RSS-hírcsatorna, Spotify-link, vagy egy műsor neve',
-    find: 'Keresés',
-    noResults: 'Nem található műsor',
-    findFailed: 'Ez a link vagy keresés nem működött — próbáld újra',
-    alreadySubscribed: 'Már feliratkoztál erre a műsorra',
-    keep: 'Megtartás',
-    retentionAll: 'Minden új epizód',
-    retentionCount: {
-      one: 'Legutóbbi epizód',
-      other: 'Legutóbbi {count} epizód',
-    },
-    subscribe: 'Feliratkozás',
-    subscribed: 'Feliratkoztál: {name}',
-    emptyTitle: 'Még nincs podcast',
-    emptyBody:
-      'Iratkozz fel fent egy műsorra, és az epizódjai itt jelennek meg.',
-    kicker: 'Podcast',
-    notFound: 'Már nem vagy feliratkozva erre a műsorra',
-    noEpisodesTitle: 'Még nincs epizód',
-    noEpisodesBody:
-      'A Downtify a saját ütemezése szerint ellenőrzi ezt a hírcsatornát.',
-    download: 'Epizód letöltése',
-    downloadFailed: 'Az epizódot nem sikerült letölteni',
-    played: 'Meghallgatva',
-    markPlayed: 'Megjelölés meghallgatottként',
-    markUnplayed: 'Megjelölés meg nem hallgatottként',
-    removeDownload: 'Letöltés eltávolítása',
-    resumeAt: 'Folytatás innen: {time}',
-    unsubscribe: 'Leiratkozás',
-    unsubscribeKeepFiles: 'Leiratkozás, letöltött epizódok megtartása',
-    skipBack: '15 másodperc vissza',
-    skipForward: '30 másodperc előre',
-    playbackSpeed: 'Lejátszási sebesség',
-  },
   confirm: {
     deleteTrackTitle: 'Törlöd: „{title}”?',
     deleteTracksTitle: 'Törlöd a(z) {count} számot?',
@@ -1591,13 +1544,6 @@ export default {
       'A várakozó és kész elemek lekerülnek a listáról. A letöltött fájlok megmaradnak.',
     stopWatchingTitle: 'Leállítod „{name}” figyelését?',
     stopWatchingBody: 'A letöltött számok a könyvtáradban maradnak.',
-    removeEpisodeTitle: 'Eltávolítod „{name}” letöltését?',
-    removeEpisodeBody:
-      'Nem töltődik le újra automatikusan — bármikor újra letöltheted a műsor oldaláról.',
-    unsubscribeTitle: 'Leiratkozol a(z) „{name}” műsorról?',
-    unsubscribeBody: 'A letöltött epizódjai is törlődnek.',
-    unsubscribeKeepBody:
-      'A letöltött epizódok megmaradnak; csak a feliratkozás szűnik meg.',
     removeArtistPhotoTitle: '{name} fotójának eltávolítása?',
     removeArtistBannerTitle: '{name} bannerének eltávolítása?',
     removeArtistArtBody:

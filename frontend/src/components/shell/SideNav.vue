@@ -205,12 +205,6 @@ const items = [
     match: ['FinderBrowse'],
   },
   { name: 'Monitor', icon: 'radar', label: 'nav.monitor' },
-  {
-    name: 'Podcasts',
-    icon: 'mic',
-    label: 'nav.podcasts',
-    match: ['PodcastShow'],
-  },
   { name: 'Charts', icon: 'trending', label: 'nav.charts' },
 ]
 

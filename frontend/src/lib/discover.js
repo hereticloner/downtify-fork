@@ -105,11 +105,10 @@ export function artistRoute(item) {
 
 /**
  * The artist a play of `track` counts for - the same name the Library
- * groups it under - or `''` for what doesn't count (a podcast episode, or
- * anything that isn't a library file).
+ * groups it under - or `''` for anything that isn't a library file.
  */
 export function listenArtist(track) {
-  if (!track?.file || track.isPodcast) return ''
+  if (!track?.file) return ''
   return groupingArtistName(track)
 }
 
