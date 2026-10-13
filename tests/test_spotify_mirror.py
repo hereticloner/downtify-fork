@@ -7,14 +7,16 @@ play command), the dedupe contract and the fire-and-forget policy.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
+import json
 import time
 
 import pytest
 from fastapi import HTTPException
 
-from downtify import account_routes, api, spotify_mirror
+from downtify import account_routes, api, auth, spotify_mirror
 from downtify.playlist_catalog import PlaylistCatalog
 from downtify.track_index import TrackIndex
 
@@ -774,3 +776,459 @@ def test_not_track_end_midway_or_without_duration():
     assert spotify_mirror.is_track_end({'duration': 0}, 50) is False
     assert spotify_mirror.is_track_end({}, 50) is False
     assert spotify_mirror.is_track_end(None, 50) is False
+
+
+# -- mirror outcomes (the reason a play didn't happen) -----------------
+
+
+def test_ensure_token_outcome_passes_a_fresh_token_through():
+    config = _config(token_expires_at=99999999999)
+
+    outcome = spotify_mirror.ensure_token_outcome(config, request=_request([]))
+
+    assert outcome.ok is True
+    assert outcome.tokens == config
+
+
+def test_ensure_token_outcome_says_auth_failed():
+    """``ensure_token`` answers None; the caller still needs a reason."""
+
+    outcome = spotify_mirror.ensure_token_outcome(
+        _config(token_expires_at=0, refresh_token=''), request=_request([])
+    )
+
+    assert outcome.ok is False
+    assert outcome.error == 'auth_failed'
+    assert outcome.tokens == {}
+
+
+def test_play_track_outcome_carries_the_uri_it_played():
+    outcome = spotify_mirror.play_track_outcome(
+        _config(token_expires_at=99999999999),
+        'spotify:track:ID',
+        request=_request([], status=204),
+    )
+
+    assert outcome.ok is True
+    assert outcome.uri == 'spotify:track:ID'
+    assert not outcome.error
+
+
+def test_play_track_outcome_quotes_spotifys_refusal():
+    outcome = spotify_mirror.play_track_outcome(
+        _config(token_expires_at=99999999999),
+        'spotify:track:ID',
+        request=_request([], status=403),
+    )
+
+    assert outcome.ok is False
+    assert outcome.error.startswith('play_failed:')
+    assert '403' in outcome.error
+
+
+def test_play_track_outcome_without_a_device():
+    outcome = spotify_mirror.play_track_outcome(
+        _config(token_expires_at=99999999999, device_id=''),
+        'spotify:track:ID',
+        request=_request([]),
+    )
+
+    assert outcome.ok is False
+    assert outcome.error == 'no_device'
+
+
+def test_mirror_track_outcome_reports_the_uri_that_went_out():
+    outcome = spotify_mirror.mirror_track_outcome(
+        _config(token_expires_at=99999999999),
+        {'file': 'Road Trip/Alpha.mp3', 'artist': 'A', 'title': 'T'},
+        library=_Library(_Index({'Road Trip/Alpha.mp3': 'S' * 22})),
+        request=_request([], status=204),
+    )
+
+    assert outcome.ok is True
+    assert outcome.uri == f'spotify:track:{"S" * 22}'
+    assert outcome.tokens == {}
+
+
+def test_mirror_track_outcome_says_no_uri():
+    outcome = spotify_mirror.mirror_track_outcome(
+        _config(),
+        {'file': 'X.mp3', 'artist': '', 'title': ''},
+        library=_Library(_Index({})),
+        request=_request([]),
+    )
+
+    assert outcome.ok is False
+    assert outcome.error == 'no_uri'
+
+
+def test_mirror_track_outcome_carries_renewed_tokens():
+    def request(  # noqa: PLR0913, PLR0917
+        method, url, *, headers=None, params=None, json=None, data=None
+    ):
+        if 'api/token' in url:
+            return FakeResponse(
+                {'access_token': 'at-new', 'expires_in': 3600}, 200
+            )
+        if '/search' in url:
+            return FakeResponse(
+                {'tracks': {'items': [{'uri': 'spotify:track:AAAAA'}]}}, 200
+            )
+        return FakeResponse({}, 204)
+
+    outcome = spotify_mirror.mirror_track_outcome(
+        _config(token_expires_at=0),
+        {'file': 'X.mp3', 'artist': 'A', 'title': 'T'},
+        request=request,
+    )
+
+    assert outcome.ok is True
+    assert outcome.tokens['access_token'] == 'at-new'
+
+
+def test_mirror_track_outcome_reports_a_refused_play():
+    outcome = spotify_mirror.mirror_track_outcome(
+        _config(token_expires_at=99999999999),
+        {'file': 'Road Trip/Alpha.mp3', 'artist': 'A', 'title': 'T'},
+        library=_Library(_Index({'Road Trip/Alpha.mp3': 'S' * 22})),
+        request=_request([], status=404),
+    )
+
+    assert outcome.ok is False
+    assert outcome.error.startswith('play_failed:')
+
+
+def test_mirror_track_still_returns_none_only_for_an_unresolved_track():
+    """The boolean wrapper keeps its contract: ``None`` is "skipped"."""
+
+    unresolved = spotify_mirror.mirror_track(
+        _config(),
+        {'file': 'X.mp3', 'artist': '', 'title': ''},
+        library=_Library(_Index({})),
+        request=_request([]),
+    )
+    refused = spotify_mirror.mirror_track(
+        _config(token_expires_at=99999999999),
+        {'file': 'Road Trip/Alpha.mp3', 'artist': 'A', 'title': 'T'},
+        library=_Library(_Index({'Road Trip/Alpha.mp3': 'S' * 22})),
+        request=_request([], status=403),
+    )
+
+    assert unresolved is None
+    assert refused == {}
+
+
+# -- tracker diagnostics -----------------------------------------------
+
+
+def test_tracker_unmark_attempted_lets_the_same_song_retry():
+    """A failed attempt must not keep the dedupe claim.
+
+    ``should_mirror`` is taken before the network work, so nothing was
+    played when the URI could not be resolved; the next report for the
+    same song has to try again instead of being deduped away forever.
+    """
+
+    tracker = spotify_mirror.MirrorTracker()
+    assert tracker.should_mirror(1, 'p', 'song') is True
+    assert tracker.unmark_attempted(1, 'p', 'song') is True
+    assert tracker.should_mirror(1, 'p', 'song') is True
+
+
+def test_tracker_unmark_attempted_leaves_a_moved_on_claim_alone():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.should_mirror(1, 'p', 'one')
+    tracker.should_mirror(1, 'p', 'two')
+
+    assert tracker.unmark_attempted(1, 'p', 'one') is False
+    assert tracker.should_mirror(1, 'p', 'two') is False
+
+
+def test_tracker_unmark_attempted_forgets_the_paused_state():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.should_mirror(1, 'p', 'song')
+    tracker.should_pause(1, 'p', 'song')
+
+    assert tracker.unmark_attempted(1, 'p', 'song') is True
+    # Nothing is playing on the device, so there is nothing to pause.
+    assert tracker.should_pause(1, 'p', 'song') is False
+
+
+def test_tracker_remembers_the_last_mirror_and_its_error():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.mark_success(3, 'web:tab', 'spotify:track:ID', 100.5)
+    tracker.mark_error(3, 'web:tab', 'no_uri', 200.5)
+
+    assert tracker.last_mirror(3, 'web:tab') == {
+        'uri': 'spotify:track:ID',
+        'at': 100.5,
+    }
+    assert tracker.last_error(3, 'web:tab') == {
+        'reason': 'no_uri',
+        'at': 200.5,
+    }
+
+
+def test_tracker_last_mirror_is_empty_for_an_unknown_player():
+    tracker = spotify_mirror.MirrorTracker()
+    assert tracker.last_mirror(1, 'p') == {}
+    assert tracker.last_error(1, 'p') == {}
+
+
+def test_tracker_diagnostics_keys_are_json_safe():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.mark_success(3, 'web:tab', 'spotify:track:ID', 100.5)
+    tracker.mark_error(4, 'app', 'auth_failed', 200.5)
+
+    diagnostics = tracker.diagnostics()
+
+    assert diagnostics == {
+        'last_mirrors': {
+            '3:web:tab': {'uri': 'spotify:track:ID', 'at': 100.5}
+        },
+        'last_errors': {'4:app': {'reason': 'auth_failed', 'at': 200.5}},
+    }
+    json.dumps(diagnostics)  # tuple keys would raise here
+
+
+def test_tracker_diagnostics_are_bounded():
+    tracker = spotify_mirror.MirrorTracker()
+    for index in range(spotify_mirror.DIAGNOSTIC_LIMIT + 10):
+        tracker.mark_success(index, 'p', 'spotify:track:ID', float(index))
+    for index in range(spotify_mirror.ERROR_LIMIT + 10):
+        tracker.mark_error(index, 'p', 'no_uri', float(index))
+
+    diagnostics = tracker.diagnostics()
+
+    assert len(diagnostics['last_mirrors']) == (
+        spotify_mirror.DIAGNOSTIC_LIMIT
+    )
+    assert len(diagnostics['last_errors']) == spotify_mirror.ERROR_LIMIT
+    # The newest entries are the ones kept.
+    assert f'{spotify_mirror.ERROR_LIMIT + 9}:p' in diagnostics['last_errors']
+
+
+def test_tracker_forget_user_drops_the_diagnostics():
+    tracker = spotify_mirror.MirrorTracker()
+    tracker.should_mirror(1, 'p', 'song')
+    tracker.mark_success(1, 'p', 'spotify:track:ID', 1.0)
+    tracker.mark_error(1, 'p', 'no_uri', 2.0)
+
+    tracker.forget_user(1)
+
+    assert tracker.diagnostics() == {'last_mirrors': {}, 'last_errors': {}}
+
+
+# -- GET /api/spotify-mirror/status ------------------------------------
+
+
+@pytest.fixture
+def mirror_state(monkeypatch):
+    """Settings + a private tracker, with Spotify calls faked out."""
+
+    tracker = spotify_mirror.MirrorTracker()
+    monkeypatch.setattr(api.state, 'settings', _settings())
+    monkeypatch.setattr(api.state, 'mirror_tracker', tracker)
+    monkeypatch.setattr(api.state, 'settings_path', None)
+    # ``mirror_credentials`` drops the expiry, so without this the
+    # endpoint would refresh against accounts.spotify.com for real.
+    monkeypatch.setattr(
+        spotify_mirror,
+        'ensure_token_outcome',
+        lambda config, request=None: spotify_mirror.MirrorOutcome(
+            tokens={**config, 'token_expires_at': 99999999999}
+        ),
+    )
+    monkeypatch.setattr(
+        spotify_mirror,
+        'list_devices',
+        lambda config, request=None: [
+            {'id': 'dev-1', 'name': 'Downtify Mirror', 'is_active': False}
+        ],
+    )
+    return tracker
+
+
+def test_status_endpoint_reports_a_working_mirror(mirror_state):
+    mirror_state.mark_success(1, 'web:tab', 'spotify:track:ID', 100.0)
+
+    status = asyncio.run(api.spotify_mirror_status_endpoint())
+
+    assert status == {
+        'ok': True,
+        'device_id': 'dev-1',
+        'device_name': 'Downtify Mirror',
+        'device_online': True,
+        'token_valid': True,
+        'last_mirrors': {
+            '1:web:tab': {'uri': 'spotify:track:ID', 'at': 100.0}
+        },
+        'last_errors': {},
+    }
+
+
+def test_status_endpoint_reports_a_missing_device(mirror_state, monkeypatch):
+    monkeypatch.setattr(
+        spotify_mirror, 'list_devices', lambda config, request=None: []
+    )
+
+    status = asyncio.run(api.spotify_mirror_status_endpoint())
+
+    assert status['ok'] is False
+    assert status['device_online'] is False
+    assert status['error'] == 'device_missing'
+    assert status['token_valid'] is True
+
+
+def test_status_endpoint_reports_tokens_that_will_not_renew(
+    mirror_state, monkeypatch
+):
+    monkeypatch.setattr(api.state, 'settings', _settings(refresh_token=''))
+    monkeypatch.setattr(
+        spotify_mirror,
+        'ensure_token_outcome',
+        lambda config, request=None: spotify_mirror.MirrorOutcome(
+            error='auth_failed'
+        ),
+    )
+
+    status = asyncio.run(api.spotify_mirror_status_endpoint())
+
+    assert status['ok'] is False
+    assert status['token_valid'] is False
+    assert status['error'] == 'auth_failed'
+
+
+def test_status_endpoint_reports_an_unconnected_account(monkeypatch):
+    monkeypatch.setattr(api.state, 'settings', {})
+    monkeypatch.setattr(
+        api.state, 'mirror_tracker', spotify_mirror.MirrorTracker()
+    )
+
+    status = asyncio.run(api.spotify_mirror_status_endpoint())
+
+    assert status['ok'] is False
+    assert status['error'] == 'not_connected'
+    assert not status['device_id']
+    assert status['last_mirrors'] == {}
+
+
+def test_status_endpoint_is_admin_only():
+    """The ACL is the one ``/api/spotify-mirror/*`` already has."""
+
+    assert auth.rule_for('GET', '/api/spotify-mirror/status') == auth.ADMIN
+
+
+# -- report_playback: the dedupe claim ---------------------------------
+
+
+class _PlaybackRequest:
+    """The parts of a Request ``report_playback`` reads."""
+
+    def __init__(self, payload, principal):
+        self.scope = {'state': {'principal': principal}}
+        self.headers = {}
+        self._payload = payload
+
+    async def json(self):
+        return self._payload
+
+
+class _Player:
+    """A Downtify player reporting plays, with the mirror faked out.
+
+    ``mirror_as`` is what Spotify answers with; ``attempts`` is every
+    mirror the reports actually got to.
+    """
+
+    def __init__(self, tracker) -> None:
+        self.tracker = tracker
+        self.attempts: list[spotify_mirror.MirrorOutcome] = []
+        self.outcome = spotify_mirror.MirrorOutcome(uri='spotify:track:ID')
+
+    def mirror_as(self, outcome: spotify_mirror.MirrorOutcome) -> None:
+        self.outcome = outcome
+
+    @staticmethod
+    def report(song: str = 'song-1') -> None:
+        payload = {
+            'player': 'tab',
+            'state': 'playing',
+            'track': {'title': song, 'artist': 'A', 'file': f'{song}.mp3'},
+            'position': 5,
+        }
+        principal = auth.Principal(
+            kind='session',
+            scope=auth.USER,
+            device_id='web1',
+            user_id=7,
+            username='you',
+        )
+        asyncio.run(
+            account_routes.report_playback(
+                _PlaybackRequest(payload, principal)
+            )
+        )
+
+
+@pytest.fixture
+def player(monkeypatch):
+    """The mirror enabled, a private tracker, and a reporting player."""
+
+    tracker = spotify_mirror.MirrorTracker()
+    reported = _Player(tracker)
+    monkeypatch.setattr(api.state, 'settings', _settings())
+    monkeypatch.setattr(api.state, 'mirror_tracker', tracker)
+    monkeypatch.setattr(api.state, 'track_index', None)
+    monkeypatch.setattr(api.state, 'playlist_catalog', None)
+    monkeypatch.setattr(api.state, 'activity', None)
+    monkeypatch.setattr(api, 'client_label', lambda request, me: 'Web')
+    monkeypatch.setattr(api, 'request_ip', lambda request: '127.0.0.1')
+
+    def mirror(config, track, **kwargs):
+        reported.attempts.append(reported.outcome)
+        return reported.outcome
+
+    monkeypatch.setattr(spotify_mirror, 'mirror_track_outcome', mirror)
+    return reported
+
+
+def test_a_failed_mirror_is_retried_on_the_next_report(player):
+    """A play that never reached Spotify must not eat the dedupe.
+
+    The claim is taken before the network work, so a URI that could not
+    be resolved (or a refused play) used to leave the song deduped for
+    that player for the life of the process - silently skipped on every
+    later play of it.
+    """
+
+    player.mirror_as(spotify_mirror.MirrorOutcome(error='no_uri'))
+
+    player.report()
+    player.report()
+
+    assert len(player.attempts) == 2
+    assert player.tracker.last_error(7, 'web1:tab')['reason'] == 'no_uri'
+
+
+def test_a_mirrored_play_is_not_sent_again(player):
+    player.report()
+
+    # The heartbeat of the same song is deduped away, as before.
+    player.report()
+
+    assert len(player.attempts) == 1
+    mirrored = player.tracker.last_mirror(7, 'web1:tab')
+    assert mirrored['uri'] == 'spotify:track:ID'
+    assert mirrored['at'] > 0
+    assert not player.tracker.last_error(7, 'web1:tab')
+
+
+def test_a_failed_mirror_does_not_hide_the_next_song(player):
+    player.mirror_as(
+        spotify_mirror.MirrorOutcome(error='play_failed: HTTP 404')
+    )
+    player.report('one')
+    player.report('two')
+
+    assert len(player.attempts) == 2

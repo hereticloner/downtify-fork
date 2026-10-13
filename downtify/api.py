@@ -5788,6 +5788,63 @@ async def spotify_mirror_devices_endpoint() -> dict[str, Any]:
     return {'devices': devices}
 
 
+@router.get('/api/spotify-mirror/status')
+async def spotify_mirror_status_endpoint() -> dict[str, Any]:
+    """Whether the mirror can play right now, and what it last did.
+
+    ``{ok, device_id, device_name, device_online, token_valid,
+    last_mirrors, last_errors}`` - the two maps are keyed
+    ``"<user_id>:<player>"`` and hold the last play each player got
+    mirrored (``{uri, at}``) and the reason its last attempt failed
+    (``{reason, at}``), as
+    :class:`spotify_mirror.MirrorTracker` recorded them. Those are
+    in-memory diagnostics: a restart starts empty.
+
+    ``ok`` means tokens work *and* the chosen Connect device is online;
+    ``error`` says which of the two is missing when it isn't
+    (``auth_failed`` / ``device_missing``, the vocabulary
+    ``POST /api/spotify-mirror/test`` already answers with).
+    """
+
+    status: dict[str, Any] = {
+        'ok': False,
+        'device_id': '',
+        'device_name': '',
+        'device_online': False,
+        'token_valid': False,
+        **state.mirror_tracker.diagnostics(),
+    }
+    config = spotify_mirror.mirror_credentials(_spotify_mirror_block())
+    if config is None:
+        status['error'] = 'not_connected'
+        return status
+    status['device_id'] = config['device_id']
+    token = await asyncio.to_thread(
+        spotify_mirror.ensure_token_outcome, config
+    )
+    if not token.ok:
+        status['error'] = token.error
+        return status
+    status['token_valid'] = True
+    if token.tokens.get('access_token') != config.get('access_token'):
+        _persist_mirror_tokens({
+            'access_token': token.tokens['access_token'],
+            'refresh_token': token.tokens.get('refresh_token', ''),
+            'token_expires_at': token.tokens.get('token_expires_at', 0),
+        })
+    devices = await asyncio.to_thread(
+        spotify_mirror.list_devices, token.tokens
+    )
+    device = next((d for d in devices if d['id'] == config['device_id']), None)
+    if device is None:
+        status['error'] = 'device_missing'
+        return status
+    status['device_online'] = True
+    status['device_name'] = device['name']
+    status['ok'] = True
+    return status
+
+
 @router.post('/api/spotify-mirror/test')
 async def test_spotify_mirror_endpoint(request: Request) -> dict[str, Any]:
     """Check the connect without saving: tokens work and the chosen

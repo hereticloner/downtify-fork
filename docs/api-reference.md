@@ -954,6 +954,30 @@ Spotify Connect devices on the account, for the mirror's device picker.
 
 ---
 
+### `GET /api/spotify-mirror/status`
+
+Whether the mirror can play right now, and what it last did — the "why didn't this track show up?" call. Admin-only. See [Spotify Mirror](features/spotify-mirror.md).
+
+**Response:**
+
+```json
+{
+  "ok": true,
+  "device_id": "downtify-mirror",
+  "device_name": "Downtify Mirror",
+  "device_online": true,
+  "token_valid": true,
+  "last_mirrors": { "7:web:tab": { "uri": "spotify:track:...", "at": 1793563800.5 } },
+  "last_errors": { "8:app:1": { "reason": "no_uri", "at": 1793563801.0 } }
+}
+```
+
+`ok` means the tokens work **and** the saved Connect device is online; otherwise `error` says which is missing (`not_connected`, `auth_failed`, `device_missing`).
+
+`last_mirrors` / `last_errors` are keyed `"<user_id>:<player>"` (the same player id reports carry) and hold what each player's last mirror attempt did. In-memory only: bounded (512 players each) and cleared by a restart.
+
+---
+
 ### `GET /integrations/spotify/authorize` and `GET /integrations/spotify/callback`
 
 The connect flow's two redirects (browser): authorize sends the browser to Spotify's authorize page using the saved `client_id`, redirect URI and a PKCE challenge; the callback exchanges the returned `code` for tokens, stores them in settings (enabled), and sends the browser back to `/settings/apps?spotify=connected|error`.

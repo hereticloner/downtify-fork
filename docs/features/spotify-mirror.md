@@ -96,7 +96,25 @@ playlist still mirrors on its own, unchanged.
 
 Mirror failures are logged and skipped — lowering the volume to a gone
 device, an offline device, a rate-limit hiccup — never does anything to
-the playback you are hearing.
+the playback you are hearing. A failed attempt does **not** count as
+mirrored: the same track is tried again on the next report instead of
+being deduped away for the rest of the server's life.
+
+## When a track doesn't show up
+
+`GET /api/spotify-mirror/status` answers "why isn't this playing on
+Spotify?" in one call: whether the tokens still work, whether the
+chosen Connect device is online right now, and what each player last
+managed — the last URI that went out, or the reason the last attempt
+failed (`no_uri`, `auth_failed`, `no_device`, `play_failed: ...`).
+
+```bash
+curl -b session.txt http://your-server:8000/api/spotify-mirror/status
+```
+
+The last-play and last-error maps live in memory only (a restart clears
+them) and are keyed `"<user_id>:<player>"` — the player id is the one
+your player sends, `device:player`, e.g. `7:web:tab`.
 
 ## The Downtify Mirror device
 
@@ -144,6 +162,9 @@ The JSON endpoints (see the [API reference](../api-reference.md)):
 
 * `GET /api/spotify-mirror/devices` — `{devices: [{id, name,
   is_active}]}`.
+* `GET /api/spotify-mirror/status` — `{ok, device_id, device_name,
+  device_online, token_valid, last_mirrors, last_errors}`: whether the
+  mirror can play right now and what every player last managed.
 * `POST /api/spotify-mirror/test` — `{ok, username, device}` or
   `{ok: false, error: "auth_failed"|"device_missing"}`.
 * `POST /api/spotify-mirror/mirror-now` — body `{track: {file, artist,

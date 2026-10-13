@@ -15,6 +15,7 @@ only check *whose* data it is. Stores: :mod:`downtify.users`,
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
@@ -451,24 +452,43 @@ async def report_playback(request: Request) -> dict[str, Any]:
                     spotify_mirror.seek_playback, mirror, position
                 )
         elif tracker.should_mirror(me.user_id, player_key, song):
-            # should_mirror covers both a started track and the first
-            # play after a paused report: the player announces a new
-            # track as paused before its audio starts, so `started` is
-            # already false by the time the playing report arrives.
-            # Past the dedupe, so the catalog is only read for a play
-            # that is actually going out.
+            # should_mirror is the dedupe claim, taken before the
+            # network work so a heartbeat storm can't repeat it - and
+            # it covers both a started track and the first play after a
+            # paused report: the player announces a new track as paused
+            # before its audio starts, so `started` is already false by
+            # the time the playing report arrives. The catalog is only
+            # read for a play that is actually going out.
+            #
+            # Only a play that reached Spotify keeps the claim: an
+            # attempt that couldn't resolve the URI, couldn't renew the
+            # token or was refused gives it back, so the next report
+            # retries instead of skipping that song for this player for
+            # the rest of the process' life. Either way the outcome is
+            # recorded for GET /api/spotify-mirror/status.
             playlist_id = await asyncio.to_thread(
                 _playlist_id_for_track, track
             )
-            renewed = await asyncio.to_thread(
-                spotify_mirror.mirror_track,
+            outcome = await asyncio.to_thread(
+                spotify_mirror.mirror_track_outcome,
                 mirror,
                 track,
                 library=_LiveLibrary(),
                 playlist_spotify_id=playlist_id,
             )
-            if renewed:
-                api._persist_mirror_tokens(renewed)
+            now = time.time()
+            if outcome.ok:
+                tracker.mark_success(me.user_id, player_key, outcome.uri, now)
+                if outcome.tokens:
+                    api._persist_mirror_tokens(outcome.tokens)
+            else:
+                logger.info(
+                    'Spotify mirror skipped for {}: {}',
+                    song,
+                    outcome.error,
+                )
+                tracker.mark_error(me.user_id, player_key, outcome.error, now)
+                tracker.unmark_attempted(me.user_id, player_key, song)
         elif tracker.should_resume(me.user_id, player_key, song):
             # Resume at the paused spot: go-librespot parks a paused
             # play at the track's end, so seek first, then play.

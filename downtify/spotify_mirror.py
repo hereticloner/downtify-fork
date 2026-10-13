@@ -37,6 +37,7 @@ import hashlib
 import secrets
 import threading
 import time
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Optional
 from urllib.parse import quote
 
@@ -55,6 +56,14 @@ SCOPES = (
     'user-read-currently-playing playlist-read-private '
     'playlist-read-collaborative'
 )
+#: Diagnostics only (:class:`MirrorTracker`): how many ``(user, player)``
+#: pairs keep a last success and a last failure. They are a status
+#: snapshot, not a history - a long-lived process drops the oldest
+#: entries instead of growing with it, and a restart starts empty.
+DIAGNOSTIC_LIMIT = 512
+ERROR_LIMIT = 256
+#: How much of an exception text a diagnostic error reason keeps.
+REASON_LIMIT = 160
 
 #: Request seam: tests inject a fake; the default is a plain httpx call.
 Request = Callable[..., Any]
@@ -256,13 +265,43 @@ def refresh_access_token(
     return _parse_tokens(body, {'refresh_token': refresh_token}, time.time())
 
 
-def ensure_token(
-    config: dict[str, Any], *, request: Optional[Request] = None
-) -> Optional[dict[str, Any]]:
-    """A config with a fresh access token, refreshing when stale.
+@dataclass(frozen=True)
+class MirrorOutcome:
+    """What one mirror attempt did, and which step refused it.
 
-    Returns ``None`` when nothing works. A refreshed token is returned
-    with the new fields - the caller persists it in settings.
+    The boolean functions below (``ensure_token``, ``play_track``,
+    ``mirror_track``) tell a caller *that* something failed and nothing
+    about *why* - the reason ended up in the log and nowhere else, so a
+    user whose plays silently never reached Spotify had no way to find
+    out. This carries the verdict (``ok``), the reason when there isn't
+    one (``error``: ``auth_failed``, ``no_device``, ``no_uri`` or
+    ``play_failed: ...``) and the Spotify URI that went out, so a
+    caller can show it or record it.
+    """
+
+    error: str = ''
+    uri: str = ''
+    tokens: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def ok(self) -> bool:
+        return not self.error
+
+
+def _reason(prefix: str, exc: Exception) -> str:
+    """A short, loggable ``<prefix>: <what went wrong>`` for *exc*."""
+
+    return f'{prefix}: {_text(str(exc))[:REASON_LIMIT]}'
+
+
+def ensure_token_outcome(
+    config: dict[str, Any], *, request: Optional[Request] = None
+) -> MirrorOutcome:
+    """:func:`ensure_token`'s answer, with the reason it failed.
+
+    ``tokens`` is the config to send requests with (the caller's own
+    when it is still fresh, a renewed one otherwise); ``error`` is
+    ``auth_failed`` when no usable token could be produced.
     """
 
     expires_at = float(config.get('token_expires_at') or 0)
@@ -271,13 +310,27 @@ def ensure_token(
         and expires_at - TOKEN_REFRESH_MARGIN > time.time()
     )
     if fresh:
-        return config
+        return MirrorOutcome(tokens=config)
     renewed = refresh_access_token(
         config['client_id'], config.get('refresh_token', ''), request=request
     )
     if not renewed:
-        return None
-    return {**config, **renewed}
+        return MirrorOutcome(error='auth_failed')
+    return MirrorOutcome(tokens={**config, **renewed})
+
+
+def ensure_token(
+    config: dict[str, Any], *, request: Optional[Request] = None
+) -> Optional[dict[str, Any]]:
+    """A config with a fresh access token, refreshing when stale.
+
+    Returns ``None`` when nothing works - use
+    :func:`ensure_token_outcome` when the caller has to say why. A
+    refreshed token is returned with the new fields - the caller
+    persists it in settings.
+    """
+
+    return ensure_token_outcome(config, request=request).tokens or None
 
 
 def _bearer(token: str) -> dict[str, str]:
@@ -372,7 +425,7 @@ def play_body(uri: str, playlist_spotify_id: Optional[str] = None):
     return {'uris': [uri]}
 
 
-def play_track(
+def play_track_outcome(
     config: dict[str, Any],
     uri: str,
     *,
@@ -380,22 +433,23 @@ def play_track(
     silent: bool = True,
     playlist_spotify_id: Optional[str] = None,
     request: Optional[Request] = None,
-) -> bool:
-    """Start *uri* on the Connect device; ``False`` on any failure.
+) -> MirrorOutcome:
+    """Start *uri*, reporting which step refused it.
 
-    *silent* first turns the device's volume to 0 - the user listens in
-    Downtify; the mirrored playback is for the record, not the ears.
-
-    *playlist_spotify_id* mirrors the play inside that playlist (see
-    :func:`play_body`); ``None`` plays the track on its own.
+    Same work as :func:`play_track`; the outcome names the reason, so
+    a caller can record or surface it instead of dropping a bare
+    ``False``. ``auth_failed`` means no usable token, ``no_device``
+    that the account has no Connect device to play on, and
+    ``play_failed: ...`` carries Spotify's own refusal.
     """
 
-    current = ensure_token(config, request=request)
-    if current is None:
-        return False
+    token = ensure_token_outcome(config, request=request)
+    if not token.ok:
+        return token
+    current = token.tokens
     target = device_id or current.get('device_id')
     if not target:
-        return False
+        return MirrorOutcome(error='no_device', uri=uri)
     sender = request or _request
     try:
         if silent:
@@ -413,10 +467,39 @@ def play_track(
             json=play_body(uri, playlist_spotify_id),
         )
         response.raise_for_status()
-        return True
+        return MirrorOutcome(uri=uri)
     except Exception as exc:  # noqa: BLE001
         logger.warning('Spotify mirror play failed for {}: {}', uri, exc)
-        return False
+        return MirrorOutcome(error=_reason('play_failed', exc), uri=uri)
+
+
+def play_track(
+    config: dict[str, Any],
+    uri: str,
+    *,
+    device_id: Optional[str] = None,
+    silent: bool = True,
+    playlist_spotify_id: Optional[str] = None,
+    request: Optional[Request] = None,
+) -> bool:
+    """Start *uri* on the Connect device; ``False`` on any failure.
+
+    *silent* first turns the device's volume to 0 - the user listens in
+    Downtify; the mirrored playback is for the record, not the ears.
+
+    *playlist_spotify_id* mirrors the play inside that playlist (see
+    :func:`play_body`); ``None`` plays the track on its own.
+    :func:`play_track_outcome` is this with the reason attached.
+    """
+
+    return play_track_outcome(
+        config,
+        uri,
+        device_id=device_id,
+        silent=silent,
+        playlist_spotify_id=playlist_spotify_id,
+        request=request,
+    ).ok
 
 
 def _transport(
@@ -515,6 +598,50 @@ def uri_for_track(
     )
 
 
+def mirror_track_outcome(
+    config: dict[str, Any],
+    track: dict[str, Any],
+    *,
+    library: Any = None,
+    playlist_spotify_id: Optional[str] = None,
+    request: Optional[Request] = None,
+) -> MirrorOutcome:
+    """Mirror one play, reporting which step refused it.
+
+    *playlist_spotify_id* is the caller's answer to "which playlist is
+    this track in" (the catalog, when it knows) - see
+    :func:`mirror_track`, whose docstring covers the mirroring itself.
+
+    ``error`` is ``no_uri`` when the track could not be resolved on
+    Spotify (nothing was sent), then whatever :func:`play_track_outcome`
+    refused with.
+    """
+
+    uri = uri_for_track(config, track, library=library, request=request)
+    if not uri:
+        return MirrorOutcome(error='no_uri')
+    outcome = play_track_outcome(
+        config,
+        uri,
+        silent=bool(config.get('silent_on_target', True)),
+        playlist_spotify_id=playlist_spotify_id,
+        request=request,
+    )
+    if not outcome.ok:
+        return outcome
+    current = ensure_token(config, request=request)
+    if current and current.get('access_token') != config.get('access_token'):
+        return replace(
+            outcome,
+            tokens={
+                'access_token': current['access_token'],
+                'refresh_token': current.get('refresh_token', ''),
+                'token_expires_at': current.get('token_expires_at', 0),
+            },
+        )
+    return outcome
+
+
 def mirror_track(
     config: dict[str, Any],
     track: dict[str, Any],
@@ -532,28 +659,23 @@ def mirror_track(
 
     The tokens dict is what the caller persists when :func:`ensure_token`
     renewed the access token mid-flight (``{}`` when it wasn't).
+
+    ``None`` means the track could not be resolved on Spotify; a play
+    Spotify refused comes back as ``{}``, like any other done attempt -
+    callers that need to tell those apart, or to report *why* a play
+    didn't happen, want :func:`mirror_track_outcome`.
     """
 
-    uri = uri_for_track(config, track, library=library, request=request)
-    if not uri:
-        return None
-    if play_track(
+    outcome = mirror_track_outcome(
         config,
-        uri,
-        silent=bool(config.get('silent_on_target', True)),
+        track,
+        library=library,
         playlist_spotify_id=playlist_spotify_id,
         request=request,
-    ):
-        current = ensure_token(config, request=request)
-        if current and current.get('access_token') != config.get(
-            'access_token'
-        ):
-            return {
-                'access_token': current['access_token'],
-                'refresh_token': current.get('refresh_token', ''),
-                'token_expires_at': current.get('token_expires_at', 0),
-            }
-    return {}
+    )
+    if outcome.error == 'no_uri':
+        return None
+    return outcome.tokens
 
 
 def verify_connection(
@@ -624,12 +746,36 @@ class MirrorTracker:
     every 30 s, pause/resume) from sending the same play command again.
     Also remembers whether the mirrored song is paused, so a pause in
     Downtify pauses the mirror once and a resume resumes it once.
+
+    The dedupe is a *claim* :meth:`should_mirror` takes before the
+    network work; only a play that reached Spotify should keep it, so a
+    failed attempt releases it again (:meth:`unmark_attempted`) and the
+    next report retries instead of skipping that song for the rest of
+    the process' life. What each player last managed is kept alongside,
+    for ``GET /api/spotify-mirror/status`` - diagnostics only, bounded
+    (:data:`DIAGNOSTIC_LIMIT`, :data:`ERROR_LIMIT`) and gone on restart.
     """
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._mirrored: dict[tuple[int, str], str] = {}
         self._paused: dict[tuple[int, str], bool] = {}
+        self._last_success: dict[tuple[int, str], dict[str, Any]] = {}
+        self._last_error: dict[tuple[int, str], dict[str, Any]] = {}
+
+    @staticmethod
+    def _remember(
+        store: dict[tuple[int, str], dict[str, Any]],
+        key: tuple[int, str],
+        entry: dict[str, Any],
+        limit: int,
+    ) -> None:
+        """Keep *entry* under *key*, dropping the oldest past *limit*."""
+
+        store.pop(key, None)
+        store[key] = entry
+        while len(store) > limit:
+            del store[next(iter(store))]
 
     def should_mirror(self, user_id: int, player: str, song: str) -> bool:
         key = (int(user_id), player)
@@ -638,6 +784,25 @@ class MirrorTracker:
                 return False
             self._mirrored[key] = song
             self._paused[key] = False
+            return True
+
+    def unmark_attempted(self, user_id: int, player: str, song: str) -> bool:
+        """Give back the claim :meth:`should_mirror` took, to retry.
+
+        Called after a mirror attempt that never reached Spotify (no URI
+        found, tokens that would not renew, the play refused): the song
+        is still unmirrored, so the next report from this player should
+        try again rather than be deduped away forever. ``False`` when
+        the claim already moved on to another song, which must not be
+        undone.
+        """
+
+        key = (int(user_id), player)
+        with self._lock:
+            if self._mirrored.get(key) != song:
+                return False
+            del self._mirrored[key]
+            self._paused.pop(key, None)
             return True
 
     def knows(self, user_id: int, player: str, song: str) -> bool:
@@ -678,6 +843,70 @@ class MirrorTracker:
 
     def forget_user(self, user_id: int) -> None:
         with self._lock:
-            for store in (self._mirrored, self._paused):
+            for store in (
+                self._mirrored,
+                self._paused,
+                self._last_success,
+                self._last_error,
+            ):
                 for key in [k for k in store if k[0] == user_id]:
                     del store[key]
+
+    # -- diagnostics ---------------------------------------------------
+
+    def mark_success(
+        self, user_id: int, player: str, uri: str, at: float
+    ) -> None:
+        """Remember the last play this player got onto the device."""
+
+        self._remember(
+            self._last_success,
+            (int(user_id), player),
+            {'uri': _text(uri), 'at': float(at)},
+            DIAGNOSTIC_LIMIT,
+        )
+
+    def mark_error(
+        self, user_id: int, player: str, reason: str, at: float
+    ) -> None:
+        """Remember why this player's last mirror attempt failed."""
+
+        self._remember(
+            self._last_error,
+            (int(user_id), player),
+            {'reason': _text(reason), 'at': float(at)},
+            ERROR_LIMIT,
+        )
+
+    def last_mirror(self, user_id: int, player: str) -> dict[str, Any]:
+        """The last successful mirror for this player, ``{}`` if none."""
+
+        with self._lock:
+            entry = self._last_success.get((int(user_id), player))
+            return dict(entry) if entry else {}
+
+    def last_error(self, user_id: int, player: str) -> dict[str, Any]:
+        """The last failure for this player, ``{}`` if none."""
+
+        with self._lock:
+            entry = self._last_error.get((int(user_id), player))
+            return dict(entry) if entry else {}
+
+    def diagnostics(self) -> dict[str, dict[str, dict[str, Any]]]:
+        """Every recorded outcome, keyed ``"<user_id>:<player>"``.
+
+        String keys so an endpoint can hand the two maps straight to a
+        JSON response (a tuple key isn't one).
+        """
+
+        with self._lock:
+            return {
+                'last_mirrors': {
+                    f'{user_id}:{player}': dict(entry)
+                    for (user_id, player), entry in self._last_success.items()
+                },
+                'last_errors': {
+                    f'{user_id}:{player}': dict(entry)
+                    for (user_id, player), entry in self._last_error.items()
+                },
+            }
