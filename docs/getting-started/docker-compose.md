@@ -112,6 +112,41 @@ docker compose up -d
 
 Your music and settings are preserved in the volumes.
 
+## Resource limits and log rotation
+
+Docker's default `json-file` driver never deletes anything, so on a server that
+runs for months the log file quietly fills the host disk. Bound it:
+
+```yaml
+services:
+  downtify:
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+```
+
+Quote `max-file` — Docker wants a string, and a bare `3` is parsed as a number.
+The example above keeps at most three 10 MB files, so ~30 MB per container.
+
+To cap memory too, add `mem_limit`. Downtify idles at roughly 100–300 MB, but
+**transcoding runs `ffmpeg` inside the container** — up to
+[`DOWNTIFY_TRANSCODE_CONCURRENCY`](./environment-variables.md#mobile-apps-and-sign-in)
+at once, and each one shares that same limit:
+
+```yaml
+services:
+  downtify:
+    mem_limit: 1g
+```
+
+::: warning
+A limit that is too low does not slow the server down, it gets the container
+OOM-killed mid-download. Leave generous headroom above idle usage, and raise
+the limit before debugging anything else if playlists start dying on you.
+:::
+
 ## Volumes
 
 | Path inside the compose file | Purpose |

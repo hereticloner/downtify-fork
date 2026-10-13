@@ -21,6 +21,15 @@ services:
     dns:
       - 1.1.1.1
       - 1.0.0.1
+    # ~300 MB steady state (75 MB fresh); headroom for ffmpeg transcode
+    # children, which share this cgroup. Raise if downloads get OOM-killed.
+    mem_limit: 512m
+    # json-file would otherwise grow without bound.
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
 
   # The Downtify Mirror: a silent, always-online Spotify Connect
   # device for the Spotify Mirror (docs/features/spotify-mirror.md).
@@ -31,5 +40,13 @@ services:
     restart: unless-stopped
     volumes:
       - ./mirror:/config
+    # No mem_limit: go-librespot was never measured under a Connect
+    # session, and an over-tight cap would silently drop the device
+    # instead of failing loudly. Log growth is bounded instead.
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
 
 volumes: {}

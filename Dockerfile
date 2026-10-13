@@ -87,7 +87,7 @@ VOLUME /data
 # 8000 unless DOWNTIFY_PORT or Settings > Apps choose another.
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD ./healthcheck.sh
 
 ENTRYPOINT ["/sbin/tini", "-g", "--", "./entrypoint.sh"]
