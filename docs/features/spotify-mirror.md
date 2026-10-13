@@ -114,6 +114,10 @@ that message if the import is switched on while the account has no
 tokens.
 :::
 
+Whatever the import has stored shows up on the [Stats](stats.md#recently-played-on-spotify)
+page as your last plays, with the total stored underneath.
+:::
+
 ::: info A backstop, not a sampler
 The endpoint answers a window that deliberately overlaps the previous
 one, so a play that arrives twice is stored once (`played_at` is the

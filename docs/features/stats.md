@@ -29,12 +29,17 @@ Below the cards, **Downloads per day** lists each day that had a download, oldes
 
 **Most played** is the top ten songs by number of plays, most played first, each shown as its `Artist - Title` label and its count.
 
+## Recently played on Spotify
+
+**Recently played on Spotify** lists your last plays that Downtify mirrored out of Spotify, newest first — when each happened and its `Artist - Title` label — with the total number of stored plays underneath. It stays empty until you turn the history import on (**Settings → Spotify Mirror → Import listening history**, see [Spotify Mirror](spotify-mirror.md#importing-your-listening-history)); the plays are read from the same store the import fills, so nothing is fetched when the page loads.
+
 ## Where the numbers come from
 
 - **Tracks, playlists and likes** come from the library stores Downtify already keeps — the file index, the library playlist list and the liked-songs store.
 - **Downloads and plays** come from the [activity log](../features/users.md) in `/data/downtify_activity.db`. The log keeps 90 days of entries, so every count here (including the all-time-looking ones) only covers the retained window.
 - A **download** is one logged *request*: a playlist or album batch counts once, not once per track, because that is what the activity log records.
 - A **play** is logged each time a song *starts* (a player reporting a new song), so replaying one song counts again. Top tracks group those plays by the label the log stored.
+- The **Spotify** panel is the one exception to the 90-day window: those rows are only ever added, never pruned, so the total keeps counting up for as long as the import is on.
 - The counts are **server-wide**, not per account — everyone using the same server contributes to the same numbers.
 
 ## API
@@ -57,6 +62,17 @@ Below the cards, **Downloads per day** lists each day that had a download, oldes
     "top_tracks": [
       { "summary": "The Night Owls - Do I Still Recall", "count": 42 }
     ]
+  },
+  "spotify": {
+    "recent": [
+      {
+        "played_at": "2026-10-12T21:15:00+00:00",
+        "artist_name": "The Night Owls",
+        "track_name": "Do I Still Recall",
+        "album_name": "Night Owls"
+      }
+    ],
+    "play_count": 1284
   }
 }
 ```
@@ -71,5 +87,9 @@ Below the cards, **Downloads per day** lists each day that had a download, oldes
 | `downloads.per_day` | `{date, count}` for each day with a download, oldest first |
 | `playback.total` | Plays in the activity log |
 | `playback.top_tracks` | Up to ten `{summary, count}`, most played first |
+| `spotify.recent` | Up to ten mirrored plays, newest first, each `{played_at, artist_name, track_name, album_name}` |
+| `spotify.play_count` | Plays stored in the history table, all of them |
+
+`spotify.recent` is `[]` and `spotify.play_count` is `0` until the history import has stored something.
 
 See the [API reference](../api-reference.md#stats).

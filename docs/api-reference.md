@@ -1766,11 +1766,22 @@ Server-wide library and usage numbers — see [Stats](features/stats.md).
     "top_tracks": [
       { "summary": "The Night Owls - Do I Still Recall", "count": 42 }
     ]
+  },
+  "spotify": {
+    "recent": [
+      {
+        "played_at": "2026-10-12T21:15:00+00:00",
+        "artist_name": "The Night Owls",
+        "track_name": "Do I Still Recall",
+        "album_name": "Night Owls"
+      }
+    ],
+    "play_count": 1284
   }
 }
 ```
 
-Counts come from the library stores and the activity log (which keeps 90 days); a download request counts once, and a play is logged each time a song starts. See [Stats](features/stats.md#where-the-numbers-come-from).
+Counts come from the library stores and the activity log (which keeps 90 days); a download request counts once, and a play is logged each time a song starts. `spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
 
 ---
 

@@ -320,6 +320,8 @@ export default {
     downloadsPerDay: 'Descargas por día',
     topTracks: 'Más reproducidas',
     empty: 'Nada todavía',
+    spotifyRecent: 'Reproducciones recientes en Spotify',
+    spotifyPlayCount: '{count} reproducciones de Spotify guardadas',
   },
   collections: {
     title: 'Colecciones',

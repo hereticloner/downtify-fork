@@ -319,6 +319,8 @@ export default {
     downloadsPerDay: 'Letöltések naponta',
     topTracks: 'Legtöbbet játszottak',
     empty: 'Még nincs adat',
+    spotifyRecent: 'Legutóbbi lejátszások a Spotify-on',
+    spotifyPlayCount: '{count} tárolt Spotify-lejátszás',
   },
   collections: {
     title: 'Gyűjtemények',

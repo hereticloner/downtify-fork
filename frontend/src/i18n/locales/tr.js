@@ -321,6 +321,8 @@ export default {
     downloadsPerDay: 'Günlük indirme',
     topTracks: 'En çok dinlenenler',
     empty: 'Henüz veri yok',
+    spotifyRecent: "Spotify'da son çalmalar",
+    spotifyPlayCount: 'Depolanan {count} Spotify çalması',
   },
   collections: {
     title: 'Koleksiyonlar',

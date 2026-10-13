@@ -198,6 +198,32 @@ async def edit_collection_items_endpoint(
         _raise(exc)
 
 
+def _spotify_stats() -> dict[str, Any]:
+    """The plays mirrored out of Spotify, for the Stats page.
+
+    Read from the activity database the history import writes to (the
+    same file the activity log uses - see ``main.py``). The import is
+    opt-in, so an unreadable store, a missing module or a database that
+    was never written is simply an empty panel, not an error.
+    """
+
+    from . import spotify_history  # noqa: PLC0415
+
+    reader = getattr(spotify_history, 'get_recent_from_spotify', None)
+    if reader is None:
+        return {'recent': [], 'play_count': 0}
+    from main import DATABASE_DIR  # noqa: PLC0415
+
+    db_path = DATABASE_DIR / 'downtify_activity.db'
+    try:
+        recent = list(reader(db_path) or [])
+        counter = getattr(spotify_history, 'count_plays', None)
+        play_count = counter(db_path) if callable(counter) else 0
+    except Exception:
+        return {'recent': [], 'play_count': 0}
+    return {'recent': recent, 'play_count': play_count}
+
+
 @router.get('/api/stats')
 async def stats_endpoint() -> dict[str, Any]:
     from downtify import api as api_mod  # noqa: PLC0415
@@ -224,17 +250,21 @@ async def stats_endpoint() -> dict[str, Any]:
     except Exception:
         likes = 0
     activity = st.activity
+    spotify = _spotify_stats()
     if activity is None:
         return {
             'library': {'tracks': 0, 'playlists': 0, 'likes': 0},
             'downloads': {'total': 0, 'last_30_days': 0, 'per_day': []},
             'playback': {'total': 0, 'top_tracks': []},
+            'spotify': spotify,
         }
     return stats_mod.build_stats(
         activity=activity,
         track_count=track_count,
         likes=likes,
         playlist_count=playlist_count,
+        spotify_recent=spotify['recent'],
+        spotify_play_count=spotify['play_count'],
     )
 
 

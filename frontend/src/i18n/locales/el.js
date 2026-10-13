@@ -322,6 +322,8 @@ export default {
     downloadsPerDay: 'Λήψεις ανά ημέρα',
     topTracks: 'Πιο ακούσματα',
     empty: 'Τίποτα ακόμη',
+    spotifyRecent: 'Πρόσφατες αναπαραγωγές στο Spotify',
+    spotifyPlayCount: '{count} αναπαραγωγές Spotify αποθηκευμένες',
   },
   collections: {
     title: 'Συλλογές',

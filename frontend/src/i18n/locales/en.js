@@ -313,6 +313,8 @@ export default {
     downloadsPerDay: 'Downloads per day',
     topTracks: 'Most played',
     empty: 'Nothing yet',
+    spotifyRecent: 'Recently played on Spotify',
+    spotifyPlayCount: '{count} Spotify plays stored',
   },
   collections: {
     title: 'Collections',

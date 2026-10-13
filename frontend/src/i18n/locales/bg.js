@@ -315,6 +315,8 @@ export default {
     downloadsPerDay: 'Изтегляния на ден',
     topTracks: 'Най-слушани',
     empty: 'Още няма',
+    spotifyRecent: 'Скорошни слушания в Spotify',
+    spotifyPlayCount: '{count} записани изпълнения от Spotify',
   },
   collections: {
     title: 'Колекции',

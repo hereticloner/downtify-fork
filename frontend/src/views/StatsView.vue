@@ -62,7 +62,7 @@
         </UiPanel>
       </div>
 
-      <div class="grid items-start gap-6 xl:grid-cols-2">
+      <div class="grid items-start gap-6 xl:grid-cols-3">
         <UiPanel class="p-4">
           <h2 class="mb-3 text-lg font-medium">
             {{ t('stats.downloadsPerDay') }}
@@ -115,6 +115,39 @@
             </li>
           </ol>
         </UiPanel>
+
+        <UiPanel class="p-4">
+          <h2 class="mb-3 text-lg font-medium">
+            {{ t('stats.spotifyRecent') }}
+          </h2>
+          <div
+            v-if="!(stats.spotify?.recent || []).length"
+            class="text-sm text-faint"
+          >
+            {{ t('stats.empty') }}
+          </div>
+          <ol class="flex flex-col gap-1.5">
+            <li
+              v-for="row in stats.spotify?.recent || []"
+              :key="row.played_at"
+              class="flex items-baseline gap-2"
+            >
+              <span class="w-28 shrink-0 text-xs text-faint">{{
+                playedAt(row.played_at)
+              }}</span>
+              <span class="min-w-0 flex-1 truncate text-sm">
+                {{ row.artist_name }} - {{ row.track_name }}
+              </span>
+            </li>
+          </ol>
+          <div class="mt-3 text-xs text-faint">
+            {{
+              t('stats.spotifyPlayCount', {
+                count: stats.spotify?.play_count ?? 0,
+              })
+            }}
+          </div>
+        </UiPanel>
       </div>
     </template>
   </div>
@@ -130,7 +163,7 @@ import UiPanel from '/src/components/ui/UiPanel.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import { useStats } from '/src/model/stats'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { stats, loading, error, load } = useStats()
 
 onMounted(load)
@@ -138,4 +171,20 @@ onMounted(load)
 const maxDay = computed(() =>
   Math.max(1, ...(stats.value.downloads?.per_day || []).map((d) => d.count))
 )
+
+// When a play was made, in the reader's own locale. Spotify stamps
+// ISO instants; an unparseable one falls back to the raw text rather
+// than showing "Invalid Date".
+function playedAt(value) {
+  const stamp = String(value || '')
+  if (!stamp) return ''
+  try {
+    return new Intl.DateTimeFormat(locale.value, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(stamp))
+  } catch {
+    return stamp
+  }
+}
 </script>

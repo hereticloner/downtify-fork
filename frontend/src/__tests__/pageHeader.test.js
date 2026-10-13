@@ -14,6 +14,17 @@ vi.mock('/src/model/api', () => ({
           library: { tracks: 7, playlists: 2, likes: 1 },
           downloads: { total: 3, last_30_days: 1, per_day: [] },
           playback: { total: 11, top_tracks: [] },
+          spotify: {
+            recent: [
+              {
+                played_at: '2026-10-12T21:15:00+00:00',
+                artist_name: 'The Night Owls',
+                track_name: 'Do I Still Recall',
+                album_name: 'Night Owls',
+              },
+            ],
+            play_count: 12,
+          },
         },
       }),
   },
@@ -157,6 +168,22 @@ describe('StatsView', () => {
     ]) {
       expect(html, key).toContain(t(key))
     }
+  })
+
+  // The plays the Spotify history import mirrored are their own panel:
+  // when did each happen, who played it, and how many are stored.
+  it('renders the mirrored Spotify plays', async () => {
+    const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { load } = useStats()
+    await load()
+
+    const html = await render(StatsView)
+    expect(html).toContain(t('stats.spotifyRecent'))
+    expect(html).toContain('The Night Owls - Do I Still Recall')
+    // The timestamp is shown as a locale date, never as the raw ISO text.
+    expect(html).not.toContain('2026-10-12T21:15:00+00:00')
+    expect(html).toMatch(/\w+ \d{1,2}, 2026/)
+    expect(html).toContain(t('stats.spotifyPlayCount', { count: 12 }))
   })
 })
 
