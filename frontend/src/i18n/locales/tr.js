@@ -313,7 +313,9 @@ export default {
   stats: {
     title: 'İstatistikler',
     tracks: 'Kütüphanedeki parça',
+    playlists: 'Kütüphanedeki oynatma listesi',
     downloads30: 'İndirme (30 gün)',
+    downloadsTotal: 'İndirme (toplam)',
     plays: 'Dinlenme',
     likes: 'Beğenilen',
     downloadsPerDay: 'Günlük indirme',

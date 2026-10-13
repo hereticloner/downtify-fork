@@ -305,7 +305,9 @@ export default {
   stats: {
     title: 'Stats',
     tracks: 'Tracks in library',
+    playlists: 'Playlists in library',
     downloads30: 'Downloads (30 days)',
+    downloadsTotal: 'Downloads (all time)',
     plays: 'Plays',
     likes: 'Liked',
     downloadsPerDay: 'Downloads per day',

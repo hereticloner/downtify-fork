@@ -8,16 +8,18 @@ Stats is a read-only page that puts the size of your library and how much you us
 
 ## The numbers
 
-Four cards sit across the top:
+Six cards sit across the top:
 
 | Card | What it counts |
 |------|----------------|
 | **Tracks in library** | Audio files Downtify has indexed in the library |
+| **Playlists in library** | Playlists in the library |
 | **Downloads (30 days)** | Download requests recorded in the last 30 days |
+| **Downloads (all time)** | Download requests in the whole retained activity log |
 | **Plays** | Songs started in the [built-in player](player.md) or a paired app |
 | **Liked** | Songs with a heart, from [Liked songs](liked-songs.md) |
 
-The page also returns the number of playlists as part of the library numbers (see [API](#api)) even though it isn't shown as its own card.
+The two download cards come from the same log: one counts the retained window, the other everything still in it (see [Where the numbers come from](#where-the-numbers-come-from)).
 
 ## Downloads per day
 

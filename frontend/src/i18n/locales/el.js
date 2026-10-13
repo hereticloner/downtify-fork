@@ -314,7 +314,9 @@ export default {
   stats: {
     title: 'Στατιστικά',
     tracks: 'Κομμάτια στη βιβλιοθήκη',
+    playlists: 'Λίστες στη βιβλιοθήκη',
     downloads30: 'Λήψεις (30 ημέρες)',
+    downloadsTotal: 'Λήψεις (συνολικά)',
     plays: 'Αναπαραγωγές',
     likes: 'Αγαπημένα',
     downloadsPerDay: 'Λήψεις ανά ημέρα',

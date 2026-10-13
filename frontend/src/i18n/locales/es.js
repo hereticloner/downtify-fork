@@ -312,7 +312,9 @@ export default {
   stats: {
     title: 'Estadísticas',
     tracks: 'Pistas en la biblioteca',
+    playlists: 'Listas de reproducción en la biblioteca',
     downloads30: 'Descargas (30 días)',
+    downloadsTotal: 'Descargas (total)',
     plays: 'Reproducciones',
     likes: 'Favoritas',
     downloadsPerDay: 'Descargas por día',

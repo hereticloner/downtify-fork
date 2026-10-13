@@ -307,7 +307,9 @@ export default {
   stats: {
     title: 'Статистика',
     tracks: 'Песни в библиотеката',
+    playlists: 'Плейлисти в библиотеката',
     downloads30: 'Изтегляния (30 дни)',
+    downloadsTotal: 'Изтегляния (общо)',
     plays: 'Излъшвания',
     likes: 'Харесани',
     downloadsPerDay: 'Изтегляния на ден',

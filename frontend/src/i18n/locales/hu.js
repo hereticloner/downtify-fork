@@ -311,7 +311,9 @@ export default {
   stats: {
     title: 'Statisztikák',
     tracks: 'Számok a könyvtárban',
+    playlists: 'Lejátszási listák a könyvtárban',
     downloads30: 'Letöltések (30 nap)',
+    downloadsTotal: 'Letöltések (összesen)',
     plays: 'Lejátszások',
     likes: 'Kedvencek',
     downloadsPerDay: 'Letöltések naponta',

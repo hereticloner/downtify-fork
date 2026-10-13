@@ -8,7 +8,14 @@ vi.mock('/src/model/api', () => ({
     onForbidden: () => () => {},
     getAuthStatus: () =>
       Promise.resolve({ data: { signed_in: true, user: { role: 'admin' } } }),
-    getStats: () => Promise.resolve({ data: {} }),
+    getStats: () =>
+      Promise.resolve({
+        data: {
+          library: { tracks: 7, playlists: 2, likes: 1 },
+          downloads: { total: 3, last_30_days: 1, per_day: [] },
+          playback: { total: 11, top_tracks: [] },
+        },
+      }),
   },
 }))
 vi.mock('/src/model/library', () => ({
@@ -55,6 +62,7 @@ globalThis.document = {
 import { createSSRApp, h } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 import PageHeader from '/src/components/library/PageHeader.vue'
+import { useStats } from '/src/model/stats'
 import { t } from '/src/i18n'
 
 // Views reach `<router-link>`; a plain anchor keeps the SSR render happy.
@@ -120,6 +128,35 @@ describe('StatsView', () => {
     const html = await render(StatsView)
     expectPageHeader(html, t('stats.title'))
     expect(html).not.toContain('text-2xl font-semibold')
+  })
+
+  // Every panel reads `stats.library.tracks`, `stats.downloads.total` and
+  // the rest, so `load` has to unwrap the Axios envelope - keeping the
+  // response itself puts them all on their `?? 0` fallback and the tab
+  // looks empty however full the library is.
+  it('renders the numbers the stats endpoint reported', async () => {
+    const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { stats, load } = useStats()
+    await load()
+    expect(stats.value.library.tracks).toBe(7)
+    expect(stats.value.downloads.total).toBe(3)
+
+    // SSR never runs onMounted, so the load above is what fills the
+    // store the panels read.
+    const html = await render(StatsView)
+    expect(html).toMatch(/>7<\/div>/)
+    expect(html).toMatch(/>3<\/div>/)
+    expect(html).toMatch(/>11<\/div>/)
+    for (const key of [
+      'stats.tracks',
+      'stats.playlists',
+      'stats.downloads30',
+      'stats.downloadsTotal',
+      'stats.plays',
+      'stats.likes',
+    ]) {
+      expect(html, key).toContain(t(key))
+    }
   })
 })
 

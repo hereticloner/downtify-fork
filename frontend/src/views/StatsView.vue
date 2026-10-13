@@ -4,8 +4,11 @@
   >
     <PageHeader :title="t('stats.title')" />
 
-    <div v-if="loading" class="grid grid-cols-2 gap-4 md:grid-cols-4">
-      <UiSkeleton v-for="n in 4" :key="n" class="h-20 !rounded-panel" />
+    <div
+      v-if="loading"
+      class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6"
+    >
+      <UiSkeleton v-for="n in 6" :key="n" class="h-20 !rounded-panel" />
     </div>
 
     <UiEmpty
@@ -18,7 +21,7 @@
     </UiEmpty>
 
     <template v-else>
-      <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         <UiPanel class="p-4">
           <div class="text-3xl font-bold">
             {{ stats.library?.tracks ?? 0 }}
@@ -27,10 +30,24 @@
         </UiPanel>
         <UiPanel class="p-4">
           <div class="text-3xl font-bold">
+            {{ stats.library?.playlists ?? 0 }}
+          </div>
+          <div class="text-sm text-faint">{{ t('stats.playlists') }}</div>
+        </UiPanel>
+        <UiPanel class="p-4">
+          <div class="text-3xl font-bold">
             {{ stats.downloads?.last_30_days ?? 0 }}
           </div>
           <div class="text-sm text-faint">
             {{ t('stats.downloads30') }}
+          </div>
+        </UiPanel>
+        <UiPanel class="p-4">
+          <div class="text-3xl font-bold">
+            {{ stats.downloads?.total ?? 0 }}
+          </div>
+          <div class="text-sm text-faint">
+            {{ t('stats.downloadsTotal') }}
           </div>
         </UiPanel>
         <UiPanel class="p-4">
@@ -104,31 +121,17 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from '/src/i18n'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiPanel from '/src/components/ui/UiPanel.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
-import API from '/src/model/api'
+import { useStats } from '/src/model/stats'
 
 const { t } = useI18n()
-const stats = ref({})
-const loading = ref(true)
-const error = ref(false)
-
-async function load() {
-  loading.value = true
-  error.value = false
-  try {
-    stats.value = await API.getStats()
-  } catch {
-    error.value = true
-  } finally {
-    loading.value = false
-  }
-}
+const { stats, loading, error, load } = useStats()
 
 onMounted(load)
 
