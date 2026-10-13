@@ -86,9 +86,9 @@ def test_normalize_rejects_unknown_type() -> None:
 
 
 def test_normalize_added_keeps_valid_range() -> None:
-    rules = normalize_rules(
-        [{'type': 'added', 'from': '2024-01-01', 'to': '2024-12-31'}]
-    )
+    rules = normalize_rules([
+        {'type': 'added', 'from': '2024-01-01', 'to': '2024-12-31'}
+    ])
     assert rules == [
         {'type': 'added', 'from': '2024-01-01', 'to': '2024-12-31'}
     ]
@@ -136,9 +136,9 @@ def test_normalize_text_rule_trims_the_value() -> None:
 def test_added_rule_selects_a_date_window() -> None:
     inside = int(datetime(2024, 6, 1, tzinfo=timezone.utc).timestamp())
     outside = int(datetime(2020, 1, 1, tzinfo=timezone.utc).timestamp())
-    rules = normalize_rules(
-        [{'type': 'added', 'from': '2024-05-01', 'to': '2024-07-01'}]
-    )
+    rules = normalize_rules([
+        {'type': 'added', 'from': '2024-05-01', 'to': '2024-07-01'}
+    ])
     assert playlist_matches(
         rules, playlist('New', [], added=inside), TRACKS, PLAYS
     )
@@ -234,9 +234,7 @@ def test_rules_are_combined_with_and() -> None:
 
 
 def test_no_rule_matches_every_playlist() -> None:
-    assert playlist_matches(
-        [], playlist('P', ['rock/one.mp3']), TRACKS, PLAYS
-    )
+    assert playlist_matches([], playlist('P', ['rock/one.mp3']), TRACKS, PLAYS)
 
 
 def test_empty_result_when_nothing_matches() -> None:
@@ -268,9 +266,10 @@ def test_union_keeps_static_members_and_adds_matches() -> None:
 
 def test_static_only_collection_is_unchanged() -> None:
     data = {'version': 1, 'name': 'Plain', 'playlists': ['A']}
-    assert resolve_collection(
-        data, playlists=[], tracks={}, play_counts={}
-    ) == data
+    assert (
+        resolve_collection(data, playlists=[], tracks={}, play_counts={})
+        == data
+    )
 
 
 def test_static_member_matching_a_rule_is_not_listed_as_computed() -> None:

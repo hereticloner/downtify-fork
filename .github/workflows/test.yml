@@ -34,6 +34,9 @@ jobs:
       - name: Run Ruff
         run: uv run ruff check .; uv run ruff check . --diff
 
+      - name: Check Ruff formatting
+        run: uv run ruff format --check .
+
       - name: Run pytest
         run: uv run pytest -x -s -v
 
@@ -62,14 +65,50 @@ jobs:
       - name: Run Vitest
         run: npm test
 
-  prettier:
+      - name: Build frontend
+        run: npm run build
+
+  docs-test:
+    name: Docs tests
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Prettify code
-        uses: creyD/prettier_action@v4.6
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
         with:
-          prettier_options: --write frontend/src/.
+          node-version: '26'
+          cache: 'npm'
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix docs
+
+      - name: Run Vitest
+        run: npm test --prefix docs
+
+  prettier:
+    name: Prettier check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      # Read-only: never `--write`, and no action that pushes its own commit.
+      - name: Check formatting
+        run: npx prettier --check "src/**/*"
+        working-directory: frontend

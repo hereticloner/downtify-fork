@@ -210,14 +210,12 @@ async def stats_endpoint() -> dict[str, Any]:
     try:
         from main import DOWNLOAD_DIR  # noqa: PLC0415
 
-        playlist_count = len(
-            [
-                p
-                for p in api_mod.list_library_playlists(
-                    DOWNLOAD_DIR, None, None, stale_ok=True
-                )
-            ]
-        )
+        playlist_count = len([
+            p
+            for p in api_mod.list_library_playlists(
+                DOWNLOAD_DIR, None, None, stale_ok=True
+            )
+        ])
     except Exception:
         playlist_count = 0
     likes = 0

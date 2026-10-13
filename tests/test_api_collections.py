@@ -47,9 +47,7 @@ def test_collections_crud_over_http(client):
     assert resp.status_code == 200, resp.text
     listed = client.get('/api/collections')
     assert listed.status_code == 200
-    assert listed.json() == [
-        {'version': 1, 'name': 'Sabah', 'playlists': []}
-    ]
+    assert listed.json() == [{'version': 1, 'name': 'Sabah', 'playlists': []}]
 
     # Delete
     resp = client.request('DELETE', '/api/collections/Sabah')
@@ -133,9 +131,7 @@ def test_save_rules_then_detail_computes_union(client, monkeypatch):
     client.downloads.mkdir(parents=True, exist_ok=True)
     (client.downloads / 'Rocky.m3u').write_text('#EXTM3U\n')
     client.post('/api/collections', json={'name': 'Smart'})
-    client.post(
-        '/api/collections/Smart/items', json={'add': ['Rocky']}
-    )
+    client.post('/api/collections/Smart/items', json={'add': ['Rocky']})
     resp = client.post(
         '/api/collections/Smart/rules',
         json={'rules': [{'type': 'genre', 'value': 'Jazz'}]},

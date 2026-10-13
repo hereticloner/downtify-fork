@@ -22,7 +22,9 @@ class FakeCtx:
         return self._entries
 
 
-def _entry(file, artist='A', title='T', album='Al', size=100, bitrate=320, added=0):  # noqa: PLR0913, PLR0917
+def _entry(  # noqa: PLR0913, PLR0917
+    file, artist='A', title='T', album='Al', size=100, bitrate=320, added=0
+):
     return {
         'file': file,
         'artist': artist,

@@ -722,9 +722,7 @@ def _row_to_playlist(row: sqlite3.Row) -> MonitoredPlaylist:
         enabled=bool(row['enabled']),
         last_checked=row['last_checked'],
         last_track_count=row['last_track_count'],
-        quiet_passes=(
-            row['quiet_passes'] if 'quiet_passes' in keys else 0
-        ),
+        quiet_passes=(row['quiet_passes'] if 'quiet_passes' in keys else 0),
         created_at=row['created_at'],
         # Rows written before the kind migration have no column at all
         # when reading from a stale connection/schema cache.
@@ -1545,7 +1543,12 @@ async def check_watch(
                 )
             else:
                 count = await check_playlist(
-                    playlist, db, downloader, broadcast, loop, settings,
+                    playlist,
+                    db,
+                    downloader,
+                    broadcast,
+                    loop,
+                    settings,
                     library,
                 )
         except Exception:

@@ -57,9 +57,7 @@ def build_stats(
     top_tracks = Counter(
         str(e.get('summary') or '') for e in playbacks if e.get('summary')
     )
-    per_day = Counter(
-        _parse_at(e.get('at')) for e in downloads if e.get('at')
-    )
+    per_day = Counter(_parse_at(e.get('at')) for e in downloads if e.get('at'))
 
     return {
         'library': {

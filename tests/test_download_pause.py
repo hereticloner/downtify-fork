@@ -47,13 +47,18 @@ async def test_run_download_waits_while_paused(state_reset, monkeypatch):
 
     monkeypatch.setattr(api.asyncio, 'to_thread', fake_to_thread)
 
-    api.state.download_jobs.setdefault('t1', {
-        'song': {'title': 'x'}, 'status': 'downloading',
-        'progress': 0, 'message': '', 'provider': '', 'filename': None,
-    })
-    task = asyncio.create_task(
-        api._wait_while_paused()
+    api.state.download_jobs.setdefault(
+        't1',
+        {
+            'song': {'title': 'x'},
+            'status': 'downloading',
+            'progress': 0,
+            'message': '',
+            'provider': '',
+            'filename': None,
+        },
     )
+    task = asyncio.create_task(api._wait_while_paused())
     await asyncio.sleep(0.05)
     assert not task.done()
     api.state.download_paused = False

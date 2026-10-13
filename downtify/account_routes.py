@@ -411,17 +411,12 @@ async def report_playback(request: Request) -> dict[str, Any]:
             # The player went away: pause the mirror so it doesn't keep
             # playing (autoplay would otherwise carry it on).
             if tracker.should_pause_any(me.user_id, player_key):
-                await asyncio.to_thread(
-                    spotify_mirror.pause_playback, mirror
-                )
+                await asyncio.to_thread(spotify_mirror.pause_playback, mirror)
         elif state == 'paused':
-            if (
-                not spotify_mirror.is_track_end(track, position)
-                and tracker.should_pause(me.user_id, player_key, song)
-            ):
-                await asyncio.to_thread(
-                    spotify_mirror.pause_playback, mirror
-                )
+            if not spotify_mirror.is_track_end(
+                track, position
+            ) and tracker.should_pause(me.user_id, player_key, song):
+                await asyncio.to_thread(spotify_mirror.pause_playback, mirror)
                 # go-librespot parks a paused play at the track's end
                 # (the cluster then shows the last second); put it back
                 # where the user stopped.
@@ -448,16 +443,12 @@ async def report_playback(request: Request) -> dict[str, Any]:
                 await asyncio.to_thread(
                     spotify_mirror.seek_playback, mirror, position
                 )
-            await asyncio.to_thread(
-                spotify_mirror.resume_playback, mirror
-            )
+            await asyncio.to_thread(spotify_mirror.resume_playback, mirror)
         elif seek_requested and tracker.knows(me.user_id, player_key, song):
             # A seek pauses go-librespot's playback; seek to the
             # reported spot, then play so it keeps running there.
             await asyncio.to_thread(
                 spotify_mirror.seek_playback, mirror, position
             )
-            await asyncio.to_thread(
-                spotify_mirror.resume_playback, mirror
-            )
+            await asyncio.to_thread(spotify_mirror.resume_playback, mirror)
     return {'ok': True}

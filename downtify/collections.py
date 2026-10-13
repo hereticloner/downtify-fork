@@ -147,9 +147,7 @@ def get_collection(download_dir: Path, name: str) -> dict[str, Any]:
     return _require(download_dir, name)
 
 
-def set_rules(
-    download_dir: Path, name: str, rules: Any
-) -> dict[str, Any]:
+def set_rules(download_dir: Path, name: str, rules: Any) -> dict[str, Any]:
     """Replace a collection's rules; an empty list makes it static again."""
 
     data = _require(download_dir, name)

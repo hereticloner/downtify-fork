@@ -790,9 +790,7 @@ def _clean_spotify_mirror(value: Any) -> dict[str, Any]:
         'refresh_token': str(base.get('refresh_token') or '').strip(),
         'mirror_user': str(base.get('mirror_user') or '').strip(),
         'silent_on_target': bool(base.get('silent_on_target', True)),
-        'mirror_manual_checks': bool(
-            base.get('mirror_manual_checks', False)
-        ),
+        'mirror_manual_checks': bool(base.get('mirror_manual_checks', False)),
     }
     # Keep the expiry as stored: a number is kept a number, anything
     # else stays an empty marker.
@@ -5449,9 +5447,9 @@ async def update_settings_endpoint(
             if {'yt_player_clients', 'yt_po_tokens'} & set(payload):
                 clients = state.settings.get('yt_player_clients') or []
                 tokens = state.settings.get('yt_po_tokens') or []
-                state.downloader.yt_player_clients = (
-                    [c.strip() for c in clients if c.strip()] or None
-                )
+                state.downloader.yt_player_clients = [
+                    c.strip() for c in clients if c.strip()
+                ] or None
                 state.downloader.yt_po_tokens = [
                     t.strip() for t in tokens if t.strip()
                 ] or None
@@ -5664,7 +5662,9 @@ def _persist_mirror_tokens(tokens: dict[str, Any]) -> None:
 
 
 @router.get('/integrations/spotify/authorize')
-async def spotify_mirror_authorize_endpoint(request: Request) -> RedirectResponse:
+async def spotify_mirror_authorize_endpoint(
+    request: Request,
+) -> RedirectResponse:
     """Step 1 of the connect flow: send the browser to Spotify."""
 
     client_id = str(_spotify_mirror_block().get('client_id') or '').strip()
@@ -5687,7 +5687,9 @@ async def spotify_mirror_authorize_endpoint(request: Request) -> RedirectRespons
 
 
 @router.get('/integrations/spotify/callback')
-async def spotify_mirror_callback_endpoint(request: Request) -> RedirectResponse:
+async def spotify_mirror_callback_endpoint(
+    request: Request,
+) -> RedirectResponse:
     """Step 3 of the connect flow: Spotify sends the code back.
 
     Exchanges it for tokens, saves them into the settings block and
@@ -5725,7 +5727,8 @@ async def spotify_mirror_callback_endpoint(request: Request) -> RedirectResponse
     if state.settings_path is not None:
         _save_settings(state.settings_path, state.settings)
     logger.info(
-        'Spotify mirror connected as {}', tokens.get('refresh_token') is not None
+        'Spotify mirror connected as {}',
+        tokens.get('refresh_token') is not None,
     )
     return RedirectResponse(f'{target}?spotify=connected', 302)
 
@@ -5754,9 +5757,7 @@ async def spotify_mirror_devices_endpoint() -> dict[str, Any]:
             'refresh_token': current['refresh_token'],
             'token_expires_at': current['token_expires_at'],
         })
-    devices = await asyncio.to_thread(
-        spotify_mirror.list_devices, current
-    )
+    devices = await asyncio.to_thread(spotify_mirror.list_devices, current)
     return {'devices': devices}
 
 
@@ -5769,9 +5770,9 @@ async def test_spotify_mirror_endpoint(request: Request) -> dict[str, Any]:
     payload = await _json_object(request)
     saved = _spotify_mirror_block()
     block = payload or saved
-    config = spotify_mirror.mirror_credentials(
-        _clean_spotify_mirror(block)
-    ) or {}
+    config = (
+        spotify_mirror.mirror_credentials(_clean_spotify_mirror(block)) or {}
+    )
     return await asyncio.to_thread(spotify_mirror.verify_connection, config)
 
 
@@ -5784,9 +5785,7 @@ async def spotify_mirror_now_endpoint(request: Request) -> dict[str, Any]:
 
     payload = await _json_object(request)
     track = (
-        payload.get('track')
-        if isinstance(payload.get('track'), dict)
-        else {}
+        payload.get('track') if isinstance(payload.get('track'), dict) else {}
     )
     config = spotify_mirror.active_mirror_config(state.settings)
     if config is None:

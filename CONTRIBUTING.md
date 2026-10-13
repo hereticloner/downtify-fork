@@ -208,7 +208,7 @@ The Vue frontend depends on the exact endpoint paths and response shapes documen
 
 ## Formatting and linting
 
-Run these before pushing. CI runs the same checks and will fail the PR if they don't pass.
+Run these before pushing. CI runs the same checks and will fail the PR if they don't pass. In CI the Prettier job is read-only (`prettier --check`) — it never commits formatting back to the branch, so unformatted files fail the run instead.
 
 ```bash
 make format    # ruff format + ruff --fix + prettier --write
@@ -229,7 +229,7 @@ If `make lint` fails, run `make format` and re-run `make lint`. Commit the forma
 
 ## Testing
 
-Both test suites must pass before submitting a PR.
+All three suites must pass before submitting a PR.
 
 ```bash
 make test
@@ -238,9 +238,12 @@ make test
 This runs:
 
 ```bash
-npm run test --prefix frontend     # Vitest (frontend)
-uv run pytest -x -s -v             # pytest (backend)
+npm test --prefix frontend            # Vitest (frontend)
+uv run pytest -x -s -v                # pytest (backend)
+npm test --prefix docs                # Vitest (docs site)
 ```
+
+CI additionally runs `npm run build --prefix frontend` (Vitest does not compile `.vue` templates) and `uv run ruff format --check .`.
 
 Guidelines:
 

@@ -421,7 +421,11 @@ def test_a_failed_test_is_an_answer_not_an_error(monkeypatch):
 
     result = asyncio.run(
         api.test_navidrome_endpoint(
-            _Body({'url': 'http://nowhere:1', 'username': 'u', 'password': 'K'})
+            _Body({
+                'url': 'http://nowhere:1',
+                'username': 'u',
+                'password': 'K',
+            })
         )
     )
 
