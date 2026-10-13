@@ -143,6 +143,15 @@ make down    # docker compose down
 
 The Docker image is Alpine-based with `ffmpeg`, `tini`, and `su-exec`. UID / GID / UMASK are env-controlled — check `Dockerfile` and `entrypoint.sh`.
 
+### Deploy
+
+```bash
+scripts/deploy.sh <host>              # positional host
+DEPLOY_HOST=<host> scripts/deploy.sh  # or via the environment
+```
+
+`scripts/deploy.sh` runs the whole pull-and-restart dance in one command over a single `ssh` session: it stashes a server-local `docker-compose.yml` edit, runs `git pull --ff-only`, rebuilds the image, recreates the container, and only then polls `/api/health` — the wait belongs in the script because a container that is still booting looks exactly like one that crashed, so a deploy is only trustworthy once health actually answers. No host is baked into the repo: pass one or set `DEPLOY_HOST`, or the script exits `2` with usage. `DEPLOY_DIR` (default `~/downtify`), `BRANCH` (default `feat/collections`) and `HEALTH_URL` override the rest; a conflicting `git stash pop` stops the deploy with an explicit error instead of rebuilding a broken tree.
+
 ### Docs site
 
 ```bash
