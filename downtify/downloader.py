@@ -66,6 +66,12 @@ class NoAudioMatchError(RuntimeError):
 # Upper bound of the "Parallel downloads" setting (see api.py's clamp).
 MAX_PARALLEL_DOWNLOADS = 30
 
+#: Ceiling for ``Downloader._target_locks``, one entry per distinct
+#: output path ever downloaded. The app builds a single Downloader for
+#: the life of the process, so without a cap the dict (and every lock in
+#: it) is kept forever.
+_MAX_TARGET_LOCKS = 1024
+
 # A download holds a thread for its whole run (yt-dlp + ffmpeg, often
 # minutes). Running them on asyncio's default executor — only
 # min(32, cpu_count + 4) threads, e.g. 6 on a 2-core NAS — silently capped
@@ -627,9 +633,28 @@ class Downloader:
         return True
 
     def _target_lock(self, song: dict[str, Any]) -> threading.Lock:
+        """One lock per output path, shared by every download aiming at
+        it.
+
+        The app builds a single :class:`Downloader` for the life of the
+        process, so this dict would otherwise hold a lock per distinct
+        path ever downloaded. At the cap the oldest entry that is *not*
+        held is dropped — dropping a held one would hand a second
+        download a fresh lock and let two of them write the same file
+        at once (see ``artist_profile._lock_from``).
+        """
         key = '/'.join(p.casefold() for p in self._format_output_parts(song))
         with self._target_locks_guard:
-            return self._target_locks.setdefault(key, threading.Lock())
+            lock = self._target_locks.get(key)
+            if lock is None:
+                lock = threading.Lock()
+                if len(self._target_locks) >= _MAX_TARGET_LOCKS:
+                    for old_key, old_lock in list(self._target_locks.items()):
+                        if not old_lock.locked():
+                            del self._target_locks[old_key]
+                            break
+                self._target_locks[key] = lock
+            return lock
 
     @staticmethod
     def _skip_existing(

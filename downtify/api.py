@@ -5627,7 +5627,29 @@ async def lastfm_auth_finish_endpoint(request: Request) -> dict[str, Any]:
 # page; restarts just drop a pending flow - the user clicks again.
 _spotify_connect_states: dict[str, tuple[str, float]] = {}
 
+# How long a started flow stays usable. The callback rejects anything
+# older, and starting a new flow drops whatever has aged out.
+_SPOTIFY_CONNECT_TTL = 300
+
 _SPOTIFY_MIRROR_SCOPE = spotify_mirror.SCOPES
+
+
+def _purge_spotify_connect_states(now: float) -> None:
+    """Drop the connect flows that can no longer be finished.
+
+    A flow is only removed when its callback comes back, and a user who
+    walks away from Spotify's authorize page never sends one - so
+    without this their verifier sits in the dict for the life of the
+    process. Purged here, off the same ``expires_at`` the callback
+    already rejects on, so a flow that is swept away is one that would
+    only have produced ``?spotify=error`` anyway.
+    """
+    for key in [
+        key
+        for key, (_, expires_at) in _spotify_connect_states.items()
+        if expires_at <= now
+    ]:
+        del _spotify_connect_states[key]
 
 
 def _spotify_mirror_block() -> dict[str, Any]:
@@ -5676,7 +5698,12 @@ async def spotify_mirror_authorize_endpoint(
         )
     state_value = secrets.token_urlsafe(16)
     verifier, challenge = spotify_mirror.pkce_pair()
-    _spotify_connect_states[state_value] = (verifier, time.time() + 300)
+    now = time.time()
+    _purge_spotify_connect_states(now)
+    _spotify_connect_states[state_value] = (
+        verifier,
+        now + _SPOTIFY_CONNECT_TTL,
+    )
     url = spotify_mirror.authorize_url(
         client_id,
         _spotify_mirror_redirect(request),

@@ -6,7 +6,7 @@ import json
 import os
 import re
 from threading import Lock
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 from urllib.parse import quote, unquote
 
 import yt_dlp
@@ -91,6 +91,32 @@ _album_search_artist_cache: dict[str, list[str]] = {}
 # per music-video track, which is most of what makes an album "slow to
 # start" downloading.
 _omv_preference_cache: dict[str, tuple[str, int]] = {}
+
+#: Ceiling for every cache dict above. They are built once at import
+#: and never emptied, so a server that downloads a lot of albums would
+#: otherwise hold one entry per album for the life of the process. Same
+#: shape as the bounded ``artist_photo_proxy._url_cache``: the oldest
+#: entry goes as a new one comes in, which only costs a repeated lookup
+#: for that album.
+_CACHE_LIMIT = 256
+
+_K = TypeVar('_K')
+_V = TypeVar('_V')
+
+
+def _put(cache: dict[_K, _V], key: _K, value: _V) -> None:
+    """Store *value* under *key* without growing *cache* past its cap.
+
+    The caller holds ``_lock`` already - every read and write of these
+    dicts in this module does - so this deliberately does not take it:
+    acquiring a non-reentrant ``Lock`` twice would deadlock, and the
+    ``_cached_album_tracks_and_count`` block below writes two caches
+    under one acquire.
+    """
+    if key not in cache and len(cache) >= _CACHE_LIMIT:
+        # Oldest first; dicts keep insertion order.
+        del cache[next(iter(cache))]
+    cache[key] = value
 
 
 def _ytm() -> YTMusic:
@@ -269,7 +295,7 @@ def _album_summary(result: dict[str, Any]) -> Optional[dict[str, Any]]:
     ]
     if artists:
         with _lock:
-            _album_search_artist_cache[browse_id.strip()] = artists
+            _put(_album_search_artist_cache, browse_id.strip(), artists)
     thumbs = result.get('thumbnails') or []
     cover = _upgrade_thumbnail(thumbs[-1].get('url', '')) if thumbs else ''
     return {
@@ -1022,7 +1048,7 @@ def resolve_artist_channel_id(channel_or_handle: str) -> str:
     if not browse_id.startswith('UC'):
         raise ValueError(f'No YouTube Music artist found for {value}')
     with _lock:
-        _channel_id_cache[value.casefold()] = browse_id
+        _put(_channel_id_cache, value.casefold(), browse_id)
     return browse_id
 
 
@@ -1710,7 +1736,7 @@ def _album_browse_id_from_search(
         if rt and rt in want:
             bid = browse.strip()
             with _lock:
-                _album_browse_search_cache[cache_key] = bid
+                _put(_album_browse_search_cache, cache_key, bid)
             return bid
     return ''
 
@@ -1831,22 +1857,26 @@ def _cached_album_tracks_and_count(
     ]
     tup = (tracks, total_ct)
     with _lock:
-        _album_track_cache[browse_id] = tup
+        _put(_album_track_cache, browse_id, tup)
         if not artists:
             # get_album's own response doesn't always carry an `artists`
             # field — fall back to what the earlier albums-filter search
             # for this same browse id already told us (search_albums /
             # _album_summary), rather than losing it.
             artists = list(_album_search_artist_cache.get(browse_id) or [])
-        _album_meta_cache[browse_id] = {
-            'title': data.get('title') or '',
-            'year': str(data.get('year') or '').strip(),
-            'thumbnails': data.get('thumbnails') or [],
-            # 'Album' / 'Single' / 'EP' — YouTube Music's own release
-            # classification.
-            'type': data.get('type') or '',
-            'artists': artists,
-        }
+        _put(
+            _album_meta_cache,
+            browse_id,
+            {
+                'title': data.get('title') or '',
+                'year': str(data.get('year') or '').strip(),
+                'thumbnails': data.get('thumbnails') or [],
+                # 'Album' / 'Single' / 'EP' — YouTube Music's own release
+                # classification.
+                'type': data.get('type') or '',
+                'artists': artists,
+            },
+        )
     return tup
 
 
@@ -2012,10 +2042,10 @@ def _prefer_official_audio_track(
         )
         chosen = (candidate.strip(), (candidate_duration or duration))
         with _lock:
-            _omv_preference_cache[video_id] = chosen
+            _put(_omv_preference_cache, video_id, chosen)
         return chosen
     with _lock:
-        _omv_preference_cache[video_id] = (video_id, duration)
+        _put(_omv_preference_cache, video_id, (video_id, duration))
     return video_id, duration
 
 

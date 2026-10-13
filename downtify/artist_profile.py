@@ -950,6 +950,48 @@ _seed_jobs: queue.SimpleQueue = queue.SimpleQueue()
 _seed_workers: list[threading.Thread] = []
 _seed_workers_guard = threading.Lock()
 
+#: Ceiling for the per-artist lock dicts in this module (seeding and
+#: top songs). They are built once at import and never emptied, so a
+#: library with more artists than this would keep every lock alive for
+#: the life of the process. See :func:`_lock_from` for how entries are
+#: dropped — not quite the plain "delete the oldest" of the value caches,
+#: because these dicts hold something that can be in use.
+_MAX_LOCKS = 1024
+
+
+def _lock_from(
+    locks: dict[str, threading.Lock],
+    guard: threading.Lock,
+    key: str,
+) -> threading.Lock:
+    """The lock for *key*, made on first use and shared from then on.
+
+    *locks* grows one entry per artist and outlives every one of them,
+    so past :data:`_MAX_LOCKS` entries the oldest one that is **not
+    currently held** is dropped. Dropping a held lock is not an option:
+    the next caller would be handed a fresh one and walk straight into
+    the same critical section as the thread still holding it. Entries
+    that are in use are therefore skipped, and a burst of more than
+    ``_MAX_LOCKS`` simultaneous artists is allowed to overshoot the cap
+    rather than break mutual exclusion. The next artist to arrive after
+    the storm trims it back down.
+
+    A repeat request for the same artist always gets the same object
+    back - the cap only ever costs an artist their lock between
+    requests, never a second one *during* a request.
+    """
+    with guard:
+        lock = locks.get(key)
+        if lock is None:
+            lock = threading.Lock()
+            if len(locks) >= _MAX_LOCKS:
+                for old_key, old_lock in list(locks.items()):
+                    if not old_lock.locked():
+                        del locks[old_key]
+                        break
+            locks[key] = lock
+        return lock
+
 
 def _seed_key(download_dir: Path, name: str) -> str:
     return str(_profile_path_for(download_dir, name)).lower()
@@ -958,10 +1000,9 @@ def _seed_key(download_dir: Path, name: str) -> str:
 def _seed_lock_for(download_dir: Path, name: str) -> threading.Lock:
     """One lock per artist, shared by every way of seeding them."""
 
-    with _seed_locks_guard:
-        return _seed_locks.setdefault(
-            _seed_key(download_dir, name), threading.Lock()
-        )
+    return _lock_from(
+        _seed_locks, _seed_locks_guard, _seed_key(download_dir, name)
+    )
 
 
 def profile_seed_artist_of(song: dict[str, Any]) -> str:
@@ -1181,8 +1222,7 @@ def _profile_top_songs_lock_for(
     same artist queue up behind each other instead of fetching twice."""
 
     key = str(profile_top_songs_path_for(download_dir, name)).lower()
-    with _top_songs_locks_guard:
-        return _top_songs_locks.setdefault(key, threading.Lock())
+    return _lock_from(_top_songs_locks, _top_songs_locks_guard, key)
 
 
 def profile_top_songs_load(

@@ -28,11 +28,41 @@ _MIN_INTERVAL = 0.35  # seconds between API calls (rate-limit courtesy)
 # Avoids repeated API calls when downloading a full album (all tracks
 # share the same album and therefore the same genre).
 _genre_cache: dict[str, str] = {}
-_cache_lock = Lock()
-
 # Same idea for cover art, which a library upgrade asks about once per
 # track: every track of an album shares one artwork URL.
 _artwork_cache: dict[str, str] = {}
+_cache_lock = Lock()
+
+#: Ceiling for both caches above. They live for the life of the process
+#: and a library upgrade walks the whole library, so without a cap they
+#: keep one entry per album forever. Same shape as the bounded
+#: ``artist_photo_proxy._url_cache``: the oldest entry is dropped as a
+#: new one comes in, which only costs a repeated lookup for that album.
+_MAX_CACHE_ENTRIES = 512
+
+
+def _album_cache_key(artist: str, album: str) -> str:
+    """The per-album cache key, or ``''`` when there is no album to key
+    on - both caches are album-level, so a track without one is never
+    remembered."""
+    return f'{_normalise(artist)}|{_normalise(album)}' if album else ''
+
+
+def _remember(cache: dict[str, str], key: str, value: str) -> None:
+    """Memoize *value* for *key* without growing *cache* past its cap.
+
+    Like ``dict.setdefault``: an entry that is already there is left
+    alone. Like the rest of the module, the write happens under
+    :data:`_cache_lock` so the trim and the store can't interleave.
+    """
+    with _cache_lock:
+        if key in cache:
+            return
+        if len(cache) >= _MAX_CACHE_ENTRIES:
+            # Oldest first; dicts keep insertion order.
+            del cache[next(iter(cache))]
+        cache[key] = value
+
 
 # Timestamp of the last outgoing request – used for rate pacing.
 _last_request_time: float = 0.0
@@ -146,7 +176,7 @@ def fetch_genre(song: dict[str, Any]) -> str:
         return ''
 
     # ── Check album-level cache first ─────────────────────────────
-    cache_key = f'{_normalise(artist)}|{_normalise(album)}' if album else ''
+    cache_key = _album_cache_key(artist, album)
     if cache_key:
         with _cache_lock:
             cached = _genre_cache.get(cache_key)
@@ -181,12 +211,10 @@ def fetch_genre(song: dict[str, Any]) -> str:
 
     # ── Populate album cache ──────────────────────────────────────
     if cache_key and genre:
-        with _cache_lock:
-            _genre_cache[cache_key] = genre
+        _remember(_genre_cache, cache_key, genre)
     elif cache_key:
         # Negative cache: avoid retrying the same album repeatedly.
-        with _cache_lock:
-            _genre_cache.setdefault(cache_key, '')
+        _remember(_genre_cache, cache_key, '')
 
     return genre
 
@@ -273,7 +301,7 @@ def fetch_artwork_url(song: dict[str, Any], size: int = 1200) -> str:
     if not title:
         return ''
 
-    cache_key = f'{_normalise(artist)}|{_normalise(album)}' if album else ''
+    cache_key = _album_cache_key(artist, album)
     if cache_key:
         with _cache_lock:
             cached = _artwork_cache.get(cache_key)
@@ -291,8 +319,7 @@ def fetch_artwork_url(song: dict[str, Any], size: int = 1200) -> str:
 
     base = str((match or {}).get('artworkUrl100') or '').strip()
     if cache_key:
-        with _cache_lock:
-            _artwork_cache.setdefault(cache_key, base)
+        _remember(_artwork_cache, cache_key, base)
     if not base:
         logger.debug(
             'iTunes artwork: no match for {!r} by {!r}', title, artist
