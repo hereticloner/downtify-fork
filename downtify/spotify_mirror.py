@@ -9,6 +9,11 @@ ships one on the server: the "Downtify Mirror" spotifyd container,
 silent (volume 0) and always online. A play in Downtify starts the same
 song there, and Spotify counts it like any other playback.
 
+When the track belongs to a playlist the catalog knows, the play carries
+that playlist as its Spotify ``context_uri`` (offset to the exact
+track), so Spotify shows "playing from <playlist>" - the same thing the
+user would see had they played it there.
+
 Only a track's START is mirrored - the same ``started`` signal
 scrobbling uses - deduped per player and song, so a scrub or a
 pause/resume doesn't spam the API. Everything is best-effort: a mirror
@@ -347,18 +352,42 @@ def search_uri(
     return _text(items[0].get('uri')) or None
 
 
+def play_body(uri: str, playlist_spotify_id: Optional[str] = None):
+    """The ``PUT /me/player/play`` body for *uri*.
+
+    With no playlist the track plays on its own (``uris``). With
+    *playlist_spotify_id* the play carries that playlist as its
+    ``context_uri`` and starts at this exact track via ``offset`` -
+    Spotify then reports "playing from <playlist>" instead of a bare
+    track, which is the whole point of the mirror. The two forms are
+    mutually exclusive: Spotify rejects a body carrying both.
+    """
+
+    playlist = str(playlist_spotify_id or '').strip()
+    if playlist:
+        return {
+            'context_uri': f'spotify:playlist:{playlist}',
+            'offset': {'uri': uri},
+        }
+    return {'uris': [uri]}
+
+
 def play_track(
     config: dict[str, Any],
     uri: str,
     *,
     device_id: Optional[str] = None,
     silent: bool = True,
+    playlist_spotify_id: Optional[str] = None,
     request: Optional[Request] = None,
 ) -> bool:
     """Start *uri* on the Connect device; ``False`` on any failure.
 
     *silent* first turns the device's volume to 0 - the user listens in
     Downtify; the mirrored playback is for the record, not the ears.
+
+    *playlist_spotify_id* mirrors the play inside that playlist (see
+    :func:`play_body`); ``None`` plays the track on its own.
     """
 
     current = ensure_token(config, request=request)
@@ -381,7 +410,7 @@ def play_track(
             f'{SPOTIFY_API}/me/player/play',
             headers=_bearer(current['access_token']),
             params={'device_id': target},
-            json={'uris': [uri]},
+            json=play_body(uri, playlist_spotify_id),
         )
         response.raise_for_status()
         return True
@@ -491,9 +520,15 @@ def mirror_track(
     track: dict[str, Any],
     *,
     library: Any = None,
+    playlist_spotify_id: Optional[str] = None,
     request: Optional[Request] = None,
 ) -> Optional[dict[str, Any]]:
     """Mirror one play; ``None`` when skipped, tokens dict when done.
+
+    *playlist_spotify_id* is the caller's answer to "which playlist is
+    this track in" (the catalog, when it knows). It makes Spotify show
+    the play as coming from that playlist; ``None`` mirrors the track on
+    its own, as before.
 
     The tokens dict is what the caller persists when :func:`ensure_token`
     renewed the access token mid-flight (``{}`` when it wasn't).
@@ -506,6 +541,7 @@ def mirror_track(
         config,
         uri,
         silent=bool(config.get('silent_on_target', True)),
+        playlist_spotify_id=playlist_spotify_id,
         request=request,
     ):
         current = ensure_token(config, request=request)

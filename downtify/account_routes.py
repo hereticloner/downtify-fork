@@ -48,6 +48,33 @@ class _LiveLibrary:
         return api.state.track_index
 
 
+def _playlist_id_for_track(track: dict[str, Any]) -> Any:
+    """The Spotify playlist this track belongs to, or ``None``.
+
+    The mirror plays the track inside that playlist (``context_uri``),
+    so Spotify reports the playlist the user was playing. The catalog
+    is keyed by Spotify track id, which the track index knows for every
+    downloaded file; the first playlist that has both the track and a
+    linked Spotify id wins. Synchronous sqlite - callers run it in a
+    thread.
+    """
+
+    catalog = api.state.playlist_catalog
+    track_index = api.state.track_index
+    if catalog is None or track_index is None:
+        return None
+    tid = track_index.spotify_id_for_filename(str(track.get('file') or ''))
+    if not tid:
+        return None
+    names = set(catalog.playlists_for_track(tid))
+    if not names:
+        return None
+    for row in catalog.list_playlists_with_spotify_id():
+        if row['name'] in names:
+            return row['spotify_id']
+    return None
+
+
 def _accounts_on() -> None:
     """409 when accounts are turned off (``DOWNTIFY_DISABLE_AUTH``):
     there is one user and no password to manage."""
@@ -428,11 +455,17 @@ async def report_playback(request: Request) -> dict[str, Any]:
             # play after a paused report: the player announces a new
             # track as paused before its audio starts, so `started` is
             # already false by the time the playing report arrives.
+            # Past the dedupe, so the catalog is only read for a play
+            # that is actually going out.
+            playlist_id = await asyncio.to_thread(
+                _playlist_id_for_track, track
+            )
             renewed = await asyncio.to_thread(
                 spotify_mirror.mirror_track,
                 mirror,
                 track,
                 library=_LiveLibrary(),
+                playlist_spotify_id=playlist_id,
             )
             if renewed:
                 api._persist_mirror_tokens(renewed)

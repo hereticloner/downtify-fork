@@ -14,7 +14,9 @@ import time
 import pytest
 from fastapi import HTTPException
 
-from downtify import api, spotify_mirror
+from downtify import account_routes, api, spotify_mirror
+from downtify.playlist_catalog import PlaylistCatalog
+from downtify.track_index import TrackIndex
 
 
 class FakeResponse:
@@ -259,6 +261,49 @@ def test_play_track_puts_play_on_the_device():
     assert volume[0]['params']['volume_percent'] == 0
 
 
+def test_play_track_without_a_playlist_keeps_the_plain_uris_body():
+    calls = []
+    ok = spotify_mirror.play_track(
+        _config(token_expires_at=99999999999),
+        'spotify:track:ID',
+        playlist_spotify_id=None,
+        request=_request(calls, status=204),
+    )
+
+    assert ok is True
+    play = [c for c in calls if 'player/play' in c['url']][0]
+    assert play['json'] == {'uris': ['spotify:track:ID']}
+    assert 'context_uri' not in play['json']
+
+
+def test_play_track_inside_a_playlist_uses_context_and_offset():
+    calls = []
+    ok = spotify_mirror.play_track(
+        _config(token_expires_at=99999999999),
+        'spotify:track:ID',
+        playlist_spotify_id='abc',
+        request=_request(calls, status=204),
+    )
+
+    assert ok is True
+    play = [c for c in calls if 'player/play' in c['url']][0]
+    assert play['json'] == {
+        'context_uri': 'spotify:playlist:abc',
+        'offset': {'uri': 'spotify:track:ID'},
+    }
+    # Spotify refuses a body carrying both forms.
+    assert 'uris' not in play['json']
+
+
+def test_play_body_blank_playlist_falls_back_to_uris():
+    assert spotify_mirror.play_body('spotify:track:X', '') == {
+        'uris': ['spotify:track:X']
+    }
+    assert spotify_mirror.play_body('spotify:track:X', '  ') == {
+        'uris': ['spotify:track:X']
+    }
+
+
 def test_play_track_loud_when_not_silent():
     calls = []
     ok = spotify_mirror.play_track(
@@ -382,6 +427,111 @@ def test_mirror_track_none_when_no_uri_found():
         request=_request([]),
     )
     assert result is None
+
+
+def test_mirror_track_forwards_the_playlist_as_the_play_context():
+    calls = []
+    spotify_mirror.mirror_track(
+        _config(token_expires_at=99999999999),
+        {'file': 'Road Trip/Alpha.mp3', 'artist': 'A', 'title': 'T'},
+        library=_Library(_Index({'Road Trip/Alpha.mp3': 'S' * 22})),
+        playlist_spotify_id='pl-9',
+        request=_request(calls, status=204),
+    )
+
+    play = [c for c in calls if 'player/play' in c['url']][0]
+    assert play['json'] == {
+        'context_uri': 'spotify:playlist:pl-9',
+        'offset': {'uri': f'spotify:track:{"S" * 22}'},
+    }
+
+
+def test_mirror_track_without_a_playlist_plays_the_track_alone():
+    calls = []
+    spotify_mirror.mirror_track(
+        _config(token_expires_at=99999999999),
+        {'file': 'Road Trip/Alpha.mp3', 'artist': 'A', 'title': 'T'},
+        library=_Library(_Index({'Road Trip/Alpha.mp3': 'S' * 22})),
+        request=_request(calls, status=204),
+    )
+
+    play = [c for c in calls if 'player/play' in c['url']][0]
+    assert play['json'] == {'uris': [f'spotify:track:{"S" * 22}']}
+
+
+# ── playlist resolution (account_routes) ─────────────────────────────
+
+
+def _catalog_with(tmp_path, monkeypatch, filename, track_id):
+    """A live catalog + track index where *filename* is *track_id*."""
+
+    catalog = PlaylistCatalog(tmp_path / 'playlists.db')
+    index = TrackIndex(tmp_path / 'tracks.db')
+    monkeypatch.setattr(api.state, 'playlist_catalog', catalog)
+    monkeypatch.setattr(api.state, 'track_index', index)
+    index.register(track_id, filename)
+    return catalog, index
+
+
+def test_playlist_id_resolves_the_catalog_playlist(tmp_path, monkeypatch):
+    catalog, _index = _catalog_with(
+        tmp_path, monkeypatch, 'Road Trip/Alpha.mp3', 'S' * 22
+    )
+    catalog.ensure_playlist('Road Trip', spotify_id='PL1')
+    catalog.upsert_track(
+        'Road Trip', {'song_id': 'S' * 22}, 'Road Trip/Alpha.mp3', tmp_path
+    )
+
+    assert (
+        account_routes._playlist_id_for_track({'file': 'Road Trip/Alpha.mp3'})
+        == 'PL1'
+    )
+
+
+def test_playlist_id_none_when_no_playlist_has_the_track(
+    tmp_path, monkeypatch
+):
+    catalog, _index = _catalog_with(
+        tmp_path, monkeypatch, 'Road Trip/Alpha.mp3', 'S' * 22
+    )
+    catalog.ensure_playlist('Road Trip', spotify_id='PL1')
+    catalog.upsert_track(
+        'Road Trip', {'song_id': 'T' * 22}, 'Road Trip/Other.mp3', tmp_path
+    )
+
+    assert (
+        account_routes._playlist_id_for_track({'file': 'Road Trip/Alpha.mp3'})
+        is None
+    )
+
+
+def test_playlist_id_skips_a_playlist_without_a_spotify_id(
+    tmp_path, monkeypatch
+):
+    catalog, _index = _catalog_with(
+        tmp_path, monkeypatch, 'Road Trip/Alpha.mp3', 'S' * 22
+    )
+    # "A Collection" has the track but no linked playlist id.
+    catalog.ensure_playlist('A Collection')
+    catalog.upsert_track(
+        'A Collection', {'song_id': 'S' * 22}, 'Road Trip/Alpha.mp3', tmp_path
+    )
+    catalog.ensure_playlist('Road Trip', spotify_id='PL1')
+    catalog.upsert_track(
+        'Road Trip', {'song_id': 'S' * 22}, 'Road Trip/Alpha.mp3', tmp_path
+    )
+
+    assert (
+        account_routes._playlist_id_for_track({'file': 'Road Trip/Alpha.mp3'})
+        == 'PL1'
+    )
+
+
+def test_playlist_id_none_for_an_unknown_file(tmp_path, monkeypatch):
+    _catalog_with(tmp_path, monkeypatch, 'Road Trip/Alpha.mp3', 'S' * 22)
+
+    assert account_routes._playlist_id_for_track({'file': 'X.mp3'}) is None
+    assert account_routes._playlist_id_for_track({}) is None
 
 
 # ── test_connection ──────────────────────────────────────────────────

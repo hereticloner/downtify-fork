@@ -86,6 +86,14 @@ Anything else falls
 back to a Spotify search by artist + title; when nothing matches, the
 play is skipped.
 
+**Playing from a playlist.** When the track belongs to a playlist
+Downtify knows about — a downloaded or synced playlist with its Spotify
+id linked — the mirrored play carries that playlist as its
+`context_uri`, starting at the exact track. Spotify then shows
+*Playing from &lt;playlist&gt;* rather than a bare track, which is what
+you would have seen had you played it there. A track in no linked
+playlist still mirrors on its own, unchanged.
+
 Mirror failures are logged and skipped — lowering the volume to a gone
 device, an offline device, a rate-limit hiccup — never does anything to
 the playback you are hearing.
