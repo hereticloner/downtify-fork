@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 #: Folders ``library_catalog`` excludes from the audio listing.
-_SKIP_DIRNAMES = frozenset({'Podcasts', 'Playlists'})
+_SKIP_DIRNAMES = frozenset({'Playlists'})
 _AUDIO_SUFFIXES = frozenset({
     '.mp3',
     '.m4a',

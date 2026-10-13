@@ -920,13 +920,6 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
             CLIENT,
         ),
         (_ALL, r'^/api/discover/blocked$', CLIENT),
-        (_READ, r'^/api/podcasts/', CLIENT),
-        (
-            _m('POST'),
-            r'^/api/podcasts/(resolve|episodes/\d+/download)$',
-            CLIENT,
-        ),
-        (_m('PUT'), r'^/api/podcasts/episodes/\d+/playback$', CLIENT),
         (_m('POST'), r'^/api/activity/playback$', CLIENT),
         (_READ, r'^/api/monitor/playlists$', CLIENT),
         (_READ, r'^/api/check_update$', CLIENT),
@@ -939,7 +932,6 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_m('DELETE'), r'^/api/queue', ADMIN),
         (_m('POST'), r'^/api/likes/clear$', ADMIN),
         (_m('DELETE'), r'^/api/discover/listens$', ADMIN),
-        (_m('POST', 'PATCH', 'DELETE'), r'^/api/podcasts/', ADMIN),
         (_m('POST', 'PATCH', 'DELETE'), r'^/api/monitor/', ADMIN),
         (_ALL, r'^/api/(users|activity)(/|$)', ADMIN),
     ]

@@ -32,7 +32,6 @@ from .navidrome import (
 from .navidrome_index import NavidromeIndex
 from .playlist_catalog import PlaylistCatalog
 from .playlist_spotify_cache import PlaylistSpotifyCache
-from .podcasts import PodcastStore, sync_show
 from .sqlite_utils import connect_sqlite
 from .track_index import TrackIndex, normalize_spotify_track_id
 
@@ -154,12 +153,6 @@ def _is_due(
 
 KIND_PLAYLIST = 'playlist'
 KIND_ARTIST = 'artist'
-#: A podcast watch. ``spotify_id`` (the watch table's generic unique-key
-#: column) holds the show's RSS feed URL for this kind — there is no
-#: Spotify id involved. See ``downtify.podcasts`` for everything else
-#: about the show (retention, episodes, tags): this table only knows
-#: how to schedule the check.
-KIND_PODCAST = 'podcast'
 
 SOURCE_SPOTIFY = 'spotify'
 SOURCE_YOUTUBE_MUSIC = 'youtube_music'
@@ -1428,56 +1421,6 @@ def _download_cover_for_watch(
 _checks_running: set[int] = set()
 
 
-async def check_podcast_watch(
-    playlist: MonitoredPlaylist,
-    db: PlaylistMonitorDB,
-    podcasts: PodcastStore,
-    download_dir: Path,
-    broadcast: Callable[[dict[str, Any]], Any],
-    loop: asyncio.AbstractEventLoop,
-) -> int:
-    """Sync one podcast watch: ``playlist.spotify_id`` is its feed URL.
-
-    Only the scheduling row lives here; the show itself, its retention
-    policy and its episodes are ``podcasts.py``'s job — this is just the
-    glue ``check_watch`` needs to treat a podcast like any other kind of
-    watch. Returns the number of episodes downloaded.
-    """
-
-    show = await asyncio.to_thread(
-        podcasts.get_show_by_feed_url, playlist.spotify_id
-    )
-    if show is None:
-        logger.warning(
-            'Podcast watch "{}" has no matching show row (feed {})',
-            playlist.name,
-            playlist.spotify_id,
-        )
-        await asyncio.to_thread(
-            db.update_playlist, playlist.id, last_checked=_now_iso()
-        )
-        return 0
-
-    def _progress(info: dict[str, Any]) -> None:
-        asyncio.run_coroutine_threadsafe(
-            broadcast({'type': 'podcast_progress', **info}), loop
-        )
-
-    try:
-        count = await asyncio.to_thread(
-            sync_show, podcasts, show, download_dir, progress=_progress
-        )
-    except Exception:
-        logger.exception('Podcast sync failed for "{}"', playlist.name)
-        count = 0
-    await asyncio.to_thread(
-        db.update_playlist, playlist.id, last_checked=_now_iso()
-    )
-    if count:
-        asyncio.run_coroutine_threadsafe(broadcast({'type': 'podcasts'}), loop)
-    return count
-
-
 async def _emit_check(
     broadcast: Callable[[dict[str, Any]], Any],
     **payload: Any,
@@ -1499,7 +1442,6 @@ async def check_watch(
     loop: asyncio.AbstractEventLoop,
     settings: Optional[dict[str, Any]] = None,
     library: Optional[LibraryStores] = None,
-    podcasts: Optional[PodcastStore] = None,
 ) -> int:
     """Run the right check for a watch by kind, unless one is already
     running.
@@ -1522,26 +1464,11 @@ async def check_watch(
             kind=playlist.kind,
         )
         try:
-            if playlist.kind == KIND_PODCAST:
-                if podcasts is None:
-                    logger.warning(
-                        'Podcast watch "{}" but podcast store not ready',
-                        playlist.name,
-                    )
-                    return 0
-                count = await check_podcast_watch(
-                    playlist,
-                    db,
-                    podcasts,
-                    Path(downloader.download_dir),
-                    broadcast,
-                    loop,
-                )
-            elif playlist.kind == KIND_ARTIST:
+            if playlist.kind == KIND_ARTIST:
                 count = await check_artist(
                     playlist, db, downloader, broadcast, loop, settings
                 )
-            else:
+            elif playlist.kind == KIND_PLAYLIST:
                 count = await check_playlist(
                     playlist,
                     db,
@@ -1551,6 +1478,16 @@ async def check_watch(
                     settings,
                     library,
                 )
+            else:
+                # A kind this build doesn't know about - a row left over
+                # from a feature that no longer exists. Warn once per
+                # sweep instead of failing the fetch forever.
+                logger.warning(
+                    'Watch "{}" has unknown kind "{}" - skipping',
+                    playlist.name,
+                    playlist.kind,
+                )
+                return 0
         except Exception:
             await _emit_check(
                 broadcast,
@@ -1580,7 +1517,6 @@ async def monitor_loop(
     loop: asyncio.AbstractEventLoop,
     settings: Optional[dict[str, Any]] = None,
     get_library: Optional[Callable[[], LibraryStores]] = None,
-    get_podcasts: Optional[Callable[[], Optional[PodcastStore]]] = None,
 ) -> None:
     """Background task: sweep all enabled playlists that are due for checking."""
     while True:
@@ -1607,7 +1543,6 @@ async def monitor_loop(
                         loop,
                         settings,
                         get_library() if get_library else None,
-                        get_podcasts() if get_podcasts else None,
                     )
                     if count > 0:
                         logger.info(

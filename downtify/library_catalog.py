@@ -98,13 +98,6 @@ _FEAT_TAIL = re.compile(r'\s(feat|ft)\.?\s.*$')
 _REMASTER_TAIL = re.compile(r'\s-\s[^-]*remaster[^-]*$')
 _ARTIST_SPLIT = re.compile(r',|;| & ')
 
-#: Top-level folder podcast episodes live under (see
-#: ``downtify.podcasts``). Excluded from the library scan below, so
-#: episodes never show up as tracks, albums or artists, and never reach
-#: an Upgrade library run — they have no Spotify track id and no lyrics
-#: to look for, and neither module needs to know podcasts exist.
-PODCASTS_DIRNAME = 'Podcasts'
-
 
 #: Sidecar artwork Downtify writes (playlist covers) or that already
 #: sits beside downloaded tracks.
@@ -179,14 +172,6 @@ def resolve_library_image(stored: str, ctx: LibraryContext) -> Optional[Path]:
     return _resolve_within_library(stored, ctx, _is_image)
 
 
-def _under_podcasts(file_path: Path, download_dir: Path) -> bool:
-    try:
-        file_path.relative_to(download_dir / PODCASTS_DIRNAME)
-    except ValueError:
-        return False
-    return True
-
-
 def _register_path(
     file_path: Path,
     ctx: LibraryContext,
@@ -201,15 +186,13 @@ def _register_path(
         resolved = file_path.resolve()
     except OSError:
         return
-    if _under_podcasts(resolved, ctx.download_dir):
-        return
     resolved_key = str(resolved)
     if resolved_key in by_resolved:
         return
     by_resolved[resolved_key] = roots.stored_for(resolved)
 
 
-def _walk_audio_files(root: Path, *, prune_podcasts: bool = False):
+def _walk_audio_files(root: Path):
     """Yield audio files under *root* without visiting every other file."""
 
     try:
@@ -217,12 +200,8 @@ def _walk_audio_files(root: Path, *, prune_podcasts: bool = False):
             return
     except OSError:
         return
-    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+    for dirpath, _dirnames, filenames in os.walk(root, followlinks=False):
         current = Path(dirpath)
-        if prune_podcasts and current == root:
-            dirnames[:] = [
-                name for name in dirnames if name != PODCASTS_DIRNAME
-            ]
         for name in filenames:
             if UPGRADE_STAGING_MARKER in name:
                 continue
@@ -240,7 +219,7 @@ def _scan_library_path_pairs(ctx: LibraryContext) -> list[tuple[str, str]]:
         ctx.download_dir, ctx.slskd_dir, ctx.extra_dirs
     )
 
-    for path in _walk_audio_files(ctx.download_dir, prune_podcasts=True):
+    for path in _walk_audio_files(ctx.download_dir):
         _register_path(path, ctx, by_resolved, roots)
 
     if ctx.slskd_dir is not None and roots.slskd != roots.download:

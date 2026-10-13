@@ -102,7 +102,6 @@ from downtify.playlist_spotify_cache import (
     PlaylistSpotifyCache,
     playlist_spotify_cache_loop,
 )
-from downtify.podcasts import PodcastStore
 from downtify.security_headers import SecurityHeadersMiddleware
 from downtify.server_identity import ServerIdentity
 from downtify.server_port import (
@@ -438,7 +437,6 @@ def _open_library_stores(monitor_db_path: Path) -> None:
     )
     api.state.lyrics_cache = LyricsLookupCache(library_db)
     api.state.likes = LikedTracks(library_db)
-    api.state.podcasts = PodcastStore(library_db)
     # The mobile API (downtify/mobile_routes.py).
     api.state.library_sync = LibrarySync(library_db)
     api.state.transcoder = transcoder_from_env(DATABASE_DIR)
@@ -585,7 +583,6 @@ def build_app() -> FastAPI:
                 loop=loop,
                 settings=api.state.settings,
                 get_library=api.library_stores,
-                get_podcasts=lambda: api.state.podcasts,
             ),
             name='monitor-loop',
         )

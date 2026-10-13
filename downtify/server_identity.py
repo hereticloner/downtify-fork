@@ -156,7 +156,6 @@ def server_info(
             or {'available': False, 'formats': [], 'bitrates': []},
             'signed_urls': True,
             'pairing': True,
-            'podcasts': True,
             'discover': True,
             'lyrics': True,
             'library_sync': True,
