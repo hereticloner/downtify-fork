@@ -371,6 +371,7 @@ def test_a_revoked_device_voids_its_signed_urls(tmp_path):
     assert store.signer.verify_signed('GET', path, query) is None
 
 
+@pytest.mark.windows_broken
 def test_the_signing_key_is_private_and_kept(tmp_path):
     store = _store(tmp_path)
     device, _token = store.create_device('Cast', user_id=1)

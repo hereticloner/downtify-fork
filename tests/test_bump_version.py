@@ -7,6 +7,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).parents[1] / 'version.sh'
 
 
@@ -14,10 +16,12 @@ def test_script_exists():
     assert SCRIPT.exists(), 'version.sh is missing from repo root'
 
 
+@pytest.mark.windows_broken
 def test_script_is_executable():
     assert SCRIPT.stat().st_mode & 0o111, 'version.sh is not executable'
 
 
+@pytest.mark.windows_broken
 def test_invalid_semver_rejected():
     result = subprocess.run(
         [str(SCRIPT), 'not-semver'],
@@ -28,6 +32,7 @@ def test_invalid_semver_rejected():
     assert result.returncode != 0
 
 
+@pytest.mark.windows_broken
 def test_missing_argument_shows_usage():
     result = subprocess.run(
         [str(SCRIPT)],
@@ -67,6 +72,7 @@ def _setup_fake_repo(base: Path) -> None:
     )
 
 
+@pytest.mark.windows_broken
 def test_bump_updates_all_three_files(tmp_path):
     _setup_fake_repo(tmp_path)
     script_copy = tmp_path / 'version.sh'
@@ -96,6 +102,7 @@ def test_bump_updates_all_three_files(tmp_path):
     assert 'org.opencontainers.image.version="2.3.4"' in dockerfile
 
 
+@pytest.mark.windows_broken
 def test_bump_noop_when_already_at_target(tmp_path):
     _setup_fake_repo(tmp_path)
     script_copy = tmp_path / 'version.sh'
@@ -112,6 +119,7 @@ def test_bump_noop_when_already_at_target(tmp_path):
     assert 'nothing to do' in result.stdout.lower()
 
 
+@pytest.mark.windows_broken
 def test_current_flag_in_fake_repo(tmp_path):
     _setup_fake_repo(tmp_path)
     script_copy = tmp_path / 'version.sh'

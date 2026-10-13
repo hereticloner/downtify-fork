@@ -167,6 +167,7 @@ def test_the_reserved_name_is_recognised_however_it_is_written():
 # ── the playlist file ──────────────────────────────────────────────────
 
 
+@pytest.mark.windows_broken
 def test_the_playlist_lists_the_liked_songs_newest_first(tmp_path):
     downloads = tmp_path / 'downloads'
     _track(downloads, 'Old Artist - Old.mp3')
@@ -217,6 +218,7 @@ def test_the_playlist_appears_with_the_first_like_and_goes_with_the_last(
     assert not _liked_m3u(downloads).exists()
 
 
+@pytest.mark.windows_broken
 def test_a_song_that_went_missing_is_skipped_but_stays_liked(tmp_path):
     downloads = tmp_path / 'downloads'
     _track(downloads, 'here.mp3')

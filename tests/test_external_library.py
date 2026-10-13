@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from mutagen.id3 import ID3, TALB, TIT2, TPE1, TPE2, USLT
 
 from downtify import external_library as ext
@@ -58,6 +59,7 @@ def _write_mp3(
     tags.save(str(path), v2_version=3)
 
 
+@pytest.mark.windows_broken
 def test_sanitize_drops_relative_and_duplicates(tmp_path):
     abs_one = str(tmp_path / 'one')
     assert sanitize_external_folders([

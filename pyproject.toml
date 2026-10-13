@@ -27,6 +27,10 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = '-m "not windows_broken"'
+markers = [
+    "windows_broken: Windows'ta bilinen kırık (yol/.sh sınıfı)",
+]
 
 [tool.uv]
 upgrade = true

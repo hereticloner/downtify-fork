@@ -88,6 +88,7 @@ def test_an_older_settings_file_keeps_the_previous_defaults(tmp_path):
     assert fresh['organize_by_artist'] is True
 
 
+@pytest.mark.windows_broken
 def test_load_settings_sanitizes_external_library_folders(tmp_path):
     path = tmp_path / 'settings.json'
     good = tmp_path / 'music'

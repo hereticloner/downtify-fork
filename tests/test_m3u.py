@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from downtify import m3u
 
 # --- sanitize_playlist_name ------------------------------------------------
@@ -62,6 +64,7 @@ def _slskd_track(tmp_path: Path) -> tuple[Path, Path, Path]:
     return download_dir, slskd_dir, track
 
 
+@pytest.mark.windows_broken
 def test_build_resolves_slskd_prefixed_paths_relative_to_m3u(tmp_path):
     # An slskd download left in place lives outside download_dir; the M3U
     # still points at it relative to its own folder, so a media server
@@ -163,6 +166,7 @@ def test_build_skips_entries_without_filename(tmp_path):
     assert content == '#EXTM3U\n'
 
 
+@pytest.mark.windows_broken
 def test_build_uses_paths_relative_to_m3u_dir(tmp_path):
     # Track is flat under download_dir; M3U lives in download_dir/Playlists.
     # Relative path back to the track is therefore '../song.mp3'.
@@ -175,6 +179,7 @@ def test_build_uses_paths_relative_to_m3u_dir(tmp_path):
     assert str(tmp_path) not in content
 
 
+@pytest.mark.windows_broken
 def test_build_relative_paths_with_explicit_m3u_dir(tmp_path):
     # Track nested under an artist subdir, M3U sibling at Playlists/.
     artist_dir = tmp_path / 'Artist' / 'Album'

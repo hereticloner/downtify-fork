@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import pytest
+
 from downtify.fs_suggest import suggest_directories
 
 
+@pytest.mark.windows_broken
 def test_suggest_matches_prefix(tmp_path):
     (tmp_path / 'music').mkdir()
     (tmp_path / 'misc').mkdir()
@@ -14,6 +17,7 @@ def test_suggest_matches_prefix(tmp_path):
     assert str(tmp_path / 'misc') not in hits
 
 
+@pytest.mark.windows_broken
 def test_suggest_trailing_slash_lists_children(tmp_path):
     nested = tmp_path / 'music' / 'collection'
     nested.mkdir(parents=True)

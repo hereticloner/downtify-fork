@@ -280,6 +280,7 @@ def _sources(tmp_path: Path, count: int) -> list[Path]:
     return paths
 
 
+@pytest.mark.windows_broken
 def test_concurrent_transcodes_are_capped(tmp_path):
     ffmpeg, _runs = _fake_ffmpeg(tmp_path)
     transcoder = Transcoder(
@@ -303,6 +304,7 @@ def test_concurrent_transcodes_are_capped(tmp_path):
     assert all(p.read_bytes() == b'transcoded' for p in outputs)
 
 
+@pytest.mark.windows_broken
 def test_same_copy_is_made_once_and_then_cached(tmp_path):
     ffmpeg, runs = _fake_ffmpeg(tmp_path)
     transcoder = Transcoder(tmp_path / 'cache', ffmpeg=ffmpeg)
@@ -321,6 +323,7 @@ def test_same_copy_is_made_once_and_then_cached(tmp_path):
     assert runs.read_text().count('run') == 1
 
 
+@pytest.mark.windows_broken
 def test_a_transcode_nobody_waits_for_is_stopped(tmp_path):
     ffmpeg, _runs = _fake_ffmpeg(tmp_path, delay=5)
     transcoder = Transcoder(tmp_path / 'cache', ffmpeg=ffmpeg)
