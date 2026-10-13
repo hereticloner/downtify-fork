@@ -60,6 +60,13 @@ def _itunes_key(song: dict) -> str:
     return itunes._album_cache_key(song['artists'][0], song['album_name'])
 
 
+async def _stub_search(query, limit=5):
+    """Stands in for ``itunes._search_itunes`` (async since the rate
+    pacing moved onto the event loop)."""
+
+    return [_track_row(query, query)]
+
+
 @pytest.fixture(autouse=True)
 def _clean_itunes_caches():
     itunes._genre_cache.clear()
@@ -71,11 +78,7 @@ def _clean_itunes_caches():
 
 def test_genre_cache_is_capped_and_drops_the_oldest(monkeypatch):
     monkeypatch.setattr(itunes, '_MAX_CACHE_ENTRIES', 3)
-    monkeypatch.setattr(
-        itunes,
-        '_search_itunes',
-        lambda query, limit=5: [_track_row(query, query)],
-    )
+    monkeypatch.setattr(itunes, '_search_itunes', _stub_search)
     songs = [
         _song(f'Artist {i}', f'Track {i}', f'Album {i}') for i in range(5)
     ]
@@ -91,7 +94,7 @@ def test_genre_cache_is_capped_and_drops_the_oldest(monkeypatch):
 def test_genre_cache_still_answers_the_second_call(monkeypatch):
     calls: list[str] = []
 
-    def search(query, limit=5):
+    async def search(query, limit=5):
         calls.append(query)
         return [_track_row('Paramore', 'The Real Thing')]
 
@@ -104,11 +107,7 @@ def test_genre_cache_still_answers_the_second_call(monkeypatch):
 
 def test_artwork_cache_is_capped_and_drops_the_oldest(monkeypatch):
     monkeypatch.setattr(itunes, '_MAX_CACHE_ENTRIES', 3)
-    monkeypatch.setattr(
-        itunes,
-        '_search_itunes',
-        lambda query, limit=5: [_track_row(query, query)],
-    )
+    monkeypatch.setattr(itunes, '_search_itunes', _stub_search)
     songs = [
         _song(f'Artist {i}', f'Track {i}', f'Album {i}') for i in range(5)
     ]
@@ -124,7 +123,7 @@ def test_artwork_cache_is_capped_and_drops_the_oldest(monkeypatch):
 def test_artwork_cache_still_answers_the_second_call(monkeypatch):
     calls: list[str] = []
 
-    def search(query, limit=5):
+    async def search(query, limit=5):
         calls.append(query)
         return [_track_row('Paramore', 'The Real Thing')]
 

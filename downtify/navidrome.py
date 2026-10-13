@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import re
 import secrets
@@ -507,13 +508,24 @@ class NavidromeClient:
         user, pwd = self._scan_credentials()
         self._request('startScan', extra or None, username=user, password=pwd)
 
-    def wait_scan_complete(self, max_wait_seconds: int) -> bool:
+    async def wait_scan_complete(self, max_wait_seconds: int) -> bool:
+        """Poll ``getScanStatus`` until Navidrome is idle or the budget runs
+        out.
+
+        The poll interval is an ``await``, not a ``time.sleep``: a scan
+        that runs for minutes must not park a worker thread, and
+        sync-def FastAPI routes run in a pool of only ~40.
+        """
+
         deadline = time.monotonic() + max(10, max_wait_seconds)
         user, pwd = self._scan_credentials()
         while time.monotonic() < deadline:
             try:
-                body = self._request(
-                    'getScanStatus', username=user, password=pwd
+                body = await asyncio.to_thread(
+                    self._request,
+                    'getScanStatus',
+                    username=user,
+                    password=pwd,
                 )
             except Exception as exc:
                 logger.info('navidrome: scan status failed err={}', exc)
@@ -521,7 +533,7 @@ class NavidromeClient:
             status = body.get('scanStatus') if isinstance(body, dict) else None
             if isinstance(status, dict) and not status.get('scanning'):
                 return True
-            time.sleep(self.scan_poll_seconds)
+            await asyncio.sleep(self.scan_poll_seconds)
         logger.warning(
             'navidrome: library scan still running after {}s; '
             'playlist match may be incomplete',
@@ -857,12 +869,12 @@ def _match_songs_in_library(
     return song_ids, unmatched
 
 
-def _trigger_library_scan(
+async def _trigger_library_scan(
     client: NavidromeClient,
     cfg: dict[str, Any],
     track_count: int,
 ) -> bool:
-    """Start Navidrome scan and block until idle or timeout. Returns scan finished."""
+    """Start Navidrome scan and wait until idle or timeout. Returns scan finished."""
 
     wait_seconds = _scan_wait_budget(cfg, track_count)
     mode = 'full' if cfg.get('scan_full') else 'incremental'
@@ -873,8 +885,8 @@ def _trigger_library_scan(
         wait_seconds,
         track_count,
     )
-    client.start_scan(full=bool(cfg.get('scan_full')))
-    if client.wait_scan_complete(wait_seconds):
+    await asyncio.to_thread(client.start_scan, full=bool(cfg.get('scan_full')))
+    if await client.wait_scan_complete(wait_seconds):
         logger.info('navidrome: library scan finished')
         return True
     return False
@@ -932,7 +944,7 @@ def remove_navidrome_playlist_by_name(
     return removed
 
 
-def sync_playlist_to_navidrome(  # noqa: PLR0914
+async def sync_playlist_to_navidrome(  # noqa: PLR0914
     playlist_name: str,
     songs: list[dict[str, Any]],
     settings: dict[str, Any],
@@ -948,6 +960,11 @@ def sync_playlist_to_navidrome(  # noqa: PLR0914
     *trigger_scan*: when ``None``, use ``scan_after_download`` from settings
     (typical after new downloads). Pass ``False`` after deletes or path fixes
     when files were removed, not added.
+
+    Await rather than block: the scan poll and the post-scan retry sleep on
+    the event loop, so a slow Navidrome no longer holds one of the ~40
+    anyio worker threads a sync-def route would sit on. The Subsonic HTTP
+    and the on-disk tag reads still go to threads.
     """
     cfg = _effective_navidrome_settings(settings)
     if not cfg.get('enabled'):
@@ -956,14 +973,15 @@ def sync_playlist_to_navidrome(  # noqa: PLR0914
     if not client.configured():
         logger.info('navidrome: missing url/username/password')
         return None
-    if not client.ping():
+    if not await asyncio.to_thread(client.ping):
         logger.info('navidrome: server unreachable url={!r}', cfg.get('url'))
         return None
     if not songs:
         return None
 
     incoming = len(songs)
-    songs = _songs_for_playlist_sync(
+    songs = await asyncio.to_thread(
+        _songs_for_playlist_sync,
         playlist_name,
         songs,
         delete_mismatches=delete_tag_mismatches,
@@ -995,12 +1013,15 @@ def sync_playlist_to_navidrome(  # noqa: PLR0914
     if do_scan:
         try:
             scanned = True
-            scan_complete = _trigger_library_scan(client, cfg, len(songs))
+            scan_complete = await _trigger_library_scan(
+                client, cfg, len(songs)
+            )
         except Exception as exc:
             logger.info('navidrome: library scan failed err={}', exc)
 
     dl_dir, slskd_dir = _library_dirs_from_settings(settings, download_dir)
-    song_ids, pending = _match_songs_in_library(
+    song_ids, pending = await asyncio.to_thread(
+        _match_songs_in_library,
         client,
         songs,
         navidrome_index,
@@ -1014,8 +1035,9 @@ def sync_playlist_to_navidrome(  # noqa: PLR0914
             len(pending),
             retry_seconds,
         )
-        time.sleep(retry_seconds)
-        extra_ids, pending = _match_songs_in_library(
+        await asyncio.sleep(retry_seconds)
+        extra_ids, pending = await asyncio.to_thread(
+            _match_songs_in_library,
             client,
             pending,
             navidrome_index,
@@ -1043,6 +1065,36 @@ def sync_playlist_to_navidrome(  # noqa: PLR0914
         return PlaylistSyncResult(
             '', playlist_name, 0, total, scanned, scan_complete
         )
+
+    return await asyncio.to_thread(
+        _publish_playlist,
+        client,
+        cfg,
+        playlist_name,
+        song_ids,
+        comment=comment,
+        matched=matched,
+        total=total,
+        scanned=scanned,
+        scan_complete=scan_complete,
+    )
+
+
+def _publish_playlist(
+    client: NavidromeClient,
+    cfg: dict[str, Any],
+    playlist_name: str,
+    song_ids: list[str],
+    *,
+    comment: str,
+    matched: int,
+    total: int,
+    scanned: bool,
+    scan_complete: bool,
+) -> PlaylistSyncResult:
+    """Create (or replace) the server playlist from *song_ids* and report
+    the outcome. Blocking Subsonic HTTP only - the caller awaits it in a
+    thread so the event loop keeps running the scan/retry sleeps."""
 
     existing_ids = client.find_playlist_ids_by_name(playlist_name)
     try:

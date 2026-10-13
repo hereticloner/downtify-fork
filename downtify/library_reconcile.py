@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -233,7 +234,7 @@ def prune_stale_and_backfill(
     return pruned, backfilled, affected
 
 
-def refresh_playlists_after_moves(  # noqa: PLR0914
+async def refresh_playlists_after_moves(
     playlist_names: set[str],
     *,
     settings: dict[str, Any],
@@ -252,6 +253,10 @@ def refresh_playlists_after_moves(  # noqa: PLR0914
 
     Library scan is off by default here (deletes / reconcile). New downloads
     call ``sync_playlist_to_navidrome`` directly with scan from settings.
+
+    Awaited, not run in a thread: the Navidrome half waits on a library
+    scan and a retry, and those sleeps belong on the event loop rather
+    than on one of the ~40 anyio worker threads a sync route would take.
     """
 
     if not playlist_names:
@@ -270,6 +275,63 @@ def refresh_playlists_after_moves(  # noqa: PLR0914
         ', '.join(sorted(playlist_names)[:8])
         + ('; ...' if len(playlist_names) > 8 else ''),
     )
+
+    jobs, mismatch_delete = await asyncio.to_thread(
+        _rewrite_m3u_after_moves,
+        playlist_names,
+        settings=settings,
+        downloader=downloader,
+        playlist_catalog=playlist_catalog,
+        track_index=track_index,
+        navidrome_index=navidrome_index,
+        playlist_spotify_cache=playlist_spotify_cache,
+        cover_cache=cover_cache,
+        metadata_cache=metadata_cache,
+        generate_m3u=generate_m3u,
+        sync_navidrome=sync_navidrome,
+        delete_tag_mismatches=delete_tag_mismatches,
+    )
+    for name, songs in jobs:
+        try:
+            await sync_playlist_to_navidrome(
+                name,
+                songs,
+                settings,
+                navidrome_index=navidrome_index,
+                download_dir=Path(downloader.download_dir),
+                trigger_scan=navidrome_scan,
+                delete_tag_mismatches=mismatch_delete,
+            )
+        except Exception:
+            logger.exception(
+                'library reconcile: Navidrome sync failed for {!r}', name
+            )
+
+
+def _rewrite_m3u_after_moves(  # noqa: PLR0914
+    playlist_names: set[str],
+    *,
+    settings: dict[str, Any],
+    downloader: Downloader,
+    playlist_catalog: PlaylistCatalog,
+    track_index: Optional[TrackIndex] = None,
+    navidrome_index: Optional[Any] = None,
+    playlist_spotify_cache: Optional[PlaylistSpotifyCache] = None,
+    cover_cache: Optional[Any] = None,
+    metadata_cache: Optional[Any] = None,
+    generate_m3u: bool = True,
+    sync_navidrome: bool = True,
+    delete_tag_mismatches: bool = True,
+) -> tuple[
+    list[tuple[str, list[dict[str, Any]]]], Optional[TagMismatchDeleteContext]
+]:
+    """The disk half of :func:`refresh_playlists_after_moves`.
+
+    Rewrites every M3U, drops tag-mismatched tracks, and returns the
+    ``(playlist, songs)`` pairs still owed a Navidrome sync plus the
+    mismatch context they share - so the caller can await each sync on
+    the event loop instead of holding a worker thread through its scan.
+    """
 
     download_dir = Path(downloader.download_dir)
     slskd_dir = (
@@ -299,6 +361,7 @@ def refresh_playlists_after_moves(  # noqa: PLR0914
             navidrome_index=navidrome_index,
         )
 
+    nav_jobs: list[tuple[str, list[dict[str, Any]]]] = []
     for name in sorted(playlist_names):
         catalog_rows = playlist_catalog.list_tracks(name)
         if not catalog_rows:
@@ -392,23 +455,12 @@ def refresh_playlists_after_moves(  # noqa: PLR0914
                 )
 
         if sync_navidrome and songs_for_nav:
-            try:
-                sync_playlist_to_navidrome(
-                    name,
-                    songs_for_nav,
-                    settings,
-                    navidrome_index=navidrome_index,
-                    download_dir=download_dir,
-                    trigger_scan=navidrome_scan,
-                    delete_tag_mismatches=mismatch_delete,
-                )
-            except Exception:
-                logger.exception(
-                    'library reconcile: Navidrome sync failed for {!r}', name
-                )
+            nav_jobs.append((name, songs_for_nav))
+
+    return nav_jobs, mismatch_delete
 
 
-def reconcile_and_refresh(
+async def reconcile_and_refresh(
     download_dir: Path,
     settings: dict[str, Any],
     downloader: Downloader,
@@ -422,24 +474,32 @@ def reconcile_and_refresh(
     cover_cache: Optional[Any] = None,
     metadata_cache: Optional[Any] = None,
 ) -> dict[str, Any]:
-    """Run path reconciliation and optional playlist / Navidrome refresh."""
+    """Run path reconciliation and optional playlist / Navidrome refresh.
 
-    ctx = library_context_from_state(
-        download_dir, settings, track_index=track_index
-    )
-    pruned, backfilled, prune_affected = prune_stale_and_backfill(
-        ctx,
-        track_index=track_index,
-        playlist_catalog=playlist_catalog,
-        navidrome_index=navidrome_index,
-    )
-    count, move_affected = reconcile_library_paths(
-        ctx,
-        track_index=track_index,
-        playlist_catalog=playlist_catalog,
-        monitor_db=monitor_db,
-    )
-    affected = prune_affected | move_affected
+    The disk walk runs in a thread; the playlist / Navidrome refresh is
+    awaited so its Navidrome scan sleeps never park a worker thread.
+    """
+
+    def _walk() -> tuple[int, int, set[str], int]:
+        ctx = library_context_from_state(
+            download_dir, settings, track_index=track_index
+        )
+        pruned, backfilled, prune_affected = prune_stale_and_backfill(
+            ctx,
+            track_index=track_index,
+            playlist_catalog=playlist_catalog,
+            navidrome_index=navidrome_index,
+        )
+        count, move_affected = reconcile_library_paths(
+            ctx,
+            track_index=track_index,
+            playlist_catalog=playlist_catalog,
+            monitor_db=monitor_db,
+        )
+        return pruned, backfilled, prune_affected | move_affected, count
+
+    pruned, backfilled, affected, count = await asyncio.to_thread(_walk)
+
     generate_m3u, sync_navidrome = playlist_refresh_enabled(settings)
     did_refresh = False
     if (
@@ -448,7 +508,7 @@ def reconcile_and_refresh(
         and playlist_catalog is not None
         and (generate_m3u or sync_navidrome)
     ):
-        refresh_playlists_after_moves(
+        await refresh_playlists_after_moves(
             affected,
             settings=settings,
             downloader=downloader,

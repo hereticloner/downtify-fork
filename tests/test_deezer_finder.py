@@ -4,6 +4,7 @@ details - and the endpoints wrapping them (no network)."""
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,6 +19,11 @@ from downtify.deezer import (
     finder_artist_songs,
     finder_search,
 )
+
+
+async def _no_throttle() -> None:
+    """Stand-in for ``deezer._throttle_async`` so tests don't pace."""
+
 
 _PLACEHOLDER = (
     'https://cdn-images.dzcdn.net/images/artist/'
@@ -150,7 +156,7 @@ def test_finder_search_remembers_album_track_counts():
     with patch('downtify.deezer.httpx.get', fake):
         finder_search('the artist')
         # Known from the search row - no request needed.
-        assert album_track_counts(['70']) == {'70': 12}
+        assert asyncio.run(album_track_counts(['70'])) == {'70': 12}
     assert len(fake.calls) == 3
 
 
@@ -308,9 +314,11 @@ def test_album_track_counts_reads_the_tracklist_total_once():
     }
     fake = _routes(table)
     with patch('downtify.deezer.httpx.get', fake):
-        assert album_track_counts(['70', '71', 'x', '70']) == {'70': 11}
+        assert asyncio.run(album_track_counts(['70', '71', 'x', '70'])) == {
+            '70': 11
+        }
         # Remembered: asking again makes no new request for it.
-        assert album_track_counts(['70']) == {'70': 11}
+        assert asyncio.run(album_track_counts(['70'])) == {'70': 11}
     urls = [url for url, _params in fake.calls]
     assert urls.count('https://api.deezer.com/album/70/tracks') == 1
     assert all(params == {'limit': 1} for _url, params in fake.calls)
@@ -318,7 +326,7 @@ def test_album_track_counts_reads_the_tracklist_total_once():
 
 def test_album_track_counts_ignores_non_numeric_ids():
     with patch('downtify.deezer.httpx.get') as mock_get:
-        assert album_track_counts(['', 'abc', '../1']) == {}
+        assert asyncio.run(album_track_counts(['', 'abc', '../1'])) == {}
     mock_get.assert_not_called()
 
 
@@ -426,9 +434,9 @@ def test_finder_artist_songs_keeps_only_that_artist_across_pages():
     fake = _routes(table)
     with (
         patch('downtify.deezer.httpx.get', fake),
-        patch('downtify.deezer._throttle', lambda: None),
+        patch('downtify.deezer._throttle_async', _no_throttle),
     ):
-        songs = finder_artist_songs('8691', 'Charlie Brown Jr.')
+        songs = asyncio.run(finder_artist_songs('8691', 'Charlie Brown Jr.'))
     assert [s['name'] for s in songs] == ['Only the Artist', 'Page Two']
     assert all(s['deezer_artist_id'] == '8691' for s in songs)
     # The name is searched as it is (Deezer's artist:"..." field search
@@ -453,36 +461,39 @@ def test_finder_artist_songs_reads_a_bounded_number_of_pages(monkeypatch):
             },
         )
 
-    monkeypatch.setattr('downtify.deezer._throttle', lambda: None)
+    monkeypatch.setattr('downtify.deezer._throttle_async', _no_throttle)
     with patch('downtify.deezer.httpx.get', side_effect=fake_get):
-        songs = finder_artist_songs('8691', 'Charlie Brown Jr.')
+        songs = asyncio.run(finder_artist_songs('8691', 'Charlie Brown Jr.'))
     assert len(calls) == deezer.ARTIST_SONGS_MAX_PAGES
     assert len(songs) == deezer.ARTIST_SONGS_MAX_PAGES
 
 
 def test_finder_artist_songs_blank_input_asks_nothing():
     with patch('downtify.deezer.httpx.get') as get:
-        assert finder_artist_songs('', 'Name') == []
-        assert finder_artist_songs('8691', '  ') == []
+        assert asyncio.run(finder_artist_songs('', 'Name')) == []
+        assert asyncio.run(finder_artist_songs('8691', '  ')) == []
     get.assert_not_called()
 
 
 def test_finder_artist_songs_endpoint_is_shaped_like_a_search(monkeypatch):
-    monkeypatch.setattr(
-        api.deezer,
-        'finder_artist_songs',
-        lambda artist_id, name: [{'name': f'{name} {artist_id}'}],
-    )
-    assert api.finder_artist_songs_endpoint(artist_id='8691', name='X') == {
+    async def fake(artist_id, name):
+        return [{'name': f'{name} {artist_id}'}]
+
+    monkeypatch.setattr(api.deezer, 'finder_artist_songs', fake)
+    assert asyncio.run(
+        api.finder_artist_songs_endpoint(artist_id='8691', name='X')
+    ) == {
         'songs': [{'name': 'X 8691'}],
         'albums': [],
         'artists': [],
     }
 
-    def fail(*_args):
+    async def fail(*_args):
         raise ValueError('Could not reach Deezer')
 
     monkeypatch.setattr(api.deezer, 'finder_artist_songs', fail)
     with pytest.raises(HTTPException) as exc:
-        api.finder_artist_songs_endpoint(artist_id='8691', name='X')
+        asyncio.run(
+            api.finder_artist_songs_endpoint(artist_id='8691', name='X')
+        )
     assert exc.value.status_code == 502

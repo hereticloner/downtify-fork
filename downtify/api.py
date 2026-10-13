@@ -1470,8 +1470,7 @@ async def _schedule_playlist_refresh_after_download(
 
     async def _run() -> None:
         try:
-            await asyncio.to_thread(
-                refresh_playlists_after_moves,
+            await refresh_playlists_after_moves(
                 playlist_names,
                 settings=state.settings,
                 downloader=state.downloader,
@@ -1711,7 +1710,7 @@ def finder_artist_endpoint(
 
 
 @router.get('/api/finder/artist/songs')
-def finder_artist_songs_endpoint(
+async def finder_artist_songs_endpoint(
     artist_id: str = Query(..., pattern=_DEEZER_ID),
     name: str = Query(..., min_length=1),
 ) -> dict[str, Any]:
@@ -1720,7 +1719,7 @@ def finder_artist_songs_endpoint(
     ``downtify.deezer.finder_artist_songs``."""
 
     try:
-        songs = deezer.finder_artist_songs(artist_id, name)
+        songs = await deezer.finder_artist_songs(artist_id, name)
     except ValueError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return {'songs': songs, 'albums': [], 'artists': []}
@@ -1737,10 +1736,10 @@ def finder_artist_albums_endpoint(
 
 
 @router.get('/api/finder/albums/track_counts')
-def finder_album_track_counts_endpoint(
+async def finder_album_track_counts_endpoint(
     ids: str = Query(''),
 ) -> dict[str, int]:
-    return deezer.album_track_counts(ids.split(','))
+    return await deezer.album_track_counts(ids.split(','))
 
 
 @router.get('/api/finder/album')
@@ -3351,8 +3350,7 @@ async def _finish_playlist_batch(
     if not generate_m3u:
         do_m3u = False
     if do_m3u or do_navidrome:
-        await asyncio.to_thread(
-            refresh_playlists_after_moves,
+        await refresh_playlists_after_moves(
             {playlist_name},
             settings=state.settings,
             downloader=state.downloader,
@@ -4207,8 +4205,8 @@ async def reconcile_library_endpoint() -> dict[str, Any]:
         raise ApiError(500, 'download.not_ready', 'Downloader not ready')
     download_dir = Path(state.downloader.download_dir)
 
-    def _run() -> dict[str, Any]:
-        result = reconcile_and_refresh(
+    async def _run() -> dict[str, Any]:
+        result = await reconcile_and_refresh(
             download_dir,
             state.settings,
             state.downloader,
@@ -4223,14 +4221,16 @@ async def reconcile_library_endpoint() -> dict[str, Any]:
         )
         invalidate_library_paths_cache()
         if state.likes is not None:
-            moved = remap_moved(state.likes, library_context())
+            moved = await asyncio.to_thread(
+                remap_moved, state.likes, library_context()
+            )
             result['likes_updated'] = moved
             if moved:
                 _sync_liked_playlist()
                 _announce_likes()
         return result
 
-    return await asyncio.to_thread(_run)
+    return await _run()
 
 
 def _require_external_sync() -> ExternalSyncJob:
@@ -4732,8 +4732,7 @@ async def _schedule_playlist_refresh_after_delete(
             + ('; ...' if len(playlist_names) > 8 else ''),
         )
         try:
-            await asyncio.to_thread(
-                refresh_playlists_after_moves,
+            await refresh_playlists_after_moves(
                 playlist_names,
                 settings=state.settings,
                 downloader=state.downloader,
@@ -5056,8 +5055,7 @@ async def download_missing_playlist_tracks_endpoint(
         )
         do_m3u, do_navidrome = playlist_refresh_enabled(state.settings)
         if linked and (do_m3u or do_navidrome):
-            await asyncio.to_thread(
-                refresh_playlists_after_moves,
+            await refresh_playlists_after_moves(
                 {playlist_name},
                 settings=state.settings,
                 downloader=state.downloader,

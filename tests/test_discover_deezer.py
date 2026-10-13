@@ -415,7 +415,10 @@ def _response(payload):
 
 @pytest.fixture(autouse=True)
 def _no_throttle(monkeypatch):
-    monkeypatch.setattr(deezer, '_throttle', lambda: None)
+    async def _stub() -> None:
+        return None
+
+    monkeypatch.setattr(deezer, '_throttle_async', _stub)
 
 
 def _playlist_row(pid, title, owner):
@@ -439,7 +442,7 @@ def test_editorial_playlist_is_only_the_editors_exact_one():
         ]
     }
     with patch('downtify.deezer.httpx.get', return_value=_response(payload)):
-        playlist = deezer.editorial_playlist('Radiohead')
+        playlist = asyncio.run(deezer.editorial_playlist('Radiohead'))
     assert playlist['playlist_id'] == '3'
     assert playlist['owner'] == deezer.EDITORIAL_OWNER
     assert playlist['url'] == 'https://www.deezer.com/playlist/3'
@@ -449,13 +452,13 @@ def test_editorial_playlist_none_and_failure_differ():
     with patch(
         'downtify.deezer.httpx.get', return_value=_response({'data': []})
     ):
-        assert deezer.editorial_playlist('Nobody') is None
+        assert asyncio.run(deezer.editorial_playlist('Nobody')) is None
     with patch(
         'downtify.deezer.httpx.get',
         return_value=_response({'error': {'code': 4}}),
     ):
         with pytest.raises(ValueError, match='Deezer refused'):
-            deezer.editorial_playlist('Nobody')
+            asyncio.run(deezer.editorial_playlist('Nobody'))
 
 
 def test_search_albums_by_falls_back_to_a_plain_search():
@@ -472,7 +475,7 @@ def test_search_albums_by_falls_back_to_a_plain_search():
         return _response({'data': [album] if len(calls) == 2 else []})
 
     with patch('downtify.deezer.httpx.get', side_effect=fake_get):
-        rows = deezer.search_albums_by('Daft Punk', 'Discovery')
+        rows = asyncio.run(deezer.search_albums_by('Daft Punk', 'Discovery'))
     assert calls[0]['q'] == 'artist:"Daft Punk" album:"Discovery"'
     assert calls[1]['q'] == 'Daft Punk Discovery'
     assert rows[0]['album_id'] == '7'
@@ -493,7 +496,7 @@ def test_search_albums_by_falls_back_when_no_row_is_by_the_artist():
         'downtify.deezer.httpx.get',
         side_effect=[_response(answer) for answer in answers],
     ):
-        rows = deezer.search_albums_by('Blur', 'Blur')
+        rows = asyncio.run(deezer.search_albums_by('Blur', 'Blur'))
     assert [row['album_id'] for row in rows] == ['2']
 
 
@@ -502,7 +505,7 @@ def test_search_albums_by_stops_at_the_field_search_when_it_finds_the_artist():
     with patch(
         'downtify.deezer.httpx.get', return_value=_response({'data': [album]})
     ) as get:
-        rows = deezer.search_albums_by('Blur', 'Blur')
+        rows = asyncio.run(deezer.search_albums_by('Blur', 'Blur'))
     assert get.call_count == 1
     assert rows[0]['album_id'] == '7'
 
@@ -519,7 +522,7 @@ def test_artist_discography_follows_pages():
         'downtify.deezer.httpx.get',
         side_effect=[_response(page) for page in pages],
     ):
-        rows = deezer.artist_discography('9')
+        rows = asyncio.run(deezer.artist_discography('9'))
     assert [(r['album_id'], r['fans'], r['artist_id']) for r in rows] == [
         ('1', 5, '9'),
         ('2', 7, '9'),

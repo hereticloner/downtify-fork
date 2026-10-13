@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import MagicMock, patch
 
 from downtify.library_catalog import LibraryContext
@@ -408,18 +409,20 @@ def test_sync_playlist_creates_playlist(mock_get, mock_post):
             'scan_poll_seconds': 1,
         }
     }
-    result = sync_playlist_to_navidrome(
-        'My Spotify List',
-        [
-            {
-                'name': 'Track',
-                'artists': ['Artist'],
-                'duration': 200,
-                'filename': 'Artist/Track.mp3',
-                'library_from_tags': True,
-            }
-        ],
-        settings,
+    result = asyncio.run(
+        sync_playlist_to_navidrome(
+            'My Spotify List',
+            [
+                {
+                    'name': 'Track',
+                    'artists': ['Artist'],
+                    'duration': 200,
+                    'filename': 'Artist/Track.mp3',
+                    'library_from_tags': True,
+                }
+            ],
+            settings,
+        )
     )
     assert result is not None
     assert result.playlist_id == 'pl-1'
@@ -495,17 +498,19 @@ def test_sync_playlist_updates_existing_by_id(mock_get, mock_post):
             'scan_after_download': False,
         }
     }
-    result = sync_playlist_to_navidrome(
-        'My List',
-        [
-            {
-                'name': 'Track',
-                'artists': ['Artist'],
-                'duration': 200,
-                'filename': 'Artist/Track.mp3',
-            }
-        ],
-        settings,
+    result = asyncio.run(
+        sync_playlist_to_navidrome(
+            'My List',
+            [
+                {
+                    'name': 'Track',
+                    'artists': ['Artist'],
+                    'duration': 200,
+                    'filename': 'Artist/Track.mp3',
+                }
+            ],
+            settings,
+        )
     )
     assert result is not None
     assert result.playlist_id == 'pl-existing'
@@ -566,17 +571,19 @@ def test_sync_playlist_uses_navidrome_index_cache(
             'scan_after_download': False,
         }
     }
-    result = sync_playlist_to_navidrome(
-        'Cached List',
-        [
-            {
-                'name': 'Track',
-                'artists': ['Artist'],
-                'filename': 'Artist/Track.mp3',
-            }
-        ],
-        settings,
-        navidrome_index=index,
+    result = asyncio.run(
+        sync_playlist_to_navidrome(
+            'Cached List',
+            [
+                {
+                    'name': 'Track',
+                    'artists': ['Artist'],
+                    'filename': 'Artist/Track.mp3',
+                }
+            ],
+            settings,
+            navidrome_index=index,
+        )
     )
     assert result is not None
     assert result.matched == 1

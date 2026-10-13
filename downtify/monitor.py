@@ -929,8 +929,7 @@ async def check_playlist(
                 None,
                 known_tracks,
             )
-        await asyncio.to_thread(
-            _sync_library_playlist,
+        await _sync_library_playlist(
             playlist,
             tracks,
             downloader,
@@ -1076,7 +1075,7 @@ def _register_monitored_download(
         logger.exception('Could not register {} in the library', filename)
 
 
-def _sync_library_playlist(
+async def _sync_library_playlist(
     playlist: MonitoredPlaylist,
     tracks: list[dict[str, Any]],
     downloader: Downloader,
@@ -1085,7 +1084,10 @@ def _sync_library_playlist(
     settings: Optional[dict[str, Any]],
 ) -> None:
     """After a sweep: mirror the playlist's on-disk tracks into the
-    catalog and, when Navidrome sync is on, update its Navidrome playlist."""
+    catalog and, when Navidrome sync is on, update its Navidrome playlist.
+
+    Awaited: the catalog write is disk work (a thread), the Navidrome
+    sync waits on its own scan, which belongs on the event loop."""
 
     download_dir = Path(downloader.download_dir)
     slskd_dir = slskd_dir_from_downloader(downloader)
@@ -1102,8 +1104,11 @@ def _sync_library_playlist(
 
     if library.playlist_catalog is not None and rows:
         try:
-            library.playlist_catalog.replace_playlist_tracks(
-                playlist.name, rows, spotify_id=_catalog_spotify_id(playlist)
+            await asyncio.to_thread(
+                library.playlist_catalog.replace_playlist_tracks,
+                playlist.name,
+                rows,
+                spotify_id=_catalog_spotify_id(playlist),
             )
         except Exception:
             logger.exception(
@@ -1128,7 +1133,7 @@ def _sync_library_playlist(
         )
         return
     try:
-        sync_playlist_to_navidrome(
+        await sync_playlist_to_navidrome(
             playlist.name,
             songs,
             settings,

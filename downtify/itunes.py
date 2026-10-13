@@ -9,6 +9,7 @@ string (or ``""`` when nothing matches).
 
 from __future__ import annotations
 
+import asyncio
 import re
 import time
 import unicodedata
@@ -99,28 +100,39 @@ def _names_match(a: str, b: str) -> bool:
 
 
 # ── iTunes API call ───────────────────────────────────────────────
-def _rate_wait() -> None:
+async def _rate_wait_async() -> None:
     """Block until at least ``_MIN_INTERVAL`` seconds have elapsed
-    since the last request."""
+    since the last request.
+
+    An ``await`` rather than a ``time.sleep``, so the pace is held by the
+    event loop rather than by a worker thread. Every public entry point
+    below keeps its sync signature for the background callers (the
+    downloader's metadata pool, the external-sync job, the library
+    upgrade runner) and drives this through :func:`asyncio.run`.
+    """
+
     global _last_request_time
     with _rate_lock:
         now = time.monotonic()
         wait = _MIN_INTERVAL - (now - _last_request_time)
-        if wait > 0:
-            time.sleep(wait)
+    if wait > 0:
+        await asyncio.sleep(wait)
+    with _rate_lock:
         _last_request_time = time.monotonic()
 
 
-def _search_itunes(query: str, limit: int = 5) -> list[dict[str, Any]]:
+async def _search_itunes(query: str, limit: int = 5) -> list[dict[str, Any]]:
     """Call the iTunes Search API and return the ``results`` list."""
-    _rate_wait()
+
+    await _rate_wait_async()
     params = f'term={quote_plus(query)}&entity=song&limit={limit}'
     url = f'{_ITUNES_SEARCH_URL}?{params}'
     logger.debug('iTunes genre lookup: {}', url)
     try:
-        resp = httpx.get(url, timeout=_TIMEOUT)
-        resp.raise_for_status()
-        data = resp.json()
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
     except Exception:
         logger.opt(exception=True).debug('iTunes Search API failed')
         return []
@@ -160,7 +172,7 @@ def _pick_best(
 
 
 # ── Public API ────────────────────────────────────────────────────
-def fetch_genre(song: dict[str, Any]) -> str:
+async def fetch_genre_async(song: dict[str, Any]) -> str:
     """Return the genre string for *song*, or ``""`` if unavailable.
 
     ``song`` is the standard Downtify track dict with at least
@@ -188,13 +200,13 @@ def fetch_genre(song: dict[str, Any]) -> str:
 
     # ── Search iTunes ─────────────────────────────────────────────
     query = f'{artist} {title}'.strip()
-    results = _search_itunes(query, limit=5)
+    results = await _search_itunes(query, limit=5)
     match = _pick_best(results, artist, title)
 
     if match is None and album:
         # Retry with album name in query for disambiguation.
         query_alt = f'{artist} {title} {album}'.strip()
-        results_alt = _search_itunes(query_alt, limit=5)
+        results_alt = await _search_itunes(query_alt, limit=5)
         match = _pick_best(results_alt, artist, title)
 
     genre = ''
@@ -236,11 +248,13 @@ def artwork_url_at(url: str, size: int) -> str:
     )
 
 
-def fetch_artwork_url(song: dict[str, Any], size: int = 1200) -> str:
+async def fetch_artwork_url_async(
+    song: dict[str, Any], size: int = 1200
+) -> str:
     """Return an iTunes cover URL for *song* at *size* px, or ``""``.
 
-    Same matching as :func:`fetch_genre`: artist and title must line up,
-    with a title-only fallback for differing "feat." credits.
+    Same matching as :func:`fetch_genre_async`: artist and title must
+    line up, with a title-only fallback for differing "feat." credits.
     """
 
     artists = song.get('artists') or []
@@ -259,10 +273,10 @@ def fetch_artwork_url(song: dict[str, Any], size: int = 1200) -> str:
             return artwork_url_at(cached, size) if cached else ''
 
     query = f'{artist} {title}'.strip()
-    match = _pick_best(_search_itunes(query, limit=5), artist, title)
+    match = _pick_best(await _search_itunes(query, limit=5), artist, title)
     if match is None and album:
         match = _pick_best(
-            _search_itunes(f'{artist} {title} {album}'.strip(), limit=5),
+            await _search_itunes(f'{artist} {title} {album}'.strip(), limit=5),
             artist,
             title,
         )
@@ -276,3 +290,19 @@ def fetch_artwork_url(song: dict[str, Any], size: int = 1200) -> str:
         )
         return ''
     return artwork_url_at(base, size)
+
+
+def fetch_genre(song: dict[str, Any]) -> str:
+    """Sync entry point for the background callers (the downloader's
+    metadata pool, the external-sync job, the library upgrade runner);
+    :func:`fetch_genre_async` for an event loop."""
+
+    return asyncio.run(fetch_genre_async(song))
+
+
+def fetch_artwork_url(song: dict[str, Any], size: int = 1200) -> str:
+    """Sync entry point for the background callers (see
+    :func:`fetch_genre`); :func:`fetch_artwork_url_async` for an event
+    loop."""
+
+    return asyncio.run(fetch_artwork_url_async(song, size))

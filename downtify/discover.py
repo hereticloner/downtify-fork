@@ -1126,10 +1126,10 @@ def deezer_collections(
     fetch_related: Callable[[str, int], Related] = deezer.related_artists,
     fetch_albums: Callable[
         [str], list[dict[str, Any]]
-    ] = deezer.artist_discography,
+    ] = deezer.artist_discography_sync,
     fetch_playlist: Callable[
         [str], Optional[dict[str, Any]]
-    ] = deezer.editorial_playlist,
+    ] = deezer.editorial_playlist_sync,
     now: Optional[datetime] = None,
 ) -> dict[str, Any]:
     """Albums and playlists for a library from Deezer alone (see
@@ -1300,7 +1300,7 @@ def spotify_collections(
     search: Callable[[str], dict[str, Any]] = spotify.search,
     find_album: Callable[
         [str, str], list[dict[str, Any]]
-    ] = deezer.search_albums_by,
+    ] = deezer.search_albums_by_sync,
     now: Optional[datetime] = None,
 ) -> dict[str, Any]:
     """What Spotify adds to :func:`deezer_collections` - the page's

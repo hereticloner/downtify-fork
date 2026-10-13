@@ -167,11 +167,11 @@ def test_sweep_links_library_tracks_even_when_overwrite_is_on(
 
 def test_sweep_syncs_navidrome_only_when_enabled(monkeypatch, tmp_path):
     synced = []
-    monkeypatch.setattr(
-        monitor,
-        'sync_playlist_to_navidrome',
-        lambda name, songs, settings, **kw: synced.append((name, len(songs))),
-    )
+
+    async def _sync(name, songs, settings, **kw):
+        synced.append((name, len(songs)))
+
+    monkeypatch.setattr(monitor, 'sync_playlist_to_navidrome', _sync)
     library = _library(tmp_path)
     downloader = _Downloader(tmp_path / 'downloads')
     _sweep(

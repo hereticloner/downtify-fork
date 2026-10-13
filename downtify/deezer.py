@@ -29,6 +29,7 @@ that query shape, this needs a fresh capture, not a clever rewrite.
 
 from __future__ import annotations
 
+import asyncio
 import re
 import threading
 import time
@@ -1170,9 +1171,15 @@ _ALBUM_TRACK_COUNTS: dict[str, int] = {}
 _ALBUM_TRACK_COUNTS_MAX = 5000
 
 
-def _throttle() -> None:
+async def _throttle_async() -> None:
     """Wait until another request fits under :data:`_THROTTLE_MAX` per
-    :data:`_THROTTLE_WINDOW` seconds, then claim it."""
+    :data:`_THROTTLE_WINDOW` seconds, then claim it.
+
+    An ``await`` rather than a ``time.sleep``: the Finder endpoints are
+    reached from sync-def routes, which run in the ~40-thread anyio
+    worker pool, and a burst of Finder requests would otherwise fill it
+    with threads doing nothing but waiting out the window.
+    """
 
     while True:
         with _throttle_lock:
@@ -1186,7 +1193,7 @@ def _throttle() -> None:
                 _throttle_times.append(now)
                 return
             wait = _THROTTLE_WINDOW - (now - _throttle_times[0])
-        time.sleep(max(wait, 0.05))
+        await asyncio.sleep(max(wait, 0.05))
 
 
 def _remember_track_count(album_id: str, count: int) -> None:
@@ -1309,7 +1316,9 @@ def finder_search(
 ARTIST_SONGS_MAX_PAGES = 3
 
 
-def finder_artist_songs(artist_id: str, name: str) -> list[dict[str, Any]]:
+async def finder_artist_songs(
+    artist_id: str, name: str
+) -> list[dict[str, Any]]:
     """An artist's songs for the Finder, as :func:`_finder_song` rows in
     Deezer's own relevance order: a plain search for *name*, keeping only
     the rows whose main artist is *artist_id*.
@@ -1320,8 +1329,8 @@ def finder_artist_songs(artist_id: str, name: str) -> list[dict[str, Any]]:
     search for the name mostly finds that artist anyway, and matching the
     id rather than the name keeps out a namesake, or a song merely called
     that. Reads up to :data:`ARTIST_SONGS_MAX_PAGES` pages, each through
-    :func:`_throttle`. Raises :class:`ValueError` when Deezer can't be
-    asked or refuses.
+    :func:`_throttle_async`. Raises :class:`ValueError` when Deezer can't
+    be asked or refuses.
     """
 
     wanted = str(artist_id).strip()
@@ -1334,8 +1343,8 @@ def finder_artist_songs(artist_id: str, name: str) -> list[dict[str, Any]]:
     for _ in range(ARTIST_SONGS_MAX_PAGES):
         if not url:
             break
-        _throttle()
-        page = _get_json(url, **params)
+        await _throttle_async()
+        page = await asyncio.to_thread(_get_json, url, **params)
         rows.extend(page.get('data') or [])
         # Deezer's own "next" already carries the query and the offset.
         url, params = page.get('next'), {}
@@ -1414,7 +1423,7 @@ def finder_artist_albums(artist_id: str) -> list[dict[str, Any]]:
     )
 
 
-def _album_track_count(album_id: str) -> Optional[int]:
+async def _album_track_count(album_id: str) -> Optional[int]:
     """One album's track count - remembered, else the ``total`` of a
     one-row page of its tracklist (much lighter than the whole album) -
     or ``None`` when Deezer didn't answer."""
@@ -1422,10 +1431,12 @@ def _album_track_count(album_id: str) -> Optional[int]:
     cached = _ALBUM_TRACK_COUNTS.get(album_id)
     if cached is not None:
         return cached
-    _throttle()
+    await _throttle_async()
     try:
-        page = _get_json(
-            f'https://api.deezer.com/album/{album_id}/tracks', limit=1
+        page = await asyncio.to_thread(
+            _get_json,
+            f'https://api.deezer.com/album/{album_id}/tracks',
+            limit=1,
         )
     except ValueError:
         return None
@@ -1436,14 +1447,16 @@ def _album_track_count(album_id: str) -> Optional[int]:
     return int(total)
 
 
-def album_track_counts(album_ids: list[str]) -> dict[str, int]:
+async def album_track_counts(album_ids: list[str]) -> dict[str, int]:
     """``{album_id: track_count}`` for up to :data:`TRACK_COUNTS_MAX_IDS`
     album ids - the ones Deezer answered for; a failed lookup (a rate
     limit, say) is just left out, so the caller can ask again later.
 
     Throttled to stay under Deezer's request quota (see
-    :func:`_throttle`), so a long list takes a few seconds; the caller
-    asks in small batches to show counts as they arrive.
+    :func:`_throttle_async`), so a long list takes a few seconds; the
+    caller asks in small batches to show counts as they arrive. The wait
+    belongs on the event loop, so the batch runs concurrently under a
+    semaphore rather than on a pool of sleeping worker threads.
     """
 
     ids = list(
@@ -1455,15 +1468,16 @@ def album_track_counts(album_ids: list[str]) -> dict[str, int]:
     )[:TRACK_COUNTS_MAX_IDS]
     if not ids:
         return {}
-    # More workers than elsewhere: these are tiny requests, and _throttle
-    # keeps the overall rate in check anyway.
-    with ThreadPoolExecutor(max_workers=_FINDER_WORKERS * 2) as pool:
-        counts = list(pool.map(_album_track_count, ids))
-    return {
-        album_id: count
-        for album_id, count in zip(ids, counts)
-        if count is not None
-    }
+    # More workers than elsewhere: these are tiny requests, and
+    # _throttle_async keeps the overall rate in check anyway.
+    slots = asyncio.Semaphore(_FINDER_WORKERS * 2)
+
+    async def _one(album_id: str) -> tuple[str, Optional[int]]:
+        async with slots:
+            return album_id, await _album_track_count(album_id)
+
+    counts = await asyncio.gather(*(_one(album_id) for album_id in ids))
+    return {album_id: count for album_id, count in counts if count is not None}
 
 
 def finder_album(album_id: str) -> dict[str, Any]:
@@ -1531,8 +1545,9 @@ def finder_album(album_id: str) -> dict[str, Any]:
 #
 # Discover (see downtify.discover) builds its album and playlist shelves
 # from Deezer first, then adds what Spotify picks on top, matched back to
-# Deezer. Everything here goes through _throttle: a cold Discover page
-# asks for a few dozen of these, next to its related-artist lookups.
+# Deezer. Everything here goes through _throttle_async: a cold Discover
+# page asks for a few dozen of these, next to its related-artist
+# lookups.
 
 # Deezer's own editors publish a "100% <artist>" playlist - the very best
 # of one artist, the counterpart of Spotify's "This Is <artist>" - under
@@ -1541,28 +1556,41 @@ EDITORIAL_OWNER = 'Deezer Artist Editor'
 _EDITORIAL_PREFIX = '100%'
 
 
-def artist_discography(artist_id: str) -> list[dict[str, Any]]:
+async def artist_discography(artist_id: str) -> list[dict[str, Any]]:
     """Every release of a Deezer artist, as :func:`finder_artist_albums`
     rows (with ``fans`` and ``release_type``), each page throttled.
 
     Raises :class:`ValueError` when Deezer can't be asked or refuses.
     """
 
-    _throttle()
-    page = _get_json(
-        f'https://api.deezer.com/artist/{artist_id}/albums', limit=100
+    await _throttle_async()
+    page = await asyncio.to_thread(
+        _get_json,
+        f'https://api.deezer.com/artist/{artist_id}/albums',
+        limit=100,
     )
     rows = list(page.get('data') or [])
     while page.get('next'):
-        _throttle()
-        page = _get_json(page['next'])
+        await _throttle_async()
+        page = await asyncio.to_thread(_get_json, page['next'])
         rows.extend(page.get('data') or [])
     return _map_rows(
         rows, lambda row: _finder_album_row(row, artist_id=str(artist_id))
     )
 
 
-def editorial_playlist(name: str) -> Optional[dict[str, Any]]:
+def artist_discography_sync(artist_id: str) -> list[dict[str, Any]]:
+    """:func:`artist_discography` from a plain worker thread.
+
+    :mod:`downtify.discover` still fans its Deezer lookups out through
+    its own ``ThreadPoolExecutor`` and injects a plain callable here;
+    every request-path caller awaits the async function instead.
+    """
+
+    return asyncio.run(artist_discography(artist_id))
+
+
+async def editorial_playlist(name: str) -> Optional[dict[str, Any]]:
     """Deezer's editorial "100% <name>" playlist, or ``None`` when its
     editors have none for that artist.
 
@@ -1577,15 +1605,15 @@ def editorial_playlist(name: str) -> Optional[dict[str, Any]]:
     wanted = file_name_key(name)
     if not wanted:
         return None
-    _throttle()
+    await _throttle_async()
     rows = (
-        _get_json(
+        await asyncio.to_thread(
+            _get_json,
             f'{_FINDER_SEARCH_URL}/playlist',
             q=f'{_EDITORIAL_PREFIX} {name}',
             limit=10,
-        ).get('data')
-        or []
-    )
+        )
+    ).get('data') or []
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -1613,7 +1641,14 @@ def editorial_playlist(name: str) -> Optional[dict[str, Any]]:
     return None
 
 
-def search_albums_by(artist: str, title: str) -> list[dict[str, Any]]:
+async def editorial_playlist_sync(name: str) -> Optional[dict[str, Any]]:
+    """:func:`editorial_playlist` from a plain worker thread (see
+    :func:`artist_discography_sync`)."""
+
+    return asyncio.run(editorial_playlist(name))
+
+
+async def search_albums_by(artist: str, title: str) -> list[dict[str, Any]]:
     """Deezer albums that may be *artist*'s *title*, as
     :func:`_finder_album_row` rows, best match first - for matching an
     album found elsewhere (Spotify) back to Deezer.
@@ -1630,14 +1665,20 @@ def search_albums_by(artist: str, title: str) -> list[dict[str, Any]]:
     queries = [f'artist:"{artist}" album:"{title}"', f'{artist} {title}']
     found: list[dict[str, Any]] = []
     for query in queries:
-        _throttle()
+        await _throttle_async()
         rows = (
-            _get_json(f'{_FINDER_SEARCH_URL}/album', q=query, limit=10).get(
-                'data'
+            await asyncio.to_thread(
+                _get_json, f'{_FINDER_SEARCH_URL}/album', q=query, limit=10
             )
-            or []
-        )
+        ).get('data') or []
         found = _map_rows(rows, _finder_album_row)
         if any(file_name_key(row['artist']) == wanted for row in found):
             break
     return found
+
+
+def search_albums_by_sync(artist: str, title: str) -> list[dict[str, Any]]:
+    """:func:`search_albums_by` from a plain worker thread (see
+    :func:`artist_discography_sync`)."""
+
+    return asyncio.run(search_albums_by(artist, title))
