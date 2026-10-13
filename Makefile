@@ -23,10 +23,12 @@ run:
 
 format:
 	uv run ruff format .; ruff check . --fix
-	prettier --write frontend/src/. docs/.vitepress/.
+	npm --prefix frontend run format
+	prettier --write docs/.vitepress/.
 
 lint:
-	prettier --check frontend/src/. docs/.vitepress/.
+	npm --prefix frontend run format:check
+	prettier --check docs/.vitepress/.
 	uv run ruff check .; ruff check . --diff
 
 export:
@@ -47,7 +49,7 @@ version:
 	./version.sh $$VERSION
 	npm install --prefix frontend
 	uv run ruff format .; ruff check . --fix
-	prettier --write frontend/src/.
+	npm --prefix frontend run format
 
 doc:
 	npm install --prefix docs

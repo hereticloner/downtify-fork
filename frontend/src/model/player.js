@@ -472,9 +472,7 @@ async function autoDjCandidates() {
       return []
     }
   }
-  const queued = new Set(
-    playlist.value.map((t) => t.file).filter(Boolean)
-  )
+  const queued = new Set(playlist.value.map((t) => t.file).filter(Boolean))
   const current = playlist.value[currentIndex.value]
   const artist = String(current?.artist || '').toLowerCase()
   const sameArtist = []
@@ -492,10 +490,7 @@ async function autoDjCandidates() {
       .map((v) => [Math.random(), v])
       .sort((a, b) => a[0] - b[0])
       .map(([, v]) => v)
-  return [...shuffled(sameArtist), ...shuffled(rest)].slice(
-    0,
-    AUTO_DJ_APPEND
-  )
+  return [...shuffled(sameArtist), ...shuffled(rest)].slice(0, AUTO_DJ_APPEND)
 }
 
 async function extendWithAutoDj() {

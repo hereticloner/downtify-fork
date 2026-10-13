@@ -134,7 +134,11 @@
         </template>
 
         <template v-else-if="tab === 'bio'">
-          <div v-if="!profileReady" class="flex flex-col gap-3" aria-busy="true">
+          <div
+            v-if="!profileReady"
+            class="flex flex-col gap-3"
+            aria-busy="true"
+          >
             <UiSkeleton class="h-4 w-1/3" />
             <UiSkeleton class="h-4 w-full" />
             <UiSkeleton class="h-4 w-5/6" />

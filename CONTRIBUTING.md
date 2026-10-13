@@ -220,7 +220,7 @@ Behind the scenes:
 ```bash
 uv run ruff format .
 uv run ruff check . --fix
-prettier --write frontend/src/.
+npm --prefix frontend run format    # pinned prettier, from frontend/node_modules
 ```
 
 If `make lint` fails, run `make format` and re-run `make lint`. Commit the formatting changes in the same commit as the code change, never as a separate "format" commit.

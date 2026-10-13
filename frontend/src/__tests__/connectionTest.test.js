@@ -97,12 +97,12 @@ describe('describeTest', () => {
 describe('canTest', () => {
   it('needs every required field to hold something', () => {
     const fields = REQUIRED_FIELDS.navidrome
-    expect(canTest({ url: 'http://x', username: 'u', password: 'p' }, fields)).toBe(
-      true
-    )
-    expect(canTest({ url: 'http://x', username: 'u', password: '' }, fields)).toBe(
-      false
-    )
+    expect(
+      canTest({ url: 'http://x', username: 'u', password: 'p' }, fields)
+    ).toBe(true)
+    expect(
+      canTest({ url: 'http://x', username: 'u', password: '' }, fields)
+    ).toBe(false)
     expect(canTest({ url: 'http://x', username: '' }, fields)).toBe(false)
   })
 

@@ -262,9 +262,7 @@ describe('usePlayer auto-dj', () => {
     expect(player.isPlaying.value).toBe(true)
     // Same artist first, then everyone else (only one candidate per
     // bucket here, so the appended order is deterministic).
-    const appended = player.playlist.value
-      .slice(1)
-      .map((t) => t.title)
+    const appended = player.playlist.value.slice(1).map((t) => t.title)
     expect(appended[0]).toBe('Encore')
     expect(appended.slice(1).sort()).toEqual(['Chance', 'Other'])
     expect(provider).toHaveBeenCalledTimes(1)
@@ -303,7 +301,9 @@ describe('usePlayer auto-dj', () => {
     player.setAutoDj(true)
     const library = []
     for (let i = 0; i < 40; i++) {
-      library.push(libraryRow(`Artist ${i % 2} - Song ${i}.mp3`, `Artist ${i % 2}`))
+      library.push(
+        libraryRow(`Artist ${i % 2} - Song ${i}.mp3`, `Artist ${i % 2}`)
+      )
     }
     player.setAutoDjSource(async () => library)
     await player.next()
