@@ -48,6 +48,7 @@ from downtify import (
     api,
     auth_routes,
     mobile_routes,
+    spotify_history,
     spotify_sync,
     spotify_sync_api,
 )
@@ -612,6 +613,18 @@ def build_app() -> FastAPI:
                 broadcast=api.state.connections.broadcast,
             ),
             name='spotify-sync-loop',
+        )
+        # Reads the account's Spotify listening history back into its own
+        # table (see downtify/spotify_history.py). It rides the same
+        # OAuth connection and is off by default; the loop idles (and
+        # never calls Spotify) until the user turns import on.
+        api.spawn_task(
+            spotify_history.spotify_history_loop(
+                cfg_getter=lambda: api.state.settings,
+                db_path=DATABASE_DIR / 'downtify_activity.db',
+                persist_tokens=api._persist_mirror_tokens,
+            ),
+            name='spotify-history-loop',
         )
         # Hourly check against GitHub Releases (see
         # downtify/update_check.py) so the footer can tell the user a

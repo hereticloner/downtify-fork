@@ -1046,6 +1046,9 @@ export default {
     spotifyMirrorNowDone: 'Κατοπτρίστηκε στο Spotify.',
     spotifyMirrorNowFailed:
       'Δεν ήταν δυνατός ο κατοπτρισμός αυτού του κομματιού.',
+    spotifyMirrorImport: 'Εισαγωγή ιστορικού ακροάσεων',
+    spotifyMirrorImportHint:
+      'Διαβάζει το ιστορικό ακροάσεών σου από το Spotify στο Downtify κάθε μισή ώρα. Χρειάζεται μία επανασύνδεση, ώστε το Spotify να δώσει την άδεια.',
     spotifySyncTitle: 'Συγχρονισμός Spotify',
     spotifySyncHint:
       'Κρατά τις ληφθείσες λίστες Spotify συγχρονισμένες με το Spotify. Χρησιμοποιεί τη σύνδεση Spotify Mirror· τίποτα δεν ανακτάται μέχρι να ενεργοποιηθεί.',

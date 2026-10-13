@@ -64,6 +64,7 @@ const settings = ref({
     mirror_user: '',
     silent_on_target: true,
     mirror_manual_checks: false,
+    import_recent: false,
   },
   spotify_sync: {
     enabled: false,

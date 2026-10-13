@@ -1045,6 +1045,9 @@ export default {
     spotifyMirrorNowNothing: 'No suena nada ahora mismo.',
     spotifyMirrorNowDone: 'Reflejado en Spotify.',
     spotifyMirrorNowFailed: 'No se pudo reflejar esa canción.',
+    spotifyMirrorImport: 'Importar historial de escucha',
+    spotifyMirrorImportHint:
+      'Lee tu historial de escucha de Spotify en Downtify cada media hora. Necesitas reconectar una vez para que Spotify conceda el permiso.',
     spotifySyncTitle: 'Sincronización de Spotify',
     spotifySyncHint:
       'Mantiene las listas de Spotify descargadas al día con Spotify. Usa la conexión de Spotify Mirror; no se consulta nada hasta activarlo.',

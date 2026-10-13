@@ -1014,6 +1014,9 @@ export default {
     spotifyMirrorNowNothing: 'Nothing is playing right now.',
     spotifyMirrorNowDone: 'Mirrored on Spotify.',
     spotifyMirrorNowFailed: 'Could not mirror that track.',
+    spotifyMirrorImport: 'Import listening history',
+    spotifyMirrorImportHint:
+      'Read your Spotify listening history into Downtify every half hour. Needs one reconnect, so Spotify grants the scope.',
     spotifySyncTitle: 'Spotify Sync',
     spotifySyncHint:
       'Keep downloaded Spotify playlists in step with Spotify. Uses the Spotify Mirror connection; nothing is fetched until this is on.',

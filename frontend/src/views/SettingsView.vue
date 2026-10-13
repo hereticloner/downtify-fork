@@ -990,6 +990,19 @@
                     :aria-label="t('settings.spotifyMirrorSilent')"
                   />
                 </SettingRow>
+                <!-- Reads the account's listening history back into Downtify
+                     (downtify/spotify_history.py). Needs a reconnect once,
+                     so the new scope was granted at connect time. -->
+                <SettingRow
+                  :label="t('settings.spotifyMirrorImport')"
+                  :description="t('settings.spotifyMirrorImportHint')"
+                >
+                  <UiSwitch
+                    v-model="s.spotify_mirror.import_recent"
+                    :disabled="!spotifyConnected"
+                    :aria-label="t('settings.spotifyMirrorImport')"
+                  />
+                </SettingRow>
                 <!-- Mirrors the track that is playing right now, so the
                      connection can be checked without waiting for one. -->
                 <SettingRow

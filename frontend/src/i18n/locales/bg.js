@@ -1031,6 +1031,9 @@ export default {
     spotifyMirrorNowNothing: 'В момента нищо не свири.',
     spotifyMirrorNowDone: 'Огледано в Spotify.',
     spotifyMirrorNowFailed: 'Тази песен не можа да се огледа.',
+    spotifyMirrorImport: 'Импортиране на историята на слушане',
+    spotifyMirrorImportHint:
+      'Внася историята на слушане от Spotify в Downtify на всеки половин час. Изисква едно повторно свързване, за да даде Spotify разрешението.',
     spotifySyncTitle: 'Синхронизация на Spotify',
     spotifySyncHint:
       'Поддържа изтеглените Spotify плейлисти в синхрон със Spotify. Използва връзката на Spotify Mirror; нищо не се извлича, докато не се включи.',

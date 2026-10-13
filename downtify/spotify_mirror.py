@@ -54,7 +54,8 @@ TOKEN_REFRESH_MARGIN = 30
 SCOPES = (
     'user-read-playback-state user-modify-playback-state '
     'user-read-currently-playing playlist-read-private '
-    'playlist-read-collaborative'
+    'playlist-read-collaborative user-read-recently-played '
+    'user-top-read'
 )
 #: Diagnostics only (:class:`MirrorTracker`): how many ``(user, player)``
 #: pairs keep a last success and a last failure. They are a status

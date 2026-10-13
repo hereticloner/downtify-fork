@@ -1038,6 +1038,9 @@ export default {
     spotifyMirrorNowNothing: 'Most semmi sem szól.',
     spotifyMirrorNowDone: 'Tükrözve a Spotifyon.',
     spotifyMirrorNowFailed: 'Ezt a számot nem sikerült tükrözni.',
+    spotifyMirrorImport: 'Hallgatási előzmény importálása',
+    spotifyMirrorImportHint:
+      'Félóránként beolvassa a Spotify hallgatási előzményed a Downtifybe. Egyszer újra kell csatlakozni, hogy a Spotify megadja az engedélyt.',
     spotifySyncTitle: 'Spotify szinkron',
     spotifySyncHint:
       'A letöltött Spotify-lejátszási listákat szinkronban tartja a Spotify-jal. A Spotify Mirror kapcsolatát használja; bekapcsolásig semmit nem kér le.',

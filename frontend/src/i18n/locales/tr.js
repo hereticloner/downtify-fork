@@ -1037,6 +1037,9 @@ export default {
     spotifyMirrorNowNothing: 'Şu anda çalan bir şey yok.',
     spotifyMirrorNowDone: 'Spotify’da yansıtıldı.',
     spotifyMirrorNowFailed: 'Bu parça yansıtılamadı.',
+    spotifyMirrorImport: 'Dinleme geçmişini içe aktar',
+    spotifyMirrorImportHint:
+      'Spotify dinleme geçmişini yarım saatte bir Downtify’ye çeker. Kapsam verilmesi için bir kez yeniden bağman gerekir.',
     spotifySyncTitle: 'Spotify Senkronu',
     spotifySyncHint:
       'İndirilen Spotify çalma listelerini Spotify ile eşitler. Spotify Mirror bağlantısını kullanır; açılana kadar hiçbir şey getirilmez.',

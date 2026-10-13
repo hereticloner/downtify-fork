@@ -64,6 +64,65 @@ the connect flow never gets rejected for not having either yet.
 
 To stop mirroring, turn **Enable Spotify Mirror** off.
 
+## Importing your listening history
+
+The mirror only goes one way — Downtify → Spotify. The other direction
+is a separate, **opt-in** switch: `import_recent` in the `spotify_mirror`
+block. With it on, Downtify reads your Spotify listening history back
+(`GET /v1/me/player/recently-played`, 50 entries per call, newest
+first) roughly every 30 minutes and stores each play — timestamp, track,
+artist, album, Spotify id and duration — in its own table,
+`spotify_recently_played` in `downtify_activity.db`.
+
+It is the same connection: same client id, same tokens, same
+`ensure_token` refresh, no second sign-in. The stored rows are **history,
+not library**: nothing is added to the catalog, no file is tagged, no
+audio is touched or deleted.
+
+Turn **Import listening history** on in **Settings → Spotify Mirror**,
+next to **Silent mirror** (the switch is only clickable once the account
+is connected). The same flag can be set in the settings block:
+
+```json
+{
+  "spotify_mirror": {
+    "enabled": true,
+    "client_id": "...",
+    "access_token": "...",
+    "refresh_token": "...",
+    "import_recent": true
+  }
+}
+```
+
+or over the API:
+
+```bash
+curl -b session.txt -X POST http://your-server:8000/api/settings/update \
+  -H 'Content-Type: application/json' \
+  -d '{"spotify_mirror": {"import_recent": true}}'
+```
+
+::: warning Reconnect once
+The history import needs the `user-read-recently-played` scope, which the
+connect flow started asking for with this feature. An account connected
+earlier does not have it, and Spotify answers every fetch with `403`
+until you connect again: clear `access_token` and `refresh_token` in the
+`spotify_mirror` block, save, and use **Connect with Spotify** once more —
+Spotify then asks for the extra scope. The save is refused up front with
+that message if the import is switched on while the account has no
+tokens.
+:::
+
+::: info A backstop, not a sampler
+The endpoint answers a window that deliberately overlaps the previous
+one, so a play that arrives twice is stored once (`played_at` is the
+key). The sweep is slow on purpose: it catches what was missed, and it
+only reaches as far back as Spotify hands out. A rate-limit (`429`) is
+waited out up to a minute and retried on the next pass; a failed sweep
+is logged and skipped, never fatal.
+:::
+
 ## How it behaves
 
 A track's **start** is mirrored — the same signal
@@ -140,13 +199,17 @@ The block is `spotify_mirror` in `settings.json`:
     "refresh_token": "...",
     "token_expires_at": 1793563800.0,
     "mirror_user": "you",
-    "silent_on_target": true
+    "silent_on_target": true,
+    "import_recent": false
   }
 }
 ```
 
 Saving it with only `client_id` (no tokens yet) is fine: the runtime
-hooks mirror nothing until both a token and a device id exist.
+hooks mirror nothing until both a token and a device id exist. The two
+optional booleans are **Silent mirror** and
+**Import listening history**; the history import only runs while
+`enabled` is on too.
 
 ## API
 

@@ -1039,6 +1039,9 @@ export default {
     spotifyMirrorNowNothing: 'Nada está tocando agora.',
     spotifyMirrorNowDone: 'Espelhado no Spotify.',
     spotifyMirrorNowFailed: 'Não foi possível espelhar essa música.',
+    spotifyMirrorImport: 'Importar histórico de escuta',
+    spotifyMirrorImportHint:
+      'Lê o seu histórico de escuta do Spotify no Downtify a cada meia hora. Precisa reconectar uma vez para o Spotify conceder a permissão.',
     spotifySyncTitle: 'Sincronização do Spotify',
     spotifySyncHint:
       'Mantém as playlists do Spotify baixadas em dia com o Spotify. Usa a conexão do Spotify Mirror; nada é buscado até isso ser ativado.',

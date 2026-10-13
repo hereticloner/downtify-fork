@@ -625,6 +625,7 @@ def test_clean_coerces_and_fills():
         'mirror_user': '',
         'silent_on_target': True,
         'mirror_manual_checks': False,
+        'import_recent': False,
     }
 
 
@@ -663,6 +664,45 @@ def test_validate_accepts_complete_config():
 
 def test_validate_skips_when_not_enabled():
     api._validate_spotify_mirror_settings({'enabled': False})
+
+
+def test_scopes_ask_for_the_history_import():
+    """The listening-history import is opt-in, but its scope is not.
+
+    It rides the one connect flow the app already has, so a user who
+    turns the import on has to have granted the scope when they
+    connected - the ask has to be in the request or every fetch is a
+    403.
+    """
+
+    scopes = spotify_mirror.SCOPES.split()
+    assert 'user-read-recently-played' in scopes
+    assert 'user-top-read' in scopes
+    # The playback scopes the mirror itself needs are untouched.
+    assert 'user-modify-playback-state' in scopes
+
+
+def test_validate_rejects_the_history_import_before_connecting():
+    """Turning the import on without a connection is refused up front."""
+
+    with pytest.raises(HTTPException):
+        api._validate_spotify_mirror_settings({
+            'enabled': True,
+            'client_id': 'c',
+            'device_id': 'd',
+            'refresh_token': '',
+            'import_recent': True,
+        })
+
+
+def test_validate_accepts_the_history_import_with_tokens():
+    api._validate_spotify_mirror_settings({
+        'enabled': True,
+        'client_id': 'c',
+        'device_id': 'd',
+        'refresh_token': 'r',
+        'import_recent': True,
+    })
 
 
 # -- transport commands (pause / resume / seek) -----------------------

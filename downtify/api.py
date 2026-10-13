@@ -561,7 +561,10 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     # play in Downtify starts the same track on the user's own Connect
     # device - this fork ships a silent one on the server ("Downtify
     # Mirror") - so the listening shows up on Spotify. Tokens land here
-    # through the connect flow.
+    # through the connect flow. ``import_recent`` reads the account's
+    # listening history back (see downtify.spotify_history) - a second
+    # scope the connect flow now asks for, so an account connected
+    # before it has to reconnect once.
     'spotify_mirror': {
         'enabled': False,
         'client_id': '',
@@ -573,6 +576,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         'mirror_user': '',
         'silent_on_target': True,
         'mirror_manual_checks': False,
+        'import_recent': False,
     },
     # Keep downloaded Spotify playlists in step with their Spotify source
     # (see downtify.spotify_sync). It reuses the Spotify Mirror's OAuth
@@ -791,6 +795,7 @@ def _clean_spotify_mirror(value: Any) -> dict[str, Any]:
         'mirror_user': str(base.get('mirror_user') or '').strip(),
         'silent_on_target': bool(base.get('silent_on_target', True)),
         'mirror_manual_checks': bool(base.get('mirror_manual_checks', False)),
+        'import_recent': bool(base.get('import_recent', False)),
     }
     # Keep the expiry as stored: a number is kept a number, anything
     # else stays an empty marker.
@@ -816,6 +821,17 @@ def _validate_spotify_mirror_settings(mirror: dict[str, Any]) -> None:
         return
     if not mirror.get('client_id'):
         detail = 'A Spotify client id is required when enabled'
+        raise HTTPException(status_code=400, detail=detail)
+    # The history import (downtify.spotify_history) needs a connection
+    # that was authorized for it: the scope was added to the connect
+    # flow after some accounts were, so an old token answers 403 forever.
+    if mirror.get('import_recent') and not (
+        mirror.get('access_token') or mirror.get('refresh_token')
+    ):
+        detail = (
+            'Reconnect Spotify before importing listening history, so the '
+            'history scope is granted'
+        )
         raise HTTPException(status_code=400, detail=detail)
 
 
