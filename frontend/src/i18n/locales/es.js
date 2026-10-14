@@ -1051,6 +1051,15 @@ export default {
     spotifyMirrorImport: 'Importar historial de escucha',
     spotifyMirrorImportHint:
       'Lee tu historial de escucha de Spotify en Downtify cada media hora. Necesitas reconectar una vez para que Spotify conceda el permiso.',
+    mirrorStatus: 'Estado en vivo',
+    mirrorDevice: 'Dispositivo',
+    mirrorOnline: 'En línea ✓',
+    mirrorOffline: 'Sin conexión ✗',
+    mirrorTokenOk: 'Token válido',
+    mirrorTokenBad: 'Token caducado: vuelve a conectar',
+    mirrorLast: 'Última réplica: {uri} · {when}',
+    mirrorLastError: 'Último error: {reason} · {when}',
+    mirrorNone: 'Sin errores registrados.',
     spotifySyncTitle: 'Sincronización de Spotify',
     spotifySyncHint:
       'Mantiene las listas de Spotify descargadas al día con Spotify. Usa la conexión de Spotify Mirror; no se consulta nada hasta activarlo.',

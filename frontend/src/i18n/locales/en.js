@@ -1021,6 +1021,15 @@ export default {
     spotifyMirrorImport: 'Import listening history',
     spotifyMirrorImportHint:
       'Read your Spotify listening history into Downtify every half hour. Needs one reconnect, so Spotify grants the scope.',
+    mirrorStatus: 'Live status',
+    mirrorDevice: 'Device',
+    mirrorOnline: 'Online ✓',
+    mirrorOffline: 'Offline ✗',
+    mirrorTokenOk: 'Token valid',
+    mirrorTokenBad: 'Token expired — connect again',
+    mirrorLast: 'Last mirror: {uri} · {when}',
+    mirrorLastError: 'Last error: {reason} · {when}',
+    mirrorNone: 'No failures recorded.',
     spotifySyncTitle: 'Spotify Sync',
     spotifySyncHint:
       'Keep downloaded Spotify playlists in step with Spotify. Uses the Spotify Mirror connection; nothing is fetched until this is on.',

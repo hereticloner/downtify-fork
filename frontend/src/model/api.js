@@ -753,6 +753,13 @@ function spotifyMirrorNow(track) {
   return API.post('/api/spotify-mirror/mirror-now', { track })
 }
 
+// Live mirror diagnostics. Admin-only, and the records behind it live in
+// memory, so a user without the right just gets no panel - the request
+// stays quiet instead of firing the "needs an admin" notice.
+function getMirrorStatus() {
+  return API.get('/api/spotify-mirror/status', { quiet: true })
+}
+
 function getSpotifySync() {
   return API.get('/api/spotify-sync')
 }
@@ -926,6 +933,7 @@ export default {
   spotifyMirrorDevices,
   testSpotifyMirror,
   spotifyMirrorNow,
+  getMirrorStatus,
   getSpotifySync,
   runSpotifySync,
   testScrobbling,

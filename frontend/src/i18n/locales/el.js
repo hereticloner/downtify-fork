@@ -1052,6 +1052,15 @@ export default {
     spotifyMirrorImport: 'Εισαγωγή ιστορικού ακροάσεων',
     spotifyMirrorImportHint:
       'Διαβάζει το ιστορικό ακροάσεών σου από το Spotify στο Downtify κάθε μισή ώρα. Χρειάζεται μία επανασύνδεση, ώστε το Spotify να δώσει την άδεια.',
+    mirrorStatus: 'Ζωντανή κατάσταση',
+    mirrorDevice: 'Συσκευή',
+    mirrorOnline: 'Σε σύνδεση ✓',
+    mirrorOffline: 'Εκτός σύνδεσης ✗',
+    mirrorTokenOk: 'Το token ισχύει',
+    mirrorTokenBad: 'Το token έχει λήξει — ξανασυνδεθείτε',
+    mirrorLast: 'Τελευταίος κατοπτρισμός: {uri} · {when}',
+    mirrorLastError: 'Τελευταίο σφάλμα: {reason} · {when}',
+    mirrorNone: 'Κανένα σφάλμα δεν έχει καταγραφεί.',
     spotifySyncTitle: 'Συγχρονισμός Spotify',
     spotifySyncHint:
       'Κρατά τις ληφθείσες λίστες Spotify συγχρονισμένες με το Spotify. Χρησιμοποιεί τη σύνδεση Spotify Mirror· τίποτα δεν ανακτάται μέχρι να ενεργοποιηθεί.',

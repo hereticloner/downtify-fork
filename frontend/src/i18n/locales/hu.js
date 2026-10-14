@@ -1044,6 +1044,15 @@ export default {
     spotifyMirrorImport: 'Hallgatási előzmény importálása',
     spotifyMirrorImportHint:
       'Félóránként beolvassa a Spotify hallgatási előzményed a Downtifybe. Egyszer újra kell csatlakozni, hogy a Spotify megadja az engedélyt.',
+    mirrorStatus: 'Élő állapot',
+    mirrorDevice: 'Eszköz',
+    mirrorOnline: 'Online ✓',
+    mirrorOffline: 'Offline ✗',
+    mirrorTokenOk: 'A token érvényes',
+    mirrorTokenBad: 'A token lejárt — csatlakozz újra',
+    mirrorLast: 'Utolsó tükrözés: {uri} · {when}',
+    mirrorLastError: 'Utolsó hiba: {reason} · {when}',
+    mirrorNone: 'Nincs rögzített hiba.',
     spotifySyncTitle: 'Spotify szinkron',
     spotifySyncHint:
       'A letöltött Spotify-lejátszási listákat szinkronban tartja a Spotify-jal. A Spotify Mirror kapcsolatát használja; bekapcsolásig semmit nem kér le.',

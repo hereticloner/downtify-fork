@@ -918,6 +918,52 @@
                   :aria-label="t('settings.spotifyMirrorEnabled')"
                 />
               </SettingRow>
+              <!-- Live diagnostics: why a play didn't show up on Spotify.
+                   Empty when the endpoint is refused (it is admin-only),
+                   never an error - Settings belongs to an admin either way. -->
+              <UiPanel
+                v-if="mirrorStatus.status.value"
+                class="mx-5 my-4"
+                :title="t('settings.mirrorStatus')"
+              >
+                <div class="flex flex-col gap-2 text-[13px]">
+                  <p class="flex flex-wrap items-baseline gap-x-2">
+                    <span class="text-muted">
+                      {{ t('settings.mirrorDevice') }}
+                    </span>
+                    <span>{{ mirrorStatus.device.value || '-' }}</span>
+                  </p>
+                  <p>
+                    <UiBadge :tone="mirrorOnline ? 'accent' : 'danger'">
+                      {{
+                        mirrorOnline
+                          ? t('settings.mirrorOnline')
+                          : t('settings.mirrorOffline')
+                      }}
+                    </UiBadge>
+                  </p>
+                  <p>
+                    <UiBadge :tone="mirrorTokenOk ? 'accent' : 'warn'">
+                      {{
+                        mirrorTokenOk
+                          ? t('settings.mirrorTokenOk')
+                          : t('settings.mirrorTokenBad')
+                      }}
+                    </UiBadge>
+                  </p>
+                  <p
+                    v-if="mirrorStatus.lastMirror.value"
+                    class="break-words text-muted"
+                  >
+                    {{ mirrorStatus.lastMirror.value }}
+                  </p>
+                  <p class="break-words text-muted">
+                    {{
+                      mirrorStatus.lastError.value || t('settings.mirrorNone')
+                    }}
+                  </p>
+                </div>
+              </UiPanel>
               <template v-if="s.spotify_mirror.enabled">
                 <div class="grid gap-4 px-5 py-4 sm:grid-cols-2">
                   <UiInput
@@ -1244,13 +1290,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import AppIcon from '/src/components/ui/AppIcon.vue'
 import AppLogo from '/src/components/ui/AppLogo.vue'
 import UiBadge from '/src/components/ui/UiBadge.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiInput from '/src/components/ui/UiInput.vue'
+import UiPanel from '/src/components/ui/UiPanel.vue'
 import UiSegmented from '/src/components/ui/UiSegmented.vue'
 import UiSelect from '/src/components/ui/UiSelect.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
@@ -1272,7 +1319,7 @@ import SettingRow from '/src/components/settings/SettingRow.vue'
 import SourceOrder from '/src/components/settings/SourceOrder.vue'
 import LyricsOrder from '/src/components/settings/LyricsOrder.vue'
 import API from '/src/model/api'
-import { mirrorNow } from '/src/model/spotifyMirror'
+import { mirrorNow, useMirrorStatus } from '/src/model/spotifyMirror'
 import { useSpotifySync } from '/src/model/spotifySync'
 import { friendlyError } from '/src/lib/errors'
 import {
@@ -1399,6 +1446,14 @@ function disconnectLastfm() {
 // the block first - Spotify reads the saved client id - then sends the
 // browser to Spotify, which returns through the callback into this
 // page.
+//
+// The status panel is the server's answer to "why didn't this track show
+// up on Spotify?". It is a diagnostic, so it is read on its own - quiet
+// about a refusal, since this whole section is an admin's.
+const mirrorStatus = useMirrorStatus()
+const mirrorOnline = computed(() => !!mirrorStatus.status.value?.device_online)
+const mirrorTokenOk = computed(() => !!mirrorStatus.status.value?.token_valid)
+
 const spotifyDevices = ref([])
 const spotifyDevicesLoading = ref(false)
 const spotifyConnecting = ref(false)
@@ -1711,6 +1766,36 @@ watch(section, (value) => {
     loadStorage()
   }
 })
+
+// The mirror status is the one panel here that goes stale on its own: a
+// play made anywhere in the app moves it. Poll it while the Spotify
+// section is open, and stop on leave and on unmount so a tab left in the
+// background isn't asking every 30 s.
+const MIRROR_STATUS_POLL_MS = 30 * 1000
+let mirrorStatusTimer = null
+
+function startMirrorStatus() {
+  if (mirrorStatusTimer) return
+  mirrorStatus.load()
+  mirrorStatusTimer = setInterval(mirrorStatus.load, MIRROR_STATUS_POLL_MS)
+}
+
+function stopMirrorStatus() {
+  if (!mirrorStatusTimer) return
+  clearInterval(mirrorStatusTimer)
+  mirrorStatusTimer = null
+}
+
+watch(
+  section,
+  (value) => {
+    if (value === 'spotify') startMirrorStatus()
+    else stopMirrorStatus()
+  },
+  { immediate: true }
+)
+
+onUnmounted(stopMirrorStatus)
 
 function needsValue(value) {
   return String(value ?? '').trim() ? '' : t('settings.required')

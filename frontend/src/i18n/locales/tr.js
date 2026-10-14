@@ -1043,6 +1043,15 @@ export default {
     spotifyMirrorImport: 'Dinleme geçmişini içe aktar',
     spotifyMirrorImportHint:
       'Spotify dinleme geçmişini yarım saatte bir Downtify’ye çeker. Kapsam verilmesi için bir kez yeniden bağman gerekir.',
+    mirrorStatus: 'Canlı durum',
+    mirrorDevice: 'Cihaz',
+    mirrorOnline: 'Çevrimiçi ✓',
+    mirrorOffline: 'Çevrimdışı ✗',
+    mirrorTokenOk: 'Token geçerli',
+    mirrorTokenBad: 'Token süresi doldu — yeniden bağlan',
+    mirrorLast: 'Son yansıtma: {uri} · {when}',
+    mirrorLastError: 'Son hata: {reason} · {when}',
+    mirrorNone: 'Kayıtlı hata yok.',
     spotifySyncTitle: 'Spotify Senkronu',
     spotifySyncHint:
       'İndirilen Spotify çalma listelerini Spotify ile eşitler. Spotify Mirror bağlantısını kullanır; açılana kadar hiçbir şey getirilmez.',

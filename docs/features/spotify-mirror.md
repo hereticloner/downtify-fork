@@ -165,11 +165,19 @@ being deduped away for the rest of the server's life.
 
 ## When a track doesn't show up
 
-`GET /api/spotify-mirror/status` answers "why isn't this playing on
-Spotify?" in one call: whether the tokens still work, whether the
-chosen Connect device is online right now, and what each player last
-managed — the last URI that went out, or the reason the last attempt
-failed (`no_uri`, `auth_failed`, `no_device`, `play_failed: ...`).
+**Settings → Spotify Mirror** carries the answer on one panel: the
+chosen Connect device and whether it is online right now, whether the
+token still works, the last URI that went out, and the reason the last
+attempt failed. It re-reads itself every 30 seconds while the section is
+open. The panel is admin-only, like the section around it, and stays
+empty when the server refuses the request.
+
+The same answer is one call away for scripts — `GET
+/api/spotify-mirror/status` returns whether the tokens still work,
+whether the chosen Connect device is online right now, and what each
+player last managed — the last URI that went out, or the reason the
+last attempt failed (`no_uri`, `auth_failed`, `no_device`,
+`play_failed: ...`).
 
 ```bash
 curl -b session.txt http://your-server:8000/api/spotify-mirror/status

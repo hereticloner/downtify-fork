@@ -1037,6 +1037,15 @@ export default {
     spotifyMirrorImport: 'Импортиране на историята на слушане',
     spotifyMirrorImportHint:
       'Внася историята на слушане от Spotify в Downtify на всеки половин час. Изисква едно повторно свързване, за да даде Spotify разрешението.',
+    mirrorStatus: 'Състояние в реално време',
+    mirrorDevice: 'Устройство',
+    mirrorOnline: 'На линия ✓',
+    mirrorOffline: 'Извън линия ✗',
+    mirrorTokenOk: 'Токенът е валиден',
+    mirrorTokenBad: 'Токенът е изтекъл — свържете се отново',
+    mirrorLast: 'Последно огледало: {uri} · {when}',
+    mirrorLastError: 'Последна грешка: {reason} · {when}',
+    mirrorNone: 'Няма записани грешки.',
     spotifySyncTitle: 'Синхронизация на Spotify',
     spotifySyncHint:
       'Поддържа изтеглените Spotify плейлисти в синхрон със Spotify. Използва връзката на Spotify Mirror; нищо не се извлича, докато не се включи.',
