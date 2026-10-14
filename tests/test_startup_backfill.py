@@ -187,11 +187,116 @@ def test_open_library_stores_imports_once(tmp_path, monkeypatch):
 
     monkeypatch.setattr(main.TrackIndex, 'backfill_from_monitor_db', spy)
 
-    main._open_library_stores(monitor_db)
+    # The track index import is cheap and stays on the startup path; the
+    # playlist catalog half is deferred (see the tests below).
+    assert main._open_library_stores(monitor_db) is True
     assert len(imported) == 1
+    assert main.api.state.playlist_catalog.list_tracks('Old Mix') == []
+
+    main._backfill_library_history(monitor_db, catalog_import=True)
     assert main._backfill_done(monitor_db) is True
     assert main.api.state.playlist_catalog.list_tracks('Old Mix')
 
     # Same history on the next start: the import is skipped, not repeated.
-    main._open_library_stores(monitor_db)
+    assert main._open_library_stores(monitor_db) is False
     assert len(imported) == 1
+
+
+def test_the_playlist_catalog_import_does_not_block_startup(
+    tmp_path, monkeypatch
+):
+    """Opening the stores must not stat a file per history row.
+
+    Linking the playlist catalog walks every downloaded-track row and hits
+    the library volume once per distinct file, which held up the first
+    request for minutes on a large library. It now runs after startup.
+    """
+
+    downloads = _app(tmp_path, monkeypatch)
+    for index in range(3):
+        (downloads / f'Artist - Song {index}.mp3').write_bytes(b'audio')
+    monitor_db = _monitor_db(
+        tmp_path / 'downtify_monitor.db',
+        filenames=tuple(f'Artist - Song {i}.mp3' for i in range(3)),
+    )
+    with sqlite3.connect(monitor_db) as conn:
+        conn.execute(
+            """CREATE TABLE monitored_playlists (
+                   id INTEGER PRIMARY KEY,
+                   spotify_id TEXT NOT NULL,
+                   name TEXT NOT NULL,
+                   url TEXT NOT NULL,
+                   interval_minutes INTEGER DEFAULT 60,
+                   enabled INTEGER DEFAULT 1,
+                   last_checked TEXT,
+                   last_track_count INTEGER DEFAULT 0,
+                   created_at TEXT NOT NULL
+               )"""
+        )
+        conn.execute(
+            'INSERT INTO monitored_playlists VALUES '
+            "(1, 'playlist0000000000000001', 'Old Mix', 'http://x', 60, 1, "
+            "NULL, 0, 'now')"
+        )
+
+    def explode(*args, **kwargs):
+        raise AssertionError('the catalog import ran on the startup path')
+
+    catalog = main.api.state.playlist_catalog
+    real_import = catalog.backfill_from_monitor_db
+    monkeypatch.setattr(catalog, 'backfill_from_monitor_db', explode)
+    assert main._open_library_stores(monitor_db) is True
+
+    # The deferred half still imports once it is actually run.
+    monkeypatch.setattr(catalog, 'backfill_from_monitor_db', real_import)
+    main._backfill_library_history(monitor_db, catalog_import=True)
+    assert len(main.api.state.playlist_catalog.list_tracks('Old Mix')) == 3
+
+
+def test_the_deferred_import_registers_batch_rows(tmp_path, monkeypatch):
+    """Batch rows are registered even when the history was already imported."""
+
+    downloads = _app(tmp_path, monkeypatch)
+    (downloads / 'Artist - Song.mp3').write_bytes(b'audio')
+    monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
+    with sqlite3.connect(monitor_db) as conn:
+        conn.execute(
+            """CREATE TABLE monitored_playlists (
+                   id INTEGER PRIMARY KEY,
+                   spotify_id TEXT NOT NULL,
+                   name TEXT NOT NULL,
+                   url TEXT NOT NULL,
+                   interval_minutes INTEGER DEFAULT 60,
+                   enabled INTEGER DEFAULT 1,
+                   last_checked TEXT,
+                   last_track_count INTEGER DEFAULT 0,
+                   created_at TEXT NOT NULL
+               )"""
+        )
+        conn.execute(
+            'INSERT INTO monitored_playlists VALUES '
+            "(1, 'playlist0000000000000001', 'Old Mix', 'http://x', 60, 1, "
+            "NULL, 0, 'now')"
+        )
+
+    assert main._open_library_stores(monitor_db) is True
+    main._backfill_library_history(monitor_db, catalog_import=True)
+    registered = [
+        batch['spotify_playlist_id']
+        for batch in main.api.state.playlist_batch_store.list_latest_batches()
+    ]
+    assert 'playlist0000000000000001' in registered
+
+
+def test_the_deferred_import_marks_the_history_imported(tmp_path, monkeypatch):
+    """A restart before the deferred half ran has to import again."""
+
+    downloads = _app(tmp_path, monkeypatch)
+    (downloads / 'Artist - Song.mp3').write_bytes(b'audio')
+    monitor_db = _monitor_db(tmp_path / 'downtify_monitor.db')
+
+    main._open_library_stores(monitor_db)
+    assert main._backfill_done(monitor_db) is False
+
+    main._backfill_library_history(monitor_db, catalog_import=True)
+    assert main._backfill_done(monitor_db) is True

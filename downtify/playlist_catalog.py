@@ -2,13 +2,22 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from .library_cache_keys import file_content_key
-from .library_paths import locate_library_file
+from .library_cache_keys import (
+    file_content_key,
+    file_content_key_from_name_and_size,
+)
+from .library_paths import (
+    EXTERNAL_LIBRARY_PREFIX,
+    SLSKD_LIBRARY_PREFIX,
+    locate_library_file,
+)
 from .sqlite_utils import connect_sqlite
 from .track_index import normalize_spotify_track_id
 
@@ -19,6 +28,48 @@ def _now_iso() -> str:
 
 def _norm_path(filename: str) -> str:
     return str(filename or '').strip().replace('\\', '/')
+
+
+# Stored keys whose file does not sit directly under the download folder;
+# those take the full candidate search in ``_stored_content_key``.
+_ELSEWHERE = (SLSKD_LIBRARY_PREFIX, EXTERNAL_LIBRARY_PREFIX, '/')
+
+
+def _stored_content_key(
+    filename: str,
+    download_dir: Path,
+    slskd_dir: Optional[Path],
+) -> Optional[str]:
+    """The library content key for a stored name, or ``None`` if it is gone.
+
+    A plain ``Artist/Album/Track.mp3`` sits directly under the download
+    folder, so one ``stat`` answers it. ``locate_library_file`` instead
+    resolves every candidate path first, which is what made the startup
+    import cost several syscalls per history row.
+
+    The key is the same ``sha256(basename:size)`` every other module builds
+    (``file_content_key``) - see ``library_catalog``'s
+    ``_attach_playlists_to_entries``, which joins catalog rows to files on it.
+    """
+
+    if filename and not filename.startswith(_ELSEWHERE):
+        try:
+            info = os.stat(download_dir / filename)
+        except OSError:
+            pass
+        else:
+            if stat.S_ISREG(info.st_mode):
+                return file_content_key_from_name_and_size(
+                    filename, int(info.st_size)
+                )
+    full = locate_library_file(filename, download_dir, slskd_dir)
+    if full is None:
+        return None
+    try:
+        size = int(full.stat().st_size)
+    except OSError:
+        return None
+    return file_content_key_from_name_and_size(full.name, size)
 
 
 def _chunked(values: list, size: int):
@@ -152,6 +203,10 @@ class PlaylistCatalog:
         per-row ``ensure_playlist``/``upsert_track`` pair used to open - and
         commit - two connections per track, which took minutes on a library
         of a few hundred rows.
+
+        Each distinct file name is looked up once, no matter how many
+        playlists hold it, since every lookup is a few syscalls on the
+        library volume.
         """
 
         path = Path(monitor_db_path)
@@ -170,6 +225,7 @@ class PlaylistCatalog:
 
         playlists: dict[str, Optional[str]] = {}
         tracks: list[tuple[str, str, Optional[str], str, int]] = []
+        keys: dict[str, Optional[str]] = {}
         for row in rows:
             pl_name = str(row[0] or '').strip()
             spotify_id = str(row[1] or '').strip() or None
@@ -179,11 +235,15 @@ class PlaylistCatalog:
             filename = _norm_path(str(row[3] or ''))
             if not pl_name or not tid or not filename:
                 continue
-            full = locate_library_file(filename, download_dir, slskd_dir)
-            if full is None:
+            if filename not in keys:
+                keys[filename] = _stored_content_key(
+                    filename, download_dir, slskd_dir
+                )
+            ck = keys[filename]
+            if ck is None:
                 continue
             playlists.setdefault(pl_name, spotify_id)
-            tracks.append((pl_name, tid, file_content_key(full), filename, 0))
+            tracks.append((pl_name, tid, ck, filename, 0))
         if not tracks:
             return 0
 

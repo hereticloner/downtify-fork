@@ -419,9 +419,14 @@ def _mark_backfill_done(monitor_db_path: Path) -> None:
         logger.debug('Could not write the library backfill marker')
 
 
-def _open_library_stores(monitor_db_path: Path) -> None:
-    """Open the library catalog/index/cache stores in /data and backfill the
-    track index and playlist catalog from Playlist Monitor history."""
+def _open_library_stores(monitor_db_path: Path) -> bool:
+    """Open the library catalog/index/cache stores in /data and import the
+    Playlist Monitor history into the track index.
+
+    Returns whether the playlist catalog still needs the same import. That
+    half walks every history row and stats a file per row, so it runs after
+    startup instead (see :func:`_deferred_backfill`).
+    """
 
     library_db = DATABASE_DIR / 'downtify_library.db'
     api.state.track_index = TrackIndex(library_db)
@@ -457,55 +462,95 @@ def _open_library_stores(monitor_db_path: Path) -> None:
     api.state.external_sync = ExternalSyncJob(
         DATABASE_DIR / 'external_sync.json'
     )
-    ctx = api.library_context()
     if _backfill_done(monitor_db_path):
         logger.debug(
             'Library backfill: monitor history unchanged, nothing imported'
         )
-    else:
+        return False
+    started = time.perf_counter()
+    try:
+        imported = api.state.track_index.backfill_from_monitor_db(
+            monitor_db_path
+        )
+        logger.info(
+            'Track library index: imported {} path(s) from monitor '
+            'history in {:.1f}s',
+            imported,
+            time.perf_counter() - started,
+        )
+    except Exception:
+        logger.exception('Track library backfill from monitor db failed')
+    return True
+
+
+async def _deferred_backfill(
+    monitor_db_path: Path, *, catalog_import: bool
+) -> None:
+    """Run the rest of the monitor-history import off the event loop.
+
+    :func:`_backfill_library_history` is blocking work, so it goes to a
+    thread: the server keeps answering requests while the catalog fills in.
+    """
+
+    await asyncio.to_thread(
+        _backfill_library_history, monitor_db_path, catalog_import
+    )
+
+
+def _backfill_library_history(
+    monitor_db_path: Path, *, catalog_import: bool
+) -> None:
+    """Link the playlist catalog (and its batch rows) to the monitor history.
+
+    Blocking: every history row costs a few syscalls on the library volume,
+    which kept the server from answering for minutes when this ran before
+    the first request. The playlist list starts empty and fills in a few
+    seconds after startup.
+
+    *catalog_import* is False when this history was already imported
+    (:func:`_backfill_done`); the batch rows are registered either way, since
+    a playlist can reach the catalog without the history changing.
+    """
+
+    overall = time.perf_counter()
+    if catalog_import:
+        ctx = api.library_context()
         started = time.perf_counter()
-        try:
-            imported = api.state.track_index.backfill_from_monitor_db(
-                monitor_db_path
-            )
-            logger.info(
-                'Track library index: imported {} path(s) from monitor '
-                'history in {:.1f}s',
-                imported,
-                time.perf_counter() - started,
-            )
-        except Exception:
-            logger.exception('Track library backfill from monitor db failed')
-        started = time.perf_counter()
+        linked = 0
         try:
             linked = api.state.playlist_catalog.backfill_from_monitor_db(
                 monitor_db_path,
                 download_dir=ctx.download_dir,
                 slskd_dir=ctx.slskd_dir,
             )
-            logger.info(
-                'Playlist catalog: linked {} track(s) from monitor history '
-                'in {:.1f}s',
-                linked,
-                time.perf_counter() - started,
-            )
         except Exception:
             logger.exception(
                 'Playlist catalog backfill from monitor db failed'
             )
+        logger.info(
+            'Playlist catalog: linked {} track(s) from monitor history '
+            'in {:.1f}s',
+            linked,
+            time.perf_counter() - started,
+        )
         _mark_backfill_done(monitor_db_path)
     try:
         registered = ensure_batch_records(
             api.state.playlist_batch_store,
             api.collect_playlist_batch_sync_rows(),
         )
+    except Exception:
+        logger.exception('Playlist batch sync from library failed')
+    else:
         if registered:
             logger.info(
                 'Playlist batches: registered {} playlist(s) from library',
                 registered,
             )
-    except Exception:
-        logger.exception('Playlist batch sync from library failed')
+    logger.info(
+        'Library backfill: done in {:.1f}s',
+        time.perf_counter() - overall,
+    )
 
 
 def open_auth_store() -> AuthStore:
@@ -560,7 +605,7 @@ def build_app() -> FastAPI:
         )
         db_path = DATABASE_DIR / 'downtify_monitor.db'
         api.state.monitor_db = PlaylistMonitorDB(db_path)
-        _open_library_stores(db_path)
+        backfill_pending = _open_library_stores(db_path)
         threading.Thread(
             target=_warm_library_listing,
             name='downtify-library-warm',
@@ -658,6 +703,16 @@ def build_app() -> FastAPI:
                 logger.exception('Library upgrade: could not resume')
 
         yield
+
+        # The playlist half of the monitor-history import used to run before
+        # the first request could be served, which held up startup for
+        # minutes on a large library. It starts here, after ``yield``, and
+        # runs in a thread: the playlist list is empty for the first few
+        # seconds and fills in once the import lands.
+        api.spawn_task(
+            _deferred_backfill(db_path, catalog_import=backfill_pending),
+            name='library-backfill',
+        )
 
         if api.state.discovery is not None:
             await api.state.discovery.stop()
