@@ -149,6 +149,31 @@
           </div>
         </UiPanel>
       </div>
+
+      <UiPanel class="p-4">
+        <h2 class="mb-3 text-lg font-medium">
+          {{ t('stats.activityHeatmap') }}
+        </h2>
+        <ActivityHeatmap :days="stats.playback?.heatmap || []" />
+        <div class="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <div>
+            <div class="text-2xl font-bold">{{ streak }}</div>
+            <div class="text-xs text-faint">{{ t('stats.streakDays') }}</div>
+          </div>
+          <div class="flex flex-col gap-1 text-sm">
+            <span>{{ t('stats.streak', { count: streak }) }}</span>
+            <span v-if="busiest.count" class="text-faint">
+              {{
+                t('stats.bestDay', {
+                  date: busiest.date,
+                  count: busiest.count,
+                })
+              }}
+            </span>
+            <span v-else class="text-faint">{{ t('stats.empty') }}</span>
+          </div>
+        </div>
+      </UiPanel>
     </template>
   </div>
 </template>
@@ -156,6 +181,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useI18n } from '/src/i18n'
+import ActivityHeatmap from '/src/components/library/ActivityHeatmap.vue'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
@@ -171,6 +197,11 @@ onMounted(load)
 const maxDay = computed(() =>
   Math.max(1, ...(stats.value.downloads?.per_day || []).map((d) => d.count))
 )
+
+// Days in a row with a play, and the busiest day of the retained
+// window - the same two numbers the heatmap panel is built around.
+const streak = computed(() => stats.value.playback?.streak_days ?? 0)
+const busiest = computed(() => stats.value.playback?.best_day ?? {})
 
 // When a play was made, in the reader's own locale. Spotify stamps
 // ISO instants; an unparseable one falls back to the raw text rather

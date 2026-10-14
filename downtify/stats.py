@@ -9,11 +9,19 @@ tables.
 from __future__ import annotations
 
 from collections import Counter
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
+
+from .activity import RETENTION_DAYS
 
 #: How many mirrored Spotify plays one response carries. The store keeps
 #: a page of fifty; the page shows the newest handful of it.
 SPOTIFY_RECENT_LIMIT = 10
+
+#: How many weeks the listening heatmap spans. Tied to the activity
+#: log's own retention, so the grid never promises days the log has
+#: already pruned.
+HEATMAP_WEEKS = max(1, RETENTION_DAYS // 7)
 
 
 def _activity_kinds(log: Any, kind: str) -> list[dict[str, Any]]:
@@ -34,6 +42,68 @@ def _activity_kinds(log: Any, kind: str) -> list[dict[str, Any]]:
 def _parse_at(value: str) -> str:
     # entries carry ISO strings; the first 10 chars are the date.
     return str(value or '')[:10]
+
+
+def _played_days(activity: Any) -> Counter:
+    """``{YYYY-MM-DD: plays}`` for one kind of activity entry."""
+
+    return Counter(
+        day for day in (_parse_at(e.get('at')) for e in activity or []) if day
+    )
+
+
+def _today() -> date:
+    return datetime.now(timezone.utc).date()
+
+
+def build_activity_heatmap(
+    activity: list[dict[str, Any]],
+    weeks: int = HEATMAP_WEEKS,
+    *,
+    today: Optional[date] = None,
+) -> list[dict[str, Any]]:
+    """One ``{date, count}`` per day for the last *weeks* weeks.
+
+    Oldest first, and dense: a day without a play is a zero rather than
+    a gap, so the grid the page draws always has ``weeks * 7`` cells
+    (see ``frontend/src/lib/heatmap.js``). The window is capped at the
+    activity log's retention, since older plays are pruned and would
+    read as empty days anyway. *today* is only there to keep tests off
+    the clock.
+    """
+
+    span = max(1, min(int(weeks or 0), HEATMAP_WEEKS)) * 7
+    end = today or _today()
+    counts = _played_days(activity)
+    out: list[dict[str, Any]] = []
+    day = end - timedelta(days=span - 1)
+    for _ in range(span):
+        stamp = day.isoformat()
+        out.append({'date': stamp, 'count': counts.get(stamp, 0)})
+        day += timedelta(days=1)
+    return out
+
+
+def build_listening_streak(
+    activity: list[dict[str, Any]], *, today: Optional[date] = None
+) -> int:
+    """Days in a row that had at least one play.
+
+    A day still to come doesn't break the streak: until it is over,
+    yesterday's run still counts. Nothing played today *or* yesterday
+    means zero - that is a finished streak, not one waiting to start.
+    *today* is only there to keep tests off the clock.
+    """
+
+    played = _played_days(activity)
+    cursor = today or _today()
+    if cursor.isoformat() not in played:
+        cursor -= timedelta(days=1)
+    streak = 0
+    while cursor.isoformat() in played:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return streak
 
 
 def _spotify_recent(rows: Any) -> list[dict[str, Any]]:
@@ -83,12 +153,14 @@ def build_stats(
     is how many the store holds altogether. Without them the ``spotify``
     block is simply empty - the import is opt-in, so a server that never
     turned it on has nothing to report.
+
+    The ``playback`` block carries the listening heatmap (one entry per
+    day of the retained window), the current streak and the busiest day,
+    all read from the same play entries as ``total`` and ``top_tracks``.
     """
 
     downloads = _activity_kinds(activity, 'download')
     playbacks = _activity_kinds(activity, 'playback')
-
-    from datetime import datetime, timezone  # noqa: PLC0415
 
     now = datetime.now(timezone.utc)
 
@@ -107,6 +179,13 @@ def build_stats(
     )
     per_day = Counter(_parse_at(e.get('at')) for e in downloads if e.get('at'))
     recent = _spotify_recent(spotify_recent)
+
+    # The heatmap is dense (a playless day is a zero), so the busiest
+    # day is the first entry that isn't: the empties only lead.
+    heatmap = build_activity_heatmap(playbacks)
+    busiest = next(
+        (day for day in reversed(heatmap) if day['count'] > 0), None
+    )
 
     return {
         'library': {
@@ -128,6 +207,13 @@ def build_stats(
                 {'summary': summary, 'count': count}
                 for summary, count in top_tracks.most_common(10)
             ],
+            'heatmap': heatmap,
+            'streak_days': build_listening_streak(playbacks),
+            'best_day': (
+                {'date': busiest['date'], 'count': busiest['count']}
+                if busiest
+                else {'date': '', 'count': 0}
+            ),
         },
         'spotify': {
             'recent': recent,

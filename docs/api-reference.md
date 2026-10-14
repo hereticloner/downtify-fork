@@ -1765,7 +1765,10 @@ Server-wide library and usage numbers — see [Stats](features/stats.md).
     "total": 1543,
     "top_tracks": [
       { "summary": "The Night Owls - Do I Still Recall", "count": 42 }
-    ]
+    ],
+    "heatmap": [{ "date": "2026-09-29", "count": 2 }],
+    "streak_days": 4,
+    "best_day": { "date": "2026-10-10", "count": 31 }
   },
   "spotify": {
     "recent": [
@@ -1781,7 +1784,7 @@ Server-wide library and usage numbers — see [Stats](features/stats.md).
 }
 ```
 
-Counts come from the library stores and the activity log (which keeps 90 days); a download request counts once, and a play is logged each time a song starts. `spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
+Counts come from the library stores and the activity log (which keeps a year of entries); a download request counts once, and a play is logged each time a song starts. `playback.heatmap` is one `{date, count}` per day of that window (364 days, days without a play included as `0`), `playback.streak_days` the current run of consecutive days with a play, and `playback.best_day` the busiest of them (`{"date": "", "count": 0}` when nothing was played). `spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
 
 ---
 
@@ -2536,7 +2539,7 @@ Admin. The activity log, newest first.
 }
 ```
 
-`kind` is one of `login`, `login_failed`, `logout`, `playback` (a song started), `download`, `like`, `unlike`, `delete`, `device_paired`, `device_unpaired`, `user_created`, `user_updated`, `user_deleted`, `password_changed`, `settings_changed` (`summary` lists the setting names, never their values). `client` is the app's name or `Web (Firefox on Linux)`. Entries are kept for 90 days.
+`kind` is one of `login`, `login_failed`, `logout`, `playback` (a song started), `download`, `like`, `unlike`, `delete`, `device_paired`, `device_unpaired`, `user_created`, `user_updated`, `user_deleted`, `password_changed`, `settings_changed` (`summary` lists the setting names, never their values). `client` is the app's name or `Web (Firefox on Linux)`. Entries are kept for a year.
 
 ---
 

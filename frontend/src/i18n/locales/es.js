@@ -318,6 +318,13 @@ export default {
     empty: 'Nada todavía',
     spotifyRecent: 'Reproducciones recientes en Spotify',
     spotifyPlayCount: '{count} reproducciones de Spotify guardadas',
+    activityHeatmap: 'Actividad de escucha',
+    streakDays: 'Racha de días',
+    streak: {
+      one: '{count} día seguido',
+      other: '{count} días seguidos',
+    },
+    bestDay: 'Día más activo: {date} ({count})',
   },
   collections: {
     title: 'Colecciones',

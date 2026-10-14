@@ -328,6 +328,13 @@ export default {
     empty: 'Rien pour le moment',
     spotifyRecent: 'Écoutés récents sur Spotify',
     spotifyPlayCount: '{count} écoutes Spotify enregistrées',
+    activityHeatmap: 'Activité d’écoute',
+    streakDays: 'Série de jours',
+    streak: {
+      one: '{count} jour d’affilée',
+      other: '{count} jours d’affilée',
+    },
+    bestDay: 'Jour le plus actif : {date} ({count})',
   },
   collections: {
     title: 'Collections',

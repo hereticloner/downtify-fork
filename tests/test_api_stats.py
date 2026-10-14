@@ -8,6 +8,7 @@ likes, and the plays the Spotify history import mirrored. No new tables.
 from __future__ import annotations
 
 import sqlite3
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from starlette.testclient import TestClient
 
 import main
 from downtify import api, spotify_history
+from downtify import stats as stats_mod
 
 
 @pytest.fixture
@@ -159,3 +161,116 @@ def test_stats_spotify_survives_a_broken_history_store(client, monkeypatch):
     resp = client.get('/api/stats')
     assert resp.status_code == 200, resp.text
     assert resp.json()['spotify'] == {'recent': [], 'play_count': 0}
+
+
+# ── the listening heatmap ──────────────────────────────────────────────────
+
+
+def _record_on(kind: str, day: date, summary: str = 'Song') -> None:
+    """An activity entry stamped on *day* rather than on now."""
+
+    with sqlite3.connect(main.DATABASE_DIR / 'downtify_activity.db') as conn:
+        conn.execute(
+            'INSERT INTO activity (at, user_id, username, kind, summary, '
+            'detail_json, client, ip) '
+            "VALUES (?, 0, 'admin', ?, ?, '{}', 'test', '')",
+            (f'{day.isoformat()}T20:00:00+00:00', kind, summary),
+        )
+
+
+def test_stats_ships_a_dense_year_of_heatmap_days(client):
+    """Every day of the retained window, so the grid has no holes."""
+
+    data = client.get('/api/stats').json()
+    heatmap = data['playback']['heatmap']
+    assert len(heatmap) == stats_mod.HEATMAP_WEEKS * 7
+
+    today = datetime.now(timezone.utc).date()
+    # Oldest first, ending today.
+    assert heatmap[-1]['date'] == today.isoformat()
+    assert (
+        heatmap[0]['date']
+        == (today - timedelta(days=len(heatmap) - 1)).isoformat()
+    )
+    assert all(set(day) == {'date', 'count'} for day in heatmap)
+    assert all(isinstance(day['count'], int) for day in heatmap)
+
+    # Nothing played yet: no streak, and no busiest day to name.
+    assert data['playback']['streak_days'] == 0
+    assert data['playback']['best_day'] == {'date': '', 'count': 0}
+
+
+def test_stats_heatmap_counts_the_plays_of_each_day(client):
+    """Counts plays per day - downloads don't colour the grid."""
+
+    today = datetime.now(timezone.utc).date()
+    yesterday = today - timedelta(days=1)
+    before_that = today - timedelta(days=2)
+    for _ in range(3):
+        _record_on('playback', yesterday)
+    _record_on('playback', before_that)
+    _record_on('download', today)
+
+    data = client.get('/api/stats').json()
+    counts = {d['date']: d['count'] for d in data['playback']['heatmap']}
+    assert counts[yesterday.isoformat()] == 3
+    assert counts[before_that.isoformat()] == 1
+    assert counts[today.isoformat()] == 0
+    assert data['playback']['best_day'] == {
+        'date': yesterday.isoformat(),
+        'count': 3,
+    }
+    # A today still to come doesn't break the run: yesterday and the
+    # day before it are two days in a row.
+    assert data['playback']['streak_days'] == 2
+
+
+def test_stats_streak_counts_today_when_there_were_plays(client):
+    today = datetime.now(timezone.utc).date()
+    for offset in range(4):
+        _record_on('playback', today - timedelta(days=offset))
+
+    data = client.get('/api/stats').json()
+    assert data['playback']['streak_days'] == 4
+
+
+# ── the two builders, on a fixed clock ─────────────────────────────────────
+
+
+def test_heatmap_counts_one_entry_per_day_oldest_first():
+    entries = [
+        {'at': '2026-10-11T08:00:00+00:00'},
+        {'at': '2026-10-11T21:00:00+00:00'},
+        {'at': '2026-10-09T08:00:00+00:00'},
+    ]
+    days = stats_mod.build_activity_heatmap(
+        entries, weeks=2, today=date(2026, 10, 12)
+    )
+    assert len(days) == 14
+    assert days[0]['date'] == '2026-09-29'
+    assert days[-1] == {'date': '2026-10-12', 'count': 0}
+    assert days[-2] == {'date': '2026-10-11', 'count': 2}
+    assert days[-4] == {'date': '2026-10-09', 'count': 1}
+
+
+def test_heatmap_never_promises_more_days_than_the_log_keeps():
+    """A wider ask than the activity log retains is capped at retention."""
+
+    days = stats_mod.build_activity_heatmap(
+        [], weeks=500, today=date(2026, 10, 12)
+    )
+    assert stats_mod.HEATMAP_WEEKS == 52
+    assert len(days) == 52 * 7
+
+
+def test_streak_counts_back_from_today_but_stops_at_a_gap():
+    today = date(2026, 10, 12)
+    played = [
+        {'at': f'{(today - timedelta(days=n)).isoformat()}T20:00:00+00:00'}
+        for n in range(3)
+    ]
+    assert stats_mod.build_listening_streak(played, today=today) == 3
+    # Yesterday and the day before it are still consecutive.
+    assert stats_mod.build_listening_streak(played[1:], today=today) == 2
+    # Nothing for two days is a finished streak, not one about to start.
+    assert stats_mod.build_listening_streak([], today=today) == 0

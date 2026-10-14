@@ -66,7 +66,7 @@ There's always at least one admin: the last one can't be deleted or made a user,
 **Settings → Activity** (admins) shows, like Jellyfin's dashboard:
 
 - **Playing now** — what each browser and app is playing, by whom, where it is in the song, and whether it's paused. It refreshes every few seconds.
-- **History** — sign-ins (and failed ones, with the address they came from), sign-outs, songs played, downloads, likes, deleted files, apps paired and unpaired, accounts added, changed or deleted, passwords and settings changed. Filter by user or by kind. Saved settings are listed by name only, never their values. Entries are kept for 90 days.
+- **History** — sign-ins (and failed ones, with the address they came from), sign-outs, songs played, downloads, likes, deleted files, apps paired and unpaired, accounts added, changed or deleted, passwords and settings changed. Filter by user or by kind. Saved settings are listed by name only, never their values. Entries are kept for a year.
 
 Apps report what they play too — see the [mobile client contract](../mobile-client-contract.md#8-report-plays).
 

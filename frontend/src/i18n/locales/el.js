@@ -320,6 +320,13 @@ export default {
     empty: 'Τίποτα ακόμη',
     spotifyRecent: 'Πρόσφατες αναπαραγωγές στο Spotify',
     spotifyPlayCount: '{count} αναπαραγωγές Spotify αποθηκευμένες',
+    activityHeatmap: 'Δραστηριότητα ακρόασης',
+    streakDays: 'Συνεχόμενες ημέρες',
+    streak: {
+      one: '{count} ημέρα συνεχόμενα',
+      other: '{count} ημέρες συνεχόμενα',
+    },
+    bestDay: 'Πιο δραστήρια ημέρα: {date} ({count})',
   },
   collections: {
     title: 'Συλλογές',

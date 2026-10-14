@@ -27,8 +27,10 @@ from typing import Any, Optional
 
 from .sqlite_utils import connect_sqlite
 
-#: How long entries are kept.
-RETENTION_DAYS = 90
+#: How long entries are kept. A year, because the Stats page draws a
+#: 52-week listening heatmap out of them - a shorter window would leave
+#: most of that grid permanently empty.
+RETENTION_DAYS = 365
 #: A player that hasn't reported for this long isn't playing any more.
 NOW_PLAYING_TIMEOUT = 90
 #: Longest page of entries one request gets.

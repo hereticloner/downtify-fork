@@ -319,6 +319,13 @@ export default {
     empty: 'Henüz veri yok',
     spotifyRecent: "Spotify'da son çalmalar",
     spotifyPlayCount: 'Depolanan {count} Spotify çalması',
+    activityHeatmap: 'Dinleme etkinliği',
+    streakDays: 'Gün serisi',
+    streak: {
+      one: '{count} gün üst üste',
+      other: '{count} gün üst üste',
+    },
+    bestDay: 'En yoğun gün: {date} ({count})',
   },
   collections: {
     title: 'Koleksiyonlar',

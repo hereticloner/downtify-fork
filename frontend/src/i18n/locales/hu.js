@@ -317,6 +317,13 @@ export default {
     empty: 'Még nincs adat',
     spotifyRecent: 'Legutóbbi lejátszások a Spotify-on',
     spotifyPlayCount: '{count} tárolt Spotify-lejátszás',
+    activityHeatmap: 'Hallgatási tevékenység',
+    streakDays: 'Sorozatban játszott napok',
+    streak: {
+      one: '{count} nap egyhuzamosan',
+      other: '{count} nap egyhuzamosan',
+    },
+    bestDay: 'Legtöbbet játszott nap: {date} ({count})',
   },
   collections: {
     title: 'Gyűjtemények',

@@ -255,7 +255,13 @@ async def stats_endpoint() -> dict[str, Any]:
         return {
             'library': {'tracks': 0, 'playlists': 0, 'likes': 0},
             'downloads': {'total': 0, 'last_30_days': 0, 'per_day': []},
-            'playback': {'total': 0, 'top_tracks': []},
+            'playback': {
+                'total': 0,
+                'top_tracks': [],
+                'heatmap': [],
+                'streak_days': 0,
+                'best_day': {'date': '', 'count': 0},
+            },
             'spotify': spotify,
         }
     return stats_mod.build_stats(

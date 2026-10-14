@@ -313,6 +313,13 @@ export default {
     empty: 'Още няма',
     spotifyRecent: 'Скорошни слушания в Spotify',
     spotifyPlayCount: '{count} записани изпълнения от Spotify',
+    activityHeatmap: 'Активност на слушането',
+    streakDays: 'Серия от дни',
+    streak: {
+      one: '{count} ден поред',
+      other: '{count} дни поред',
+    },
+    bestDay: 'Най-активен ден: {date} ({count})',
   },
   collections: {
     title: 'Колекции',

@@ -311,6 +311,13 @@ export default {
     empty: 'Nothing yet',
     spotifyRecent: 'Recently played on Spotify',
     spotifyPlayCount: '{count} Spotify plays stored',
+    activityHeatmap: 'Listening activity',
+    streakDays: 'Day streak',
+    streak: {
+      one: '{count} day in a row',
+      other: '{count} days in a row',
+    },
+    bestDay: 'Busiest day: {date} ({count})',
   },
   collections: {
     title: 'Collections',
