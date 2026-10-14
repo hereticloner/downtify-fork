@@ -36,7 +36,7 @@ services:
   # go-librespot logs a pairing code on first start - enter it at
   # https://spotify.com/pair; the credentials land in mirror/state.json.
   mirror:
-    image: 'ghcr.io/devgianlu/go-librespot:v0.10.3'
+    image: 'ghcr.io/devgianlu/go-librespot:v0.10.4'
     restart: unless-stopped
     volumes:
       - ./mirror:/config
