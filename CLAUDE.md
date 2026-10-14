@@ -14,7 +14,7 @@ Entry point: `main.py` (CLI flag `web` boots the FastAPI app on `DOWNTIFY_PORT`,
 - **Frontend**: Vue 3 + Vue Router, Tailwind CSS v4 (design tokens in `frontend/src/styles/tokens.css`, shared with the docs site), VueUse, Vite, Vitest.
 - **Packaging**: `uv` (lockfile is `uv.lock`; `requirements.txt` is exported for Docker only — do **not** hand-edit).
 - **Container**: Alpine + `ffmpeg` + `tini` + `su-exec` (UID/GID/UMASK env-controlled).
-- **CI**: GitHub Actions (`build.yml`, `test.yml`, `docs.yml`, `codeflash.yaml`).
+- **CI**: GitHub Actions — yalnız `test.yml` (ruff check + `ruff format --check`, pytest, frontend test + `npm run build`, docs test, prettier `--check`). Upstream'e ait `build.yml`, `docs.yml`, `labeler.yml`, `codeflash.yaml` **2026-10-14'te fork'tan kaldırıldı** (fork'ta tetiklenmiyorlardı / DockerHub+Pages+bot secret'ları gerektiriyorlardı).
 - **Docs**: VitePress with a custom Tailwind theme, its own npm package in `docs/` (`make doc`, `make doc-build`).
 
 ## Layout
