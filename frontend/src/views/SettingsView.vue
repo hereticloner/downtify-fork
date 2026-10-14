@@ -1568,6 +1568,13 @@ async function runSpotifySyncNow() {
     const summary = await spotifySync.run()
     if (summary?.error === 'not_connected') {
       ui.toast(t('settings.spotifySyncNotConnected'), { kind: 'error' })
+    } else if (summary?.rate_limited) {
+      ui.toast(
+        t('settings.spotifySyncRateLimited', {
+          minutes: summary.retry_after_minutes || 0,
+        }),
+        { kind: 'error' }
+      )
     } else if (summary?.errors) {
       ui.toast(t('settings.spotifySyncPartial', { count: summary.errors }), {
         kind: 'error',

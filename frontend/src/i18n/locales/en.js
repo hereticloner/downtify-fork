@@ -1046,6 +1046,7 @@ export default {
     spotifySyncLast: 'Last synced {when} · {count} playlist(s)',
     spotifySyncDone: 'Synced: {added} added, {removed} removed.',
     spotifySyncNoChange: 'Everything is already up to date.',
+    spotifySyncRateLimited: 'Spotify rate limited you; it will retry in {minutes} min.',
     spotifySyncPartial: 'The sync finished with {count} error(s).',
     spotifySyncFailed: 'The sync could not run.',
     scrobbling: 'Scrobbling',

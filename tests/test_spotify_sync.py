@@ -13,6 +13,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import httpx
 import pytest
 from fastapi import HTTPException
 
@@ -32,16 +33,38 @@ from downtify.spotify_sync import (
 
 
 class FakeResponse:
-    def __init__(self, body=None, status_code: int = 200) -> None:
+    def __init__(
+        self, body=None, status_code: int = 200, headers=None
+    ) -> None:
         self._body = body if body is not None else {}
         self.status_code = status_code
+        self.headers = headers or {}
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
-            raise RuntimeError(f'HTTP {self.status_code}')
+            # The shape production raises: the code reads status and
+            # Retry-After off ``exc.response``.
+            raise httpx.HTTPStatusError(
+                f'HTTP {self.status_code}',
+                request=httpx.Request('GET', 'https://example.test'),
+                response=httpx.Response(
+                    self.status_code,
+                    headers=self.headers,
+                    request=httpx.Request('GET', 'https://example.test'),
+                ),
+            )
 
     def json(self):
         return self._body
+
+
+@pytest.fixture(autouse=True)
+def _no_rate_limit_cooldown():
+    """The refusal cooldown is process state; don't leak it between tests."""
+
+    spotify_sync._RATE_LIMITED_UNTIL.clear()
+    yield
+    spotify_sync._RATE_LIMITED_UNTIL.clear()
 
 
 def _config(**overrides):
@@ -471,6 +494,94 @@ def test_sync_playlist_reports_an_apply_failure(tmp_path: Path):
     assert result['error'] == 'apply_failed'
     # The baseline is not moved on, so the same diff is retried next time.
     assert store.track_ids('pl') == ['a']
+
+
+def _refusing(calls, retry_after='15423'):
+    """A request fake whose playlist fetch is always a 429."""
+
+    def request(  # noqa: PLR0913, PLR0917
+        method, url, *, headers=None, params=None, json=None, data=None
+    ):
+        calls.append(url)
+        if 'api/token' in url:
+            return FakeResponse(
+                {'access_token': 'at', 'expires_in': 3600}, 200
+            )
+        return FakeResponse({}, 429, {'retry-after': retry_after})
+
+    return request
+
+
+def test_sync_playlist_reports_a_rate_limit_with_its_retry_after(
+    tmp_path: Path,
+):
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    calls = []
+    result = spotify_sync.sync_playlist(
+        _playlist(),
+        config=_config(),
+        store=store,
+        apply=lambda n, a, r: None,
+        request=_refusing(calls),
+    )
+    assert result['error'] == 'rate_limited'
+    assert result['retry_after'] == 15423
+    # No baseline: nothing to diff against until Spotify answers again.
+    assert store.track_ids('pl') is None
+
+
+def test_run_sync_stops_asking_while_spotify_says_wait(tmp_path: Path):
+    """The loop that fed the penalty: without a cooldown it asked every sweep."""
+
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    first = []
+    run_sync(
+        [_playlist()],
+        settings=_enabled_settings(),
+        store=store,
+        apply=lambda n, a, r: None,
+        credentials=_config(),
+        request=_refusing(first),
+    )
+    second = []
+    summary = run_sync(
+        [_playlist()],
+        settings=_enabled_settings(),
+        store=store,
+        apply=lambda n, a, r: None,
+        credentials=_config(),
+        request=_refusing(second),
+    )
+    assert summary['rate_limited'] == 1
+    assert summary['skipped'] == 1
+    assert summary['retry_after_minutes'] > 0
+    # Only the token POST - the playlist fetch was not repeated.
+    assert not [url for url in second if '/tracks' in url]
+
+
+def test_run_sync_force_asks_again_despite_the_cooldown(tmp_path: Path):
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    calls = []
+    run_sync(
+        [_playlist()],
+        settings=_enabled_settings(),
+        store=store,
+        apply=lambda n, a, r: None,
+        credentials=_config(),
+        request=_refusing(calls),
+    )
+    forced = []
+    summary = run_sync(
+        [_playlist()],
+        settings=_enabled_settings(),
+        store=store,
+        apply=lambda n, a, r: None,
+        credentials=_config(),
+        request=_refusing(forced),
+        force=True,
+    )
+    assert [url for url in forced if '/tracks' in url]
+    assert summary['rate_limited'] == 1
 
 
 # ── run_sync ─────────────────────────────────────────────────────────

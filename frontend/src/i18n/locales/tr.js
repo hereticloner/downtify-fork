@@ -1069,6 +1069,7 @@ export default {
     spotifySyncLast: 'Son eşitleme {when} · {count} çalma listesi',
     spotifySyncDone: 'Eşitlendi: {added} eklendi, {removed} çıkarıldı.',
     spotifySyncNoChange: 'Her şey zaten güncel.',
+    spotifySyncRateLimited: 'Spotify seni geıici olarak kısıtladı; {minutes} dk sonra tekrar denenecek.',
     spotifySyncPartial: 'Eşitleme {count} hatayla bitti.',
     spotifySyncFailed: 'Eşitleme çalıştırılamadı.',
     scrobbling: 'Scrobbling',

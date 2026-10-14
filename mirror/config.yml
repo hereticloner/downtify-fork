@@ -1,10 +1,10 @@
-# go-librespot — the "Downtify Mirror": a silent, always-online Spotify
+# go-librespot ΓÇö the "Downtify Mirror": a silent, always-online Spotify
 # Connect device for Spotify Mirror (docs/features/spotify-mirror.md).
 #
 # Login uses Spotify's device-authorization flow: on first start the
 # daemon logs a short code, you enter it at https://spotify.com/pair
 # from any phone or computer, and the credentials are stored next to
-# this file in state.json. No browser redirect, no password — Spotify
+# this file in state.json. No browser redirect, no password ΓÇö Spotify
 # removed password logins for Connect clients.
 #
 # Spotify Premium is required (Connect playback).
@@ -25,9 +25,11 @@ ignore_last_volume: true
 
 bitrate: 320
 
-# Do NOT set disable_autoplay: true here: on go-librespot v0.10.3 it
-# makes a Web-API play (a bare track list, no context) pause itself one
-# second after it starts, so mirrored plays never run. Autoplay stays on.
 
 credentials:
   type: device_auth
+
+# 2026-10-14: with a playlist context, a track whose audio key Spotify
+# refuses made the device advance to the next playlist track, so the app
+# walked the playlist one second at a time. Autoplay off stops instead.
+disable_autoplay: true

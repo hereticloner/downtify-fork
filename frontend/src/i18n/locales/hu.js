@@ -1072,6 +1072,7 @@ export default {
     spotifySyncDone:
       'Szinkronizálva: {added} hozzáadva, {removed} eltávolítva.',
     spotifySyncNoChange: 'Minden már naprakész.',
+    spotifySyncRateLimited: 'A Spotify ideiglenés korlátozott: {minutes} perc után később kísérelésére.',
     spotifySyncPartial: 'A szinkron {count} hibával fejeződött be.',
     spotifySyncFailed: 'A szinkront nem sikerült lefuttatni.',
     scrobbling: 'Scrobbling',

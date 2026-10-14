@@ -1093,6 +1093,7 @@ export default {
     spotifySyncLast: 'Dernière synchronisation {when} · {count} playlist(s)',
     spotifySyncDone: 'Synchronisé : {added} ajoutée(s), {removed} retirée(s).',
     spotifySyncNoChange: 'Tout est déjà à jour.',
+    spotifySyncRateLimited: 'Spotify vous a limité temporairement ; nouvel essai dans {minutes} min.',
     spotifySyncPartial:
       'La synchronisation s’est terminée avec {count} erreur(s).',
     spotifySyncFailed: 'La synchronisation n’a pas pu s’exécuter.',

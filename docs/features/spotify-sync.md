@@ -80,8 +80,16 @@ Failures are **logged and reported**, never silent:
   to the log and counted in the sweep's summary; the playlist keeps its
   old baseline, so the same diff is retried next time.
 - The manual **Sync now** button turns a failure into a toast in the
-  browser — "connect Spotify", "the sync finished with N error(s)" or
-  "everything is already up to date".
+  browser — "connect Spotify", "Spotify rate limited you, it will retry
+  in N min", "the sync finished with N error(s)" or "everything is
+  already up to date".
+- **Rate limiting (HTTP 429)** is its own case, because a refused fetch
+  writes no `synced_at` and the interval check therefore cannot see it.
+  The playlist goes on a cooldown for exactly as long as Spotify's
+  `Retry-After` asks, the sweep skips it and says so, and only **Sync
+  now** (or the expiry) asks again. Without that, the sweep re-asked
+  every two minutes — measured on 2026-10-14: 418 playlist fetches in a
+  day against 4 playlists, which kept the penalty alive all day.
 
 A failed sweep never raises out of the loop and never touches the audio
 or the rest of the library.

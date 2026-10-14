@@ -27,6 +27,7 @@ import asyncio
 import json
 import os
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -330,6 +331,62 @@ def _request(
     )
 
 
+class RateLimited(Exception):
+    """Spotify refused a fetch with 429 and said for how long.
+
+    Carries the ``Retry-After`` in seconds so the caller can both say
+    something useful and stop asking.
+    """
+
+    def __init__(self, retry_after: int) -> None:
+        super().__init__(f'rate limited for {retry_after}s')
+        self.retry_after = max(int(retry_after), 1)
+
+
+#: playlist id -> epoch second until which Spotify asked us to stop asking.
+#:
+#: A refused fetch never writes ``synced_at``, so the interval check in
+#: :func:`run_sync` cannot see it: without this the sweep re-asked every
+#: 120 seconds (418 playlist fetches in a day, measured 2026-10-14) and
+#: each ask lengthened the penalty it was serving. In-process is enough -
+#: a restart costs one extra sweep.
+_RATE_LIMITED_UNTIL: dict[str, float] = {}
+
+
+def in_rate_limit_cooldown(playlist_id: str) -> bool:
+    """Whether Spotify's refusal for this playlist is still in effect."""
+
+    sid = str(playlist_id or '').strip()
+    until = _RATE_LIMITED_UNTIL.get(sid, 0.0)
+    if until <= time.time():
+        _RATE_LIMITED_UNTIL.pop(sid, None)
+        return False
+    return True
+
+
+def rate_limit_retry_after(playlist_id: str) -> int:
+    """Seconds left on this playlist's refusal, ``0`` when there is none."""
+
+    return max(
+        int(
+            _RATE_LIMITED_UNTIL.get(str(playlist_id or '').strip(), 0.0)
+            - time.time()
+        ),
+        0,
+    )
+
+
+def _retry_after_seconds(exc: Exception, default: int = 900) -> int:
+    """The ``Retry-After`` header on an HTTP error, in seconds."""
+
+    response = getattr(exc, 'response', None)
+    header = getattr(response, 'headers', {}).get('retry-after')
+    try:
+        return int(str(header))
+    except (TypeError, ValueError):
+        return default
+
+
 def fetch_snapshot(
     config: dict[str, Any],
     playlist_id: str,
@@ -342,7 +399,9 @@ def fetch_snapshot(
     ``spotify_mirror.ensure_token`` and the renewed fields are written
     back onto *config* so the caller can persist them. Pages the Web API
     until every track is read. Any failure - no working token, an HTTP
-    error, a non-JSON body - is logged and reported as ``None``.
+    error, a non-JSON body - is logged and reported as ``None``; a 429
+    raises :class:`RateLimited` instead, because it is the one failure
+    the caller has to remember.
     """
 
     sid = str(playlist_id or '').strip()
@@ -390,6 +449,16 @@ def fetch_snapshot(
             url = body.get('next') if isinstance(body, dict) else ''
             params = None
     except Exception as exc:  # noqa: BLE001 - reported to the user, not raised
+        status = getattr(getattr(exc, 'response', None), 'status_code', None)
+        if status == 429:
+            limited = RateLimited(_retry_after_seconds(exc))
+            _RATE_LIMITED_UNTIL[sid] = time.time() + limited.retry_after
+            logger.warning(
+                'Spotify sync: playlist {} refused (429), next try in {} min',
+                sid,
+                round(limited.retry_after / 60),
+            )
+            raise limited from exc
         logger.warning('Spotify sync: playlist {} fetch failed: {}', sid, exc)
         return None
     return ids
@@ -529,7 +598,7 @@ def sync_playlist(
     error}``. The first ever sync records a baseline and applies nothing
     - otherwise every existing track would read as "added". When nothing
     changed, *apply* is not called at all and the stored timestamp is
-    refreshed.
+    refreshed. ``error='rate_limited'`` carries ``retry_after`` seconds.
     """
 
     sid = str(playlist.get('spotify_id') or '').strip()
@@ -547,7 +616,12 @@ def sync_playlist(
         result['error'] = 'no_playlist_id'
         return result
 
-    current = fetch_snapshot(config, sid, request=request)
+    try:
+        current = fetch_snapshot(config, sid, request=request)
+    except RateLimited as limited:
+        result['error'] = 'rate_limited'
+        result['retry_after'] = limited.retry_after
+        return result
     if current is None:
         result['error'] = 'auth_failed'
         return result
@@ -600,10 +674,12 @@ def run_sync(
 
     A playlist is skipped when it was synced less than the configured
     interval ago, unless *force* (the manual "Sync now" button) - which
-    also lets that button run while the switch is still off. The
-    returned summary carries the per-playlist results, aggregate counts
-    and, when the token was renewed mid-run, the fields to persist under
-    ``tokens``.
+    also lets that button run while the switch is still off, and also
+    ignores a live rate-limit cooldown, because that button is the user
+    asking again on purpose. The returned summary carries the per-playlist
+    results, aggregate counts and, when the token was renewed mid-run, the
+    fields to persist under ``tokens``. ``rate_limited`` /
+    ``retry_after_minutes`` say that Spotify refused and for how long.
     """
 
     block = clean_settings(settings.get(SETTINGS_KEY))
@@ -617,6 +693,8 @@ def run_sync(
         'errors': 0,
         'skipped': 0,
         'error': '',
+        'rate_limited': 0,
+        'retry_after_minutes': 0,
     }
     if not block['enabled'] and not force:
         return summary
@@ -638,6 +716,14 @@ def run_sync(
     interval = block['interval_minutes']
     for playlist in playlists:
         sid = str(playlist.get('spotify_id') or '').strip()
+        if not force and sid and in_rate_limit_cooldown(sid):
+            summary['skipped'] += 1
+            summary['rate_limited'] += 1
+            summary['retry_after_minutes'] = max(
+                summary['retry_after_minutes'],
+                round(rate_limit_retry_after(sid) / 60),
+            )
+            continue
         if not force and sid and not is_due(store.synced_at(sid), interval):
             summary['skipped'] += 1
             continue
@@ -653,6 +739,12 @@ def run_sync(
         summary['removed'] += len(result['removed'])
         summary['changed'] += 1 if result['changed'] else 0
         summary['errors'] += 1 if result['error'] else 0
+        if result['error'] == 'rate_limited':
+            summary['rate_limited'] += 1
+            summary['retry_after_minutes'] = max(
+                summary['retry_after_minutes'],
+                round(int(result.get('retry_after') or 0) / 60),
+            )
     if config.get('access_token') != before_token and config.get('client_id'):
         summary['tokens'] = {
             'access_token': config.get('access_token', ''),
@@ -702,16 +794,25 @@ async def spotify_sync_loop(
                         summary.get('added', 0),
                         summary.get('removed', 0),
                     )
-                if summary.get('errors'):
+                if summary.get('rate_limited'):
+                    logger.warning(
+                        'Spotify rate limited: {} playlist(s), next try in '
+                        '{} min',
+                        summary['rate_limited'],
+                        summary.get('retry_after_minutes', 0),
+                    )
+                elif summary.get('errors'):
                     logger.warning(
                         'Spotify sync finished with {} error(s)',
                         summary['errors'],
                     )
                 # An unattached account is a standing state, not an event:
                 # it is shown in Settings, not re-toasted every wake-up.
+                # So is a rate limit: it says itself in Settings too.
                 notify = summary.get('changed') or (
                     summary.get('errors')
                     and summary.get('error') != 'not_connected'
+                    and not summary.get('rate_limited')
                 )
                 if broadcast is not None and notify:
                     await broadcast({'type': 'spotify_sync', **summary})

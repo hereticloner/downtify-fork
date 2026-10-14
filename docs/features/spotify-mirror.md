@@ -140,8 +140,15 @@ While the same track runs, the mirror follows the player:
   device, once per transition.
 * **Seeking** (the position jumps) moves the mirrored playback to the
   same spot — the web player flags a seek in its report.
-* **Stopping** (the player goes away) pauses the mirror, so autoplay
+* **Stopping** (the player goes away) pauses the mirror, so the device
   doesn't carry it on with recommendations.
+
+The mirror device runs with `disable_autoplay: true` (`mirror/config.yml`).
+Without it a track whose audio key Spotify refuses is *skipped*, and with
+a playlist context that skip lands on the next track of that playlist —
+the Spotify app then walks the playlist one second at a time while
+Downtify keeps playing its own track. With autoplay off the device stops
+on the failed track instead.
 
 Finding the track's Spotify id: Downtify stores it for everything it
 downloaded (the track index registers a play for every download).

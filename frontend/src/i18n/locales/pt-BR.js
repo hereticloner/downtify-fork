@@ -1073,6 +1073,7 @@ export default {
     spotifySyncDone:
       'Sincronizado: {added} adicionada(s), {removed} removida(s).',
     spotifySyncNoChange: 'Tudo já está em dia.',
+    spotifySyncRateLimited: 'O Spotify te limitou temporariamente; nova tentativa em {minutes} min.',
     spotifySyncPartial: 'A sincronização terminou com {count} erro(s).',
     spotifySyncFailed: 'Não foi possível executar a sincronização.',
     scrobbling: 'Scrobbling',

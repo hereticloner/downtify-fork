@@ -1078,6 +1078,7 @@ export default {
     spotifySyncLast: 'Última sincronización {when} · {count} lista(s)',
     spotifySyncDone: 'Sincronizado: {added} añadidas, {removed} quitadas.',
     spotifySyncNoChange: 'Todo ya está al día.',
+    spotifySyncRateLimited: 'Spotify te limitó de forma temporal; se reintentará en {minutes} min.',
     spotifySyncPartial: 'La sincronización terminó con {count} error(es).',
     spotifySyncFailed: 'No se pudo ejecutar la sincronización.',
     scrobbling: 'Scrobbling',

@@ -1063,6 +1063,7 @@ export default {
     spotifySyncLast: 'Последна синхронизация {when} · {count} плейлист(а)',
     spotifySyncDone: 'Синхронизирано: {added} добавени, {removed} премахнати.',
     spotifySyncNoChange: 'Всичко вече е актуално.',
+    spotifySyncRateLimited: 'Spotify временно временно ограничение; нов опит се нова правка след {minutes} мин.',
     spotifySyncPartial: 'Синхронизацията завърши с {count} грешка(и).',
     spotifySyncFailed: 'Синхронизацията не можа да се изпълни.',
     scrobbling: 'Скроблинг',
