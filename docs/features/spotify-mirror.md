@@ -143,26 +143,20 @@ While the same track runs, the mirror follows the player:
 * **Stopping** (the player goes away) pauses the mirror, so the device
   doesn't carry it on with recommendations.
 
-The mirror device runs with `disable_autoplay: true` (`mirror/config.yml`).
-Without it a track whose audio key Spotify refuses is *skipped*, and with
-a playlist context that skip lands on the next track of that playlist —
-the Spotify app then walks the playlist one second at a time while
-Downtify keeps playing its own track. With autoplay off the device stops
-on the failed track instead.
-
 Finding the track's Spotify id: Downtify stores it for everything it
 downloaded (the track index registers a play for every download).
 Anything else falls
 back to a Spotify search by artist + title; when nothing matches, the
 play is skipped.
 
-**Playing from a playlist.** When the track belongs to a playlist
-Downtify knows about — a downloaded or synced playlist with its Spotify
-id linked — the mirrored play carries that playlist as its
-`context_uri`, starting at the exact track. Spotify then shows
-*Playing from &lt;playlist&gt;* rather than a bare track, which is what
-you would have seen had you played it there. A track in no linked
-playlist still mirrors on its own, unchanged.
+**No playlist context.** The play always carries a bare track list, never
+a `context_uri`. A context puts the whole playlist on the Connect device,
+and a track whose audio key Spotify refuses is then *skipped* — so the
+device walks the playlist a second at a time, the Spotify app shows a
+different song every moment, and none of it counts as listening (measured
+2026-10-14, cihaz logu: `failed advancing past unplayable track`). What
+the mirror needs is one track that plays long enough to be a real listen;
+the playlist name in the Spotify app does not come with it.
 
 Mirror failures are logged and skipped — lowering the volume to a gone
 device, an offline device, a rate-limit hiccup — never does anything to

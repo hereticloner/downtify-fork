@@ -28,8 +28,3 @@ bitrate: 320
 
 credentials:
   type: device_auth
-
-# 2026-10-14: with a playlist context, a track whose audio key Spotify
-# refuses made the device advance to the next playlist track, so the app
-# walked the playlist one second at a time. Autoplay off stops instead.
-disable_autoplay: true
