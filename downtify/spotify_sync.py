@@ -348,6 +348,19 @@ def _request(
     )
 
 
+class ScopeRequired(Exception):
+    """Spotify refused a playlist read because the token lacks the scopes.
+
+    Measured 2026-10-15: a token granted before the playlist scopes were
+    added answers 403 - ``/me/playlists`` with
+    ``{"message": "Insufficient client scope"}``, every
+    ``/playlists/{id}/tracks`` with ``Forbidden``. It is not a rate
+    limit: no wait clears it, because a refresh grant cannot add scopes
+    the authorization never asked for. The account has to reconnect, so
+    the caller must be able to say exactly that.
+    """
+
+
 class RateLimited(Exception):
     """Spotify refused a fetch with 429 and said for how long.
 
@@ -523,6 +536,17 @@ def fetch_snapshot(
                 round(limited.retry_after / 60),
             )
             raise limited from exc
+        if status in {401, 403}:
+            # 403 = the playlist scopes are missing on this token; 401 =
+            # a token Spotify no longer accepts. Neither is retryable.
+            logger.warning(
+                'Spotify sync: playlist {} refused ({}): the connection '
+                'has no permission for playlist reads - reconnect Spotify '
+                'in Settings',
+                sid,
+                status,
+            )
+            raise ScopeRequired(str(status)) from exc
         logger.warning('Spotify sync: playlist {} fetch failed: {}', sid, exc)
         return None
     return ids
@@ -664,7 +688,10 @@ def sync_playlist(
     ``snapshot_id`` still matches the stored one nothing is read at all
     (``skipped='unchanged'``); when it matches but the tracks don't, *apply*
     is not called and the stored timestamp is refreshed.
-    ``error='rate_limited'`` carries ``retry_after`` seconds.
+    ``error='rate_limited'`` carries ``retry_after`` seconds;
+    ``error='scope_missing'`` means Spotify refused the playlist read
+    because the connection has no playlist permission - reconnect Spotify
+    in Settings, because no retry can clear it.
     """
 
     sid = str(playlist.get('spotify_id') or '').strip()
@@ -701,6 +728,9 @@ def sync_playlist(
     except RateLimited as limited:
         result['error'] = 'rate_limited'
         result['retry_after'] = limited.retry_after
+        return result
+    except ScopeRequired:
+        result['error'] = 'scope_missing'
         return result
     if current is None:
         result['error'] = 'auth_failed'
@@ -759,7 +789,9 @@ def run_sync(
     asking again on purpose. The returned summary carries the per-playlist
     results, aggregate counts and, when the token was renewed mid-run, the
     fields to persist under ``tokens``. ``rate_limited`` /
-    ``retry_after_minutes`` say that Spotify refused and for how long.
+    ``retry_after_minutes`` say that Spotify refused and for how long;
+    ``scope_missing`` counts playlists the connection has no permission
+    to read (a reconnect fixes those, so it is reported apart).
     """
 
     block = clean_settings(settings.get(SETTINGS_KEY))
@@ -775,6 +807,7 @@ def run_sync(
         'error': '',
         'rate_limited': 0,
         'retry_after_minutes': 0,
+        'scope_missing': 0,
     }
     if not block['enabled'] and not force:
         return summary
@@ -826,6 +859,8 @@ def run_sync(
                 summary['retry_after_minutes'],
                 round(int(result.get('retry_after') or 0) / 60),
             )
+        elif result['error'] == 'scope_missing':
+            summary['scope_missing'] += 1
     if config.get('access_token') != before_token and config.get('client_id'):
         summary['tokens'] = {
             'access_token': config.get('access_token', ''),
@@ -882,6 +917,13 @@ async def spotify_sync_loop(
                         summary['rate_limited'],
                         summary.get('retry_after_minutes', 0),
                     )
+                elif summary.get('scope_missing'):
+                    logger.warning(
+                        'Spotify sync: {} playlist(s) unreadable - the '
+                        'connection has no playlist permission, reconnect '
+                        'Spotify in Settings',
+                        summary['scope_missing'],
+                    )
                 elif summary.get('errors'):
                     logger.warning(
                         'Spotify sync finished with {} error(s)',
@@ -889,11 +931,14 @@ async def spotify_sync_loop(
                     )
                 # An unattached account is a standing state, not an event:
                 # it is shown in Settings, not re-toasted every wake-up.
-                # So is a rate limit: it says itself in Settings too.
+                # So is a rate limit: it says itself in Settings too. So
+                # does a token that needs reconnecting - the fix is a click
+                # in Settings, not another failed sweep.
                 notify = summary.get('changed') or (
                     summary.get('errors')
                     and summary.get('error') != 'not_connected'
                     and not summary.get('rate_limited')
+                    and not summary.get('scope_missing')
                 )
                 if broadcast is not None and notify:
                     await broadcast({'type': 'spotify_sync', **summary})

@@ -366,12 +366,14 @@ def test_fetch_snapshot_none_when_token_cannot_renew():
 
 
 def test_fetch_snapshot_none_on_http_error():
+    """A generic failure (not a quota refusal, not a permission) is None."""
+
     calls = []
     assert (
         spotify_sync.fetch_snapshot(
             _config(),
             'pl',
-            request=_track_pages([_page(['a'])], calls, status=403),
+            request=_track_pages([_page(['a'])], calls, status=500),
         )
         is None
     )
@@ -595,6 +597,61 @@ def _refusing(calls, retry_after='15423'):
         return FakeResponse({}, 429, {'retry-after': retry_after})
 
     return request
+
+
+def _no_permission(calls, status=403):
+    """A request fake whose playlist fetch is refused as a permission (or
+    a revoked token): the shape of a connection granted before the
+    playlist scopes existed."""
+
+    def request(  # noqa: PLR0913, PLR0917
+        method, url, *, headers=None, params=None, json=None, data=None
+    ):
+        calls.append(url)
+        if 'api/token' in url:
+            return FakeResponse(
+                {'access_token': 'at', 'expires_in': 3600}, 200
+            )
+        return FakeResponse({}, status, {})
+
+    return request
+
+
+def test_a_playlist_read_without_permission_says_reconnect(tmp_path: Path):
+    """403 is not a rate limit: retrying can never clear a missing scope."""
+
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    calls = []
+    result = spotify_sync.sync_playlist(
+        _playlist(),
+        config=_config(),
+        store=store,
+        apply=lambda n, a, r: None,
+        request=_no_permission(calls),
+    )
+    assert result['error'] == 'scope_missing'
+    assert result['changed'] is False
+    assert store.track_ids('pl') is None
+
+
+def test_run_sync_counts_playlists_the_connection_cannot_read(
+    tmp_path: Path,
+):
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    calls = []
+    summary = run_sync(
+        [_playlist()],
+        settings=_enabled_settings(),
+        store=store,
+        apply=lambda n, a, r: None,
+        credentials=_config(),
+        request=_no_permission(calls),
+    )
+    assert summary['scope_missing'] == 1
+    assert summary['errors'] == 1
+    # Not a standing "no answer" state: it asks again next sweep, because
+    # the user may reconnect in between.
+    assert [url for url in calls if '/tracks' in url]
 
 
 def test_sync_playlist_reports_a_rate_limit_with_its_retry_after(

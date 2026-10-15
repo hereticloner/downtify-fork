@@ -1074,6 +1074,8 @@ export default {
       'Szinkronizálva: {added} hozzáadva, {removed} eltávolítva.',
     spotifySyncNoChange: 'Minden már naprakész.',
     spotifySyncRateLimited: 'A Spotify ideiglenés korlátozott: {minutes} perc után később kísérelésére.',
+    spotifySyncScopeMissing:
+      'A Spotify-kapcsolatnak nincs jogosultsága a lejátszási listák olvasásához — kapcsolódj újra a Beállításokban.',
     spotifySyncPartial: 'A szinkron {count} hibával fejeződött be.',
     spotifySyncFailed: 'A szinkront nem sikerült lefuttatni.',
     scrobbling: 'Scrobbling',

@@ -1082,6 +1082,8 @@ export default {
       'Συγχρονίστηκε: {added} προστέθηκαν, {removed} αφαιρέθηκαν.',
     spotifySyncNoChange: 'Όλα είναι ήδη ενημερωμένα.',
     spotifySyncRateLimited: 'To Spotify ςήςε σας προσωρινα για πολιποη; επανήσωςα σε {minutes} λεπτά.',
+    spotifySyncScopeMissing:
+      'Η σύνδεση Spotify δεν έχει άδεια ανάγνωσης λιστών — επανασύνδεσε το Spotify στις Ρυθμίσεις.',
     spotifySyncPartial: 'Ο συγχρονισμός ολοκληρώθηκε με {count} σφάλμα(τα).',
     spotifySyncFailed: 'Ο συγχρονισμός δεν μπόρεσε να εκτελεστεί.',
     scrobbling: 'Scrobbling',

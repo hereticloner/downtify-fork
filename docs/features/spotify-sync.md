@@ -105,6 +105,12 @@ Failures are **logged and reported**, never silent:
   now** (or the expiry) asks again. Without that, the sweep re-asked
   every two minutes — measured on 2026-10-14: 418 playlist fetches in a
   day against 4 playlists, which kept the penalty alive all day.
+- A **403/401** is a different species and says so: the connection has no
+  permission for playlist reads (measured 2026-10-15 on a token granted
+  before the playlist scopes existed), so every playlist is reported as
+  `scope_missing` and the browser is told to **reconnect Spotify**
+  instead of counting it as a broken sweep. No retry clears it — a
+  refresh grant cannot add scopes the authorization never asked for.
 - Spotify's **development-mode quota** (`429` with
   `"reason": "QUOTA_EXCEEDED"`) is a daily allowance for the whole
   developer account, not a short rate limit, and it only answers after

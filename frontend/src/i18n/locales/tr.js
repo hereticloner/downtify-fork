@@ -1071,6 +1071,8 @@ export default {
     spotifySyncDone: 'Eşitlendi: {added} eklendi, {removed} çıkarıldı.',
     spotifySyncNoChange: 'Her şey zaten güncel.',
     spotifySyncRateLimited: 'Spotify seni geıici olarak kısıtladı; {minutes} dk sonra tekrar denenecek.',
+    spotifySyncScopeMissing:
+      "Spotify bağlantısı playlist okuma iznine sahip değil — Ayarlar'dan Spotify'ı yeniden bağla.",
     spotifySyncPartial: 'Eşitleme {count} hatayla bitti.',
     spotifySyncFailed: 'Eşitleme çalıştırılamadı.',
     scrobbling: 'Scrobbling',

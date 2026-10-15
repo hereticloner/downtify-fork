@@ -1095,6 +1095,8 @@ export default {
     spotifySyncDone: 'Synchronisé : {added} ajoutée(s), {removed} retirée(s).',
     spotifySyncNoChange: 'Tout est déjà à jour.',
     spotifySyncRateLimited: 'Spotify vous a limité temporairement ; nouvel essai dans {minutes} min.',
+    spotifySyncScopeMissing:
+      'La connexion Spotify n’a pas l’autorisation de lire tes playlists — reconnecte Spotify dans les Réglages.',
     spotifySyncPartial:
       'La synchronisation s’est terminée avec {count} erreur(s).',
     spotifySyncFailed: 'La synchronisation n’a pas pu s’exécuter.',

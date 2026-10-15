@@ -1572,6 +1572,8 @@ async function runSpotifySyncNow() {
     const summary = await spotifySync.run()
     if (summary?.error === 'not_connected') {
       ui.toast(t('settings.spotifySyncNotConnected'), { kind: 'error' })
+    } else if (summary?.scope_missing) {
+      ui.toast(t('settings.spotifySyncScopeMissing'), { kind: 'error' })
     } else if (summary?.rate_limited) {
       ui.toast(
         t('settings.spotifySyncRateLimited', {

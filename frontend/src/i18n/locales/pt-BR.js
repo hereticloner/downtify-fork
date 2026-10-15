@@ -1075,6 +1075,8 @@ export default {
       'Sincronizado: {added} adicionada(s), {removed} removida(s).',
     spotifySyncNoChange: 'Tudo já está em dia.',
     spotifySyncRateLimited: 'O Spotify te limitou temporariamente; nova tentativa em {minutes} min.',
+    spotifySyncScopeMissing:
+      'A conexão do Spotify não tem permissão para ler suas playlists — reconecte o Spotify nas Configurações.',
     spotifySyncPartial: 'A sincronização terminou com {count} erro(s).',
     spotifySyncFailed: 'Não foi possível executar a sincronização.',
     scrobbling: 'Scrobbling',

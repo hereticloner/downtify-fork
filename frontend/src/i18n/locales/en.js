@@ -1048,6 +1048,8 @@ export default {
     spotifySyncDone: 'Synced: {added} added, {removed} removed.',
     spotifySyncNoChange: 'Everything is already up to date.',
     spotifySyncRateLimited: 'Spotify rate limited you; it will retry in {minutes} min.',
+    spotifySyncScopeMissing:
+      'Spotify has no permission to read your playlists — reconnect Spotify in Settings.',
     spotifySyncPartial: 'The sync finished with {count} error(s).',
     spotifySyncFailed: 'The sync could not run.',
     scrobbling: 'Scrobbling',
