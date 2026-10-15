@@ -1021,6 +1021,7 @@ export default {
     spotifyMirrorDevice: 'Spotify Connect устройство',
     spotifyMirrorNoDevices: 'Няма онлайн Spotify Connect устройство в момента.',
     spotifyMirrorConnect: 'Свържи се със Spotify',
+    spotifyMirrorReconnect: 'Свържи се отново със Spotify',
     spotifyMirrorOk: 'Свързан като {username} - устройство {device}',
     spotifyMirrorFailed: 'Тестът се провали - свържете се отново.',
     spotifyMirrorConnected: 'Spotify е свързан.',

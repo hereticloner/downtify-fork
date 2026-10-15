@@ -1027,6 +1027,7 @@ export default {
     spotifyMirrorDevice: 'Spotify Connect cihazı',
     spotifyMirrorNoDevices: 'Şu anda çevrimiçi Spotify Connect cihazı yok.',
     spotifyMirrorConnect: 'Spotify ile bağlan',
+    spotifyMirrorReconnect: 'Spotify ile yeniden bağlan',
     spotifyMirrorOk: '{username} olarak bağlandı - cihaz {device}',
     spotifyMirrorFailed: 'Test başarısız - tekrar bağlanın.',
     spotifyMirrorConnected: 'Spotify bağlandı.',

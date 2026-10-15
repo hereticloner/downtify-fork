@@ -1050,6 +1050,7 @@ export default {
     spotifyMirrorNoDevices:
       "Aucun appareil Spotify Connect n'est en ligne actuellement.",
     spotifyMirrorConnect: 'Se connecter à Spotify',
+    spotifyMirrorReconnect: 'Se reconnecter à Spotify',
     spotifyMirrorOk: 'Connecté sous {username} - appareil {device}',
     spotifyMirrorFailed: 'Le test a échoué - reconnectez-vous.',
     spotifyMirrorConnected: 'Spotify connecté.',

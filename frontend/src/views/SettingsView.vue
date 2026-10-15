@@ -1005,10 +1005,13 @@
                 <div class="flex flex-wrap items-center gap-3 px-5 pb-4">
                   <UiButton
                     variant="ghost"
-                    :disabled="spotifyConnected"
                     @click="connectSpotify"
                   >
-                    {{ t('settings.spotifyMirrorConnect') }}
+                    {{
+                      spotifyConnected
+                        ? t('settings.spotifyMirrorReconnect')
+                        : t('settings.spotifyMirrorConnect')
+                    }}
                   </UiButton>
                   <UiButton
                     variant="ghost"
@@ -1520,8 +1523,9 @@ const spotifyMirrorOkLabel = computed(() => {
 // (and auto-prefilled when the saved block has none).
 const spotifyRedirectSuggest = `${window.location.origin}/integrations/spotify/callback`
 
-// Connected (refresh token from the callback flow present) disables the
-// connect button: reconnect only makes sense after a disconnect.
+// The button stays live when connected: a token granted before the
+// playlist scopes were added cannot read playlists, and the only way to
+// re-grant them is to send the browser through Spotify's consent again.
 const spotifyConnected = computed(() => !!s.value.spotify_mirror.refresh_token)
 
 // Mirror the track playing right now - the quickest way to prove the

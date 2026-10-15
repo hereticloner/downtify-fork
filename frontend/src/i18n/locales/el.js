@@ -1035,6 +1035,7 @@ export default {
     spotifyMirrorNoDevices:
       'Δεν υπάρχει διαθέσιμη συσκευή Spotify Connectτώρα.',
     spotifyMirrorConnect: 'Σύνδεση με Spotify',
+    spotifyMirrorReconnect: 'Επανασύνδεση με Spotify',
     spotifyMirrorOk: 'Συνδεθήκατε ως {username} - συσκευή {device}',
     spotifyMirrorFailed: 'Ο έλεγχος απέτυχε - συνδεθείτε ξανά.',
     spotifyMirrorConnected: 'Συνδέθηκε το Spotify.',

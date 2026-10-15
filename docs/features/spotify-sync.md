@@ -46,7 +46,11 @@ Spotify Sync rides the Spotify Mirror's OAuth connection, so the
 developer app and a connected account. Playlist reads use the same
 tokens and add the `playlist-read-private` and
 `playlist-read-collaborative` scopes, so **reconnect Spotify** after
-upgrading if the account was connected before those scopes existed.
+upgrading if the account was connected before those scopes existed —
+the **Reconnect with Spotify** button in **Settings → Apps** (it shows
+that label, not a disabled *Connect*, whenever a connection is already
+stored). Without those scopes Spotify answers `403 Insufficient client
+scope` to every playlist read, and the sync reports it as an error.
 
 A playlist only syncs once it has been downloaded (or watched) so the
 library has a Spotify id for it.

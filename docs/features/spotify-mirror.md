@@ -107,11 +107,10 @@ curl -b session.txt -X POST http://your-server:8000/api/settings/update \
 The history import needs the `user-read-recently-played` scope, which the
 connect flow started asking for with this feature. An account connected
 earlier does not have it, and Spotify answers every fetch with `403`
-until you connect again: clear `access_token` and `refresh_token` in the
-`spotify_mirror` block, save, and use **Connect with Spotify** once more —
-Spotify then asks for the extra scope. The save is refused up front with
-that message if the import is switched on while the account has no
-tokens.
+until you connect again: use **Reconnect with Spotify** in
+**Settings → Apps** — Spotify asks for the extra scope and the stored
+token is replaced. The save is refused up front with that message if the
+import is switched on while the account has no tokens.
 :::
 
 Whatever the import has stored shows up on the [Stats](stats.md#recently-played-on-spotify)

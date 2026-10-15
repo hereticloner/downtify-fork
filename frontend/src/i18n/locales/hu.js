@@ -1028,6 +1028,7 @@ export default {
     spotifyMirrorDevice: 'Spotify Connect eszköz',
     spotifyMirrorNoDevices: 'Jelenleg egy Spotify Connect eszköz sincs online.',
     spotifyMirrorConnect: 'Csatlakozás a Spotifyhoz',
+    spotifyMirrorReconnect: 'Újracsatlakozás a Spotifyhoz',
     spotifyMirrorOk: 'Kapcsolódva mint {username} - eszköz {device}',
     spotifyMirrorFailed: 'A teszt meghiúsult - csatlakozzon újra.',
     spotifyMirrorConnected: 'Spotify csatlakoztatva.',
