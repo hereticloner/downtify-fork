@@ -141,7 +141,7 @@ def test_find_duplicates_sorts_by_wasted_bytes(monkeypatch):
 
 def test_delete_files_removes_and_drops_cache(monkeypatch, tmp_path):
     removed: list[str] = []
-    dropped: list[bool] = []
+    dropped: list[list[str]] = []
 
     class Ctx:
         download_dir = str(tmp_path)
@@ -160,12 +160,35 @@ def test_delete_files_removes_and_drops_cache(monkeypatch, tmp_path):
     monkeypatch.setattr(
         storage,
         'drop_library_listing_files',
-        lambda ctx: dropped.append(True),
+        lambda ctx, stored_paths: dropped.append(list(stored_paths)),
     )
     result = storage.delete_files(Ctx(), ['a.mp3', 'b.mp3'])
     assert result == {'removed': 2}
     assert removed == ['a.mp3', 'b.mp3']
-    assert dropped == [True]
+    # The cache drop must be told WHAT was removed, or the library keeps
+    # listing files that are gone (and a one-argument call raises 500).
+    assert dropped == [['a.mp3', 'b.mp3']]
+
+
+def test_delete_files_drops_the_cache_through_the_real_function(
+    monkeypatch, tmp_path
+):
+    """No mock: the real call decides the number of arguments."""
+
+    class Ctx:
+        download_dir = str(tmp_path)
+        data_dir = str(tmp_path)
+
+    monkeypatch.setattr(
+        storage, 'resolve_library_file', lambda name, ctx: tmp_path / name
+    )
+
+    def missing_unlink(self):
+        raise FileNotFoundError
+
+    monkeypatch.setattr(storage.Path, 'unlink', missing_unlink)
+    monkeypatch.setattr(storage.Path, 'is_file', lambda self: False)
+    assert storage.delete_files(Ctx(), ['a.mp3']) == {'removed': 0}
 
 
 def test_delete_files_skips_missing(monkeypatch, tmp_path):

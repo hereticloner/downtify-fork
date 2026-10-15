@@ -127,6 +127,7 @@ def delete_files(ctx: Any, files: list[str]) -> dict[str, Any]:
     """
 
     removed = 0
+    deleted: list[str] = []
     for stored in files:
         name = str(stored or '').strip().replace('\\', '/')
         if not name:
@@ -137,8 +138,9 @@ def delete_files(ctx: Any, files: list[str]) -> dict[str, Any]:
         try:
             full.unlink()
             removed += 1
+            deleted.append(name)
         except OSError as exc:
             logger.warning('Could not delete {}: {}', full, exc)
-    if removed:
-        drop_library_listing_files(ctx)
+    if deleted:
+        drop_library_listing_files(ctx, deleted)
     return {'removed': removed}
