@@ -74,6 +74,17 @@ playlists whose interval has elapsed — a quiet playlist is not fetched
 on every wake-up. Leave the switch off (the default) and no request ever
 goes out.
 
+**The cheap check first.** Before reading a playlist's tracks, the sync
+asks the playlist's own metadata (`GET /playlists/{id}`) for its
+`snapshot_id` — the id Spotify rewrites on every edit. An unchanged id
+means the tracks are not read at all. That endpoint is not on the quota
+the tracks endpoint is (measured 2026-10-15: it answered 200 while every
+tracks page said 429 `QUOTA_EXCEEDED`), so a quiet playlist costs one
+free request and nothing more; only a playlist you actually changed is
+read in full. If the metadata can't be read the sync falls back to
+reading the tracks — the check is an optimisation, never a new way to
+miss a change.
+
 Failures are **logged and reported**, never silent:
 
 - A token that cannot renew, or a playlist the API refuses, is written
@@ -90,6 +101,12 @@ Failures are **logged and reported**, never silent:
   now** (or the expiry) asks again. Without that, the sweep re-asked
   every two minutes — measured on 2026-10-14: 418 playlist fetches in a
   day against 4 playlists, which kept the penalty alive all day.
+- Spotify's **development-mode quota** (`429` with
+  `"reason": "QUOTA_EXCEEDED"`) is a daily allowance for the whole
+  developer account, not a short rate limit, and it only answers after
+  it resets. The snapshot check above is what keeps a normal day far
+  below it. Apps in development mode cannot buy their way out: extended
+  quota is granted to organisations only.
 
 A failed sweep never raises out of the loop and never touches the audio
 or the rest of the library.

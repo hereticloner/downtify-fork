@@ -287,18 +287,35 @@ class SyncSnapshotStore:
         *,
         name: str = '',
         synced_at: Optional[str] = None,
+        snapshot_id: Optional[str] = None,
     ) -> None:
         sid = str(playlist_id or '').strip()
         if not sid:
             return
         with self._lock:
             data = self._load()
+            previous = data['playlists'].get(sid)
+            # A save without a snapshot (a hand-edited store, a caller
+            # that never read the metadata) must not drop the one already
+            # stored - the cheap "nothing changed" check compares it.
+            if snapshot_id is None and isinstance(previous, dict):
+                snapshot_id = previous.get('snapshot_id')
             data['playlists'][sid] = {
                 'name': str(name or ''),
                 'track_ids': normalize_snapshot(track_ids),
                 'synced_at': synced_at or _now_iso(),
+                'snapshot_id': str(snapshot_id or ''),
             }
             self._write(data)
+
+    def snapshot_id(self, playlist_id: str) -> Optional[str]:
+        """The Spotify ``snapshot_id`` this playlist was last synced at."""
+
+        entry = self.entry(playlist_id)
+        if entry is None:
+            return None
+        value = entry.get('snapshot_id')
+        return str(value) if isinstance(value, str) and value else None
 
     def forget(self, playlist_id: str) -> bool:
         sid = str(playlist_id or '').strip()
@@ -385,6 +402,53 @@ def _retry_after_seconds(exc: Exception, default: int = 900) -> int:
         return int(str(header))
     except (TypeError, ValueError):
         return default
+
+
+def fetch_snapshot_id(
+    config: dict[str, Any],
+    playlist_id: str,
+    *,
+    request: Optional[Request] = None,
+) -> Optional[str]:
+    """The playlist's current ``snapshot_id``, or ``None`` when unavailable.
+
+    The cheap "did anything change?" question. ``GET /playlists/{id}``
+    sits outside the playlist-item quota (measured 2026-10-15, it
+    answered 200 while every ``/tracks`` page said 429
+    ``QUOTA_EXCEEDED``), and it carries the id Spotify rewrites on every
+    edit. A caller that gets nothing here simply falls back to reading
+    the tracks.
+    """
+
+    sid = str(playlist_id or '').strip()
+    if not sid:
+        return None
+    current = spotify_mirror.ensure_token(config, request=request)
+    if current is None:
+        return None
+    # Hand the caller the possible renewal; it owns persistence.
+    config['access_token'] = current.get('access_token', '')
+    config['refresh_token'] = current.get('refresh_token', '')
+    config['token_expires_at'] = current.get('token_expires_at', '')
+    sender = request or _request
+    try:
+        response = sender(
+            'GET',
+            f'{spotify_mirror.SPOTIFY_API}/playlists/{sid}',
+            headers={
+                'Authorization': 'Bearer '
+                + str(current.get('access_token') or '')
+            },
+        )
+        response.raise_for_status()
+        body = response.json()
+    except Exception as exc:  # noqa: BLE001 - the caller falls back
+        logger.debug('Spotify sync: no snapshot for playlist {}: {}', sid, exc)
+        return None
+    if not isinstance(body, dict):
+        return None
+    value = body.get('snapshot_id')
+    return str(value) if value else None
 
 
 def fetch_snapshot(
@@ -596,9 +660,11 @@ def sync_playlist(
 
     Returns ``{playlist_id, name, added, removed, changed, first_run,
     error}``. The first ever sync records a baseline and applies nothing
-    - otherwise every existing track would read as "added". When nothing
-    changed, *apply* is not called at all and the stored timestamp is
-    refreshed. ``error='rate_limited'`` carries ``retry_after`` seconds.
+    - otherwise every existing track would read as "added". When Spotify's
+    ``snapshot_id`` still matches the stored one nothing is read at all
+    (``skipped='unchanged'``); when it matches but the tracks don't, *apply*
+    is not called and the stored timestamp is refreshed.
+    ``error='rate_limited'`` carries ``retry_after`` seconds.
     """
 
     sid = str(playlist.get('spotify_id') or '').strip()
@@ -611,9 +677,23 @@ def sync_playlist(
         'changed': False,
         'first_run': False,
         'error': '',
+        'skipped': '',
     }
     if not sid:
         result['error'] = 'no_playlist_id'
+        return result
+
+    # Cheap check first: the playlist's own metadata says whether Spotify
+    # changed anything at all, and it is not on the quota that
+    # /playlists/{id}/tracks is. Only a changed (or unknown) snapshot
+    # costs a full read.
+    snapshot_id = fetch_snapshot_id(config, sid, request=request)
+    known = store.snapshot_id(sid)
+    if snapshot_id and known and snapshot_id == known:
+        result['skipped'] = 'unchanged'
+        store.save(
+            sid, store.track_ids(sid), name=name, snapshot_id=snapshot_id
+        )
         return result
 
     try:
@@ -631,12 +711,12 @@ def sync_playlist(
         # First look: the local copy is the baseline, not a pile of
         # additions.
         result['first_run'] = True
-        store.save(sid, current, name=name)
+        store.save(sid, current, name=name, snapshot_id=snapshot_id)
         return result
 
     diff = snapshot_diff(previous, current)
     if not diff['changed']:
-        store.save(sid, current, name=name)
+        store.save(sid, current, name=name, snapshot_id=snapshot_id)
         return result
 
     result['added'] = list(diff['added'])
@@ -650,7 +730,7 @@ def sync_playlist(
         )
         result['error'] = 'apply_failed'
         return result
-    store.save(sid, current, name=name)
+    store.save(sid, current, name=name, snapshot_id=snapshot_id)
     logger.info(
         'Spotify sync: {!r} +{} -{} track(s)',
         name,
@@ -739,6 +819,7 @@ def run_sync(
         summary['removed'] += len(result['removed'])
         summary['changed'] += 1 if result['changed'] else 0
         summary['errors'] += 1 if result['error'] else 0
+        summary['skipped'] += 1 if result.get('skipped') else 0
         if result['error'] == 'rate_limited':
             summary['rate_limited'] += 1
             summary['retry_after_minutes'] = max(

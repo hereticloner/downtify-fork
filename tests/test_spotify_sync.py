@@ -80,8 +80,13 @@ def _config(**overrides):
     return config
 
 
-def _track_pages(pages, calls, token_body=None, status=200):
-    """A request fake: token POSTs, then one playlist-tracks GET per page."""
+def _track_pages(pages, calls, token_body=None, status=200, snapshot_id=''):
+    """A request fake: token POSTs, the playlist metadata, then the pages.
+
+    *snapshot_id* is what ``GET /playlists/{id}`` answers with; the empty
+    default stands for "no metadata available", which is the case every
+    pre-snapshot-check test was written against.
+    """
 
     seen = {'page': 0}
 
@@ -102,6 +107,8 @@ def _track_pages(pages, calls, token_body=None, status=200):
             return FakeResponse(body, 200)
         if status >= 400:
             return FakeResponse({}, status)
+        if '/playlists/' in url and '/tracks' not in url:
+            return FakeResponse({'snapshot_id': snapshot_id}, 200)
         index = seen['page']
         seen['page'] += 1
         body = pages[index] if index < len(pages) else {'items': []}
@@ -375,6 +382,84 @@ def test_fetch_snapshot_none_for_an_empty_id():
 
 
 # ── sync_playlist ────────────────────────────────────────────────────
+
+
+# ── the cheap "did anything change?" check ───────────────────────────
+
+
+def test_unchanged_snapshot_never_reads_the_quota_bound_tracks(tmp_path: Path):
+    """/playlists/{id}/tracks is the endpoint that runs out of quota."""
+
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    store.save('pl', ['a'], snapshot_id='snap-1')
+    calls = []
+    result = spotify_sync.sync_playlist(
+        _playlist(),
+        config=_config(),
+        store=store,
+        apply=lambda n, a, r: None,
+        request=_track_pages([_page(['a', 'b'])], calls, snapshot_id='snap-1'),
+    )
+
+    assert result['skipped'] == 'unchanged'
+    assert result['changed'] is False
+    assert not [c for c in calls if c['url'].endswith('/tracks')]
+
+
+def test_a_new_snapshot_reads_the_tracks_and_applies(tmp_path: Path):
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    store.save('pl', ['a'], snapshot_id='snap-1')
+    applied = []
+    calls = []
+    result = spotify_sync.sync_playlist(
+        _playlist(),
+        config=_config(),
+        store=store,
+        apply=lambda n, a, r: applied.append((n, a, r)),
+        request=_track_pages([_page(['a', 'b'])], calls, snapshot_id='snap-2'),
+    )
+
+    assert result['changed'] is True
+    assert result['added'] == ['b']
+    assert applied
+    assert store.snapshot_id('pl') == 'snap-2'
+
+
+def test_the_first_sync_reads_the_tracks_and_records_the_snapshot(
+    tmp_path: Path,
+):
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    calls = []
+    result = spotify_sync.sync_playlist(
+        _playlist(),
+        config=_config(),
+        store=store,
+        apply=lambda n, a, r: None,
+        request=_track_pages([_page(['a'])], calls, snapshot_id='snap-1'),
+    )
+
+    assert result['first_run'] is True
+    assert store.track_ids('pl') == ['a']
+    assert store.snapshot_id('pl') == 'snap-1'
+    assert [c for c in calls if c['url'].endswith('/tracks')]
+
+
+def test_no_metadata_falls_back_to_reading_the_tracks(tmp_path: Path):
+    """The check is an optimisation: never a new way to miss a change."""
+
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    store.save('pl', ['a'], snapshot_id='snap-1')
+    calls = []
+    result = spotify_sync.sync_playlist(
+        _playlist(),
+        config=_config(),
+        store=store,
+        apply=lambda n, a, r: None,
+        request=_track_pages([_page(['a', 'b'])], calls, snapshot_id=''),
+    )
+
+    assert not result['skipped']
+    assert result['added'] == ['b']
 
 
 def _playlist(sid='pl', name='Mix'):
