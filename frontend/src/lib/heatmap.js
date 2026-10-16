@@ -70,3 +70,62 @@ export function heatmapColumns(cells) {
 export function heatmapLead(cells) {
   return weekdayIndex(Array.isArray(cells) ? cells[0]?.date : '')
 }
+
+/** How many days the 30-day trend line spans. */
+export const TREND_DAYS = 30
+
+/**
+ * The newest `days` cells, oldest first - the window the trend line
+ * draws. A shorter window than asked for is all there is.
+ */
+export function heatmapTrend(cells, days = TREND_DAYS) {
+  const span = Math.max(0, Number(days) || 0)
+  const rows = Array.isArray(cells) ? cells : []
+  return rows.slice(Math.max(0, rows.length - span))
+}
+
+/**
+ * The numbers the trend panel reads out: how much was played, over how
+ * many days, and the best day of the window. `average` is per day
+ * played, not per day in the window - a day nobody listened is a zero
+ * that says something.
+ */
+export function heatmapTotals(cells) {
+  const rows = Array.isArray(cells) ? cells : []
+  const plays = rows.reduce((sum, cell) => sum + (Number(cell?.count) || 0), 0)
+  const active = rows.filter((cell) => (Number(cell?.count) || 0) > 0).length
+  const best = rows.reduce(
+    (peak, cell) =>
+      (Number(cell?.count) || 0) > (Number(peak?.count) || 0) ? cell : peak,
+    null
+  )
+  return {
+    plays,
+    activeDays: active,
+    days: rows.length,
+    average: active > 0 ? Math.round((plays / active) * 10) / 10 : 0,
+    best: best
+      ? { date: String(best.date || ''), count: Number(best.count) }
+      : null,
+  }
+}
+
+/**
+ * The trend line as an SVG polyline `points` string, oldest day on the
+ * left. Scaled to the busiest day in the window rather than to a fixed
+ * number, like the grid's shades. `height` is flipped, because SVG y
+ * grows downwards.
+ */
+export function trendPoints(cells, width = 100, height = 28) {
+  const rows = Array.isArray(cells) ? cells : []
+  if (rows.length < 2) return ''
+  const counts = rows.map((cell) => Number(cell?.count) || 0)
+  const peak = Math.max(1, ...counts)
+  const step = width / (rows.length - 1)
+  return counts
+    .map(
+      (count, i) =>
+        `${(i * step).toFixed(2)},${(height - (count / peak) * height).toFixed(2)}`
+    )
+    .join(' ')
+}

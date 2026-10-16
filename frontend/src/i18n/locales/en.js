@@ -318,6 +318,16 @@ export default {
       other: '{count} days in a row',
     },
     bestDay: 'Busiest day: {date} ({count})',
+    recentPlays: 'Recent plays',
+    playedFrom: 'Played from',
+    topContexts: 'Most played from',
+    trend: 'Last 30 days',
+    trendPlays: '{count} plays',
+    trendActiveDays: 'Days listened',
+    trendActiveDaysCount: '{count} days',
+    trendAverage: 'Daily average',
+    dayPlays: '{date}',
+    clearDay: 'All days',
   },
   collections: {
     title: 'Collections',
@@ -1047,7 +1057,8 @@ export default {
     spotifySyncLast: 'Last synced {when} · {count} playlist(s)',
     spotifySyncDone: 'Synced: {added} added, {removed} removed.',
     spotifySyncNoChange: 'Everything is already up to date.',
-    spotifySyncRateLimited: 'Spotify rate limited you; it will retry in {minutes} min.',
+    spotifySyncRateLimited:
+      'Spotify rate limited you; it will retry in {minutes} min.',
     spotifySyncScopeMissing:
       'Spotify has no permission to read your playlists — reconnect Spotify in Settings.',
     spotifySyncPartial: 'The sync finished with {count} error(s).',

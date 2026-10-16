@@ -324,6 +324,16 @@ export default {
       other: '{count} nap egyhuzamosan',
     },
     bestDay: 'Legtöbbet játszott nap: {date} ({count})',
+    recentPlays: 'Legutóbbi lejátszások',
+    playedFrom: 'Ebből játszott',
+    topContexts: 'Legtöbbet ebből',
+    trend: 'Utolsó 30 nap',
+    trendPlays: '{count} lejátszás',
+    trendActiveDays: 'Hallgatási napok',
+    trendActiveDaysCount: '{count} nap',
+    trendAverage: 'Napi átlag',
+    dayPlays: '{date}',
+    clearDay: 'Összes nap',
   },
   collections: {
     title: 'Gyűjtemények',
@@ -1073,7 +1083,8 @@ export default {
     spotifySyncDone:
       'Szinkronizálva: {added} hozzáadva, {removed} eltávolítva.',
     spotifySyncNoChange: 'Minden már naprakész.',
-    spotifySyncRateLimited: 'A Spotify ideiglenés korlátozott: {minutes} perc után később kísérelésére.',
+    spotifySyncRateLimited:
+      'A Spotify ideiglenés korlátozott: {minutes} perc után később kísérelésére.',
     spotifySyncScopeMissing:
       'A Spotify-kapcsolatnak nincs jogosultsága a lejátszási listák olvasásához — kapcsolódj újra a Beállításokban.',
     spotifySyncPartial: 'A szinkron {count} hibával fejeződött be.',

@@ -28,11 +28,13 @@ export function settingsSectionsFor(role, sections, { authDisabled } = {}) {
 /**
  * What a player sends to `POST /api/activity/playback` about `track`
  * (a player track: `{ file, title, artists, album, duration, ... }`).
+ * `context` is the queue the play was served from - the player keeps it
+ * as `{ type, title, route }` - so the Stats page can say "played from".
  * `null` for nothing worth reporting (no track, a preview).
  */
 export function playbackReport(
   track,
-  { player, state, position = 0, seek = false }
+  { player, state, position = 0, seek = false, context = null }
 ) {
   if (state === 'stopped') return { player, state, track: {}, position: 0 }
   if (!track?.file || track.isPreview) return null
@@ -49,6 +51,12 @@ export function playbackReport(
       artist: (track.artists || []).join(', ') || track.artist || '',
       album: track.album || '',
       duration: Number(track.duration) || 0,
+      ...(context?.title
+        ? {
+            context: String(context.title).slice(0, 300),
+            context_type: String(context.type || '').slice(0, 300),
+          }
+        : {}),
     },
   }
 }

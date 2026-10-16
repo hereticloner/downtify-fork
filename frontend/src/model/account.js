@@ -96,6 +96,8 @@ function startPlaybackReports() {
       state,
       position: player.currentTime.value,
       seek,
+      // Where the queue came from, so Stats can name the playlist.
+      context: player.context.value,
     })
     if (!report) return
     lastSent = Date.now()

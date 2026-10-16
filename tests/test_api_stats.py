@@ -7,6 +7,7 @@ likes, and the plays the Spotify history import mirrored. No new tables.
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -232,6 +233,96 @@ def test_stats_streak_counts_today_when_there_were_plays(client):
 
     data = client.get('/api/stats').json()
     assert data['playback']['streak_days'] == 4
+
+
+# ── where a play came from ──────────────────────────────────────────────────
+
+
+def _play_from(day: date, summary: str, context: str, kind: str = 'playlist'):
+    """A playback entry whose queue came from a named playlist."""
+
+    with sqlite3.connect(main.DATABASE_DIR / 'downtify_activity.db') as conn:
+        conn.execute(
+            'INSERT INTO activity (at, user_id, username, kind, summary, '
+            "detail_json, client, ip) VALUES (?, 0, 'admin', "
+            "'playback', ?, ?, 'test', '')",
+            (
+                f'{day.isoformat()}T20:00:00+00:00',
+                summary,
+                json.dumps({
+                    'track': {
+                        'title': summary,
+                        'context': context,
+                        'context_type': kind,
+                    }
+                }),
+            ),
+        )
+
+
+def test_stats_reports_the_queue_a_play_came_from(client):
+    """The recent panel says which playlist the play was served from."""
+
+    today = datetime.now(timezone.utc).date()
+    _play_from(today, 'Roads', 'Chill Deploy')
+    _play_from(today, 'Dummy', 'Chill Deploy')
+    _play_from(today, 'Roads', 'Gece')
+
+    recent = client.get('/api/stats').json()['playback']['recent']
+    assert len(recent) == 3
+    assert {r['context'] for r in recent} == {'Chill Deploy', 'Gece'}
+    assert all(r['date'] == today.isoformat() for r in recent)
+    assert all(r['at'].startswith(today.isoformat()) for r in recent)
+    assert {r['summary'] for r in recent} == {'Roads', 'Dummy'}
+
+
+def test_stats_counts_the_queues_played_most(client):
+    """The same plays, grouped by the queue that served them."""
+
+    today = datetime.now(timezone.utc).date()
+    _play_from(today, 'A', 'Chill Deploy')
+    _play_from(today, 'B', 'Chill Deploy')
+    _play_from(today, 'C', 'Gece')
+    # A play with no queue at all (a bare library play) isn't a queue.
+    with sqlite3.connect(main.DATABASE_DIR / 'downtify_activity.db') as conn:
+        conn.execute(
+            'INSERT INTO activity (at, user_id, username, kind, summary, '
+            "detail_json, client, ip) VALUES (?, 0, 'admin', 'playback', "
+            "'D', ?, 'test', '')",
+            (f'{today.isoformat()}T20:00:00+00:00', '{}'),
+        )
+
+    contexts = client.get('/api/stats').json()['playback']['top_contexts']
+    assert contexts[0] == {'context': 'Chill Deploy', 'count': 2}
+    assert contexts[1] == {'context': 'Gece', 'count': 1}
+
+
+def test_stats_recent_plays_are_capped(client):
+    """The panel lists a page of plays, not the whole retained year."""
+
+    today = datetime.now(timezone.utc).date()
+    for n in range(stats_mod.PLAYBACK_RECENT_LIMIT + 10):
+        _play_from(today, f'Song {n}', 'Chill Deploy')
+
+    recent = client.get('/api/stats').json()['playback']['recent']
+    assert len(recent) == stats_mod.PLAYBACK_RECENT_LIMIT
+
+
+def test_stats_survives_a_playback_entry_without_detail(client):
+    """An entry the log wrote with no detail is still a play, not a 500."""
+
+    with sqlite3.connect(main.DATABASE_DIR / 'downtify_activity.db') as conn:
+        conn.execute(
+            'INSERT INTO activity (at, user_id, username, kind, summary, '
+            "detail_json, client, ip) VALUES ('2026-10-12T20:00:00+00:00', "
+            "0, 'admin', 'playback', 'Song A', 'not json', 'test', '')"
+        )
+
+    resp = client.get('/api/stats')
+    assert resp.status_code == 200, resp.text
+    recent = resp.json()['playback']['recent']
+    assert recent[0]['summary'] == 'Song A'
+    assert not recent[0]['context']
 
 
 # ── the two builders, on a fixed clock ─────────────────────────────────────

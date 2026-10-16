@@ -327,6 +327,16 @@ export default {
       other: '{count} ημέρες συνεχόμενα',
     },
     bestDay: 'Πιο δραστήρια ημέρα: {date} ({count})',
+    recentPlays: 'Πρόσφατες αναπαραγωγές',
+    playedFrom: 'Αναπαράγεται από',
+    topContexts: 'Πιο ακούστηκε από',
+    trend: 'Τελευταίες 30 ημέρες',
+    trendPlays: '{count} αναπαραγωγές',
+    trendActiveDays: 'Μέρες ακρόασης',
+    trendActiveDaysCount: '{count} μέρες',
+    trendAverage: 'Ημερήσιος μέσος όρος',
+    dayPlays: '{date}',
+    clearDay: 'Όλες οι μέρες',
   },
   collections: {
     title: 'Συλλογές',
@@ -1081,7 +1091,8 @@ export default {
     spotifySyncDone:
       'Συγχρονίστηκε: {added} προστέθηκαν, {removed} αφαιρέθηκαν.',
     spotifySyncNoChange: 'Όλα είναι ήδη ενημερωμένα.',
-    spotifySyncRateLimited: 'To Spotify ςήςε σας προσωρινα για πολιποη; επανήσωςα σε {minutes} λεπτά.',
+    spotifySyncRateLimited:
+      'To Spotify ςήςε σας προσωρινα για πολιποη; επανήσωςα σε {minutes} λεπτά.',
     spotifySyncScopeMissing:
       'Η σύνδεση Spotify δεν έχει άδεια ανάγνωσης λιστών — επανασύνδεσε το Spotify στις Ρυθμίσεις.',
     spotifySyncPartial: 'Ο συγχρονισμός ολοκληρώθηκε με {count} σφάλμα(τα).',

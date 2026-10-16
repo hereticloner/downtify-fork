@@ -335,6 +335,16 @@ export default {
       other: '{count} jours d’affilée',
     },
     bestDay: 'Jour le plus actif : {date} ({count})',
+    recentPlays: 'Écoutés récents',
+    playedFrom: 'Écouté depuis',
+    topContexts: 'Le plus écouté depuis',
+    trend: '30 derniers jours',
+    trendPlays: '{count} écoutes',
+    trendActiveDays: 'Jours écoutés',
+    trendActiveDaysCount: '{count} jours',
+    trendAverage: 'Moyenne quotidienne',
+    dayPlays: '{date}',
+    clearDay: 'Tous les jours',
   },
   collections: {
     title: 'Collections',
@@ -1094,7 +1104,8 @@ export default {
     spotifySyncLast: 'Dernière synchronisation {when} · {count} playlist(s)',
     spotifySyncDone: 'Synchronisé : {added} ajoutée(s), {removed} retirée(s).',
     spotifySyncNoChange: 'Tout est déjà à jour.',
-    spotifySyncRateLimited: 'Spotify vous a limité temporairement ; nouvel essai dans {minutes} min.',
+    spotifySyncRateLimited:
+      'Spotify vous a limité temporairement ; nouvel essai dans {minutes} min.',
     spotifySyncScopeMissing:
       'La connexion Spotify n’a pas l’autorisation de lire tes playlists — reconnecte Spotify dans les Réglages.',
     spotifySyncPartial:

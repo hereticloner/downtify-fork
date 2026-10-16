@@ -108,6 +108,34 @@ describe('playbackReport', () => {
     })
     expect('seek' in report).toBe(false)
   })
+
+  it('says which queue the play was served from', () => {
+    const report = playbackReport(track, {
+      player: 'tab',
+      state: 'playing',
+      position: 0,
+      context: { type: 'playlist', title: 'Chill Deploy', route: '/p/x' },
+    })
+    expect(report.track.context).toBe('Chill Deploy')
+    expect(report.track.context_type).toBe('playlist')
+  })
+
+  it('sends no queue when the player has none', () => {
+    const bare = playbackReport(track, {
+      player: 'tab',
+      state: 'playing',
+      position: 0,
+    })
+    expect('context' in bare.track).toBe(false)
+    // A context object with nothing to name is the same as none.
+    const empty = playbackReport(track, {
+      player: 'tab',
+      state: 'playing',
+      position: 0,
+      context: { type: 'playlist', title: '' },
+    })
+    expect('context' in empty.track).toBe(false)
+  })
 })
 
 describe('activity kinds', () => {

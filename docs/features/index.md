@@ -27,7 +27,7 @@ Downtify covers everything you need to build and maintain a local music library 
 | [Navidrome](slskd-navidrome.md) | Mirror the playlists you download into Navidrome, and track playlist downloads |
 | [Library catalog & path sync](library-catalog.md) | How Downtify tracks library files and playlists, playlists you create in the Library, and fixing paths after moving files |
 | [Collections](collections.md) | Group your library playlists into named collections, one level above the playlist |
-| [Stats](stats.md) | Library, download and play counts, a downloads-per-day chart, a year of listening as a heatmap and your most-played tracks |
+| [Stats](stats.md) | Library, download and play counts, a downloads-per-day chart, a year of listening as a heatmap with per-day detail, the playlists you played from, and your most-played tracks |
 | [Notifications](notifications.md) | A Telegram message when a watch downloads new tracks |
 | [Scrobbling](scrobbling.md) | Send plays to last.fm |
 | [Spotify Mirror](spotify-mirror.md) | Plays in Downtify show up in your Spotify listening history |

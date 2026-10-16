@@ -35,7 +35,12 @@ Below the cards, **Downloads per day** lists each day that had a download, oldes
 
 ## Listening activity
 
-**Listening activity** is a GitHub-style heatmap of the last 52 weeks: one column per week, one cell per day, oldest week on the left. A day with no play is the empty grey; the more you played, the stronger the green. The shading is scaled to your busiest day of that window, so even a quiet month keeps its shape. Hovering a cell shows the date and how many songs were played on it.
+**Listening activity** is a GitHub-style heatmap of the last 52 weeks: one column per week, one cell per day, oldest week on the left. A day with no play is the empty grey; the more you played, the stronger the green. The shading is scaled to your busiest day of that window, so even a quiet month keeps its shape.
+
+The cells arrive one after another rather than all at once, each column a moment behind the last, and each cell grows under the cursor and when the keyboard reaches it.
+
+- **Hovering** (or focusing) a cell shows the full date and how many songs were played on it.
+- **Clicking** a cell — or pressing it with the keyboard — opens **Recent plays** filtered to that day, and rings the cell so the choice stays visible once the cursor moves away. Clicking the same cell again, or **All days**, clears it.
 
 Underneath the grid are two numbers:
 
@@ -43,6 +48,20 @@ Underneath the grid are two numbers:
 - **Busiest day** — the day of that window with the most plays, with the date and the count.
 
 Both come from the same [activity log](../features/users.md) as the other panels, and are server-wide: everyone using the same server contributes to the same grid.
+
+## Recent plays
+
+**Recent plays** lists what you actually played, newest first: the time, the `Artist - Title` label, and — when the player knew it — **the queue it came from** as a small tag. That is the playlist, album or artist you pressed play on, so "what did I listen to" answers with a source rather than a bare title. Without a day picked in the heatmap it lists your newest plays; with one, only that day's.
+
+Only plays from after this shipped carry the tag. A player that reports no queue (an older app, a bare library play) is simply listed without one.
+
+## Most played from
+
+**Most played from** groups the same plays by the queue that served them, most played first — the playlists you actually start, rather than the songs inside them.
+
+## Last 30 days
+
+**Last 30 days** draws the tail of the heatmap as a line, scaled to its own busiest day so a quiet week still reads as a shape. Under it: how many plays those 30 days hold, how many of them you listened on a day at all, and your average per listening day.
 
 ## Where the numbers come from
 
@@ -78,7 +97,17 @@ Both come from the same [activity log](../features/users.md) as the other panels
       { "date": "2026-09-30", "count": 0 }
     ],
     "streak_days": 4,
-    "best_day": { "date": "2026-10-10", "count": 31 }
+    "best_day": { "date": "2026-10-10", "count": 31 },
+    "recent": [
+      {
+        "at": "2026-10-12T21:15:00+00:00",
+        "date": "2026-10-12",
+        "summary": "The Night Owls - Do I Still Recall",
+        "context": "Chill Deploy",
+        "context_type": "playlist"
+      }
+    ],
+    "top_contexts": [{ "context": "Chill Deploy", "count": 128 }]
   },
   "spotify": {
     "recent": [
@@ -107,6 +136,8 @@ Both come from the same [activity log](../features/users.md) as the other panels
 | `playback.heatmap` | `{date, count}` for every day of the retained window (364 days), oldest first — days without a play are `0` |
 | `playback.streak_days` | Days in a row with a play; a day still to come doesn't break it |
 | `playback.best_day` | `{date, count}` for the busiest day of the window, or `{"date": "", "count": 0}` when nothing was played |
+| `playback.recent` | Up to 400 of your newest plays, newest first, each `{at, date, summary, context, context_type}` — `context` is the queue it was served from, empty when the player reported none |
+| `playback.top_contexts` | Up to ten `{context, count}`, most played first; plays without a queue are left out |
 | `spotify.recent` | Up to ten mirrored plays, newest first, each `{played_at, artist_name, track_name, album_name}` |
 | `spotify.play_count` | Plays stored in the history table, all of them |
 

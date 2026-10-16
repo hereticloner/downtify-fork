@@ -326,6 +326,16 @@ export default {
       other: '{count} gün üst üste',
     },
     bestDay: 'En yoğun gün: {date} ({count})',
+    recentPlays: 'Son çalmalar',
+    playedFrom: 'Çalındığı yer',
+    topContexts: 'En çok dinlenen kaynaklar',
+    trend: 'Son 30 gün',
+    trendPlays: '{count} çalma',
+    trendActiveDays: 'Dinlenen gün',
+    trendActiveDaysCount: '{count} gün',
+    trendAverage: 'Günlük ortalama',
+    dayPlays: '{date} günü',
+    clearDay: 'Tüm günler',
   },
   collections: {
     title: 'Koleksiyonlar',
@@ -1070,7 +1080,8 @@ export default {
     spotifySyncLast: 'Son eşitleme {when} · {count} çalma listesi',
     spotifySyncDone: 'Eşitlendi: {added} eklendi, {removed} çıkarıldı.',
     spotifySyncNoChange: 'Her şey zaten güncel.',
-    spotifySyncRateLimited: 'Spotify seni geıici olarak kısıtladı; {minutes} dk sonra tekrar denenecek.',
+    spotifySyncRateLimited:
+      'Spotify seni geıici olarak kısıtladı; {minutes} dk sonra tekrar denenecek.',
     spotifySyncScopeMissing:
       "Spotify bağlantısı playlist okuma iznine sahip değil — Ayarlar'dan Spotify'ı yeniden bağla.",
     spotifySyncPartial: 'Eşitleme {count} hatayla bitti.',

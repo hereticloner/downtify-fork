@@ -1784,7 +1784,7 @@ Server-wide library and usage numbers — see [Stats](features/stats.md).
 }
 ```
 
-Counts come from the library stores and the activity log (which keeps a year of entries); a download request counts once, and a play is logged each time a song starts. `playback.heatmap` is one `{date, count}` per day of that window (364 days, days without a play included as `0`), `playback.streak_days` the current run of consecutive days with a play, and `playback.best_day` the busiest of them (`{"date": "", "count": 0}` when nothing was played). `spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
+Counts come from the library stores and the activity log (which keeps a year of entries); a download request counts once, and a play is logged each time a song starts. `playback.heatmap` is one `{date, count}` per day of that window (364 days, days without a play included as `0`), `playback.streak_days` the current run of consecutive days with a play, and `playback.best_day` the busiest of them (`{"date": "", "count": 0}` when nothing was played). `playback.recent` carries up to 400 of your newest plays, newest first, each `{at, date, summary, context, context_type}` — `context` is the playlist, album or artist the play was served from, empty when the player reported no queue — and `playback.top_contexts` those same plays grouped by queue, most played first. `spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
 
 ---
 
@@ -2567,7 +2567,7 @@ Admin. What each browser tab and app is playing — the players that reported in
 
 ### `POST /api/activity/playback`
 
-Client. A player says what it plays: `{ "player": "<id stable for this player>", "state": "playing" | "paused" | "stopped", "track": { "title", "artist", "album", "file" or "track_id", "duration" }, "position": 42 }`. Send it when a song starts, on pause/resume and stop, and about every 30 seconds while playing. A new song adds a `playback` entry to the log; the rest only update `GET /api/activity/now`. `400` for an unknown `state`, or no `file`/`track_id` (except for `stopped`). **Response:** `{ "ok": true }`.
+Client. A player says what it plays: `{ "player": "<id stable for this player>", "state": "playing" | "paused" | "stopped", "track": { "title", "artist", "album", "file" or "track_id", "duration", "context": "<queue title>", "context_type": "playlist" | "album" | "artist" | "library" }, "position": 42 }`. Send it when a song starts, on pause/resume and stop, and about every 30 seconds while playing. `context`/`context_type` are optional and name the playlist, album or artist the queue came from; Downtify stores them with the play, which is what the [Stats](features/stats.md#recent-plays) page shows as "played from". A new song adds a `playback` entry to the log; the rest only update `GET /api/activity/now`. `400` for an unknown `state`, or no `file`/`track_id` (except for `stopped`). **Response:** `{ "ok": true }`.
 
 ---
 

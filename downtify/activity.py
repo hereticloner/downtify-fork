@@ -324,13 +324,27 @@ class NowPlaying:
 
 
 def clean_track(value: Any) -> dict[str, Any]:
-    """The track a player reports, reduced to what's shown."""
+    """The track a player reports, reduced to what's shown.
+
+    ``context``/``context_type`` are where the queue came from (a
+    playlist, an album, an artist, the library) - what the Stats page
+    shows as "played from".
+    """
 
     if not isinstance(value, dict):
         return {}
     track: dict[str, Any] = {
         key: _clip(value.get(key), 300)
-        for key in ('title', 'artist', 'album', 'file', 'track_id', 'cover')
+        for key in (
+            'title',
+            'artist',
+            'album',
+            'file',
+            'track_id',
+            'cover',
+            'context',
+            'context_type',
+        )
         if value.get(key)
     }
     try:

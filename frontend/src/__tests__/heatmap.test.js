@@ -7,10 +7,14 @@ import {
   HEATMAP_DAYS,
   HEATMAP_LEVELS,
   HEATMAP_WEEKS,
+  TREND_DAYS,
   heatmapCells,
   heatmapColumns,
   heatmapLead,
   heatmapLevel,
+  heatmapTotals,
+  heatmapTrend,
+  trendPoints,
   weekdayIndex,
 } from '/src/lib/heatmap'
 
@@ -114,6 +118,68 @@ describe('heatmapColumns', () => {
   })
 })
 
+describe('heatmapTrend', () => {
+  it('takes the newest days, oldest first', () => {
+    const trend = heatmapTrend(heatmapCells(year()), 30)
+    expect(trend).toHaveLength(30)
+    expect(trend.at(-1).date).toBe(year().at(-1).date)
+  })
+
+  it('returns everything it has when asked for more', () => {
+    expect(heatmapTrend(heatmapCells(year(), 1), 30)).toHaveLength(HEATMAP_DAYS)
+    expect(heatmapTrend([])).toEqual([])
+    expect(heatmapTrend(undefined)).toEqual([])
+  })
+})
+
+describe('heatmapTotals', () => {
+  it('reads out plays, active days and the busiest of them', () => {
+    const days = year()
+    days.at(-1).count = 6
+    days.at(-2).count = 4
+    const totals = heatmapTotals(heatmapCells(days))
+    expect(totals.plays).toBe(10)
+    expect(totals.activeDays).toBe(2)
+    expect(totals.days).toBe(HEATMAP_WEEKS * HEATMAP_DAYS)
+    // Per day actually listened to, not per day in the window.
+    expect(totals.average).toBe(5)
+    expect(totals.best).toEqual({ date: days.at(-1).date, count: 6 })
+  })
+
+  it('reads zero for a window nobody played in', () => {
+    const totals = heatmapTotals(heatmapCells(year()))
+    expect(totals.plays).toBe(0)
+    expect(totals.average).toBe(0)
+    expect(totals.best).toBeNull()
+    expect(heatmapTotals(undefined).plays).toBe(0)
+  })
+})
+
+describe('trendPoints', () => {
+  it('scales the line to the busiest day, y flipped for SVG', () => {
+    const line = trendPoints(
+      [{ count: 0 }, { count: 5 }, { count: 2 }, { count: 5 }],
+      30,
+      20
+    )
+    const points = line.split(' ').map((p) => p.split(',').map(Number))
+    expect(points).toHaveLength(4)
+    // Oldest on the left, spanning the full width.
+    expect(points[0][0]).toBe(0)
+    expect(points.at(-1)[0]).toBe(30)
+    // Busiest days sit at the top (y = 0), quiet days at the bottom.
+    expect(points[1][1]).toBe(0)
+    expect(points[0][1]).toBe(20)
+    expect(points[2][1]).toBeCloseTo(12)
+  })
+
+  it('needs two days to draw a line, and copes with none', () => {
+    expect(trendPoints([])).toBe('')
+    expect(trendPoints([{ count: 3 }])).toBe('')
+    expect(trendPoints(undefined)).toBe('')
+  })
+})
+
 describe('ActivityHeatmap', () => {
   it('renders a cell for every day of the window', async () => {
     const html = await render(ActivityHeatmap, { days: year() })
@@ -126,7 +192,7 @@ describe('ActivityHeatmap', () => {
     days.at(-2).count = 0
     const html = await render(ActivityHeatmap, { days })
     const rendered = html
-      .split('<span')
+      .split('<button')
       .filter((tag) => tag.includes('data-date'))
     const today = rendered.at(-1)
     const yesterday = rendered.at(-2)
@@ -143,6 +209,21 @@ describe('ActivityHeatmap', () => {
 
   it('renders an empty grid rather than failing on no data', async () => {
     expect(cellsIn(await render(ActivityHeatmap, {}))).toHaveLength(0)
+  })
+
+  it('marks the day the page picked', async () => {
+    const days = year()
+    const picked = days.at(-3).date
+    const html = await render(ActivityHeatmap, { days, selected: picked })
+    expect(html).toContain(`data-selected="${picked}"`)
+    expect(html.split('data-selected=')).toHaveLength(2)
+  })
+
+  it('lets a cell be clicked to pick that day', async () => {
+    const days = year()
+    const html = await render(ActivityHeatmap, { days })
+    expect(html).toContain('data-cell=')
+    expect(html).toContain('type="button"')
   })
 })
 

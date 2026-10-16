@@ -320,6 +320,16 @@ export default {
       other: '{count} дни поред',
     },
     bestDay: 'Най-активен ден: {date} ({count})',
+    recentPlays: 'Последни слушания',
+    playedFrom: 'Слушано от',
+    topContexts: 'Най-много слушано от',
+    trend: 'Последни 30 дни',
+    trendPlays: '{count} пускания',
+    trendActiveDays: 'Дни със слушане',
+    trendActiveDaysCount: '{count} дни',
+    trendAverage: 'Средно на ден',
+    dayPlays: '{date}',
+    clearDay: 'Всички дни',
   },
   collections: {
     title: 'Колекции',
@@ -1064,7 +1074,8 @@ export default {
     spotifySyncLast: 'Последна синхронизация {when} · {count} плейлист(а)',
     spotifySyncDone: 'Синхронизирано: {added} добавени, {removed} премахнати.',
     spotifySyncNoChange: 'Всичко вече е актуално.',
-    spotifySyncRateLimited: 'Spotify временно временно ограничение; нов опит се нова правка след {minutes} мин.',
+    spotifySyncRateLimited:
+      'Spotify временно временно ограничение; нов опит се нова правка след {minutes} мин.',
     spotifySyncScopeMissing:
       'Настройката за Spotify няма разрешение да чете плейлистите — свържи се отново в Настройки.',
     spotifySyncPartial: 'Синхронизацията завърши с {count} грешка(и).',

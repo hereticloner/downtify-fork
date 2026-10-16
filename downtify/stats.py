@@ -8,6 +8,7 @@ tables.
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
@@ -17,6 +18,15 @@ from .activity import RETENTION_DAYS
 #: How many mirrored Spotify plays one response carries. The store keeps
 #: a page of fifty; the page shows the newest handful of it.
 SPOTIFY_RECENT_LIMIT = 10
+
+#: How many of your own plays the response carries. The Stats page lists
+#: them newest first and filters them by day when a heatmap cell is
+#: clicked, so this has to be deeper than one evening of listening -
+#: but not the whole retained year, which would dwarf every other field.
+PLAYBACK_RECENT_LIMIT = 400
+
+#: How many queues the "most played from" list names.
+TOP_CONTEXTS_LIMIT = 10
 
 #: How many weeks the listening heatmap spans. Tied to the activity
 #: log's own retention, so the grid never promises days the log has
@@ -44,6 +54,12 @@ def _parse_at(value: str) -> str:
     return str(value or '')[:10]
 
 
+def _text(value: Any) -> str:
+    """A trimmed string, whatever the row actually held."""
+
+    return str(value or '').strip()
+
+
 def _played_days(activity: Any) -> Counter:
     """``{YYYY-MM-DD: plays}`` for one kind of activity entry."""
 
@@ -54,6 +70,76 @@ def _played_days(activity: Any) -> Counter:
 
 def _today() -> date:
     return datetime.now(timezone.utc).date()
+
+
+def _detail(entry: dict[str, Any]) -> dict[str, Any]:
+    """An entry's ``detail`` object, or ``{}`` if it isn't readable.
+
+    The log writes JSON, but a row can still arrive empty or malformed
+    (a restore from an older backup, a hand edit). Stats must show the
+    play rather than fail the whole page over its detail.
+    """
+
+    raw = entry.get('detail')
+    if isinstance(raw, dict):
+        return raw
+    try:
+        parsed = json.loads(raw) if raw else {}
+    except (TypeError, ValueError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _play_source(entry: dict[str, Any]) -> tuple[str, str]:
+    """``(queue title, queue kind)`` a play was served from.
+
+    Players report where the queue came from - a playlist, an album, an
+    artist, the library - so the Stats page can say *what you were
+    playing* rather than only how much. Both are empty for a play the
+    player didn't attribute (an old entry, or a bare library play).
+    """
+
+    track = _detail(entry).get('track')
+    if not isinstance(track, dict):
+        return '', ''
+    return _text(track.get('context')), _text(track.get('context_type'))
+
+
+def _recent_plays(
+    entries: list[dict[str, Any]], limit: int = PLAYBACK_RECENT_LIMIT
+) -> list[dict[str, Any]]:
+    """Your newest plays, newest first, each with the queue it came from.
+
+    *entries* arrives newest first (the log's own order), so the newest
+    page of them is simply the head of the list.
+    """
+
+    out: list[dict[str, Any]] = []
+    for entry in list(entries or [])[:limit]:
+        at = str(entry.get('at') or '')
+        context, kind = _play_source(entry)
+        out.append({
+            'at': at,
+            'date': _parse_at(at),
+            'summary': _text(entry.get('summary')),
+            'context': context,
+            'context_type': kind,
+        })
+    return out
+
+
+def _top_contexts(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The queues your plays came from, most played first."""
+
+    counts = Counter(
+        context
+        for context, _kind in (_play_source(e) for e in entries or [])
+        if context
+    )
+    return [
+        {'context': context, 'count': count}
+        for context, count in counts.most_common(TOP_CONTEXTS_LIMIT)
+    ]
 
 
 def build_activity_heatmap(
@@ -157,6 +243,9 @@ def build_stats(
     The ``playback`` block carries the listening heatmap (one entry per
     day of the retained window), the current streak and the busiest day,
     all read from the same play entries as ``total`` and ``top_tracks``.
+    It also carries ``recent`` - your newest plays, each with the queue
+    it was served from - and ``top_contexts``, those plays grouped by
+    queue, so the page can answer "what did I play, and from where".
     """
 
     downloads = _activity_kinds(activity, 'download')
@@ -214,6 +303,11 @@ def build_stats(
                 if busiest
                 else {'date': '', 'count': 0}
             ),
+            # What the plays were, and which queue served them: the page
+            # lists these and filters them by the day a heatmap cell
+            # stands for.
+            'recent': _recent_plays(playbacks),
+            'top_contexts': _top_contexts(playbacks),
         },
         'spotify': {
             'recent': recent,
