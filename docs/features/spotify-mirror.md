@@ -189,8 +189,9 @@ your player sends, `device:player`, e.g. `7:web:tab`.
 
 ## The Downtify Mirror device
 
-The server's `docker-compose.yml` can ship a `spotifyd` service — a
-silent, always-on Spotify Connect client named **Downtify Mirror**. It
+The server's `docker-compose.yml` can ship a `mirror` service — a
+silent, always-on Spotify Connect client named **Downtify Mirror**,
+running Spotify's own headless client (Soloist). It
 shows up in the device list once it is running and its credentials are
 in place; that deployment step lives in
 [Server setup](server.md#the-downtify-mirror-device). Until then, pointing the

@@ -33,20 +33,27 @@ services:
 
   # The Downtify Mirror: a silent, always-online Spotify Connect
   # device for the Spotify Mirror (docs/features/spotify-mirror.md).
-  # go-librespot logs a pairing code on first start - enter it at
-  # https://spotify.com/pair; the credentials land in mirror/state.json.
+  # It runs Spotify Soloist - Spotify's own headless client - so plays
+  # sent to it are recorded as real listening; go-librespot, an
+  # unofficial engine, was not. Pair it once with
+  # `docker compose run --rm mirror pair`; the session lands in the
+  # `soloist_data` volume, so restarts don't need pairing again.
+  # Soloist builds expire after 90 days: rebuild the image before then.
   mirror:
-    image: 'ghcr.io/devgianlu/go-librespot:v0.10.3'
+    build:
+      context: ./mirror
+      dockerfile: Dockerfile
     restart: unless-stopped
+    environment:
+      - SOLOIST_API_KEY=${SOLOIST_API_KEY}
+      - SOLOIST_DEVICE_NAME=Downtify Mirror
     volumes:
-      - ./mirror:/config
-    # No mem_limit: go-librespot was never measured under a Connect
-    # session, and an over-tight cap would silently drop the device
-    # instead of failing loudly. Log growth is bounded instead.
+      - soloist_data:/data
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: '3'
 
-volumes: {}
+volumes:
+  soloist_data:

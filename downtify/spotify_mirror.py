@@ -5,9 +5,11 @@ Spotify only records real playback; nothing can inject listening
 history (and the private endpoints that try are an account-ban risk).
 What the documented Web API can do is ask the user's own Premium
 account to play the same track on a Spotify Connect device. This fork
-ships one on the server: the "Downtify Mirror" spotifyd container,
-silent (volume 0) and always online. A play in Downtify starts the same
-song there, and Spotify counts it like any other playback.
+ships one on the server: "Downtify Mirror", a container running
+Spotify Soloist - Spotify's own headless Connect client, on the same
+playback engine as the desktop and mobile apps - silent (volume 0) and
+always online. A play in Downtify starts the same song there, and
+Spotify counts it like any other playback.
 
 The play is always a bare track, never a playlist ``context_uri``: a
 context makes the Connect device walk that playlist, and a track it

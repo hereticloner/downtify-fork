@@ -8,20 +8,21 @@ icon: lucide/hard-drive
 
 ## The Downtify Mirror device
 
-For [Spotify Mirror](spotify-mirror.md) the server can ship its own silent Spotify Connect client: the `mirror` service (go-librespot), named **Downtify Mirror**, always online, playing at volume 0 through ALSA's `null` device — plays sent to it are only there to be counted by Spotify.
+For [Spotify Mirror](spotify-mirror.md) the server can ship its own silent Spotify Connect client: the `mirror` service (Spotify Soloist), named **Downtify Mirror**, always online, playing at volume 0 through PulseAudio's null sink. Unlike unofficial clients (go-librespot), Soloist is built on the same playback engine as the Spotify desktop and mobile apps — plays sent to it go through Spotify's own pipeline and count as real listening (Recently played, Friend Activity, the yearly wrap-up).
 
 Setting it up on a compose server:
 
-1. `docker compose up -d mirror` — the first start logs a short pairing code:
+1. Add `SOLOIST_API_KEY` to your `.env` file — generate a key from the [Spotify for Developers Soloist dashboard](https://developer.spotify.com/dashboard/soloist) (requires Premium).
+2. `docker compose build mirror`
+3. Pair the device once — run the `pair` command, then select **Downtify Mirror** from any Spotify app on the same local network:
    ```
-   docker compose logs mirror | grep -A2 "code"
+   docker compose run --rm mirror pair
    ```
-2. On any phone or computer, open [spotify.com/pair](https://spotify.com/pair) and enter that code with the account the mirror should run under (the same Premium account the Spotify Mirror is connected with).
-3. `docker compose logs -f mirror` shows the login complete; the credentials are stored in `mirror/state.json`, so restarts don't need pairing again.
+4. `docker compose up -d mirror` — Soloist restores the stored session and appears as a Connect device.
 
 The device then shows up in **Settings → Spotify Mirror → Load devices**; plays started in Downtify begin there — silently — and land in your Spotify history.
 
-> Password logins for Connect clients were removed by Spotify, so the device pairs once with a code (or interactive OAuth) instead; the credentials survive in `state.json`.
+> Soloist builds expire after 90 days; rebuild the image (`docker compose build --no-cache mirror`) to renew. An expired build exits with code 10.
 
 ## Changing the port
 
