@@ -29,6 +29,7 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -382,6 +383,19 @@ class RateLimited(Exception):
 #: a restart costs one extra sweep.
 _RATE_LIMITED_UNTIL: dict[str, float] = {}
 
+#: Longest a 429 refusal is believed for, whatever Spotify asks.
+#:
+#: Measured 2026-10-19 on a live server: the header came back numeric at
+#: 40000 s (~11 h) and every one of the four playlists was locked for
+#: that whole span, silently - the sweep logged "next try in 660 min"
+#: every two minutes and told nobody, so the user reported the automatic
+#: sync as broken. The quota is shared and the answer is the server's;
+#: nothing here can make an eleven-hour refusal shorter. Four hours is
+#: still long enough that the account's access token has been refreshed
+#: at least once underneath it, and it is short enough that the feature
+#: recovers on its own instead of needing a restart.
+MAX_RETRY_AFTER_SECONDS = 4 * 3600
+
 
 def in_rate_limit_cooldown(playlist_id: str) -> bool:
     """Whether Spotify's refusal for this playlist is still in effect."""
@@ -407,14 +421,60 @@ def rate_limit_retry_after(playlist_id: str) -> int:
 
 
 def _retry_after_seconds(exc: Exception, default: int = 900) -> int:
-    """The ``Retry-After`` header on an HTTP error, in seconds."""
+    """The ``Retry-After`` header on an HTTP error, in seconds.
+
+    Two shapes are legal (RFC 9110 §10.2.3) and both are seen from
+    Spotify: a delay in seconds, and a date. ``int()`` read only the
+    first, so a date quietly became ``default``. A date is read as
+    ISO-8601 (``Z`` included) or as the HTTP-date the RFC names, and a
+    naive one - which is what both spellings look like from a UTC
+    server - is taken as UTC, because that is what a Spotify date
+    means. A date already in the past falls back to ``default`` rather
+    than to "ask immediately".
+
+    The answer is then clamped to :data:`MAX_RETRY_AFTER_SECONDS`: the
+    code cannot shorten a real quota refusal, but a refusal it believes
+    for half a day outlives everything it was set for and, if it is
+    never announced, is indistinguishable from a broken feature. An
+    absent or unreadable header is ``default`` (15 minutes).
+    """
 
     response = getattr(exc, 'response', None)
     header = getattr(response, 'headers', {}).get('retry-after')
-    try:
-        return int(str(header))
-    except (TypeError, ValueError):
+    text = str(header or '').strip()
+    if not text:
         return default
+    try:
+        seconds = int(text)
+    except ValueError:
+        when = _retry_after_date(text)
+        if when is None:
+            return default
+        seconds = round((when - datetime.now(timezone.utc)).total_seconds())
+        if seconds <= 0:
+            return default
+    return max(0, min(seconds, MAX_RETRY_AFTER_SECONDS))
+
+
+def _retry_after_date(text: str) -> Optional[datetime]:
+    """A ``Retry-After`` date in UTC, or ``None`` when it is neither shape.
+
+    ISO-8601 is what a JSON API tends to write; the HTTP-date the RFC
+    names is what a proxy tends to write. Both end up here.
+    """
+
+    try:
+        when = datetime.fromisoformat(text.replace('Z', '+00:00'))
+    except ValueError:
+        try:
+            when = parsedate_to_datetime(text)
+        except (TypeError, ValueError):
+            return None
+        if when is None:  # raises on junk, but None is not out of the question
+            return None
+    if when.tzinfo is None:
+        return when.replace(tzinfo=timezone.utc)
+    return when
 
 
 def fetch_snapshot_id(
@@ -530,10 +590,18 @@ def fetch_snapshot(
         if status == 429:
             limited = RateLimited(_retry_after_seconds(exc))
             _RATE_LIMITED_UNTIL[sid] = time.time() + limited.retry_after
+            # Say so when the clamp bit: the number below is ours, not
+            # Spotify's, and an operator comparing the two needs to know.
+            capped = (
+                ' (capped, Spotify asked for longer)'
+                if limited.retry_after >= MAX_RETRY_AFTER_SECONDS
+                else ''
+            )
             logger.warning(
-                'Spotify sync: playlist {} refused (429), next try in {} min',
+                'Spotify sync: playlist {} refused (429), next try in {} min{}',
                 sid,
                 round(limited.retry_after / 60),
+                capped,
             )
             raise limited from exc
         if status in {401, 403}:
@@ -931,14 +999,21 @@ async def spotify_sync_loop(
                     )
                 # An unattached account is a standing state, not an event:
                 # it is shown in Settings, not re-toasted every wake-up.
-                # So is a rate limit: it says itself in Settings too. So
-                # does a token that needs reconnecting - the fix is a click
-                # in Settings, not another failed sweep.
-                notify = summary.get('changed') or (
-                    summary.get('errors')
-                    and summary.get('error') != 'not_connected'
-                    and not summary.get('rate_limited')
-                    and not summary.get('scope_missing')
+                # A token that needs reconnecting is the same - the fix is
+                # a click in Settings, not another failed sweep. A rate
+                # limit is neither: it is silent everywhere else, and
+                # measured 2026-10-19 a four-hour-long one was reported as
+                # "the automatic sync stopped working" because nothing
+                # said so. It rides the same event and the browser shows
+                # it once per cooldown rather than once per wake-up.
+                notify = (
+                    summary.get('changed')
+                    or bool(summary.get('rate_limited'))
+                    or (
+                        summary.get('errors')
+                        and summary.get('error') != 'not_connected'
+                        and not summary.get('scope_missing')
+                    )
                 )
                 if broadcast is not None and notify:
                     await broadcast({'type': 'spotify_sync', **summary})

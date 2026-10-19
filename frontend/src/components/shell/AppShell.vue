@@ -62,6 +62,7 @@ import { useSettingsManager } from '/src/model/settings'
 import { useLibrary } from '/src/model/library'
 import { useDiscover } from '/src/model/discover'
 import { useNowPlaying, useUi } from '/src/model/ui'
+import { startRateLimitNotifier } from '/src/model/spotifySync'
 import { useShortcuts } from './shortcuts'
 
 const auth = useAuth()
@@ -99,6 +100,10 @@ API.onForbidden(() => {
 })
 // Count listens for Discover, whichever page the music is playing on.
 useDiscover().startListenTracking()
+// The background sync's rate limit has to be said out loud wherever the
+// user is — otherwise an hour of skipped playlists is a feature that
+// looks broken, and nothing on the page says otherwise.
+startRateLimitNotifier()
 
 useShortcuts({
   player,

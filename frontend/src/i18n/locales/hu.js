@@ -848,6 +848,10 @@ export default {
     saved: 'Figyelés frissítve',
     retargeted: 'Most figyelve: {name}',
   },
+  spotifySync: {
+    rateLimitedAuto:
+      'Spotify rate limited you; automatic sync resumes in about {minutes} min.',
+  },
   settings: {
     apps: 'Alkalmazások',
     title: 'Beállítások',

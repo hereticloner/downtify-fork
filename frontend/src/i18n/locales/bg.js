@@ -841,6 +841,10 @@ export default {
     saved: 'Наблюдението е обновено',
     retargeted: 'Вече се следи {name}',
   },
+  spotifySync: {
+    rateLimitedAuto:
+      'Spotify rate limited you; automatic sync resumes in about {minutes} min.',
+  },
   settings: {
     apps: 'Приложения',
     title: 'Настройки',

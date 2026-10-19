@@ -846,6 +846,10 @@ export default {
     saved: 'Monitoramento atualizado',
     retargeted: 'Agora monitorando {name}',
   },
+  spotifySync: {
+    rateLimitedAuto:
+      'Spotify rate limited you; automatic sync resumes in about {minutes} min.',
+  },
   settings: {
     apps: 'Apps',
     title: 'Configurações',

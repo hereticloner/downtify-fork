@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
   onUnauthorized: () => () => {},
+  onMessage: () => () => {},
   getAuthStatus: () =>
     Promise.resolve({
       data: { signed_in: true, user: { role: 'admin', username: 'me' } },
@@ -27,7 +28,11 @@ globalThis.window = {
 }
 
 import { clampSyncIntervalMinutes, useSettingsManager } from '../model/settings'
-import { useSpotifySync } from '../model/spotifySync'
+import {
+  RATE_LIMIT_NOTICE_COOLDOWN_MS,
+  rateLimitNoticeMinutes,
+  useSpotifySync,
+} from '../model/spotifySync'
 
 beforeEach(() => {
   api.getSpotifySync.mockReset()
@@ -75,5 +80,53 @@ describe('useSpotifySync', () => {
     const summary = await sync.run()
     expect(summary).toMatchObject({ changed: true, added: 2 })
     expect(sync.running.value).toBe(false)
+  })
+})
+
+describe('the automatic sweep rate-limit notice', () => {
+  const limited = (minutes) => ({
+    type: 'spotify_sync',
+    rate_limited: 1,
+    retry_after_minutes: minutes,
+  })
+  const MIN = 60 * 1000
+  const AFTER = RATE_LIMIT_NOTICE_COOLDOWN_MS
+
+  // The module remembers when it last spoke; this mirrors that timestamp
+  // so every case can hand in a clock it knows is past the cooldown.
+  let saidAt = 0
+  const say = (data, later) => {
+    const minutes = rateLimitNoticeMinutes(data, saidAt + later)
+    if (minutes != null) saidAt += later
+    return minutes
+  }
+
+  it('reports the minutes Spotify asked for', () => {
+    expect(say(limited(240), AFTER)).toBe(240)
+  })
+
+  it('never reports a negative wait', () => {
+    expect(say(limited(-1), AFTER)).toBe(0)
+  })
+
+  it('ignores summaries with no rate limit in them', () => {
+    expect(
+      say({ type: 'spotify_sync', changed: true, rate_limited: 0 }, MIN)
+    ).toBe(null)
+  })
+
+  it('ignores every other WebSocket event', () => {
+    expect(say({ status: 'done' }, MIN)).toBe(null)
+  })
+
+  it('says it once, not once per two-minute wake-up', () => {
+    expect(say(limited(240), AFTER)).toBe(240)
+    expect(say(limited(239), 2 * MIN)).toBe(null)
+    expect(say(limited(238), 4 * MIN)).toBe(null)
+  })
+
+  it('says it again once the cooldown has passed', () => {
+    say(limited(240), AFTER)
+    expect(say(limited(240), AFTER + AFTER)).toBe(240)
   })
 })

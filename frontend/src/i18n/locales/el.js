@@ -851,6 +851,10 @@ export default {
     saved: 'Η παρακολούθηση ενημερώθηκε',
     retargeted: 'Παρακολούθηση του {name}',
   },
+  spotifySync: {
+    rateLimitedAuto:
+      'Spotify rate limited you; automatic sync resumes in about {minutes} min.',
+  },
   settings: {
     apps: 'Εφαρμογές',
     title: 'Ρυθμίσεις',

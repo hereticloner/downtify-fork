@@ -868,6 +868,10 @@ export default {
     saved: 'Surveillance mise à jour',
     retargeted: 'Surveillance de {name}',
   },
+  spotifySync: {
+    rateLimitedAuto:
+      'Spotify rate limited you; automatic sync resumes in about {minutes} min.',
+  },
   settings: {
     apps: 'Apps',
     title: 'Paramètres',

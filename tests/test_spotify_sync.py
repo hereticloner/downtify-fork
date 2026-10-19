@@ -583,7 +583,7 @@ def test_sync_playlist_reports_an_apply_failure(tmp_path: Path):
     assert store.track_ids('pl') == ['a']
 
 
-def _refusing(calls, retry_after='15423'):
+def _refusing(calls, retry_after='423'):
     """A request fake whose playlist fetch is always a 429."""
 
     def request(  # noqa: PLR0913, PLR0917
@@ -667,7 +667,7 @@ def test_sync_playlist_reports_a_rate_limit_with_its_retry_after(
         request=_refusing(calls),
     )
     assert result['error'] == 'rate_limited'
-    assert result['retry_after'] == 15423
+    assert result['retry_after'] == 423
     # No baseline: nothing to diff against until Spotify answers again.
     assert store.track_ids('pl') is None
 
@@ -724,6 +724,57 @@ def test_run_sync_force_asks_again_despite_the_cooldown(tmp_path: Path):
     )
     assert [url for url in forced if '/tracks' in url]
     assert summary['rate_limited'] == 1
+
+
+# ── Retry-After ───────────────────────────────────────────────────────
+
+
+class _Refusal(Exception):
+    """What ``_retry_after_seconds`` reads: the httpx response attached
+    to the raised error, headers and all."""
+
+    def __init__(self, headers) -> None:
+        super().__init__('refused')
+        self.response = FakeResponse({}, 429, headers)
+
+
+def _retry_after(header) -> int:
+    return spotify_sync._retry_after_seconds(_Refusal({'retry-after': header}))
+
+
+def test_retry_after_reads_a_numeric_header():
+    assert _retry_after('600') == 600
+
+
+def test_retry_after_reads_an_iso_date():
+    when = datetime.now(timezone.utc) + timedelta(minutes=30)
+    seconds = _retry_after(when.replace(microsecond=0).isoformat())
+    assert 1790 <= seconds <= 1800
+
+
+def test_retry_after_reads_an_http_date_as_utc():
+    # The RFC's own spelling: no offset, so it can only be read as UTC.
+    when = datetime.now(timezone.utc) + timedelta(minutes=30)
+    header = when.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    assert 1790 <= _retry_after(header) <= 1800
+
+
+def test_retry_after_caps_an_eleven_hour_refusal():
+    """Measured 2026-10-19: 40000 s locked four playlists for 11 hours,
+    silently, and the user read that as a broken feature."""
+
+    assert _retry_after('40000') == 4 * 3600
+    assert spotify_sync.MAX_RETRY_AFTER_SECONDS == 14400
+
+
+def test_retry_after_falls_back_when_the_header_is_unreadable():
+    for header in (None, '', 'soon', '2026-10-21 07:28:00-ish'):
+        assert _retry_after(header) == 900
+
+
+def test_a_refusal_date_already_past_falls_back_to_the_default():
+    past = datetime.now(timezone.utc) - timedelta(hours=3)
+    assert _retry_after(past.replace(microsecond=0).isoformat()) == 900
 
 
 # ── run_sync ─────────────────────────────────────────────────────────
@@ -932,3 +983,51 @@ def test_sync_loop_idles_when_disabled(tmp_path: Path):
 
     asyncio.run(run())
     assert calls == []
+
+
+def test_sync_loop_announces_a_rate_limit_it_hit(tmp_path: Path, monkeypatch):
+    """Measured 2026-10-19: the sweep skipped four playlists for hours
+    and said so nowhere the user could see. The summary has to reach the
+    browser, ``retry_after_minutes`` and all, or the page stays silent
+    about a sync that is deliberately doing nothing."""
+
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    events = []
+    monkeypatch.setattr(
+        spotify_sync,
+        'run_sync',
+        lambda *a, **k: {
+            'changed': False,
+            'added': 0,
+            'removed': 0,
+            'errors': 0,
+            'skipped': 1,
+            'rate_limited': 1,
+            'retry_after_minutes': 240,
+        },
+    )
+
+    async def run():
+        task = asyncio.create_task(
+            spotify_sync.spotify_sync_loop(
+                get_settings=_enabled_settings,
+                get_playlists=lambda: [_playlist()],
+                get_credentials=_config,
+                get_store=lambda: store,
+                apply=lambda n, a, r: None,
+                broadcast=events.append,
+                idle_seconds=0,
+            )
+        )
+        await asyncio.sleep(0.05)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    asyncio.run(run())
+    limited = [e for e in events if e.get('type') == 'spotify_sync']
+    assert limited
+    assert limited[0]['rate_limited'] == 1
+    assert limited[0]['retry_after_minutes'] == 240

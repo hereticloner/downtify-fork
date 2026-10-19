@@ -105,6 +105,21 @@ Failures are **logged and reported**, never silent:
   now** (or the expiry) asks again. Without that, the sweep re-asked
   every two minutes — measured on 2026-10-14: 418 playlist fetches in a
   day against 4 playlists, which kept the penalty alive all day.
+- A rate limit the **automatic** sweep hit is announced in the browser
+  wherever you are — "Spotify rate limited you; automatic sync resumes
+  in about N min" — because nothing else on the page says it: the
+  Settings status only moves when you press the button. It appears
+  **once**, and not again for 30 minutes, so a cooldown that lasts hours
+  is one toast rather than one every two minutes.
+- `Retry-After` is read as both legal shapes — a delay in seconds and a
+  date (ISO-8601 or HTTP-date, naive values read as UTC) — and it is
+  then **clamped to 4 hours**. Measured on 2026-10-19, Spotify answered
+  40 000 s (~11 h) for four playlists at once, and the sweep skipped
+  them silently for eleven hours; nothing here can shorten a real
+  refusal — the quota is shared and the answer is Spotify's — but a
+  refusal believed for half a day outlives the state it was set for, so
+  the sync asks again (and is refused again, if it must be) every four
+  hours instead of going quiet until a restart.
 - A **403/401** is a different species and says so: the connection has no
   permission for playlist reads (measured 2026-10-15 on a token granted
   before the playlist scopes existed), so every playlist is reported as

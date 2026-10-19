@@ -851,6 +851,10 @@ export default {
     saved: 'Vigilancia actualizada',
     retargeted: 'Ahora vigilando {name}',
   },
+  spotifySync: {
+    rateLimitedAuto:
+      'Spotify rate limited you; automatic sync resumes in about {minutes} min.',
+  },
   settings: {
     apps: 'Apps',
     title: 'Ajustes',

@@ -852,6 +852,10 @@ export default {
     saved: 'İzleme güncellendi',
     retargeted: 'Artık {name} izleniyor',
   },
+  spotifySync: {
+    rateLimitedAuto:
+      'Spotify kotası doldu; otomatik eşitleme yaklaşık {minutes} dk sonra devam eder.',
+  },
   settings: {
     apps: 'Uygulamalar',
     title: 'Ayarlar',
