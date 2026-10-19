@@ -3,6 +3,7 @@ import {
   RELEASE_TYPES,
   countWatches,
   filterWatches,
+  nextDueLabel,
   releaseFilterSummary,
   sortWatches,
   toggleReleaseType,
@@ -172,5 +173,54 @@ describe('artist release filters', () => {
       types: [],
       newOnly: false,
     })
+  })
+})
+
+describe('nextDueLabel', () => {
+  const t = (key, params) => `${key}:${params?.count ?? ''}`
+
+  it('says a watch with no minutes left is due now', () => {
+    expect(nextDueLabel(t, { next_due_minutes: 0 })).toBe('monitor.nextNow:')
+  })
+
+  it('counts up to an hour in minutes', () => {
+    expect(nextDueLabel(t, { next_due_minutes: 1 })).toBe(
+      'monitor.nextInMinutes:1'
+    )
+    expect(nextDueLabel(t, { next_due_minutes: 60 })).toBe(
+      'monitor.nextInMinutes:60'
+    )
+  })
+
+  it('counts past an hour in hours and past a day in days', () => {
+    expect(nextDueLabel(t, { next_due_minutes: 90 })).toBe(
+      'monitor.nextInHours:2'
+    )
+    expect(nextDueLabel(t, { next_due_minutes: 1440 })).toBe(
+      'monitor.nextInHours:24'
+    )
+    expect(nextDueLabel(t, { next_due_minutes: 4320 })).toBe(
+      'monitor.nextInDays:3'
+    )
+  })
+
+  it('says nothing when the server sent no countdown', () => {
+    expect(nextDueLabel(t, { id: 1 })).toBe('')
+    expect(nextDueLabel(t, { next_due_minutes: null })).toBe('')
+    expect(nextDueLabel(t, {})).toBe('')
+  })
+
+  it('speaks the row’s own language', async () => {
+    const { setLocale, t: realT } = await import('../i18n')
+    setLocale('en')
+    expect(nextDueLabel(realT, { next_due_minutes: 0 })).toBe('Due now')
+    expect(nextDueLabel(realT, { next_due_minutes: 30 })).toBe('In 30 minutes')
+    expect(nextDueLabel(realT, { next_due_minutes: 3000 })).toBe('In 2 days')
+    setLocale('tr')
+    expect(nextDueLabel(realT, { next_due_minutes: 0 })).toBe('Şimdi sırada')
+    expect(nextDueLabel(realT, { next_due_minutes: 30 })).toBe(
+      '30 dakika sonra'
+    )
+    setLocale('en')
   })
 })

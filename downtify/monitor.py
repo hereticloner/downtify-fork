@@ -112,17 +112,30 @@ def _next_due_at(last: datetime, interval_minutes: int) -> datetime:
 
 
 #: A watch this many consecutive passes in a row with nothing new is
-#: checked at ``7x`` its configured interval, so a finished playlist
-#: that never changes doesn't get swept hourly forever (downtify-ng idea).
+#: checked at ``QUIET_PASS_RELAX_MULTIPLIER`` times its configured
+#: interval, so a finished playlist that never changes doesn't get swept
+#: hourly forever (downtify-ng idea). A single empty pass relaxes
+#: nothing: a watch that goes quiet once — a playlist that only changes
+#: every few days, a sweep that hit a bad day — still runs at the
+#: interval the user asked for, and only a watch that has been empty
+#: that many passes running is treated as finished.
+QUIET_PASS_RELAX_THRESHOLD = 3
 QUIET_PASS_RELAX_MULTIPLIER = 7
 
 
 def effective_interval_minutes(
     interval_minutes: int, quiet_passes: int
 ) -> int:
-    """The configured interval, relaxed after consecutive quiet passes."""
+    """The interval *interval_minutes* is really checked at right now.
 
-    if quiet_passes and quiet_passes > 0:
+    Unchanged until a watch has gone :data:`QUIET_PASS_RELAX_THRESHOLD`
+    consecutive passes finding nothing new (see
+    :func:`next_quiet_passes`); from there on it is
+    :data:`QUIET_PASS_RELAX_MULTIPLIER` times longer. Quiet passes
+    below the threshold are counted but relax nothing.
+    """
+
+    if quiet_passes and quiet_passes >= QUIET_PASS_RELAX_THRESHOLD:
         return int(interval_minutes) * QUIET_PASS_RELAX_MULTIPLIER
     return int(interval_minutes)
 

@@ -276,6 +276,9 @@
                     ? timeAgo(item.last_checked, locale)
                     : t('monitor.never')
                 }}
+                <UiBadge v-if="nextDueLabel(t, item)">
+                  {{ nextDueLabel(t, item) }}
+                </UiBadge>
               </span>
               <span class="tabular text-[13px] text-muted">
                 {{
@@ -343,6 +346,7 @@ import {
   WATCH_SORT_KEYS,
   countWatches,
   filterWatches,
+  nextDueLabel,
   sortWatches,
   RELEASE_TYPES,
   releaseFilterSummary,

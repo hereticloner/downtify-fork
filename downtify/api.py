@@ -402,8 +402,10 @@ from .monitor import (
     LibraryStores,
     MonitoredPlaylist,
     PlaylistMonitorDB,
+    _next_due_at,
     check_watch,
     download_playlist_cover,
+    effective_interval_minutes,
     fetch_playlist,
     normalize_release_types,
     parse_playlist_url,
@@ -6438,11 +6440,42 @@ async def _resolve_watch_target(url: str) -> tuple[str, str, str]:
     )
 
 
+def _next_due_minutes(watch: MonitoredPlaylist) -> int:
+    """Minutes from now until *watch* is next checked; ``0`` when it's
+    due now (never checked, or its next check already passed).
+
+    Walks the same schedule the monitor loop decides due-ness with
+    (see ``monitor._is_due``) — the effective interval, so a watch that
+    is on relaxed quiet passes counts from its own next due time, and
+    the ``DOWNTIFY_MONITOR_SYNC_TIME`` snap for day-or-longer
+    intervals. Kept out of :meth:`MonitoredPlaylist.to_dict`, which is
+    the stored row: this depends on the clock, not on the database.
+    """
+
+    if not watch.last_checked:
+        return 0
+    try:
+        last = datetime.fromisoformat(watch.last_checked)
+    except ValueError:
+        return 0
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    due = _next_due_at(
+        last,
+        effective_interval_minutes(watch.interval_minutes, watch.quiet_passes),
+    )
+    minutes = (due - datetime.now(timezone.utc)).total_seconds() / 60
+    return max(0, round(minutes))
+
+
 @router.get('/api/monitor/playlists')
 async def list_monitor_playlists() -> list[dict[str, Any]]:
     db = _require_monitor_db()
     playlists = await asyncio.to_thread(db.list_playlists)
-    return [p.to_dict() for p in playlists]
+    return [
+        {**p.to_dict(), 'next_due_minutes': _next_due_minutes(p)}
+        for p in playlists
+    ]
 
 
 @router.post('/api/monitor/playlists')

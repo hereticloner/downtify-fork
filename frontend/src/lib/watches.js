@@ -1,5 +1,6 @@
 // Playlist Monitor list helpers: which tab a watch belongs to, what kind
-// of watch a pasted link makes, and filtering/sorting.
+// of watch a pasted link makes, filtering/sorting, and what a row says
+// about when its next check runs.
 import { classifyInput } from './input'
 import { compareText, fold } from './library'
 
@@ -62,6 +63,23 @@ export function sortWatches(items, key, dir = 'desc') {
     }
     return sign * ((a[key] || 0) - (b[key] || 0))
   })
+}
+
+/**
+ * What a watch's row says about its next check: "due now" when the
+ * server counted no minutes left (never checked, or the interval has
+ * passed), otherwise how far away it is — minutes up to an hour, then
+ * hours, then days. `''` when the server sent no `next_due_minutes`,
+ * so rows from an older backend show nothing rather than a wrong time.
+ */
+export function nextDueLabel(t, item) {
+  const minutes = item?.next_due_minutes
+  if (typeof minutes !== 'number' || !Number.isFinite(minutes)) return ''
+  if (minutes <= 0) return t('monitor.nextNow')
+  if (minutes <= 60) return t('monitor.nextInMinutes', { count: minutes })
+  if (minutes <= 1440)
+    return t('monitor.nextInHours', { count: Math.round(minutes / 60) })
+  return t('monitor.nextInDays', { count: Math.round(minutes / 1440) })
 }
 
 // ── Artist watches: which kinds of release they download ──────────────

@@ -783,6 +783,13 @@ export default {
     kindPlaylist: 'Çalma listesi',
     kindArtist: 'Sanatçı',
     never: 'Henüz kontrol edilmedi',
+    nextNow: 'Şimdi sırada',
+    nextInMinutes: {
+      one: '{count} dakika sonra',
+      other: '{count} dakika sonra',
+    },
+    nextInHours: { one: '{count} saat sonra', other: '{count} saat sonra' },
+    nextInDays: { one: '{count} gün sonra', other: '{count} gün sonra' },
     releases: { one: '{count} yayın', other: '{count} yayın' },
     pause: 'Duraklat',
     resume: 'Sürdür',

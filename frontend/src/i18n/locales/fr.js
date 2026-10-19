@@ -799,6 +799,13 @@ export default {
     kindPlaylist: 'Playlist',
     kindArtist: 'Artiste',
     never: 'Pas encore vérifié',
+    nextNow: 'Maintenant',
+    nextInMinutes: {
+      one: 'Dans {count} minute',
+      other: 'Dans {count} minutes',
+    },
+    nextInHours: { one: 'Dans {count} heure', other: 'Dans {count} heures' },
+    nextInDays: { one: 'Dans {count} jour', other: 'Dans {count} jours' },
     releases: { one: '{count} sortie', other: '{count} sorties' },
     pause: 'Pause',
     resume: 'Reprendre',
