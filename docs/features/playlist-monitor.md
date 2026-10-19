@@ -137,7 +137,7 @@ On each row:
 
 - **Starting…** until the sweep learns how many tracks it needs to download;
 - then **`done/total`** with a filling bar, the time elapsed and an estimate of what's left — the estimate is simply the average track so far times the tracks remaining;
-- a toast names the count when the check finishes, the row's **last checked** refreshes itself, and a failure shows an error toast with the same on the bar.
+- a toast names the count when the check finishes, the row's **last checked** refreshes itself, and a failure shows an error toast naming the reason (a rate limit is reported as one — wait for the next check, nothing is wrong with the watch).
 
 The bar follows real downloads: each track the sweep tries (downloaded, already linked from the library or failed) moves it one step. The watch list itself keeps using those live counts — the row doesn't jump around while it's checking.
 

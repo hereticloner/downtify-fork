@@ -763,6 +763,7 @@ export default {
     checkStarting: 'Başlıyor…',
     checkFinished: '{count} yeni şarkı indirildi',
     checkFailed: 'Kontrol başarısız',
+    checkErrorReason: 'Kontrol başarısız: {reason}',
     filterAll: 'Tümü',
     filterPlaylists: 'Çalma listeleri',
     filterArtists: 'Sanatçılar',

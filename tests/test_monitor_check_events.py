@@ -207,3 +207,52 @@ def test_check_watch_reports_an_error(monkeypatch, tmp_path):
         _run_in_loop(run)
 
     assert [e['phase'] for e in collector.events] == ['start', 'error']
+    # The row and its toast say why, not just "something went wrong".
+    assert collector.events[-1]['message'] == 'boom'
+
+
+@pytest.mark.parametrize(
+    ('raised', 'expected'),
+    [
+        # A rate limit's own text is a URL or an HTML error page.
+        (
+            RuntimeError('HTTP Error 429: Too Many Requests'),
+            'Rate limited by the source - the next check tries again later',
+        ),
+        ('  line one\n  line two  ', 'line one line two'),
+        ('x' * 400, 'x' * 120),
+        ('', 'RuntimeError'),
+    ],
+)
+def test_check_error_reason(raised, expected):
+    assert monitor._check_error_reason(RuntimeError(raised)) == expected
+
+
+def test_check_watch_names_a_rate_limited_check(monkeypatch, tmp_path):
+    collector = _Collector()
+
+    async def check(  # noqa: PLR0913, PLR0917
+        playlist, db, downloader, broadcast, loop, settings=None, library=None
+    ):
+        raise RuntimeError('HTTP Error 429: Too Many Requests')
+
+    _fake_songs(monkeypatch)
+    monkeypatch.setattr(monitor, 'check_playlist', check)
+    db, playlist = _watch(tmp_path)
+    downloader = _Downloader(tmp_path / 'downloads')
+
+    async def run(loop):
+        await monitor.check_watch(
+            playlist,
+            db,
+            downloader,
+            collector,
+            loop,
+            {'generate_m3u': False},
+            None,
+        )
+
+    with pytest.raises(RuntimeError, match='429'):
+        _run_in_loop(run)
+
+    assert collector.events[-1]['message'].startswith('Rate limited')

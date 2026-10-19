@@ -334,6 +334,12 @@ import { useUi } from '/src/model/ui'
 import { artistPhotoSource } from '/src/lib/artistPhotoProxy'
 import { timeAgo } from '/src/lib/format'
 import {
+  CHECK_DONE_PHASES,
+  applyCheckEvent,
+  checkToast,
+  isChecking,
+} from '/src/lib/monitorCheck'
+import {
   WATCH_SORT_KEYS,
   countWatches,
   filterWatches,
@@ -398,37 +404,12 @@ function endCheck(id) {
 }
 
 function handleCheckEvent(data) {
-  if (!data || data.type !== 'monitor_check' || data.id == null) return
-  const prev = checkState.value[data.id] || {}
-  const base = {
-    name: data.name ?? prev.name,
-    startedAt: prev.startedAt || Date.now(),
-  }
-  if (data.phase === 'progress') {
-    checkState.value = {
-      ...checkState.value,
-      [data.id]: {
-        ...base,
-        phase: 'progress',
-        done: data.done ?? 0,
-        total: data.total ?? null,
-      },
-    }
-  } else if (data.phase === 'end') {
-    checkState.value = {
-      ...checkState.value,
-      [data.id]: {
-        ...base,
-        phase: 'end',
-        downloaded: data.downloaded ?? 0,
-      },
-    }
-    setTimeout(() => endCheck(data.id), 2500)
-  } else {
-    checkState.value = {
-      ...checkState.value,
-      [data.id]: { ...base, phase: 'error' },
-    }
+  const next = applyCheckEvent(checkState.value, data)
+  // Same object back: not a check event, so nothing to announce or close.
+  if (next === checkState.value) return
+  checkState.value = next
+  const st = next[data.id]
+  if (CHECK_DONE_PHASES.includes(st.phase)) {
     setTimeout(() => endCheck(data.id), 2500)
   }
 }
@@ -437,7 +418,7 @@ const checking = computed(
   () =>
     new Set(
       Object.entries(checkState.value)
-        .filter(([, st]) => st.phase === 'start' || st.phase === 'progress')
+        .filter(([, st]) => isChecking(st))
         .map(([id]) => Number(id))
     )
 )
@@ -480,22 +461,15 @@ function progressLabel(item) {
 
 watch(checkState, (state) => {
   for (const st of Object.values(state)) {
-    if (st.phase === 'end' && !st.announced) {
-      st.announced = true
-      ui.toast(t('monitor.checkFinished', { count: st.downloaded ?? 0 }))
-      load()
-    } else if (st.phase === 'error' && !st.announced) {
-      st.announced = true
-      ui.toast(t('toast.actionFailed'), { kind: 'error' })
-    }
+    // Only the phases that close a row toast; `start`/`progress` don't.
+    const announcement = st.announced ? null : checkToast(t, st)
+    if (!announcement) continue
+    st.announced = true
+    ui.toast(announcement.text, { kind: announcement.kind })
+    if (st.phase === 'end') load()
   }
   // "Check all" waits for every watch it seeded to report back.
-  if (
-    checkingAll.value &&
-    !Object.values(state).some(
-      (s) => s.phase === 'start' || s.phase === 'progress'
-    )
-  ) {
+  if (checkingAll.value && !Object.values(state).some((s) => isChecking(s))) {
     checkingAll.value = false
   }
 })

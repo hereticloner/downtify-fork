@@ -760,6 +760,7 @@ export default {
     checkStarting: 'Começando…',
     checkFinished: '{count} novas faixas baixadas',
     checkFailed: 'A verificação falhou',
+    checkErrorReason: 'Check failed: {reason}',
     filterAll: 'Todos',
     filterPlaylists: 'Playlists',
     filterArtists: 'Artistas',

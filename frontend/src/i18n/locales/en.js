@@ -748,6 +748,7 @@ export default {
     checkStarting: 'Starting…',
     checkFinished: '{count} new tracks downloaded',
     checkFailed: 'Check failed',
+    checkErrorReason: 'Check failed: {reason}',
     filterAll: 'All',
     filterPlaylists: 'Playlists',
     filterArtists: 'Artists',

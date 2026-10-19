@@ -765,6 +765,7 @@ export default {
     checkStarting: 'Ξεκινάει…',
     checkFinished: 'Λήφθηκαν {count} νέα κομμάτια',
     checkFailed: 'Ο έλεγχος απέτυχε',
+    checkErrorReason: 'Check failed: {reason}',
     filterAll: 'Όλα',
     filterPlaylists: 'Λίστες',
     filterArtists: 'Καλλιτέχνες',

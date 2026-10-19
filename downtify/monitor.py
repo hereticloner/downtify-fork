@@ -1439,6 +1439,34 @@ async def _emit_check(
         logger.exception('Failed to broadcast monitor check event')
 
 
+#: What the row shows when the source rate limited us. The raw exception
+#: text for a 429 is a URL or an HTML error page nobody can act on; this
+#: says what happened and what to do.
+_RATE_LIMIT_REASON = (
+    'Rate limited by the source - the next check tries again later'
+)
+#: Longest reason kept on an ``error`` event: it goes into a toast and a
+#: progress bar, neither of which wants a stack of a multi-line traceback.
+_ERROR_REASON_CHARS = 120
+_RATE_LIMIT_HINTS = ('rate limit', 'too many request', '429')
+
+
+def _check_error_reason(exc: BaseException) -> str:
+    """The one-line reason a failed check shows on the row and its toast.
+
+    A rate limit is named plainly - it is the failure a user can do
+    something about (wait) and the one whose raw text is useless.
+    Anything else is the exception's own message, collapsed onto one line
+    and trimmed, falling back to its class name when it has none.
+    """
+
+    text = ' '.join(str(exc).split())
+    lowered = text.lower()
+    if any(hint in lowered for hint in _RATE_LIMIT_HINTS):
+        return _RATE_LIMIT_REASON
+    return text[:_ERROR_REASON_CHARS] or type(exc).__name__
+
+
 async def check_watch(
     playlist: MonitoredPlaylist,
     db: PlaylistMonitorDB,
@@ -1452,8 +1480,9 @@ async def check_watch(
     running.
 
     ``monitor_check`` events bracket the check (``start`` / ``end``
-    with the downloaded count, or ``error``) so the web UI can show a
-    live progress bar for a manual "Check now".
+    with the downloaded count, or ``error`` carrying a short ``message``
+    reason) so the web UI can show a live progress bar for a manual
+    "Check now".
     """
 
     if playlist.id in _checks_running:
@@ -1493,13 +1522,14 @@ async def check_watch(
                     playlist.kind,
                 )
                 return 0
-        except Exception:
+        except Exception as exc:
             await _emit_check(
                 broadcast,
                 phase='error',
                 id=playlist.id,
                 name=playlist.name,
                 kind=playlist.kind,
+                message=_check_error_reason(exc),
             )
             raise
         await _emit_check(

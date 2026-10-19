@@ -779,6 +779,7 @@ export default {
     checkStarting: 'Démarrage…',
     checkFinished: '{count} nouveaux titres téléchargés',
     checkFailed: 'La vérification a échoué',
+    checkErrorReason: 'Check failed: {reason}',
     filterAll: 'Tout',
     filterPlaylists: 'Playlists',
     filterArtists: 'Artistes',

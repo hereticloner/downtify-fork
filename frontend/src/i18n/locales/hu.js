@@ -762,6 +762,7 @@ export default {
     checkStarting: 'Indul…',
     checkFinished: '{count} új szám letöltve',
     checkFailed: 'Az ellenőrzés sikertelen',
+    checkErrorReason: 'Check failed: {reason}',
     filterAll: 'Összes',
     filterPlaylists: 'Listák',
     filterArtists: 'Előadók',

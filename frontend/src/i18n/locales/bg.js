@@ -755,6 +755,7 @@ export default {
     checkStarting: 'Започва…',
     checkFinished: 'Изтеглени {count} нови песни',
     checkFailed: 'Проверката се провали',
+    checkErrorReason: 'Check failed: {reason}',
     filterAll: 'Всички',
     filterPlaylists: 'Плейлисти',
     filterArtists: 'Изпълнители',
