@@ -30,6 +30,7 @@ the existing file untouched.
 
 from __future__ import annotations
 
+import errno
 import os
 import shutil
 import threading
@@ -90,6 +91,14 @@ DEFAULT_RECHECK_DAYS = 30
 #: run is tens of thousands of tracks long and every message costs a
 #: count query plus a broadcast.
 _PUBLISH_INTERVAL_SECONDS = 1.0
+
+#: What a track on a read-only filesystem is told when it is left
+#: alone.
+_READ_ONLY_DETAIL = 'Read-only filesystem; original file left unchanged'
+
+#: Warned once per process: a read-only folder is a setup fact, not
+#: something to repeat for every track of a run.
+_read_only_warned = False
 
 
 @dataclass(frozen=True)
@@ -350,6 +359,50 @@ class UpgradeOutcome:
     changed: list[str] = field(default_factory=list)
     artwork_px: int = 0
     artwork_source: str = ''
+    #: False when the track was never really looked at (its folder
+    #: refuses writes), so its categories must stay due for a later run
+    #: instead of being remembered as checked.
+    checked: bool = True
+
+
+def _read_only_filesystem(path: Path) -> bool:
+    """Whether *path* sits somewhere that refuses writes.
+
+    Two signals, both cheap: the mount's own flags (a read-only bind
+    mount) and the permissions the process has on the folder the
+    upgrade writes into. Windows has no statvfs; the staging step still
+    reports any write failure there. An unexpected error while asking
+    is not a verdict on the folder, so it is never turned into a skip.
+    """
+
+    statvfs = getattr(os, 'statvfs', None)
+    if statvfs is not None:
+        read_only = getattr(os, 'ST_RDONLY', 1)
+        if any(
+            statvfs(target).f_flag & read_only
+            for target in (path, path.parent)
+        ):
+            return True
+    try:
+        # The working copy and the swap both happen in the track's own
+        # folder, so that is the one that has to accept writes.
+        return not os.access(path.parent, os.W_OK)
+    except OSError:
+        return False
+
+
+def _warn_read_only_once(path: Path) -> None:
+    """Say once that a folder refuses writes."""
+
+    global _read_only_warned
+    if _read_only_warned:
+        return
+    _read_only_warned = True
+    logger.warning(
+        'Library upgrade: {} is on a read-only filesystem; '
+        'the track was skipped and left unchanged',
+        path,
+    )
 
 
 @dataclass
@@ -447,6 +500,8 @@ def _write_upgrade(
     try:
         stage = _stage(full)
     except OSError as exc:
+        if exc.errno == errno.EROFS:
+            return _READ_ONLY_DETAIL
         return f'Could not stage a copy: {exc}'
 
     try:
@@ -516,6 +571,11 @@ def upgrade_track(
     if found is None:
         return UpgradeOutcome(JOB_SKIPPED, 'File is no longer in the library')
     full, entry = found
+    if _read_only_filesystem(full):
+        # Nothing can be written here, so the track is left alone
+        # instead of failing the whole run over it.
+        _warn_read_only_once(full)
+        return UpgradeOutcome(JOB_SKIPPED, _READ_ONLY_DETAIL, checked=False)
 
     spotify_id = (
         deps.spotify_id_for(stored_path) or ''
@@ -559,6 +619,11 @@ def upgrade_track(
         new_lyrics=new_lyrics,
         write_tags=bool(changed),
     )
+    if error == _READ_ONLY_DETAIL:
+        # The folder turned read-only while the track was being worked
+        # on: the same skip, reported the same way.
+        _warn_read_only_once(full)
+        return UpgradeOutcome(JOB_SKIPPED, error, checked=False)
     if error:
         return UpgradeOutcome(JOB_FAILED, error)
 
@@ -860,10 +925,12 @@ class LibraryUpgradeRunner:
             detail=outcome.detail,
             changed=outcome.changed,
         )
-        if outcome.status != JOB_FAILED:
+        if outcome.status != JOB_FAILED and outcome.checked:
             # Only the categories this run actually looked at: the rest
             # stay due, so a later run for them still considers the
-            # track.
+            # track. A track that was skipped because its folder
+            # refuses writes was not looked at at all, so it stays due
+            # too, and is considered again once the folder is writable.
             self.db.record_check(
                 stored,
                 todo,
