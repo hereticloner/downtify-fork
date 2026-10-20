@@ -1,7 +1,7 @@
 FROM mwader/static-ffmpeg:latest AS ffmpeg-bin
 FROM denoland/deno:alpine AS deno
 
-FROM python:3.14-alpine AS builder
+FROM python:3.15-alpine AS builder
 
 WORKDIR /build
 
@@ -25,7 +25,7 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-FROM python:3.14-alpine
+FROM python:3.15-alpine
 
 LABEL maintainer="Henrique Sebastião <contato@henriquesebastiao.com>"
 LABEL version="3.4.0"
