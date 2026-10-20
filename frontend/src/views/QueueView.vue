@@ -209,6 +209,7 @@ import {
 } from '/src/model/incompletePlaylists'
 import { useUi } from '/src/model/ui'
 import { queueRowEstimate } from '/src/lib/queueList'
+import { shouldJumpToActive } from '/src/lib/queueTab'
 import { friendlyError } from '/src/lib/errors'
 import { useI18n } from '/src/i18n'
 import API from '/src/model/api'
@@ -258,11 +259,11 @@ const tab = computed(() => {
   return counts.value.active || counts.value.queued ? 'active' : 'all'
 })
 
-// Jump to "In progress" as soon as something starts downloading.
+// Jump to "In progress" as soon as downloads start.
 watch(
   () => counts.value.active,
   (now, before) => {
-    if (now > (before ?? 0) && tab.value !== 'active') {
+    if (shouldJumpToActive(now, before, tab.value)) {
       router.replace({ name: 'Queue', params: { tab: 'active' } })
     }
   }
