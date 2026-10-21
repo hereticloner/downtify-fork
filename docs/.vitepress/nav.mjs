@@ -28,6 +28,10 @@ export const NAV = [
       { title: 'Top Songs', page: 'features/top-songs.md' },
       { title: 'Library Import (CSV)', page: 'features/library-import.md' },
       { title: 'Built-in Player', page: 'features/player.md' },
+      {
+        title: 'Streaming & Similar Tracks',
+        page: 'features/streaming.md',
+      },
       { title: 'Liked Songs', page: 'features/liked-songs.md' },
       { title: 'Discover', page: 'features/discover.md' },
       { title: 'Users & Sign-in', page: 'features/users.md' },

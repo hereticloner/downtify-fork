@@ -262,6 +262,16 @@ working without changes:
 * ``WS   /api/ws`` (also ``library_changed``, ``device_paired``
   messages; a device token, session cookie or ``?ticket=`` is needed)
 * ``GET  /api/check_update``
+* ``GET  /api/similar/tracks`` (tracks similar to ``?artist=&track=`` -
+  YouTube Music's own radio mix for the seed; ``{artist, track, source,
+  tracks}``)
+* ``GET  /api/stream`` (``?video_id=`` - a fresh direct-audio URL for a
+  track that isn't downloaded; nothing is stored)
+* ``GET  /api/stream/file`` (``?video_id=&duration=`` - the same audio
+  downloaded once into ``/data/stream_cache`` and served from here
+  with seeking support)
+* ``POST /api/stream/prefetch`` (``{video_id}`` - start caching a
+  track's audio in the background) - see ``downtify/stream.py``
 """
 
 from __future__ import annotations
@@ -314,6 +324,7 @@ from . import (
     spotify_mirror,
     spotify_sync,
     storage,
+    stream,
 )
 from .activity import ActivityLog, NowPlaying, describe_user_agent
 from .auth import (
@@ -339,8 +350,10 @@ from .downloader import (
     AUDIO_PROVIDERS,
     DOWNLOAD_EXECUTOR,
     MAX_PARALLEL_DOWNLOADS,
+    MAX_TRACK_DURATION_SECONDS,
     Downloader,
     NoAudioMatchError,
+    TrackTooLongError,
     save_playlist_cover,
 )
 from .errors import ApiError
@@ -423,11 +436,13 @@ from .playlist_spotify_cache import (
     fetch_playlist_tracks,
 )
 from .server_identity import ServerIdentity
+from .stream import StreamCache
 from .track_index import (
     TrackIndex,
     normalize_spotify_track_id,
     resolve_existing_download,
 )
+from .traffic import DIRECTION_IN, TrafficCounters
 from .transcode import Transcoder
 from .update_check import UpdateChecker
 
@@ -609,6 +624,24 @@ def _clamp_download_delay(value: Any) -> float:
     return min(
         MAX_DOWNLOAD_DELAY_SECONDS, max(MIN_DOWNLOAD_DELAY_SECONDS, delay)
     )
+
+
+def _max_track_duration_seconds() -> int:
+    """The live bound on how long a track may be, in seconds.
+
+    Streams only: the bound a track is held to before it is fetched
+    (see :mod:`downtify.stream`). ``0`` takes everything, anything else
+    lands inside ``[60, MAX_TRACK_DURATION_SECONDS]``.
+    """
+
+    raw = state.settings.get('max_track_duration_seconds')
+    try:
+        seconds = int(raw)
+    except (TypeError, ValueError):
+        return int(MAX_TRACK_DURATION_SECONDS)
+    if seconds <= 0:
+        return 0
+    return min(MAX_TRACK_DURATION_SECONDS, max(60, seconds))
 
 
 _UI_LANGUAGE_RE = re.compile(r'[a-z]{2}(-[A-Z]{2})?')
@@ -1035,6 +1068,12 @@ class AppState:
     transcoder: Optional[Transcoder] = None
     cover_thumbs: Optional[CoverThumbs] = None
     discovery: Any = None
+    # The on-disk cache of streamed audio (see downtify/stream.py):
+    # opened at startup, serves GET /api/stream/file.
+    stream_cache: Optional[StreamCache] = None
+    # Per-user byte counters (see downtify/traffic.py); opened at
+    # startup, counts what the server fetched upstream per account.
+    traffic: Optional[TrafficCounters] = None
 
 
 state = AppState()
@@ -1204,6 +1243,12 @@ async def shutdown_resources() -> None:
             state.upgrade_runner.pause()
         except Exception:
             logger.exception('Library upgrade: could not pause on shutdown')
+
+    if state.traffic is not None:
+        try:
+            await asyncio.to_thread(state.traffic.flush)
+        except Exception:
+            logger.exception('Traffic counters: could not save on shutdown')
 
     try:
         loop = asyncio.get_running_loop()
@@ -6231,6 +6276,184 @@ async def song_preview_endpoint(
     except ValueError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     return {'preview_url': url}
+
+
+def _request_user_id(request: Optional[Request]) -> int:
+    """The signed-in user's id (``0`` for an anonymous request)."""
+
+    principal = principal_of(request) if request is not None else None
+    return int(getattr(principal, 'user_id', 0) or 0)
+
+
+def record_stream_fetch_traffic(video_path: Path, user_id: int) -> None:
+    """Count a stream-cache fetch's bytes as upstream traffic.
+
+    Only the fetch is counted, and only once per file: a file that was
+    already in the cache served no upstream bytes this time.
+    """
+
+    if not user_id or state.traffic is None:
+        return
+    try:
+        state.traffic.add(user_id, DIRECTION_IN, video_path.stat().st_size)
+    except Exception:
+        logger.opt(exception=True).debug(
+            'Could not record stream traffic for {}', video_path
+        )
+
+
+@router.get('/api/similar/tracks')
+async def similar_tracks_endpoint(
+    artist: str = Query('', max_length=200),
+    track: str = Query('', max_length=200),
+    limit: int = Query(20, ge=1, le=50),
+) -> dict[str, Any]:
+    """Tracks similar to *track* by *artist*, from YouTube Music's own
+    radio mix for the track (see
+    ``downtify.providers.youtube_similar_tracks``). Either *artist*
+    or *track* alone is enough for a seed.
+
+    Response ``{artist, track, source, tracks}`` - downloadable song
+    rows plus ``match``. ``502`` when YouTube Music can't be used.
+    """
+
+    try:
+        return await asyncio.to_thread(
+            providers.youtube_similar_tracks,
+            artist,
+            track,
+            limit=limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get('/api/stream')
+async def stream_endpoint(
+    video_id: str = Query(..., min_length=1, max_length=64),
+) -> dict[str, str]:
+    """A track's full audio as a fresh direct URL (``?video_id=``).
+
+    What plays a song that isn't downloaded yet: no download, no tags,
+    nothing stored. The URL is short-lived and bound to this server's
+    network, so it is fetched on demand and never cached or persisted -
+    ask again rather than storing it. ``400`` for a malformed id,
+    ``503`` when YouTube can't be reached or refuses (including
+    age-gated tracks without usable cookies - see Settings > YouTube
+    cookies).
+    """
+
+    try:
+        vid = stream.clean_video_id(video_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    try:
+        cookies = await asyncio.to_thread(
+            stream.resolve_cookies_file, state.cookies_store
+        )
+        resolved = await asyncio.to_thread(
+            stream.stream_url_for_video, vid, cookies_file=cookies
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {'url': resolved['url']}
+
+
+@router.get('/api/stream/file')
+async def stream_file_endpoint(
+    request: Request,
+    video_id: str = Query(..., min_length=1, max_length=64),
+    duration: float = Query(0, ge=0),
+) -> FileResponse:
+    """A track's full audio, downloaded once and served from this server.
+
+    ``GET /api/stream/file?video_id=`` is what plays a song that isn't
+    downloaded yet: the first request downloads the audio into
+    ``/data/stream_cache`` (concurrent requests for the same video
+    share one download), later ones are served from disk. Served with
+    seeking support, pruned least-recently-used past
+    ``DOWNTIFY_STREAM_CACHE_MB`` (see ``downtify.stream``). ``duration``
+    (seconds, when the caller knows it) refuses long tracks before any
+    download; the served file is probed either way. ``400`` for a
+    malformed id or a track past the duration limit, ``503`` when
+    YouTube can't provide the audio.
+    """
+
+    try:
+        vid = stream.clean_video_id(video_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    limit = _max_track_duration_seconds()
+    if limit and duration > limit:
+        raise HTTPException(
+            status_code=400, detail=stream.too_long_detail(limit)
+        )
+    cache = state.stream_cache
+    if cache is None:
+        raise HTTPException(
+            status_code=503, detail='Streaming is not ready yet'
+        )
+    cookies = stream.resolve_cookies_file(state.cookies_store)
+    was_cached = await asyncio.to_thread(cache.cached_path, vid) is not None
+    try:
+        path = await cache.get(vid, cookies_file=cookies, max_seconds=limit)
+    except TrackTooLongError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    if not was_cached:
+        record_stream_fetch_traffic(path, _request_user_id(request))
+    return FileResponse(
+        str(path),
+        media_type=stream.media_type_for(path),
+        filename=f'{vid}{path.suffix}',
+    )
+
+
+async def _prefetch_stream_video(
+    cache: StreamCache,
+    video_id: str,
+    cookies_file: str,
+    max_seconds: Optional[int] = None,
+) -> None:
+    """Cache one video's audio in the background (never raises)."""
+
+    try:
+        await cache.get(
+            video_id, cookies_file=cookies_file, max_seconds=max_seconds
+        )
+    except Exception:
+        logger.debug('Stream prefetch failed for videoId={}', video_id)
+
+
+@router.post('/api/stream/prefetch')
+async def stream_prefetch_endpoint(request: Request) -> dict[str, bool]:
+    """Start caching a video's audio without waiting for it.
+
+    Body ``{video_id}``; answers ``{queued: true}`` at once while the
+    download continues detached, so the player can warm the next track
+    up while the current one is still loading. ``400`` for a malformed
+    id, ``503`` when streaming isn't ready.
+    """
+
+    payload = await _json_object(request)
+    try:
+        vid = stream.clean_video_id(payload.get('video_id'))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    cache = state.stream_cache
+    if cache is None:
+        raise HTTPException(
+            status_code=503, detail='Streaming is not ready yet'
+        )
+    cookies = stream.resolve_cookies_file(state.cookies_store)
+    spawn_task(
+        _prefetch_stream_video(
+            cache, vid, cookies, _max_track_duration_seconds()
+        ),
+        name=f'stream-prefetch-{vid}',
+    )
+    return {'queued': True}
 
 
 @router.post('/api/discover/listens')

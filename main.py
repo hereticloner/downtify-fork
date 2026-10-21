@@ -112,8 +112,10 @@ from downtify.server_port import (
     set_restart_handler,
     write_runtime_port,
 )
+from downtify.stream import stream_cache_from_env
 from downtify.telemetry import redact_url_secrets
 from downtify.track_index import TrackIndex
+from downtify.traffic import TrafficCounters, traffic_flush_loop
 from downtify.transcode import transcoder_from_env
 from downtify.update_check import UpdateChecker, update_check_loop
 
@@ -463,9 +465,15 @@ def _open_library_stores(monitor_db_path: Path) -> bool:
     )
     api.state.lyrics_cache = LyricsLookupCache(library_db)
     api.state.likes = LikedTracks(library_db)
+    # Per-user byte counters (downtify/traffic.py): what the server
+    # fetched upstream, per account.
+    api.state.traffic = TrafficCounters(library_db)
     # The mobile API (downtify/mobile_routes.py).
     api.state.library_sync = LibrarySync(library_db)
     api.state.transcoder = transcoder_from_env(DATABASE_DIR)
+    # The on-disk cache of streamed audio (downtify/stream.py): what
+    # GET /api/stream/file serves.
+    api.state.stream_cache = stream_cache_from_env(DATABASE_DIR)
     api.state.cover_thumbs = CoverThumbs(DATABASE_DIR / 'cover_thumbs')
     api.state.discover = DiscoverStore(library_db)
     api.state.cover_cache = CoverArtCache(DATABASE_DIR / 'cover_cache')
@@ -651,6 +659,12 @@ def build_app() -> FastAPI:
                 get_library=api.library_stores,
             ),
             name='monitor-loop',
+        )
+        # Counted bytes are held in memory (an event-loop write per
+        # response stalled every request); this saves them.
+        api.spawn_task(
+            traffic_flush_loop(lambda: api.state.traffic),
+            name='traffic-flush',
         )
         # Separate hourly sweep that forgets a downloaded-track record once
         # its file is gone from the downloads directory — see

@@ -63,6 +63,25 @@ class NoAudioMatchError(RuntimeError):
     """No enabled audio provider found a source for the song."""
 
 
+#: Songs longer than this are refused before any stream fetch: mixes and
+#: hour-long uploads are never what a library track should be. The
+#: stream cache enforces it for every caller (see ``downtify.stream``),
+#: whatever the caller asked for.
+MAX_TRACK_DURATION_SECONDS = 600
+
+
+class TrackTooLongError(RuntimeError):
+    """The song's known duration is past the duration limit."""
+
+
+def describe_duration(seconds: float) -> str:
+    """``90`` → ``"90 seconds"``, ``600`` → ``"10 minutes"``."""
+
+    if seconds >= 90:
+        return f'{seconds / 60:.0f} minutes'
+    return f'{seconds:.0f} seconds'
+
+
 # Upper bound of the "Parallel downloads" setting (see api.py's clamp).
 MAX_PARALLEL_DOWNLOADS = 30
 

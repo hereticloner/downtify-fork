@@ -2077,6 +2077,49 @@ Only a Deezer song by that artist with that title counts (both compared ignoring
 
 ---
 
+## Streaming
+
+Full-track audio for a song that isn't in the library. See [Streaming & Similar Tracks](features/streaming.md).
+
+### `GET /api/stream/file`
+
+A track's full audio, downloaded once into `/data/stream_cache` and served from this server with seeking support. This is what keeps playback working where the client itself can't reach YouTube (or only slowly): the only YouTube traffic is server-side, and the second play of a track never touches YouTube at all.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `video_id` | string | yes | The song's YouTube video id (11 characters) |
+| `duration` | number | no | The track's length in seconds, when the caller knows it — refused before any download when over 10 minutes |
+
+The first request for a video downloads it (concurrent requests share one download); the cache is pruned least-recently-used past `DOWNTIFY_STREAM_CACHE_MB` (default 1024) with at most `DOWNTIFY_STREAM_CONCURRENCY` downloads at once (default 2). `400` for a malformed id and for tracks over 10 minutes (the served file's probed length is enforced either way, so long uploads never accumulate), `503` when YouTube can't provide the audio — including age-gated tracks without usable cookies (see [YouTube Cookies](features/youtube-cookies.md)). A stream never lands in the library or the activity log.
+
+### `POST /api/stream/prefetch`
+
+Start caching a video's audio without waiting for it. Body `{ "video_id": "…" }`; answers `{ "queued": true }` at once while the download continues detached. `400` for a malformed id, `503` when streaming isn't ready.
+
+### `GET /api/stream`
+
+The same audio as a fresh direct URL (`{ "url": "https://r1---sn.googlevideo.com/…" }`, usually AAC) — for third-party clients that can reach YouTube themselves. Short-lived and bound to the server's network: fetch it on demand, never cache or persist it. Same `400`/`503` contract as above.
+
+---
+
+## Similar tracks
+
+### `GET /api/similar/tracks`
+
+Tracks similar to one track, from YouTube Music's own radio mix for it. Needs no key. See [Streaming & Similar Tracks](features/streaming.md).
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `artist` | string | either this or `track` | The seed track's artist (a bare artist seeds from its top hit) |
+| `track` | string | either this or `artist` | The seed track's title |
+| `limit` | number | no | How many similar tracks to return (default `20`, max `50`) |
+
+**Response:** `{ "artist": "Cher", "track": "Believe", "source": "youtube", "tracks": [{ "song_id": "…", "name": "Strong Enough", "artists": ["Cher"], "cover_url": "https://…", "duration": 224, "url": "https://music.youtube.com/watch?v=…", "match": 0.9 }] }` — full song objects plus `match`, which decays with the row's position since YouTube gives no score.
+
+`502` when YouTube Music can't be used (unknown track, network). Rows stream through [`GET /api/stream/file`](#get-apistreamfile) for playback and download straight away.
+
+---
+
 ## Playlist downloads
 
 Spotify playlists downloaded through `POST /api/download/batch`, checked against Spotify for missing tracks. See [Playlist downloads](features/slskd-navidrome.md#playlist-downloads).
