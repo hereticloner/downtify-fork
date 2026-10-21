@@ -321,7 +321,8 @@ class PlaylistMonitorDB:
         # Shared tuning: WAL + a 30 s busy timeout. This DB is written
         # all through a sweep (one row per downloaded track); without it
         # a page request reading the same file during a sweep hit
-        # SQLite's short default lock and answered 500s.
+        # SQLite's short default lock and answered 500s. The shared
+        # helper also closes the connection when its with-block ends.
         conn = connect_sqlite(self._path, row_factory=True)
         conn.execute('PRAGMA foreign_keys = ON')
         return conn

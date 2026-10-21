@@ -59,6 +59,8 @@ In **Settings → Users** an admin can:
 - **Delete** a user — their apps are unpaired and their browsers signed out. What they downloaded stays in the library.
 - **Sign out everyone** — every app of every user is unpaired and every browser signed out, yours too.
 
+Signing out, unpairing an app and changing an account all take effect at once: the server keeps a checked sign-in in memory for up to 30 seconds, but drops it the moment any of those happens.
+
 There's always at least one admin: the last one can't be deleted or made a user, and you can't delete your own account.
 
 ## Activity

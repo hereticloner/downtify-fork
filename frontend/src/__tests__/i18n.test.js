@@ -1,3 +1,8 @@
+/**
+ * Runtime behaviour of the i18n layer: key parity lives in the
+ * dedicated gate `i18nParity.test.js`, this file covers `t()`,
+ * placeholder interpolation and plural selection.
+ */
 import { afterEach, describe, expect, it } from 'vitest'
 import { AVAILABLE_LOCALES, setLocale, t } from '../i18n'
 import en from '../i18n/locales/en.js'
