@@ -64,6 +64,10 @@ export const NAV = [
       },
       { title: 'Install as an App (PWA)', page: 'features/pwa.md' },
       { title: 'Update Notifications', page: 'features/updates.md' },
+      {
+        title: 'Upstream Port (W1)',
+        page: 'features/upstream-port-w1.md',
+      },
     ],
   },
   { title: 'How It Works', page: 'how-it-works.md' },
