@@ -187,6 +187,33 @@ export default {
     empty: 'Nada na parada por enquanto',
     playlist: 'Playlist',
   },
+  similar: {
+    title: 'Similar',
+    subtitle: 'Tracks that sound like one you name, from YouTube Music.',
+    artist: 'Artist',
+    artistPlaceholder: 'Cher',
+    track: 'Track',
+    trackPlaceholder: 'Believe',
+    searchButton: 'Find similar',
+    resultsFor: 'Like “{track}” by {artist}',
+    resultsForArtist: 'Like {artist}',
+    resultsForTrack: 'Like “{track}”',
+    failed: "Couldn't find similar tracks",
+    noResults: 'Nothing similar found',
+    noResultsHint: 'Check the spelling — YouTube is picky about titles.',
+    findSimilar: 'Find similar tracks',
+    noDownloadMatch: 'No downloadable match for “{name}”',
+    resolveFailed: "Couldn't look that track up for download",
+    tipSimilarTitle: 'Start from one track',
+    tipSimilarBody:
+      'Type the artist or the track — YouTube answers with what plays next after it.',
+    tipDownloadTitle: 'Hear it all',
+    tipDownloadBody:
+      'Every row plays in full in the player; download the ones you like.',
+  },
+  stream: {
+    failed: "Couldn't stream “{name}”.",
+  },
   finder: {
     placeholder: 'Busque um artista, álbum ou música',
     resultsFor: 'Resultados para “{query}”',
