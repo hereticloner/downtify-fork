@@ -1,12 +1,16 @@
+// Browser location, or safe defaults when this module is evaluated
+// without a DOM (the Vitest suite imports the API client directly).
+const location =
+  typeof window !== 'undefined' && window.location ? window.location : {}
+
 const config = {
-  PROTOCOL: process.env.PROTOCOL || window.location.protocol,
+  PROTOCOL: process.env.PROTOCOL || location.protocol || 'http:',
   WS_PROTOCOL:
-    process.env.WS_PROTOCOL || window.location.protocol === 'https:'
-      ? 'wss:'
-      : 'ws:',
-  BACKEND: process.env.BACKEND || window.location.hostname,
-  PORT: process.env.PORT || window.location.port,
-  WS_PORT: process.env.WS_PORT || window.location.port,
+    process.env.WS_PROTOCOL ||
+    (location.protocol === 'https:' ? 'wss:' : 'ws:'),
+  BACKEND: process.env.BACKEND || location.hostname || '',
+  PORT: process.env.PORT || location.port || '',
+  WS_PORT: process.env.WS_PORT || location.port || '',
   BASEURL: process.env.BASEURL || '',
 }
 

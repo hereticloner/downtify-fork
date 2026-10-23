@@ -62,7 +62,13 @@ function socketURL() {
 
 function connect() {
   if (typeof WebSocket === 'undefined') return
-  socket = new WebSocket(socketURL())
+  try {
+    socket = new WebSocket(socketURL())
+  } catch {
+    // An unusable config (or a runtime without a socket) must not take
+    // the whole API client down with it.
+    return
+  }
   socket.onopen = () => {
     retryDelay = 1000
   }
@@ -173,6 +179,25 @@ function finderTrackCounts(albumIds) {
 
 function finderAlbum(albumId) {
   return API.get('/api/finder/album', { params: { album_id: albumId } })
+}
+
+// ── Similar tracks (YouTube Music) ───────────────────────────────
+// Tracks similar to one track, by artist + title - see
+// downtify/providers.py. Needs no key.
+function getSimilarTracks(artist, track, limit = 20) {
+  return API.get('/api/similar/tracks', { params: { artist, track, limit } })
+}
+
+// A track's full audio as a fresh direct URL - the player behind a song
+// that isn't downloaded yet. Short-lived: fetched on demand, never stored.
+function getStreamUrl(videoId) {
+  return API.get('/api/stream', { params: { video_id: videoId } })
+}
+
+// Start caching a video's audio on the server without waiting for it -
+// how the player warms the next track up. Never fails the caller.
+function prefetchStream(videoId) {
+  return API.post('/api/stream/prefetch', { video_id: videoId })
 }
 
 // ── Artist photo & banner ───────────────────────────────────────────
@@ -904,6 +929,9 @@ export default {
   getDiscoverDeezerCollections,
   getDiscoverSpotifyCollections,
   findPreview,
+  getSimilarTracks,
+  getStreamUrl,
+  prefetchStream,
   recordListen,
   clearListens,
   getBlockedArtists,
