@@ -58,6 +58,30 @@ export function streamTrack(song, url, videoId) {
 }
 
 /**
+ * The player track behind a song: the library's once it's downloaded,
+ * else an unstored stream the player resolves when its turn comes
+ * (`url` still empty). Pure, so list-building callers (Similar) stay
+ * testable without the player.
+ */
+export function songToPlayerTrack(song, findTrack) {
+  const found = findTrack ? findTrack(songArtist(song), songTitle(song)) : null
+  if (found) return found
+  return {
+    file: '',
+    stream: true,
+    video_id: directVideoId(song),
+    title: songTitle(song),
+    artist: songArtist(song),
+    album: String(song?.album_name || song?.album || ''),
+    albumArtist: songArtist(song),
+    cover: String(song?.cover_url || ''),
+    hasCover: !!song?.cover_url,
+    url: '',
+    duration: Number(song?.duration) || 0,
+  }
+}
+
+/**
  * Play `song` in full through the built-in player. Resolves `false`
  * when there is nothing to play (the caller toasts); anything else the
  * caller can't fix surfaces the same way.

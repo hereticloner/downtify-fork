@@ -33,7 +33,12 @@ import {
   songTitle,
   warmServerCache,
 } from '../model/streamResolve.js'
-import { resolvingFor, streamTrack, useStream } from '../model/stream.js'
+import {
+  resolvingFor,
+  songToPlayerTrack,
+  streamTrack,
+  useStream,
+} from '../model/stream.js'
 
 const SONG = {
   name: 'Believe',
@@ -111,5 +116,45 @@ describe('stream row helpers', () => {
     expect(resolvingFor(SONG)).toBe(true)
     expect(resolvingFor({ name: 'Other', artists: ['Cher'] })).toBe(false)
     resolvingKey.value = ''
+  })
+})
+
+describe('songToPlayerTrack', () => {
+  it('maps a downloaded song to its library track', () => {
+    const found = { file: 'Cher - Believe.mp3', title: 'Believe' }
+    const findTrack = (artist, title) =>
+      artist === 'Cher' && title === 'Believe' ? found : null
+    expect(songToPlayerTrack(SONG, findTrack)).toBe(found)
+  })
+
+  it('maps a not-downloaded song to an unresolvable-until-played stream', () => {
+    expect(songToPlayerTrack(SONG, () => null)).toEqual({
+      file: '',
+      stream: true,
+      video_id: '',
+      title: 'Believe',
+      artist: 'Cher',
+      album: '',
+      albumArtist: 'Cher',
+      cover: 'https://img/xl',
+      hasCover: true,
+      url: '',
+      duration: 0,
+    })
+  })
+
+  it('keeps a known video id pinned to one version', () => {
+    const track = songToPlayerTrack(
+      { ...SONG, song_id: 'dQw4w9WgXcQ', duration: 224 },
+      () => null
+    )
+    expect(track.video_id).toBe('dQw4w9WgXcQ')
+    expect(track.duration).toBe(224)
+  })
+
+  it('still works without a finder (pure list mapping)', () => {
+    expect(songToPlayerTrack(SONG, null)).toEqual(
+      songToPlayerTrack(SONG, undefined)
+    )
   })
 })

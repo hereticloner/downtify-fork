@@ -143,6 +143,17 @@ export function useTrackActions() {
           router.push({ name: 'Artist', query: { name: track.albumArtist } }),
       },
       {
+        // Tracks like this one: opens the Similar page searching for it.
+        label: t('similar.findSimilar'),
+        icon: 'wand',
+        hidden: !track.artist || !track.title,
+        action: () =>
+          router.push({
+            name: 'Similar',
+            query: { artist: track.artist, track: track.title },
+          }),
+      },
+      {
         label: t('library.saveToDevice'),
         icon: 'download',
         action: () => saveToDevice(track),
