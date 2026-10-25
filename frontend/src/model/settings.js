@@ -75,6 +75,7 @@ const settings = ref({
   organize_by_album: true,
   max_parallel_downloads: 3,
   download_delay_seconds: 0,
+  max_track_duration_seconds: 600,
   external_sync_delay_seconds: 0,
   cover_resolution: 600,
   download_cover_art: true,
@@ -88,6 +89,12 @@ const MAX_PARALLEL_DOWNLOADS = 30
 
 const MIN_DOWNLOAD_DELAY_SECONDS = 0
 const MAX_DOWNLOAD_DELAY_SECONDS = 300
+
+// The longest a streamed track may be, in seconds (0 = no bound); the
+// backend clamps it the same way, see MAX_TRACK_DURATION_SECONDS in
+// downtify/downloader.py - keep the two in step.
+const MIN_TRACK_DURATION_SECONDS = 0
+const MAX_TRACK_DURATION_SECONDS = 600
 
 const MIN_COVER_RESOLUTION = 300
 const MAX_COVER_RESOLUTION = 1200
@@ -107,6 +114,9 @@ const settingsOptions = {
   download_delay_seconds_presets: [0, 5, 15, 30, 60],
   download_delay_seconds_min: MIN_DOWNLOAD_DELAY_SECONDS,
   download_delay_seconds_max: MAX_DOWNLOAD_DELAY_SECONDS,
+  max_track_duration_seconds_presets: [0, 60, 120, 300, 600],
+  max_track_duration_seconds_min: MIN_TRACK_DURATION_SECONDS,
+  max_track_duration_seconds_max: MAX_TRACK_DURATION_SECONDS,
   external_sync_delay_seconds_presets: [0, 5, 15, 30, 60],
   external_sync_delay_seconds_min: MIN_DOWNLOAD_DELAY_SECONDS,
   external_sync_delay_seconds_max: MAX_DOWNLOAD_DELAY_SECONDS,
@@ -151,6 +161,14 @@ export function clampDownloadDelaySeconds(value) {
 }
 
 export const clampExternalSyncDelaySeconds = clampDownloadDelaySeconds
+
+/** The stream cap in seconds: `0` (no bound) or `[60, MAX]`. */
+export function clampTrackDurationSeconds(value) {
+  const parsed = Number.parseInt(value, 10)
+  if (Number.isNaN(parsed)) return 600
+  if (parsed <= 0) return MIN_TRACK_DURATION_SECONDS
+  return Math.min(MAX_TRACK_DURATION_SECONDS, Math.max(60, parsed))
+}
 
 export function clampCoverResolution(value) {
   const parsed = Number.parseInt(value, 10)
