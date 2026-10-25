@@ -15,7 +15,7 @@
     <span role="columnheader" class="w-12 text-right">
       <AppIcon name="clock" :size="14" class="inline" />
     </span>
-    <span class="w-28 shrink-0" aria-hidden="true" />
+    <span :class="[actionsWidth, 'shrink-0']" aria-hidden="true" />
   </div>
 </template>
 
@@ -32,6 +32,9 @@ defineProps({
   selectable: { type: Boolean, default: false },
   // Matches TrackDownPlay's own `hideAlbum`.
   hideAlbum: { type: Boolean, default: false },
+  // Matches the rows' action column width (TrackDownPlay keeps `w-28`;
+  // the Similar rows carry the wand extra, so they ask for `w-40`).
+  actionsWidth: { type: String, default: 'w-28' },
 })
 
 const { t } = useI18n()

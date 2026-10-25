@@ -188,6 +188,35 @@ export default {
     empty: 'Şu anda listede bir şey yok',
     playlist: 'Çalma listesi',
   },
+  similar: {
+    title: 'Benzer',
+    subtitle:
+      'Adını verdiğiniz bir parçaya benzeyen parçalar, YouTube Music’ten.',
+    artist: 'Sanatçı',
+    artistPlaceholder: 'Cher',
+    track: 'Parça',
+    trackPlaceholder: 'Believe',
+    searchButton: 'Benzerlerini bul',
+    resultsFor: '“{track}” — {artist} benzeri',
+    resultsForArtist: '{artist} benzeri',
+    resultsForTrack: '“{track}” benzeri',
+    failed: 'Benzer parçalar bulunamadı',
+    noResults: 'Benzer bir şey bulunamadı',
+    noResultsHint:
+      'Yazımı kontrol edin — YouTube başlıklar konusunda titizdir.',
+    findSimilar: 'Benzer parçaları bul',
+    noDownloadMatch: '“{name}” için indirilebilir eşleşme yok',
+    resolveFailed: 'Bu parça indirme için aranamadı',
+    tipSimilarTitle: 'Tek bir parçadan başlayın',
+    tipSimilarBody:
+      'Sanatçıyı ya da parçayı yazın — YouTube ondan sonra ne çalacağını söyler.',
+    tipDownloadTitle: 'Hepsini dinleyin',
+    tipDownloadBody:
+      'Her satır oynatıcıda tam olarak çalar; beğendiklerinizi indirin.',
+  },
+  stream: {
+    failed: '“{name}” oynatılamadı.',
+  },
   finder: {
     placeholder: 'Sanatçı, albüm veya şarkı arayın',
     resultsFor: '“{query}” için sonuçlar',

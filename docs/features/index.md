@@ -11,6 +11,7 @@ Downtify covers everything you need to build and maintain a local music library 
 | Feature | What it does |
 |---------|-------------|
 | [Charts](charts.md) | Browse Deezer's global chart and download whatever is trending |
+| [Similar](similar.md) | Find tracks that sound like one you name, from YouTube Music's radio mix |
 | [Finder](finder.md) | Search Deezer, then browse an artist, their albums and any album's tracks in columns |
 | [Download Settings](download-settings.md) | Choose format (MP3/FLAC/M4A/OGG/OPUS), bitrate, parallel downloads and delay between downloads |
 | [Queue](queue.md) | Pause and resume the whole download queue from the Queue page |
@@ -18,6 +19,7 @@ Downtify covers everything you need to build and maintain a local music library 
 | [Top Songs](top-songs.md) | Paste an artist link and download their most popular songs, optionally as a playlist |
 | [Library Import (CSV)](library-import.md) | Import a library export from Soundiiz, TuneMyMusic or Exportify and queue the whole thing |
 | [Built-in Player](player.md) | Play your library in the browser: queue management, synced lyrics, sleep timer, keyboard and media keys |
+| [Streaming & Similar Tracks](streaming.md) | Play a track in full without downloading it into your library, and find tracks that sound like one you name |
 | [Liked songs](liked-songs.md) | Heart a song to like it; a playlist of everything you have liked appears on its own |
 | [Users & Sign-in](users.md) | Username and password sign-in (`admin` / `downtify` on a new server), admin and normal user accounts, per-user preferences, and an activity log of sign-ins and what everyone plays |
 | [Replace Audio](replace-audio.md) | Wrong song or version? Pick the right one on YouTube Music or YouTube; the file keeps its name, tags and playlists |

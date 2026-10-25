@@ -98,14 +98,20 @@ describe('usePlayer initial volume', () => {
   })
 
   it('starts at max volume on a mobile-width viewport, ignoring a saved level', async () => {
-    globalThis.window = { innerWidth: 375 }
+    globalThis.window = {
+      innerWidth: 375,
+      location: { protocol: 'http:', hostname: 'localhost', port: '' },
+    }
     globalThis.localStorage = { getItem: () => '0.3', setItem: () => {} }
     const { usePlayer } = await import('../model/player.js')
     expect(usePlayer().volume.value).toBe(1)
   })
 
   it('restores the saved volume on a desktop-width viewport', async () => {
-    globalThis.window = { innerWidth: 1280 }
+    globalThis.window = {
+      innerWidth: 1280,
+      location: { protocol: 'http:', hostname: 'localhost', port: '' },
+    }
     globalThis.localStorage = { getItem: () => '0.3', setItem: () => {} }
     const { usePlayer } = await import('../model/player.js')
     expect(usePlayer().volume.value).toBe(0.3)
@@ -144,6 +150,11 @@ describe('usePlayer queue', () => {
 
   beforeEach(async () => {
     vi.resetModules()
+    globalThis.window = {
+      innerWidth: 1280,
+      location: { protocol: 'http:', hostname: 'localhost', port: '' },
+      addEventListener: () => {},
+    }
     globalThis.localStorage = { getItem: () => null, setItem: () => {} }
     globalThis.Audio = FakeAudio
     const { usePlayer } = await import('../model/player.js')

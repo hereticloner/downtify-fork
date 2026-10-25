@@ -5,10 +5,21 @@
 export const PANEL_IDS = ['lyrics', 'queue', 'details', 'equalizer']
 
 /**
- * The panels on offer: the lyrics one only while lyrics are shown.
+ * The panels on offer: the lyrics one only while lyrics are shown, and
+ * never for a podcast episode or a streamed track - there is no file
+ * behind either's lyrics tab. A stream has no file behind "details"
+ * either, so that tab goes with it.
  */
-export function availablePanels({ lyrics = true } = {}) {
-  return PANEL_IDS.filter((id) => id !== 'lyrics' || lyrics)
+export function availablePanels({
+  lyrics = true,
+  isPodcast = false,
+  isStream = false,
+} = {}) {
+  return PANEL_IDS.filter(
+    (id) =>
+      (id !== 'lyrics' || (lyrics && !isPodcast && !isStream)) &&
+      (id !== 'details' || !isStream)
+  )
 }
 
 /**
@@ -22,8 +33,12 @@ export function requestedPanel(value, available) {
 }
 
 /** What the side panel shows when none was picked. */
-export function defaultPanel({ lyrics = true } = {}) {
+export function defaultPanel({
+  lyrics = true,
+  isPodcast = false,
+  isStream = false,
+} = {}) {
   // Without lyrics the queue is the most useful thing to have beside the
   // artwork, and it already hides the "Up next" column so it isn't twice.
-  return lyrics ? 'lyrics' : 'queue'
+  return lyrics && !isPodcast && !isStream ? 'lyrics' : 'queue'
 }

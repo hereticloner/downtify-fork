@@ -21,6 +21,19 @@ describe('availablePanels', () => {
       'equalizer',
     ])
   })
+
+  it('drops the file-backed panels for a stream (no file behind either)', () => {
+    expect(availablePanels({ isStream: true })).toEqual(['queue', 'equalizer'])
+    // Lyrics already an option it loses never comes back.
+    expect(availablePanels({ lyrics: false, isStream: true })).toEqual([
+      'queue',
+      'equalizer',
+    ])
+  })
+
+  it('keeps the details panel as long as there is a file', () => {
+    expect(availablePanels({ isStream: false })).toEqual(PANEL_IDS)
+  })
 })
 
 describe('requestedPanel', () => {
@@ -57,5 +70,12 @@ describe('defaultPanel', () => {
     expect(fallback).toBe('queue')
     // Never a panel the view doesn't offer.
     expect(availablePanels({ lyrics: false })).toContain(fallback)
+  })
+
+  it('never opens on the lyrics for a stream', () => {
+    expect(defaultPanel({ isStream: true })).toBe('queue')
+    expect(availablePanels({ isStream: true })).toContain(
+      defaultPanel({ isStream: true })
+    )
   })
 })
