@@ -480,6 +480,17 @@ function renameLibraryPlaylist(name, newName) {
   })
 }
 
+function uploadLibraryPlaylistCover(name, file, contentType) {
+  return API.put('/api/library/playlists/cover', file, {
+    params: { name },
+    headers: { 'Content-Type': contentType },
+  })
+}
+
+function removeLibraryPlaylistCover(name) {
+  return API.delete('/api/library/playlists/cover', { params: { name } })
+}
+
 // ── Collections: named groups of library playlists ───────────────────
 function listCollections() {
   return API.get('/api/collections')
@@ -938,6 +949,8 @@ export default {
   createLibraryPlaylist,
   editLibraryPlaylistTracks,
   renameLibraryPlaylist,
+  uploadLibraryPlaylistCover,
+  removeLibraryPlaylistCover,
   listCollections,
   createCollection,
   renameCollection,

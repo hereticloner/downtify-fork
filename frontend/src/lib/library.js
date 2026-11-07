@@ -215,12 +215,17 @@ export function buildPlaylists(playlists, tracksByFile, batches = []) {
       // The playlist of hearted songs, not a downloaded one.
       liked: Boolean(playlist.liked),
       manual: Boolean(playlist.manual),
+      explicitCover: Boolean(playlist.explicit_cover),
       fileCount: playlist.count != null ? Number(playlist.count) : files.length,
       tracks,
       // Downloaded playlists keep their own artwork. Manual ones leave
       // this empty so CoverArt mosaics up to four track covers (the
-      // sidecar JPEG is still written for Navidrome).
-      cover: playlist.manual ? '' : playlistCoverURL(playlist.cover),
+      // sidecar JPEG is still written for Navidrome) — unless the user
+      // uploaded their own cover, which takes precedence.
+      cover:
+        playlist.manual && !playlist.explicit_cover
+          ? ''
+          : playlistCoverURL(playlist.cover),
       covers,
       duration: tracks.reduce((sum, track) => sum + track.duration, 0),
       // M3U mtime from GET /playlists — not the resolved tracks, or the

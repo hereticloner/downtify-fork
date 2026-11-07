@@ -819,6 +819,12 @@ export default {
     nothingYet: 'Nenhuma faixa ainda',
     nothingYetHint: 'As faixas aparecem aqui conforme terminam de baixar.',
     nothingYetManualHint: 'Adicione músicas da biblioteca.',
+    uploadCover: 'Enviar capa',
+    removeCover: 'Remover capa',
+    coverSaved: 'Capa da lista salva',
+    coverRemoved: 'Capa removida',
+    coverInvalid: 'Escolha uma imagem JPEG, PNG ou WebP.',
+    coverTooLarge: 'As imagens de capa devem ter 10 MiB ou menos.',
   },
   track: {
     title: 'Título',

@@ -810,6 +810,13 @@ export default {
     nothingYet: 'Още няма изтеглени песни',
     nothingYetHint: 'Песните се появяват тук, когато се изтеглят.',
     nothingYetManualHint: 'Добави песни от библиотеката.',
+    uploadCover: 'Качване на корица',
+    removeCover: 'Премахни корицата',
+    coverSaved: 'Корицата на плейлистата е запазена',
+    coverRemoved: 'Корицата е премахната',
+    coverInvalid: 'Изберете изображение JPEG, PNG или WebP.',
+    coverTooLarge:
+      'Изображенията на корицата трябва да са 10 MiB или по-малки.',
   },
   track: {
     title: 'Заглавие',

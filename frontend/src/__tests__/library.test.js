@@ -154,6 +154,24 @@ describe('buildPlaylists', () => {
     expect(playlist.fileCount).toBe(2)
   })
 
+  it('shows an uploaded cover on a manual playlist', () => {
+    const base = {
+      name: 'Mix',
+      manual: true,
+      files: [],
+      cover: 'Playlists/Mix.jpg',
+    }
+    const [without] = buildPlaylists([base], new Map())
+    expect(without.cover).toBe('')
+    expect(without.explicitCover).toBe(false)
+    const [withCover] = buildPlaylists(
+      [{ ...base, explicit_cover: true }],
+      new Map()
+    )
+    expect(withCover.cover).toContain('Mix.jpg')
+    expect(withCover.explicitCover).toBe(true)
+  })
+
   it('keeps the M3U added time even when tracks are not loaded', () => {
     const [playlist] = buildPlaylists(
       [

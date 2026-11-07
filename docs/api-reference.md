@@ -1439,6 +1439,22 @@ Rename a **manual** playlist. Imported playlists return `403`. The M3U and sidec
 
 ---
 
+### `PUT /api/library/playlists/cover`
+
+Upload a custom cover for a **manual** playlist. Imported playlists return `403`; playlists the caller cannot open return `404`. The raw request body must be an `image/jpeg`, `image/png` or `image/webp` image no larger than 10 MiB. Downtify validates and converts it to the `.jpg` sidecar beside the M3U, then sends `playlists_changed` so connected clients refresh the cover.
+
+**Query parameter:** `name` — playlist name.
+
+**Response:** `{ "ok": true }`; `400` for an invalid image, `413` when the body exceeds 10 MiB, or `503` if image conversion is unavailable.
+
+---
+
+### `DELETE /api/library/playlists/cover`
+
+Remove the custom cover from a **manual** playlist. The generated track mosaic is restored beside the M3U. Uses the same `name` query parameter and returns `{ "ok": true }`.
+
+---
+
 ### `GET /api/library/playlists/details`
 
 What the playlist page [filters its songs by](features/library-catalog.md#search-a-playlist), for a playlist the caller can open (`404` otherwise).

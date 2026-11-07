@@ -63,6 +63,26 @@
           <UiButton
             v-if="playlist.manual && auth.isAdmin.value"
             variant="ghost"
+            icon="upload"
+            :disabled="coverBusy"
+            @click="coverPicker?.click()"
+          >
+            {{ t('playlists.uploadCover') }}
+          </UiButton>
+          <UiButton
+            v-if="
+              playlist.manual && auth.isAdmin.value && playlist.explicitCover
+            "
+            variant="ghost"
+            icon="trash"
+            :disabled="coverBusy"
+            @click="removeCover"
+          >
+            {{ t('playlists.removeCover') }}
+          </UiButton>
+          <UiButton
+            v-if="playlist.manual && auth.isAdmin.value"
+            variant="ghost"
             icon="pencil"
             @click="playlistActions.openRename(playlist)"
           >
@@ -80,6 +100,13 @@
           <UiMenu :items="menu" :label="t('common.more')" size="lg" />
         </template>
       </CollectionHero>
+      <input
+        ref="coverPicker"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        class="hidden"
+        @change="onCoverSelected"
+      />
 
       <div
         class="mx-auto flex max-w-[1680px] flex-col gap-10 px-4 sm:px-6 lg:px-10"
@@ -254,6 +281,14 @@ const actions = useTrackActions()
 const playlistActions = usePlaylistActions()
 const ui = useUi()
 const tracker = useProgressTracker()
+const coverPicker = ref(null)
+const coverBusy = ref(false)
+const MAX_COVER_BYTES = 10 * 1024 * 1024
+const COVER_TYPES = {
+  'image/jpeg': true,
+  'image/png': true,
+  'image/webp': true,
+}
 
 const playlist = computed(() =>
   library.findPlaylist(String(route.query.name || ''))
@@ -472,6 +507,67 @@ const isThisPlaying = computed(
 function togglePlay() {
   if (isThisPlaying.value) player.pause()
   else playlistActions.play(playlist.value)
+}
+
+async function refreshCoverContext(name) {
+  await library.refreshPlaylists()
+  const updated = library.findPlaylist(name)
+  const context = player.context.value
+  if (
+    updated &&
+    context?.type === 'playlist' &&
+    context.playlistName === name
+  ) {
+    player.context.value = {
+      ...context,
+      cover: updated.cover || '',
+      covers: updated.covers || [],
+    }
+  }
+}
+
+async function onCoverSelected(event) {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  if (file.size > MAX_COVER_BYTES) {
+    ui.toast(t('playlists.coverTooLarge'), { kind: 'error' })
+    return
+  }
+  const contentType = file.type.toLowerCase()
+  if (!COVER_TYPES[contentType]) {
+    ui.toast(t('playlists.coverInvalid'), { kind: 'error' })
+    return
+  }
+  coverBusy.value = true
+  const name = playlist.value.name
+  try {
+    await API.uploadLibraryPlaylistCover(name, file, contentType)
+    await refreshCoverContext(name)
+    ui.toast(t('playlists.coverSaved'), { kind: 'success' })
+  } catch (error) {
+    ui.toast(error?.response?.data?.detail || t('toast.actionFailed'), {
+      kind: 'error',
+    })
+  } finally {
+    coverBusy.value = false
+  }
+}
+
+async function removeCover() {
+  coverBusy.value = true
+  const name = playlist.value.name
+  try {
+    await API.removeLibraryPlaylistCover(name)
+    await refreshCoverContext(name)
+    ui.toast(t('playlists.coverRemoved'), { kind: 'success' })
+  } catch (error) {
+    ui.toast(error?.response?.data?.detail || t('toast.actionFailed'), {
+      kind: 'error',
+    })
+  } finally {
+    coverBusy.value = false
+  }
 }
 
 const menu = computed(() =>
