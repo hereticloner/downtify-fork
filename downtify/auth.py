@@ -1017,6 +1017,7 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
             r'^/api/library/(upgrade|reconcile|archive|replace|external)',
             ADMIN,
         ),
+        (_READ, r'^/api/library/playlists/details$', CLIENT),
         (_ALL, r'^/api/library/playlist', ADMIN),
         (_ALL, r'^/(delete|delete/batch)$', ADMIN),
         (_ALL, r'^/(docs|redoc|openapi\.json)', ADMIN),

@@ -162,6 +162,9 @@ working without changes:
 * ``POST /api/library/playlists/tracks`` (add or remove tracks on a
   manual playlist)
 * ``POST /api/library/playlists/rename`` (rename a manual playlist)
+* ``GET  /api/library/playlists/details`` (what the playlist page
+  filters by: ``{name, providers: {file: provider}, navidrome: {enabled,
+  unmatched}}`` - see ``downtify/file_providers.py``)
 * ``POST /api/library/reconcile`` (fix stored library paths after files
   moved on disk, then refresh M3U/Navidrome playlists)
 * ``POST /api/library/external/sync`` (start a background scan of
@@ -367,13 +370,16 @@ from .external_sync import (
     run_external_sync,
     unmap_extra_folder,
 )
+from .file_providers import FileProviders, providers_for
 from .fs_suggest import suggest_directories
+from .library_cache_keys import file_content_key_from_name_and_size
 from .library_catalog import (
     LibraryContext,
     library_album_index,
     library_artist_index,
     library_context_from_state,
     library_home_summary,
+    listing_for_request,
     lookup_library_songs,
     merge_library_listing_file,
     resolve_library_file,
@@ -431,6 +437,7 @@ from .playlist_batches import (
     split_tracks_by_library,
 )
 from .playlist_catalog import PlaylistCatalog
+from .playlist_listing import list_library_playlists
 from .playlist_spotify_cache import (
     PlaylistSpotifyCache,
     fetch_playlist_tracks,
@@ -1036,6 +1043,8 @@ class AppState:
     metadata_cache: Optional[LibraryMetadataCache] = None
     cover_cache: Optional[CoverArtCache] = None
     playlist_catalog: Optional[PlaylistCatalog] = None
+    # Which audio provider fetched each file (downtify/file_providers.py).
+    file_providers: Optional[FileProviders] = None
     playlist_batch_store: Optional[PlaylistBatchStore] = None
     playlist_spotify_cache: Optional[PlaylistSpotifyCache] = None
     # Last-known Spotify track ids per playlist, for the live sync
@@ -1319,6 +1328,13 @@ def forget_library_file(stored_path: str) -> list[str]:
         state.cover_cache.forget_by_stored_path(name)
     if state.likes is not None:
         state.likes.unlike(name)
+    if state.file_providers is not None:
+        try:
+            state.file_providers.drop_path(name)
+        except Exception:
+            logger.opt(exception=True).debug(
+                'Could not drop the provider of a deleted file'
+            )
     return affected
 
 
@@ -2191,6 +2207,33 @@ def _ui_language() -> str:
     ``DEFAULT_SETTINGS``), or ``en`` while no page has said."""
 
     return str(state.settings.get('ui_language') or '') or 'en'
+
+
+def after_download(song: dict[str, Any], filename: str) -> None:
+    """``Downloader.on_downloaded`` (set in ``main.py``): remember which
+    provider fetched the new file, then seed its artist's profile. Runs on
+    the download's own thread; never raises."""
+
+    record_download_provider(song, filename)
+    enrich_artist_after_download(song, filename)
+
+
+def record_download_provider(song: dict[str, Any], filename: str) -> None:
+    """Store ``song['download_provider']`` for *filename* (see
+    :mod:`downtify.file_providers`) - best effort."""
+
+    provider = str(song.get('download_provider') or '').strip()
+    if not provider or state.file_providers is None:
+        return
+    try:
+        key = content_key_for(
+            resolve_library_file(filename, library_context())
+        )
+        state.file_providers.record(key, filename, provider)
+    except Exception:
+        logger.opt(exception=True).debug(
+            'Could not record the provider of {}', filename
+        )
 
 
 def enrich_artist_after_download(song: dict[str, Any], filename: str) -> None:
@@ -4907,6 +4950,71 @@ async def rename_library_playlist_endpoint(request: Request) -> dict[str, Any]:
         ) from exc
     invalidate_library_paths_cache()
     return result
+
+
+@router.get('/api/library/playlists/details')
+async def playlist_details_endpoint(
+    name: str = Query(..., min_length=1),
+) -> dict[str, Any]:
+    """What the playlist page filters its songs by, for a playlist the
+    caller can open: ``{name, providers, navidrome}`` - ``providers`` is
+    ``{file: provider}`` for the songs whose provider is known, and
+    ``navidrome`` is ``{enabled, unmatched}``: while Navidrome sync is on,
+    the songs that have no Navidrome song id yet."""
+
+    ctx = library_context()
+    found = await asyncio.to_thread(
+        list_library_playlists, ctx.download_dir, ctx.slskd_dir, ctx.extra_dirs
+    )
+    entry = next(
+        (
+            item
+            for item in found
+            if str(item.get('name') or '') == str(name or '').strip()
+        ),
+        None,
+    )
+    if entry is None:
+        raise HTTPException(status_code=404, detail='Playlist not found')
+    files = [str(f) for f in (entry.get('files') or [])]
+    return await asyncio.to_thread(
+        _playlist_details, str(entry['name']), files
+    )
+
+
+def _playlist_details(name: str, files: list[str]) -> dict[str, Any]:
+    by_file = {
+        str(row.get('file') or '').replace('\\', '/'): row
+        for row in listing_for_request(library_context())
+    }
+    keys: dict[str, str] = {}
+    for path in dict.fromkeys(files):
+        row = by_file.get(str(path).replace('\\', '/'))
+        if row is None:
+            keys[path] = ''
+            continue
+        size = row.get('size')
+        keys[path] = (
+            file_content_key_from_name_and_size(path, int(size or 0)) or ''
+        )
+    enabled = bool(state.settings.get('navidrome', {}).get('enabled')) and (
+        state.navidrome_index is not None
+    )
+    unmatched: list[str] = []
+    if enabled:
+        try:
+            matched = state.navidrome_index.matched_files(keys)
+        except Exception:
+            logger.opt(exception=True).warning(
+                'Could not read the Navidrome matches of {!r}', name
+            )
+            matched = set(keys)
+        unmatched = [path for path in keys if path not in matched]
+    return {
+        'name': name,
+        'providers': providers_for(state.file_providers, keys),
+        'navidrome': {'enabled': enabled, 'unmatched': unmatched},
+    }
 
 
 @router.delete('/api/library/playlist')

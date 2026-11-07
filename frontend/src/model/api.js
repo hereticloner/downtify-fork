@@ -344,6 +344,12 @@ function getPlaylistBatchDetails(spotifyPlaylistId, { tracks = true } = {}) {
   )
 }
 
+// What the playlist page filters by: who fetched each song and which ones
+// Navidrome hasn't matched - see downtify/file_providers.py.
+function getPlaylistDetails(name) {
+  return API.get('/api/library/playlists/details', { params: { name } })
+}
+
 function downloadMissingPlaylistTracks(payload) {
   return API.post('/api/playlists/incomplete/download-missing', payload)
 }
@@ -859,6 +865,7 @@ export default {
   getIncompletePlaylists,
   getPlaylistBatches,
   getPlaylistBatchDetails,
+  getPlaylistDetails,
   downloadMissingPlaylistTracks,
   deletePlaylistBatch,
   downloadFileURL: fileURL,

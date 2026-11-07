@@ -1425,6 +1425,29 @@ Rename a **manual** playlist. Imported playlists return `403`. The M3U and sidec
 
 ---
 
+### `GET /api/library/playlists/details`
+
+What the playlist page [filters its songs by](features/library-catalog.md#search-a-playlist), for a playlist the caller can open (`404` otherwise).
+
+**Query:** `?name=Road trip`
+
+**Response:**
+
+```json
+{
+  "name": "Road trip",
+  "providers": {
+    "Road trip/Artist - Song.mp3": "youtube-music",
+    "slskd/Artist/Album/02 - Other.flac": "slskd"
+  },
+  "navidrome": { "enabled": true, "unmatched": ["Road trip/Artist - Third.mp3"] }
+}
+```
+
+`providers` maps the playlist's files (as `GET /tracks` lists them) to the audio provider that fetched them: `youtube-music`, `youtube`, `slskd` or `deemix`, or `folder` for a file from an [extra music folder](features/external-library.md). Downtify records it when a download finishes, so files downloaded before that are left out — except slskd files left in place, recognised by their `slskd/` path. `navidrome.enabled` is whether Navidrome sync is on; while it is, `unmatched` lists the playlist's files that have no Navidrome song id in Downtify's index yet (not matched by a playlist sync or after a download).
+
+---
+
 ### `POST /api/library/reconcile`
 
 Fix library paths after files were moved or deleted outside Downtify, then rewrite the affected M3U files / Navidrome playlists when those are enabled. See [Fix library paths](features/library-catalog.md#fix-library-paths).
