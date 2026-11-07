@@ -724,7 +724,11 @@ function getStats() {
 }
 
 function getQueueStatus() {
-  return API.get('/api/queue/status')
+  return API.get('/api/queue/state')
+}
+
+function getQueueState() {
+  return API.get('/api/queue/state')
 }
 
 function pauseQueue() {
@@ -958,6 +962,7 @@ export default {
   clearCompletedQueue,
   getStats,
   getQueueStatus,
+  getQueueState,
   pauseQueue,
   resumeQueue,
   getSettings,

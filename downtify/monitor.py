@@ -14,6 +14,7 @@ from loguru import logger
 
 from . import m3u, notifications, providers, spotify
 from .cover_cache import CoverArtCache
+from .download_queue import queue_pause
 from .downloader import (
     DOWNLOAD_EXECUTOR,
     Downloader,
@@ -867,6 +868,8 @@ async def check_playlist(
     for index, song in enumerate(new_tracks):
         track_id = song['song_id']
         pl_name = playlist.name
+        # A paused download queue holds the sweep before each track.
+        await queue_pause.wait()
 
         # YouTube Music rows already carry their own video's metadata.
         if from_spotify:
@@ -876,12 +879,13 @@ async def check_playlist(
             return _progress_cb(s, name, broadcast, loop)
 
         try:
-            filename = await loop.run_in_executor(
-                DOWNLOAD_EXECUTOR,
-                lambda s=song: downloader.download(
-                    s, _make_cb(s, pl_name), subdir=pl_subdir
-                ),
-            )
+            async with queue_pause.running():
+                filename = await loop.run_in_executor(
+                    DOWNLOAD_EXECUTOR,
+                    lambda s=song: downloader.download(
+                        s, _make_cb(s, pl_name), subdir=pl_subdir
+                    ),
+                )
             await asyncio.to_thread(
                 db.mark_track_downloaded, playlist.id, track_id, filename
             )
@@ -1298,13 +1302,15 @@ async def check_artist(
                 continue
             if track_id in known_tracks:
                 continue
+            await queue_pause.wait()
             try:
-                filename = await loop.run_in_executor(
-                    DOWNLOAD_EXECUTOR,
-                    lambda s=song: downloader.download(
-                        s, _progress_cb(s, playlist.name, broadcast, loop)
-                    ),
-                )
+                async with queue_pause.running():
+                    filename = await loop.run_in_executor(
+                        DOWNLOAD_EXECUTOR,
+                        lambda s=song: downloader.download(
+                            s, _progress_cb(s, playlist.name, broadcast, loop)
+                        ),
+                    )
                 await asyncio.to_thread(
                     db.mark_track_downloaded, playlist.id, track_id, filename
                 )

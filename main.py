@@ -61,6 +61,7 @@ from downtify.cover_thumbs import CoverThumbs
 from downtify.cover_thumbs import normalize_size as normalize_cover_size
 from downtify.discover import DiscoverStore
 from downtify.discovery import Announcer, discovery_enabled
+from downtify.download_queue import PendingDownloads
 from downtify.downloader import Downloader
 from downtify.errors import code_for
 from downtify.external_sync import ExternalSyncJob
@@ -460,6 +461,7 @@ def _open_library_stores(monitor_db_path: Path) -> bool:
     set_listing_refresh_gate(_downloads_using_disk)
     api.state.playlist_catalog = PlaylistCatalog(library_db)
     api.state.file_providers = FileProviders(library_db)
+    api.state.pending_downloads = PendingDownloads(library_db)
     api.state.playlist_batch_store = PlaylistBatchStore(library_db)
     api.state.playlist_spotify_cache = PlaylistSpotifyCache(library_db)
     api.state.playlist_sync_store = spotify_sync.SyncSnapshotStore(
@@ -738,6 +740,12 @@ def build_app() -> FastAPI:
                 api.state.upgrade_runner.resume_after_restart()
             except Exception:
                 logger.exception('Library upgrade: could not resume')
+        # The download queue (and its pause switch) outlives a restart
+        # or an update: unfinished jobs are queued again.
+        try:
+            await api.restore_download_queue()
+        except Exception:
+            logger.exception('Download queue: could not restore')
 
         yield
 

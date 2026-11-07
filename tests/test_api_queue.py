@@ -64,7 +64,6 @@ def test_a_cleared_download_is_skipped_not_resurrected(monkeypatch):
     monkeypatch.setattr(api.state, 'connections', FakeConnections())
     jobs = {}
     monkeypatch.setattr(api.state, 'download_jobs', jobs)
-    monkeypatch.setattr(api.state, 'download_paused', False)
 
     filename = asyncio.run(
         api._run_download({'song_id': 's-1', 'name': 'Song'}, 'gone')
