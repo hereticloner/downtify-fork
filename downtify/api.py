@@ -1079,6 +1079,7 @@ class AppState:
     mirror_tracker: Any = spotify_mirror.MirrorTracker()
     # The mobile API (downtify/mobile_routes.py).
     library_sync: Optional[LibrarySync] = None
+    library_trash: Any = None
     transcoder: Optional[Transcoder] = None
     cover_thumbs: Optional[CoverThumbs] = None
     discovery: Any = None
@@ -1286,12 +1287,21 @@ def library_context() -> LibraryContext:
         if state.downloader is not None
         else Path('/downloads')
     )
+    # Songs in the music trash (or waiting to go there) are no longer
+    # part of the library, for anyone.
+    hidden_files, hidden_resolved = (
+        state.library_trash.hidden()
+        if state.library_trash is not None
+        else (frozenset(), frozenset())
+    )
     return library_context_from_state(
         download_dir,
         state.settings,
         state.track_index,
         metadata_cache=state.metadata_cache,
         playlist_catalog=state.playlist_catalog,
+        hidden_files=hidden_files,
+        hidden_resolved=hidden_resolved,
     )
 
 
@@ -6392,6 +6402,13 @@ def announce_library_changed() -> None:
     if loop is None:
         return
     loop.call_soon_threadsafe(_schedule_library_changed)
+
+
+async def announce_playlists_changed() -> None:
+    """Tell connected clients playlists changed (upstream PR #512 uses
+    this after moving songs to the music trash)."""
+
+    await state.connections.broadcast({'type': 'playlists_changed'})
 
 
 add_invalidation_listener(announce_library_changed)

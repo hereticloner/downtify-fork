@@ -208,3 +208,12 @@ POST /api/activity/playback
 | `429` | Rate-limited (pairing) — wait `Retry-After` seconds |
 | `499` | The server stopped a transcode because the client disconnected (you won't normally see it) |
 | `501` | Transcoding requested but the server has no ffmpeg — use `format=original` |
+
+## Music trash (admins)
+
+When the server has the [music trash](features/music-trash.md) on, an admin's device can move songs to it, restore them and let expired ones be downloaded again — the same endpoints as the web app, under `/api/v1/library/trash` (see [Music trash](api-reference.md#music-trash)):
+
+- Ask `GET /api/v1/library/trash/capabilities` for each pairing, and again when the account may have changed. Offer the trash only while `can_manage` is `true`; a `404` (older server) or any error means it's off. Every request is authorised again on the server: a `403` (`admin_required`) means the account is no longer an admin — hide the trash.
+- Moving takes three steps: `POST …/preview` with `{ "track_ids": [...] }` (library ids, up to 200), poll `GET …/preview/{request_id}` about once a second until `state` is `ready`, show its `items` (title, format, path) for the user to confirm, then `POST …/confirm` with its `confirmation` (good for 10 minutes). The confirmation answers before anything has moved: show the song as waiting, not as gone.
+- Confirmed songs leave the library feed as removed ids (`deleted` in `GET /api/v1/library`); a restored song comes back with **the same `id`**, so likes, playlists, queue entries and offline files keyed by id find it again. Don't drop the user's queue or offline files before the first successful sync of a session: an id is gone only when a sync says so.
+- Show `detail.code` from a `409` as a message (the codes are listed in the API reference) and treat an unknown code as "not done, nothing deleted".

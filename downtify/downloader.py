@@ -36,6 +36,7 @@ from yt_dlp.postprocessor.ffmpeg import FFmpegExtractAudioPP
 from . import lyrics as lyrics_mod
 from . import spotify as spotify_mod
 from .cookies import CookiesStore
+from .download_policy import DownloadPolicyBlocked
 from .file_naming import sanitize_file_name
 from .itunes import fetch_genre as _fetch_itunes_genre
 from .m3u import sanitize_playlist_name
@@ -724,6 +725,11 @@ class Downloader:
         returned instead (see :meth:`find_existing_download`).
         """
 
+        # A song sent to the music trash stays out until an admin restores
+        # it or allows it again; like an exclusion, not a failed attempt.
+        trash = getattr(self, 'trash_store', None)
+        if trash is not None and trash.blocked(song):
+            raise DownloadPolicyBlocked('library_trash_excluded')
         skip_existing = not self.overwrite_existing_files
         if skip_existing and self._can_resolve_path_early(song):
             existing = self.find_existing_download(song, subdir)

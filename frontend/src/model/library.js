@@ -301,6 +301,7 @@ function refreshSoon(delay = 2500) {
 }
 
 API.onMessage((data) => {
+  if (data?.type === 'library_changed') refreshSoon()
   if (data?.status === 'done') refreshSoon()
 })
 

@@ -129,6 +129,7 @@ import MediaTile from '/src/components/library/MediaTile.vue'
 import PlayButton from '/src/components/library/PlayButton.vue'
 import SelectionBar from '/src/components/library/SelectionBar.vue'
 import TrackList from '/src/components/library/TrackList.vue'
+import { useAuth } from '/src/model/auth'
 import { useLibrary } from '/src/model/library'
 import { usePlayer } from '/src/model/player'
 import { usePlaylistActions } from '/src/model/playlistActions'
@@ -136,6 +137,7 @@ import { useTrackActions } from '/src/model/trackActions'
 import { useTrackSelection } from '/src/model/selection'
 import { albumKey } from '/src/lib/library'
 import { formatBytes, splitLength } from '/src/lib/format'
+import { useTrashCapability } from '/src/lib/trash'
 import { useI18n } from '/src/i18n'
 
 const { t } = useI18n()
@@ -145,6 +147,8 @@ const library = useLibrary()
 const player = usePlayer()
 const actions = useTrackActions()
 const playlistActions = usePlaylistActions()
+const auth = useAuth()
+const trash = useTrashCapability()
 
 const ready = ref(false)
 
@@ -264,9 +268,10 @@ const menu = computed(() => [
   },
   { divider: true },
   {
-    label: t('album.delete'),
+    label: trash.enabled.value ? t('trash.move') : t('album.delete'),
     icon: 'trash',
     danger: true,
+    hidden: trash.enabled.value && !auth.isAdmin.value,
     action: async () => {
       const deleted = await actions.remove(album.value.tracks)
       if (deleted.length)

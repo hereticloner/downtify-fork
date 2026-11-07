@@ -49,6 +49,8 @@ class LibraryContext:
     track_index: Optional[TrackIndex] = None
     metadata_cache: Optional[LibraryMetadataCache] = None
     playlist_catalog: Optional[PlaylistCatalog] = None
+    hidden_files: frozenset[str] = frozenset()
+    hidden_resolved: frozenset[str] = frozenset()
 
 
 def library_context_from_state(
@@ -57,6 +59,8 @@ def library_context_from_state(
     track_index: Optional[TrackIndex] = None,
     metadata_cache: Optional[LibraryMetadataCache] = None,
     playlist_catalog: Optional[PlaylistCatalog] = None,
+    hidden_files: frozenset[str] = frozenset(),
+    hidden_resolved: frozenset[str] = frozenset(),
 ) -> LibraryContext:
     slskd_raw = settings.get('slskd')
     slskd_dir: Optional[Path] = None
@@ -70,6 +74,8 @@ def library_context_from_state(
         settings, Path(download_dir), slskd_dir
     )
     return LibraryContext(
+        hidden_files=hidden_files,
+        hidden_resolved=hidden_resolved,
         download_dir=Path(download_dir),
         slskd_dir=slskd_dir,
         extra_dirs=extra_dirs,
@@ -122,15 +128,24 @@ def _resolve_within_library(
     """A library-relative path, confined to the library's own folders."""
 
     text = str(stored or '').strip().replace('\\', '/')
+    if text in getattr(ctx, 'hidden_files', frozenset()):
+        return None
     if not text or text.startswith('/'):
         return None
     if '\0' in text:
+        return None
+    # Files in the library trash must not be served as normal media.
+    if '.downtify-trash' in text.split('/'):
         return None
 
     candidate = locate_library_file(
         text, ctx.download_dir, ctx.slskd_dir, ctx.extra_dirs
     )
     if candidate is None or not accept(candidate):
+        return None
+    if '.downtify-trash' in candidate.parts or str(
+        candidate.resolve()
+    ) in getattr(ctx, 'hidden_resolved', frozenset()):
         return None
 
     allowed_roots = [ctx.download_dir.resolve()]
@@ -180,6 +195,8 @@ def _register_path(
 ) -> None:
     if UPGRADE_STAGING_MARKER in file_path.name:
         return
+    if '.downtify-trash' in file_path.parts:
+        return
     if file_path.suffix.lower() not in AUDIO_EXTENSIONS:
         return
     try:
@@ -187,6 +204,12 @@ def _register_path(
     except OSError:
         return
     resolved_key = str(resolved)
+    if resolved_key in getattr(
+        ctx, 'hidden_resolved', frozenset()
+    ) or roots.stored_for(resolved) in getattr(
+        ctx, 'hidden_files', frozenset()
+    ):
+        return
     if resolved_key in by_resolved:
         return
     by_resolved[resolved_key] = roots.stored_for(resolved)

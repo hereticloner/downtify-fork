@@ -44,6 +44,7 @@ export const NAV = [
       { title: 'Collections', page: 'features/collections.md' },
       { title: 'Smart Collections', page: 'features/smart-collections.md' },
       { title: 'Stats', page: 'features/stats.md' },
+      { title: 'Music Trash', page: 'features/music-trash.md' },
       { title: 'Notifications', page: 'features/notifications.md' },
       { title: 'Scrobbling', page: 'features/scrobbling.md' },
       { title: 'Spotify Mirror', page: 'features/spotify-mirror.md' },
