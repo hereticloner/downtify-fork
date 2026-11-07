@@ -14,6 +14,7 @@ from loguru import logger
 
 from . import m3u, notifications, providers, spotify
 from .cover_cache import CoverArtCache
+from .download_policy import DownloadPolicy, DownloadPolicyBlocked
 from .download_queue import queue_pause
 from .downloader import (
     DOWNLOAD_EXECUTOR,
@@ -317,6 +318,7 @@ class PlaylistMonitorDB:
         self._path = str(db_path)
         self._lock = asyncio.Lock()
         self._init_db()
+        self.download_policy = DownloadPolicy(self._connect)
 
     def _connect(self) -> sqlite3.Connection:
         # Shared tuning: WAL + a 30 s busy timeout. This DB is written
@@ -1302,6 +1304,9 @@ async def check_artist(
                 continue
             if track_id in known_tracks:
                 continue
+            if await asyncio.to_thread(db.download_policy.blocked, song):
+                complete = False
+                continue
             await queue_pause.wait()
             try:
                 async with queue_pause.running():
@@ -1314,11 +1319,21 @@ async def check_artist(
                 await asyncio.to_thread(
                     db.mark_track_downloaded, playlist.id, track_id, filename
                 )
+                await asyncio.to_thread(db.download_policy.succeeded, song)
                 invalidate_library_paths_cache()
                 known_tracks[track_id] = filename
                 downloaded += 1
                 if delay_seconds > 0:
                     await asyncio.sleep(delay_seconds)
+            except DownloadPolicyBlocked:
+                complete = False
+                await broadcast({
+                    'song': song,
+                    'status': 'failed',
+                    'progress': 0,
+                    'message': 'download_excluded',
+                    'playlist_name': playlist.name,
+                })
             except Exception:
                 complete = False
                 logger.exception(

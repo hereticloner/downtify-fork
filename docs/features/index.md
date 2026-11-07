@@ -16,6 +16,7 @@ Downtify covers everything you need to build and maintain a local music library 
 | [Download Settings](download-settings.md) | Choose format (MP3/FLAC/M4A/OGG/OPUS), bitrate, parallel downloads and delay between downloads |
 | [Queue](queue.md) | Pause and resume the whole download queue from the Queue page |
 | [Download Queue](download-queue.md) | Pausing the queue holds new downloads and survives restarts |
+| [Download exclusions](download-exclusions.md) | Stop retrying a track and set a cumulative attempt-time budget |
 | [Playlist Monitor](playlist-monitor.md) | Watch Spotify or YouTube Music playlists and artists, and auto-download new tracks and releases |
 | [Top Songs](top-songs.md) | Paste an artist link and download their most popular songs, optionally as a playlist |
 | [Library Import (CSV)](library-import.md) | Import a library export from Soundiiz, TuneMyMusic or Exportify and queue the whole thing |

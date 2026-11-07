@@ -489,6 +489,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     'download_cover_art_artist_banner': False,
     'max_parallel_downloads': 3,
     'download_delay_seconds': 0,
+    'download_retry_budget_minutes': 0,
     'external_sync_delay_seconds': 0,
     'cover_resolution': providers.DEFAULT_COVER_RESOLUTION,
     'download_cover_art': True,
@@ -640,6 +641,18 @@ def _clamp_download_delay(value: Any) -> float:
     return min(
         MAX_DOWNLOAD_DELAY_SECONDS, max(MIN_DOWNLOAD_DELAY_SECONDS, delay)
     )
+
+
+def _clamp_retry_budget(value: Any) -> int:
+    """Coerce and clamp the cumulative attempt budget, in minutes.
+
+    ``0`` disables the limit; anything else lands inside ``[0, 1440]``
+    regardless of what the client sends.
+    """
+    try:
+        return max(0, min(1440, int(value)))
+    except (TypeError, ValueError, OverflowError):
+        return 0
 
 
 def _max_track_duration_seconds() -> int:
@@ -5884,6 +5897,8 @@ async def update_settings_endpoint(
                 continue
             if key == 'max_parallel_downloads':
                 state.settings[key] = _clamp_parallel_downloads(raw_value)
+            elif key == 'download_retry_budget_minutes':
+                state.settings[key] = _clamp_retry_budget(raw_value)
             elif key == 'download_delay_seconds':
                 state.settings[key] = _clamp_download_delay(raw_value)
             elif key == 'external_sync_delay_seconds':

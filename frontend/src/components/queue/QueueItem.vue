@@ -95,6 +95,18 @@
         >
           {{ t('queue.retry') }}
         </UiButton>
+        <UiButton
+          v-if="
+            auth.isAdmin.value &&
+            (item.state === 'failed' || item.state === 'active')
+          "
+          size="sm"
+          variant="secondary"
+          :disabled="suspending"
+          @click="suspendDownload"
+        >
+          {{ t('downloadPolicy.block') }}
+        </UiButton>
         <UiIconButton
           icon="x"
           :label="t('queue.remove')"
@@ -133,6 +145,9 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import API from '/src/model/api'
+import { useAuth } from '/src/model/auth'
+import { useUi } from '/src/model/ui'
 import AppIcon from '../ui/AppIcon.vue'
 import CoverArt from '../ui/CoverArt.vue'
 import SourceBadge from '../ui/SourceBadge.vue'
@@ -166,6 +181,9 @@ const failure = computed(() => {
   if (FAILURE_CODES[message]) return t(FAILURE_CODES[message])
   return message || t('queue.failedGeneric')
 })
+const auth = useAuth()
+const ui = useUi()
+const suspending = ref(false)
 const dm = useDownloadManager()
 const library = useLibrary()
 const queuePause = useQueuePause()
@@ -174,6 +192,34 @@ const override = ref('')
 const overrideError = ref('')
 
 const song = computed(() => props.item.song)
+async function suspendDownload() {
+  if (
+    !(await ui.confirm({
+      title: t('downloadPolicy.confirm'),
+      body: t('downloadPolicy.confirmHelp'),
+      confirmLabel: t('downloadPolicy.block'),
+    }))
+  )
+    return
+  const track = song.value || {}
+  suspending.value = true
+  try {
+    await API.excludeDownload({
+      song_id: String(track.song_id || ''),
+      name: String(track.name || ''),
+      artist: String(track.artist || ''),
+      artists: Array.isArray(track.artists) ? track.artists : [],
+      album_name: String(track.album_name || ''),
+      duration: Number(track.duration) || 0,
+    })
+    ui.toast(t('downloadPolicy.blocked'))
+    window.dispatchEvent(new Event('downtify-download-policy-changed'))
+  } catch {
+    ui.toast(t('downloadPolicy.error'), { kind: 'error' })
+  } finally {
+    suspending.value = false
+  }
+}
 const artists = computed(
   () =>
     (song.value.artists || []).join(', ') ||

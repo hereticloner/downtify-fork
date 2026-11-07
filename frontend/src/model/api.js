@@ -403,6 +403,18 @@ function deleteDownload(file) {
   return API.delete('/delete', { params: { file } })
 }
 
+function downloadExclusions() {
+  return API.get('/api/v1/download-policy/exclusions')
+}
+function excludeDownload(song) {
+  return API.post('/api/v1/download-policy/exclusions', song)
+}
+function resumeDownload(id) {
+  return API.delete(
+    '/api/v1/download-policy/exclusions/' + encodeURIComponent(id)
+  )
+}
+
 function deleteDownloadsBatch(files) {
   return API.delete('/delete/batch', { data: { files } })
 }
@@ -886,6 +898,9 @@ function setSettings(settings) {
 }
 
 export default {
+  downloadExclusions,
+  excludeDownload,
+  resumeDownload,
   trashCapabilities,
   trashPreview,
   trashConfirm,
