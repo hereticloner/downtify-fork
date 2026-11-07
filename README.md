@@ -76,6 +76,8 @@ All of it runs inside a single Docker container. See **[How it works](https://he
 | **Integrations** | Optionally mirror playlists into Navidrome, with a **Test connection** button in Settings and controls for the post-download scan and client name. See [Navidrome](https://henriquesebastiao.github.io/downtify/features/slskd-navidrome/). |
 | **Interface** | Light and dark themes, one layout from phone to widescreen, an installable app ([PWA](https://henriquesebastiao.github.io/downtify/features/pwa/)), live download progress, update notices and eight languages. |
 
+In **Library → Tracks**, sort by release date from the column heading. See [Library catalog](https://downtify.henriquesebastiao.com/features/library-catalog/#library-page).
+
 ## Quick start
 
 You only need [Docker](https://docs.docker.com/get-docker/).

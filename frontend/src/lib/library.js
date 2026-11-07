@@ -83,6 +83,7 @@ export function normalizeTrack(row) {
     albumArtist,
     trackNumber: Number(raw.track_number) || 0,
     year: String(raw.year || ''),
+    releaseDate: String(raw.release_date || raw.year || ''),
     duration: Number(raw.duration) || 0,
     added: Number(raw.added) || 0,
     size: Number(raw.size) || 0,
@@ -263,6 +264,8 @@ const SORTERS = {
     compareText(a.title ?? a.name, b.title ?? b.name),
   album: (a, b) => compareText(a.album, b.album) || byTrackOrder(a, b),
   year: (a, b) => compareText(b.year, a.year) || compareText(a.title, b.title),
+  releaseDate: (a, b) =>
+    compareText(b.releaseDate, a.releaseDate) || compareText(a.title, b.title),
   duration: (a, b) => b.duration - a.duration,
   count: (a, b) => itemTrackCount(b) - itemTrackCount(a),
 }

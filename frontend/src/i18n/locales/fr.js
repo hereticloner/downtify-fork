@@ -856,6 +856,7 @@ export default {
     album: 'Album',
     trackNumber: 'Piste',
     year: 'Année',
+    releaseDate: 'Date de sortie',
     length: 'Durée',
     format: 'Format',
     size: 'Taille',

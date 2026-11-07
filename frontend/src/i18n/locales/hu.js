@@ -833,6 +833,7 @@ export default {
     album: 'Album',
     trackNumber: 'Sorszám',
     year: 'Év',
+    releaseDate: 'Megjelenési dátum',
     length: 'Hossz',
     format: 'Formátum',
     size: 'Méret',

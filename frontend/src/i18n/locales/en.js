@@ -816,6 +816,7 @@ export default {
     album: 'Album',
     trackNumber: 'Track',
     year: 'Year',
+    releaseDate: 'Release date',
     length: 'Length',
     format: 'Format',
     size: 'Size',

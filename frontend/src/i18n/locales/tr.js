@@ -831,6 +831,7 @@ export default {
     album: 'Albüm',
     trackNumber: 'Parça',
     year: 'Yıl',
+    releaseDate: 'Çıkış tarihi',
     length: 'Süre',
     format: 'Biçim',
     size: 'Boyut',

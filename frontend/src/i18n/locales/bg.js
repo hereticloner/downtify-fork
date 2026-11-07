@@ -824,6 +824,7 @@ export default {
     album: 'Албум',
     trackNumber: 'Номер',
     year: 'Година',
+    releaseDate: 'Дата на издаване',
     length: 'Продължителност',
     format: 'Формат',
     size: 'Размер',

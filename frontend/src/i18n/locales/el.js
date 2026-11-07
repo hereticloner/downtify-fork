@@ -840,6 +840,7 @@ export default {
     album: 'Άλμπουμ',
     trackNumber: 'Κομμάτι',
     year: 'Έτος',
+    releaseDate: 'Ημερομηνία κυκλοφορίας',
     length: 'Διάρκεια',
     format: 'Μορφή',
     size: 'Μέγεθος',
