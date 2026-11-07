@@ -555,6 +555,104 @@ def _drop_manual_playlist_if_any(
         return {'ok': False, 'error': str(exc)}
 
 
+def _m3u_paths_for_playlist(
+    download_dir: Path,
+    playlist_name: str,
+    *,
+    organize_by_artist: bool,
+) -> list[Path]:
+    safe = sanitize_playlist_name(playlist_name)
+    paths = [
+        download_dir / 'Playlists' / f'{safe}.m3u',
+        download_dir / safe / f'{safe}.m3u',
+    ]
+    if organize_by_artist:
+        return [paths[0]]
+    return paths
+
+
+def _remove_playlist_m3u_files(
+    download_dir: Path,
+    playlist_name: str,
+    *,
+    organize_by_artist: bool,
+) -> int:
+    removed = 0
+    for m3u_path in _m3u_paths_for_playlist(
+        download_dir,
+        playlist_name,
+        organize_by_artist=organize_by_artist,
+    ):
+        try:
+            if m3u_path.is_file():
+                m3u_path.unlink()
+                removed += 1
+                logger.info('Playlist delete: removed M3U {}', m3u_path)
+                prune_empty_parent_dirs(m3u_path.parent, download_dir)
+        except OSError as exc:
+            logger.warning('Could not remove M3U {}: {}', m3u_path, exc)
+    return removed
+
+
+def _remove_playlist_cover_file(
+    download_dir: Path,
+    playlist_name: str,
+    *,
+    organize_by_artist: bool,
+) -> bool:
+    """Remove the playlist's cover art, if any.
+
+    Saved by ``downloader.save_playlist_cover`` at the same path as the
+    playlist's M3U, with a ``.jpg`` suffix instead — see
+    ``_m3u_paths_for_playlist`` for the candidate locations. Returns
+    whether a file was removed.
+    """
+    for m3u_path in _m3u_paths_for_playlist(
+        download_dir,
+        playlist_name,
+        organize_by_artist=organize_by_artist,
+    ):
+        cover_path = m3u_path.with_suffix('.jpg')
+        try:
+            if cover_path.is_file():
+                cover_path.unlink()
+                logger.info(
+                    'Playlist delete: removed cover art {}', cover_path
+                )
+                prune_empty_parent_dirs(cover_path.parent, download_dir)
+                return True
+        except OSError as exc:
+            logger.warning(
+                'Could not remove cover art {}: {}', cover_path, exc
+            )
+    return False
+
+
+def remove_playlist_shell(
+    playlist_name: str,
+    download_dir: Path,
+    *,
+    organize_by_artist: bool = False,
+) -> dict[str, Any]:
+    """Remove a playlist's M3U file(s) and sidecar cover; audio and the
+    catalog entry are left alone (the caller handles those).
+
+    Used when the music trash is on: deleting a playlist must not delete
+    audio (upstream PR #512 port).
+    """
+
+    pl_name = str(playlist_name or '').strip()
+    if not pl_name:
+        return {'m3u_removed': 0, 'cover_removed': False}
+    m3u_removed = _remove_playlist_m3u_files(
+        download_dir, pl_name, organize_by_artist=organize_by_artist
+    )
+    cover_removed = _remove_playlist_cover_file(
+        download_dir, pl_name, organize_by_artist=organize_by_artist
+    )
+    return {'m3u_removed': m3u_removed, 'cover_removed': cover_removed}
+
+
 def delete_playlist_from_library(
     playlist_name: str,
     download_dir: Path,
@@ -572,6 +670,29 @@ def delete_playlist_from_library(
         settings,
         track_index=state.track_index,
     )
+    if getattr(state, 'library_trash', None) is not None:
+        manual = _drop_manual_playlist_if_any(ctx, download_dir, pl_name)
+        if manual is not None:
+            return manual
+        if state.playlist_catalog is not None:
+            state.playlist_catalog.delete_playlist(pl_name)
+        remove_playlist_shell(
+            pl_name,
+            download_dir,
+            organize_by_artist=bool(
+                settings.get('organize_by_artist')
+                or settings.get('organize_by_album')
+            ),
+        )
+        return {
+            'ok': True,
+            'playlist': pl_name,
+            'files': [],
+            'deleted_count': 0,
+            'failed_count': 0,
+            'failed': [],
+            'playlists_affected': [pl_name],
+        }
     return _drop_manual_playlist_if_any(
         ctx, download_dir, pl_name
     ) or _delete_imported_playlist(pl_name, download_dir, settings, state, ctx)

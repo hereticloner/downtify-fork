@@ -47,10 +47,12 @@ from downtify import (
     account_routes,
     api,
     auth_routes,
+    download_policy_routes,
     mobile_routes,
     spotify_history,
     spotify_sync,
     spotify_sync_api,
+    trash_routes,
 )
 from downtify.activity import ActivityLog
 from downtify.auth import AuthMiddleware, AuthStore, auth_disabled_from_env
@@ -61,9 +63,11 @@ from downtify.cover_thumbs import CoverThumbs
 from downtify.cover_thumbs import normalize_size as normalize_cover_size
 from downtify.discover import DiscoverStore
 from downtify.discovery import Announcer, discovery_enabled
+from downtify.download_queue import PendingDownloads
 from downtify.downloader import Downloader
 from downtify.errors import code_for
 from downtify.external_sync import ExternalSyncJob
+from downtify.file_providers import FileProviders
 from downtify.library_archive import (
     MAX_ARCHIVE_FILES,
     ArchiveTicketStore,
@@ -89,6 +93,7 @@ from downtify.library_paths_cache import (
     set_listing_refresh_gate,
 )
 from downtify.library_sync import LibrarySync
+from downtify.library_trash import trash_from_env
 from downtify.library_upgrade import LibraryUpgradeRunner, UpgradeDeps
 from downtify.library_upgrade_db import LibraryUpgradeDB
 from downtify.likes import LikedTracks
@@ -458,6 +463,8 @@ def _open_library_stores(monitor_db_path: Path) -> bool:
     bind_listing_store(library_db)
     set_listing_refresh_gate(_downloads_using_disk)
     api.state.playlist_catalog = PlaylistCatalog(library_db)
+    api.state.file_providers = FileProviders(library_db)
+    api.state.pending_downloads = PendingDownloads(library_db)
     api.state.playlist_batch_store = PlaylistBatchStore(library_db)
     api.state.playlist_spotify_cache = PlaylistSpotifyCache(library_db)
     api.state.playlist_sync_store = spotify_sync.SyncSnapshotStore(
@@ -468,6 +475,26 @@ def _open_library_stores(monitor_db_path: Path) -> bool:
     # Per-user byte counters (downtify/traffic.py): what the server
     # fetched upstream, per account.
     api.state.traffic = TrafficCounters(library_db)
+    # The music trash (downtify/library_trash.py), when the operator
+    # turned it on. A configuration that doesn't load stops the server:
+    # carrying on would quietly bring permanent deletion back.
+    try:
+        api.state.library_trash = trash_from_env(DOWNLOAD_DIR, library_db)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        logger.error(
+            'Music trash configuration unusable ({}): fix '
+            'DOWNTIFY_TRASH_CONFIG or unset it',
+            error,
+        )
+        raise
+    if api.state.library_trash is not None:
+        logger.info(
+            'Music trash on ({} worker): {}',
+            api.state.library_trash.worker,
+            ', '.join(sorted(api.state.library_trash.roots)),
+        )
+    if api.state.downloader is not None:
+        api.state.downloader.trash_store = api.state.library_trash
     # The mobile API (downtify/mobile_routes.py).
     api.state.library_sync = LibrarySync(library_db)
     api.state.transcoder = transcoder_from_env(DATABASE_DIR)
@@ -634,6 +661,12 @@ def build_app() -> FastAPI:
         )
         db_path = DATABASE_DIR / 'downtify_monitor.db'
         api.state.monitor_db = PlaylistMonitorDB(db_path)
+        api.state.downloader.download_policy = (
+            api.state.monitor_db.download_policy
+        )
+        api.state.downloader.download_policy_limit = lambda: (
+            api.state.settings.get('download_retry_budget_minutes', 0)
+        )
         backfill_pending = _open_library_stores(db_path)
         threading.Thread(
             target=_warm_library_listing,
@@ -736,6 +769,12 @@ def build_app() -> FastAPI:
                 api.state.upgrade_runner.resume_after_restart()
             except Exception:
                 logger.exception('Library upgrade: could not resume')
+        # The download queue (and its pause switch) outlives a restart
+        # or an update: unfinished jobs are queued again.
+        try:
+            await api.restore_download_queue()
+        except Exception:
+            logger.exception('Download queue: could not restore')
 
         yield
 
@@ -876,9 +915,9 @@ def build_app() -> FastAPI:
     ] or None
     api.normalize_lyrics_location(api.state.settings)
     api.bind_lrc_resolver()
-    # A finished download (from the UI or a monitor sweep alike) seeds its
-    # artist's profile in the background.
-    api.state.downloader.on_downloaded = api.enrich_artist_after_download
+    # A finished download (from the UI or a monitor sweep alike) records
+    # which provider fetched it and seeds its artist's profile.
+    api.state.downloader.on_downloaded = api.after_download
     api.providers.set_cover_resolution(
         api._clamp_cover_resolution(
             api.state.settings.get(
@@ -890,6 +929,8 @@ def build_app() -> FastAPI:
     app.include_router(auth_routes.router)
     app.include_router(account_routes.router)
     app.include_router(mobile_routes.router)
+    app.include_router(trash_routes.router)
+    app.include_router(download_policy_routes.router)
     from downtify.collections_api import (  # noqa: PLC0415
         router as collections_router,
     )
@@ -1195,14 +1236,14 @@ def build_app() -> FastAPI:
             full,
             media_type=mimetypes.guess_type(str(full))[0] or 'image/jpeg',
             headers={
-                'Cache-Control': 'public, max-age=86400',
-                'ETag': f'"{int(full.stat().st_mtime)}"',
+                'Cache-Control': 'no-cache',
+                'ETag': f'"{full.stat().st_mtime_ns}"',
             },
         )
 
     app.mount(
         '/downloads',
-        StaticFiles(directory=str(DOWNLOAD_DIR)),
+        LibraryAudioFiles(directory=str(DOWNLOAD_DIR)),
         name='downloads',
     )
     app.mount(
@@ -1211,6 +1252,42 @@ def build_app() -> FastAPI:
         name='static',
     )
     return app
+
+
+class LibraryAudioFiles(StaticFiles):
+    """Refuse media that went to the music trash (upstream PR #512 port).
+
+    ``api.library_context()`` already hides trashed files from catalog
+    reads, but the plain file mount serves by path alone — without this
+    a trashed song is still playable from an old URL.
+    """
+
+    async def get_response(self, path: str, scope: dict) -> Any:
+        ctx = api.library_context()
+        candidate = (DOWNLOAD_DIR / path).resolve()
+        if (
+            '.downtify-trash' in candidate.parts
+            or path in ctx.hidden_files
+            or str(candidate) in ctx.hidden_resolved
+        ):
+            raise HTTPException(status_code=404)
+        return await super().get_response(path, scope)
+
+
+def _read_library_file(stored: str) -> Optional[Path]:
+    """Resolve a library-stored path, refusing trashed media.
+
+    ``api.library_context()`` already hides trashed files from catalog
+    reads; this is the same guard for the cover/file read paths.
+    """
+    ctx = api.library_context()
+    full = resolve_library_file(stored, ctx)
+    if full is not None and (
+        '.downtify-trash' in full.resolve().parts
+        or str(full.resolve()) in ctx.hidden_resolved
+    ):
+        return None
+    return full
 
 
 def _parse_args() -> argparse.Namespace:

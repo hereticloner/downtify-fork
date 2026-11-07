@@ -1,4 +1,139 @@
 export default {
+  downloadPolicy: {
+    block: 'Stop downloading',
+    blocked: 'Downloads suspended for this track.',
+    confirm: 'Suspend downloads for this track?',
+    confirmHelp:
+      'New attempts will be blocked. A shared transfer already started may finish. Existing files will not be deleted.',
+    exclusions: 'Suspended tracks',
+    empty: 'No suspended tracks.',
+    resume: 'Allow again',
+    timeout: 'Attempt time limit reached',
+    manual: 'Suspended manually',
+    error: 'Could not change the suspension.',
+    alreadyActive: 'An attempt for this track is already in progress.',
+    budget: 'Cumulative attempt limit',
+    budgetHelp:
+      'Automatically suspend a track after this cumulative attempt time. Time between attempts is excluded. 0 disables the limit.',
+  },
+  trash: {
+    title: 'Кошче',
+    subtitle:
+      'Песни, извадени от библиотеката, пазят се {days} дни след преместването. Дотогава можеш да ги възстановиш.',
+    adminOnly: 'Само администратори могат да виждат това',
+    adminOnlyHint: 'Помоли администратор на този сървър да възстанови песен.',
+    off: 'Кошчето е изключено',
+    offHint:
+      'На този сървър песните се изтриват завинаги. Кошчето се включва в конфигурацията на сървъра (DOWNTIFY_TRASH).',
+    inTrash: 'В кошчето',
+    exclusions: 'Извън изтеглянията',
+    search: 'Търси в кошчето',
+    restoreSelected: {
+      one: 'Възстанови {count} песен',
+      other: 'Възстанови {count} песни',
+    },
+    summary: {
+      one: '{count} песен · {size}',
+      other: '{count} песни · {size}',
+    },
+    empty: 'Кошчето е празно',
+    emptyHint:
+      'Песните, преместени от библиотеката в кошчето, се показват тук, докато изтекат.',
+    noMatch: 'Нищо в кошчето не съвпада',
+    select: 'Избери „{title}“',
+    keptUntil: 'Пази се до {date}',
+    restore: 'Възстанови',
+    retry: 'Опитай пак',
+    previous: 'Назад',
+    next: 'Напред',
+    exclusionsHint:
+      'Песни, чийто срок в кошчето е изтекъл. Автоматичните изтегляния (наблюдение на плейлисти, следения) продължават да ги пропускат, докато не ги разрешиш отново.',
+    exclusionsEmpty: 'Нищо не е извън изтеглянията',
+    allowDownload: 'Разреши изтеглянията',
+    allowTitle: 'Да се разреши „{title}“ да се изтегли отново?',
+    allowBody:
+      'Автоматичните изтегляния може да я изтеглят пак. Сега нищо не се изтегля.',
+    move: 'Премести в кошчето',
+    preparing: 'Файловете се проверяват…',
+    confirmTitle: {
+      one: 'Да се премести {count} песен в кошчето?',
+      other: 'Да се преместят {count} песни в кошчето?',
+    },
+    confirmBody:
+      'Преместват се само тези файлове, заедно с файловете им с текстове. Те излизат от библиотеката за всички и могат да се възстановят в продължение на {days} дни. Плейлистите и харесванията им се връщат с тях, а автоматичните изтегляния ги пропускат междувременно.',
+    confirmMore: {
+      one: 'и още {count}',
+      other: 'и още {count}',
+    },
+    pending: {
+      one: '{count} песен се премества в кошчето',
+      other: '{count} песни се преместват в кошчето',
+    },
+    downloadBlocked:
+      'В кошчето за музика: администратор трябва да я разреши отново.',
+    states: {
+      preview: 'Чака потвърждение',
+      pending: 'Чака преместване',
+      moving: 'Премества се',
+      trashed: 'В кошчето',
+      restore_pending: 'Чака възстановяване',
+      restoring: 'Възстановява се',
+      restored: 'Възстановена',
+      purging: 'Изтича',
+      purged: 'Изтекла',
+      error: 'Спряна — файловете са запазени',
+    },
+    errors: {
+      unavailable: 'Кошчето не е достъпно в момента. Нищо не е преместено.',
+      admin_required: 'Само администратор може да използва кошчето.',
+      admin_access_revoked:
+        'Профилът, който поиска това, вече не е администратор.',
+      atomic_move_unsupported:
+        'Това хранилище не може да мести файлове безопасно. Нищо не е преместено.',
+      confirmation_expired: 'Проверката изтече. Избери песните отново.',
+      confirmation_invalid: 'Това потвърждение не е за твоя профил или избор.',
+      file_changed:
+        'Файлът се промени след проверката. Остана на мястото си; избери го отново.',
+      file_changed_during_move:
+        'Файлът се промени по време на преместването. Пази се в кошчето, за да го провериш.',
+      file_missing: 'Липсва файл. Провери хранилището и опитай пак.',
+      filesystem_unavailable:
+        'Хранилището не е достъпно. Провери го и опитай пак.',
+      identity_uncertain:
+        'Таговете на тази песен не стигат, за да остане извън автоматичните изтегляния. Нищо не е преместено.',
+      invalid_path: 'Този файл е извън папките, които кошчето покрива.',
+      invalid_selection: 'Избери между 1 и 200 песни.',
+      item_not_found: 'Тази песен вече не е в библиотеката.',
+      library_task_active:
+        'Подобряването на библиотеката работи. Изчакай го или първо го спри на пауза.',
+      nas_marker_changed:
+        'Хранилището не е това, което кошчето очаква. Нищо не е преместено.',
+      nas_marker_missing:
+        'Очакваното хранилище не е монтирано. Нищо не е преместено.',
+      operation_already_pending: 'Тази песен вече е на път.',
+      operation_in_progress:
+        'Преместването още тече. Изчакай го, преди да възстановяваш.',
+      operation_not_complete: 'Изчакай текущата стъпка да приключи.',
+      preview_busy: 'Тече друга проверка. Изчакай я да приключи.',
+      preview_unavailable: 'Проверката беше прекъсната. Избери песните отново.',
+      restore_collision:
+        'Там вече има друг файл. Нищо не е презаписано; песента остава в кошчето.',
+      retention_expired: 'Срокът ѝ в кошчето изтече.',
+      root_unavailable: 'Папката с музика не е достъпна.',
+      track_is_playing: 'Някой слуша тази песен. Първо я спри на пауза.',
+      trash_file_changed: 'Копието в кошчето се промени. Няма да бъде изтрито.',
+      trash_file_missing: 'Липсва файл в кошчето.',
+      trash_ignore_invalid:
+        'Файлът .ignore в папката на кошчето не е празен. Нищо не е преместено.',
+      trash_not_configured: 'Кошчето е изключено на този сървър.',
+      trash_permissions_unsafe:
+        'Други могат да четат папката на кошчето. Провери правата ѝ.',
+      unsafe_symlink: 'Пътят съдържа символна връзка, затова не се пипа.',
+      unsupported_collection: 'Папката на тази песен не е покрита от кошчето.',
+      unsupported_lyrics_location:
+        'Папката с текстове не е покрита от кошчето. Нищо не е преместено.',
+    },
+  },
   language: {
     name: 'Български',
   },
@@ -43,6 +178,18 @@ export default {
     spotify: {
       not_connected: 'Първо свържете Spotify в Настройки.',
     },
+  },
+  playlistSearch: {
+    placeholder: 'Търсене в този плейлист',
+    all: 'Всички',
+    missing: 'Липсващи',
+    failed: 'Неуспешни',
+    notInNavidrome: 'Липсват в Navidrome',
+    fromFolders: 'Вашите папки',
+    unknownSource: 'Неизвестен източник',
+    showing: '{count} от {total}',
+    noMatch: 'Няма съвпадения',
+    noMatchHint: 'Опитайте с други думи или друг филтър.',
   },
   common: {
     cancel: 'Отказ',
@@ -292,6 +439,19 @@ export default {
     retryFailed: 'Повтори неуспешните ({count})',
     clearDone: 'Изчисти готовите ({count})',
     clearAll: 'Изчисти опашката',
+    pause: 'Пауза на изтеглянията',
+    resume: 'Продължи изтеглянията',
+    pauseFailed: 'Опашката не можа да бъде променена. Опитай отново.',
+    pausingTitle: 'Изтеглянията спират…',
+    pausingBody: {
+      one: 'Изчакване {count} изтегляне да приключи. Няма да започват нови изтегляния.',
+      other:
+        'Изчакване {count} изтегляния да приключат. Няма да започват нови изтегляния.',
+    },
+    pausedTitle: 'Изтеглянията са на пауза',
+    pausedBody: 'Няма да започват нови изтегляния, докато не продължиш.',
+    pausedKept:
+      'Чакащите песни остават в опашката, дори ако Downtify се рестартира или обнови.',
     emptyTitle: 'Опашката е празна',
     emptyBody:
       'Потърси музика или постави линк — изтеглянията се показват тук.',
@@ -309,6 +469,7 @@ export default {
     },
     showMore: 'Покажи още {count}',
     statusQueued: 'Чака',
+    statusPaused: 'На пауза',
     statusDone: 'Изтеглено',
     retry: 'Опитай отново',
     remove: 'Премахни от опашката',
@@ -666,6 +827,13 @@ export default {
     nothingYet: 'Още няма изтеглени песни',
     nothingYetHint: 'Песните се появяват тук, когато се изтеглят.',
     nothingYetManualHint: 'Добави песни от библиотеката.',
+    uploadCover: 'Качване на корица',
+    removeCover: 'Премахни корицата',
+    coverSaved: 'Корицата на плейлистата е запазена',
+    coverRemoved: 'Корицата е премахната',
+    coverInvalid: 'Изберете изображение JPEG, PNG или WebP.',
+    coverTooLarge:
+      'Изображенията на корицата трябва да са 10 MiB или по-малки.',
   },
   track: {
     title: 'Заглавие',
@@ -673,6 +841,7 @@ export default {
     album: 'Албум',
     trackNumber: 'Номер',
     year: 'Година',
+    releaseDate: 'Дата на издаване',
     length: 'Продължителност',
     format: 'Формат',
     size: 'Размер',
@@ -1292,6 +1461,7 @@ export default {
     lyrics: 'Текст',
     queue: 'Следват',
     search: 'Търсене',
+    findInPlaylist: 'Търсене в плейлиста (на страницата му)',
     goLibrary: 'Към библиотеката',
     goQueue: 'Към опашката',
     close: 'Затвори „Сега звучи“',

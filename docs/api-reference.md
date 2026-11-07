@@ -643,7 +643,7 @@ Remove finished (`done`) jobs, keeping queued, in-progress and failed ones.
 
 ### `DELETE /api/queue`
 
-Clear the entire download queue/history.
+Clear the entire download queue/history. A job that hasn't started yet never starts; one already downloading finishes.
 
 **Response:** `{ "cleared": true }`
 
@@ -651,7 +651,7 @@ Clear the entire download queue/history.
 
 ### `DELETE /api/queue/item`
 
-Remove a single job from the queue.
+Remove a single job from the queue. If it hasn't started yet, it never does.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -661,27 +661,41 @@ Remove a single job from the queue.
 
 ---
 
-### `GET /api/queue/status`
+### `GET /api/queue/state`
 
-Whether the download queue is currently paused.
+Whether the download queue is paused. Anyone signed in can read it. See [Download Queue](features/download-queue.md).
 
-**Response:** `{ "paused": false }`
+**Response:**
+
+```json
+{ "paused": true, "state": "pausing", "active": 2 }
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `paused` | boolean | Whether the queue is paused |
+| `state` | string | `running`, `pausing` (paused, with `active` downloads still finishing) or `paused` (nothing running) |
+| `active` | integer | Downloads running right now, everyone's (Playlist Monitor sweeps included) |
+
+Every change is also broadcast as a `queue_state` [WebSocket](#websocket) frame.
 
 ---
 
 ### `POST /api/queue/pause`
 
-Pause the download queue. Downloads already running finish; rows still waiting don't start until [`POST /api/queue/resume`](#post-apiqueueresume). The pause is process-wide and not persisted, so a restart starts unpaused. See [Queue](features/queue.md#pausing-and-resuming-the-queue).
+Admin. Pause the queue: no download starts until it is resumed, and the ones already running finish normally. Waiting jobs keep their place (`status: "queued"`, including a `POST /api/download/url` that hasn't started — that request waits until the queue is resumed), and Playlist Monitor sweeps wait before each track. The switch is saved, so the queue is still paused after a restart.
 
-**Response:** `{ "paused": true }`
+**Response:** the [`GET /api/queue/state`](#get-apiqueuestate) object.
 
 ---
 
 ### `POST /api/queue/resume`
 
-Resume a paused queue, so waiting rows start again.
+Admin. Carry on with the waiting jobs, with the current settings and audio provider order.
 
-**Response:** `{ "paused": false }`
+**Response:** the [`GET /api/queue/state`](#get-apiqueuestate) object.
+
+Unfinished jobs (waiting, or interrupted mid-download) are saved in `/data` and queued again when Downtify starts, paused or not; finished and failed ones are not.
 
 ---
 
@@ -1422,6 +1436,45 @@ Rename a **manual** playlist. Imported playlists return `403`. The M3U and sidec
 **Request body:** `{ "name": "Late night", "new_name": "Late night mix" }`
 
 **Response:** `{ "name": "Late night mix", "previous": "Late night", "manual": true, "files": ["Artist - Song.mp3"], "count": 1 }`
+
+---
+
+### `PUT /api/library/playlists/cover`
+
+Upload a custom cover for a **manual** playlist. Imported playlists return `403`; playlists the caller cannot open return `404`. The raw request body must be an `image/jpeg`, `image/png` or `image/webp` image no larger than 10 MiB. Downtify validates and converts it to the `.jpg` sidecar beside the M3U, then sends `playlists_changed` so connected clients refresh the cover.
+
+**Query parameter:** `name` — playlist name.
+
+**Response:** `{ "ok": true }`; `400` for an invalid image, `413` when the body exceeds 10 MiB, or `503` if image conversion is unavailable.
+
+---
+
+### `DELETE /api/library/playlists/cover`
+
+Remove the custom cover from a **manual** playlist. The generated track mosaic is restored beside the M3U. Uses the same `name` query parameter and returns `{ "ok": true }`.
+
+---
+
+### `GET /api/library/playlists/details`
+
+What the playlist page [filters its songs by](features/library-catalog.md#search-a-playlist), for a playlist the caller can open (`404` otherwise).
+
+**Query:** `?name=Road trip`
+
+**Response:**
+
+```json
+{
+  "name": "Road trip",
+  "providers": {
+    "Road trip/Artist - Song.mp3": "youtube-music",
+    "slskd/Artist/Album/02 - Other.flac": "slskd"
+  },
+  "navidrome": { "enabled": true, "unmatched": ["Road trip/Artist - Third.mp3"] }
+}
+```
+
+`providers` maps the playlist's files (as `GET /tracks` lists them) to the audio provider that fetched them: `youtube-music`, `youtube`, `slskd` or `deemix`, or `folder` for a file from an [extra music folder](features/external-library.md). Downtify records it when a download finishes, so files downloaded before that are left out — except slskd files left in place, recognised by their `slskd/` path. `navidrome.enabled` is whether Navidrome sync is on; while it is, `unmatched` lists the playlist's files that have no Navidrome song id in Downtify's index yet (not matched by a playlist sync or after a download).
 
 ---
 
@@ -2763,6 +2816,146 @@ Paths must start with `/api/v1/tracks/`, `/downloads/`, `/media/`, `/cover` or `
 
 ---
 
+## Music trash
+
+The [music trash](features/music-trash.md), when the server has it on (`DOWNTIFY_TRASH` or `DOWNTIFY_TRASH_CONFIG`): songs an admin removes are moved aside and kept for 30 days, restorable until then. The web app and the Android app use the same endpoints.
+
+Everything except `GET /api/v1/library/trash/capabilities` needs a browser session or a paired device of an account that is still an administrator (or sign-in turned off); anything else gets `403` (`admin_required`). With the trash off they answer `503` (`trash_not_configured`). Errors carry a stable code in `detail.code` and never a path on the server.
+
+The files are moved by the trash worker, inside the server or in a [separate process](features/music-trash.md#a-separate-worker): a confirmed request answers before anything has moved, and `state` says how far it got. Songs leave the library (`/tracks`, `/list`, [`GET /api/v1/library`](#get-apiv1library), streaming by path) as soon as they are confirmed, and the journal's changes reach connected clients as `library_changed` and `playlists_changed` frames.
+
+While the trash is on, [`DELETE /delete`](#delete-delete) and [`DELETE /delete/batch`](#delete-deletebatch) answer `409` (`trash_confirmation_required`), and deleting a playlist ([`DELETE /api/library/playlist`](#delete-apilibraryplaylist), [`DELETE /api/playlists/batches/{spotify_playlist_id}`](#delete-apiplaylistsbatchesspotify_playlist_id)) removes the playlist but keeps its songs.
+
+An operation (one song) looks like this:
+
+```json
+{
+  "id": "6f0c2a…",
+  "file": "Artist/Album/01 - Song.flac",
+  "track_id": "q0Zr3k…",
+  "metadata": { "title": "Song", "artist": "Artist", "album": "Album", "codec": "flac", "…": "…" },
+  "state": "trashed",
+  "size": 31457280,
+  "expires_at": 1764288000.0,
+  "error": ""
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Operation ID, for restore, retry and allow-download |
+| `file` | string | Library path it had (and gets back) |
+| `track_id` | string | Its [library id](#get-apiv1library), `""` when it had none; restoring keeps it |
+| `metadata` | object | Its library row when it was confirmed |
+| `state` | string | `pending` (confirmed, not moved yet), `moving`, `trashed`, `restore_pending`, `restoring`, `restored`, `purging`, `purged` (expired and deleted) or `error` (stopped; files kept) |
+| `size` | integer | Bytes of the audio and the sidecars that move with it |
+| `expires_at` | number \| null | Unix time it is deleted for good; set once it has moved |
+| `error` | string | The stop's code when `state` is `error` |
+
+---
+
+### `GET /api/v1/library/trash/capabilities`
+
+Whether the trash is on and whether this caller may use it. Any signed-in caller; an older server answers `404`, which a client takes as "off".
+
+**Response:** `{ "enabled": true, "can_manage": true, "retention_days": 30 }`. `can_manage` is `true` only for an administrator while the trash is on.
+
+---
+
+### `POST /api/v1/library/trash/preview`
+
+Check exactly what would move, in the background.
+
+**Body:** `{ "files": ["Artist/Album/01 - Song.flac"] }` or `{ "track_ids": ["q0Zr3k…"] }` (both may be given; up to 200 in all).
+
+**Response** (`202`): `{ "request_id": "Yx3…", "state": "preparing" }`. `409` (`invalid_selection`) when nothing was given; `409` (`preview_busy`) while this admin has a check running, `429` (`preview_busy`) while four are.
+
+---
+
+### `GET /api/v1/library/trash/preview/{request_id}`
+
+The check's result, for the admin who started it. Poll until it is ready.
+
+**Response:** `{ "state": "preparing" }`, then
+
+```json
+{
+  "state": "ready",
+  "preview": {
+    "confirmation": "Lr0…",
+    "expires_at": 1761600600.0,
+    "items": [{ "id": "6f0c2a…", "file": "Artist/Album/01 - Song.flac", "state": "preview", "…": "…" }]
+  }
+}
+```
+
+`items` are the operations, one per song, with the files that will move counted in `size`. When the check failed it answers `409` with the reason — `item_not_found`, `invalid_selection`, `track_is_playing`, `library_task_active`, `unsupported_collection`, `unsupported_lyrics_location`, `identity_uncertain` (tags too thin to keep the song out of automatic downloads), `unsafe_symlink`, `root_unavailable`, `nas_marker_missing`, `nas_marker_changed`, `admin_access_revoked`, `filesystem_unavailable`. `404` (`preview_unavailable`) for an unknown request, another admin's, or one finished more than an hour ago.
+
+---
+
+### `POST /api/v1/library/trash/confirm`
+
+Move what a check listed. The confirmation is good for 10 minutes, once, for the admin who asked for it.
+
+**Body:** `{ "confirmation": "Lr0…" }`
+
+**Response** (`202`): `{ "ids": ["6f0c2a…"], "state": "pending" }` — the files have not moved yet. Confirming again answers the same. `409` with `confirmation_invalid`, `confirmation_expired`, `file_changed` (a file differs from what was checked), `operation_already_pending`, `track_is_playing` or `library_task_active`; nothing moves then.
+
+---
+
+### `GET /api/v1/library/trash`
+
+What is in the trash or on its way, newest first: every operation not restored or expired.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `offset` | integer | no | Default `0` |
+| `limit` | integer | no | 1–100, default `50` |
+| `search` | string | no | Matches the path and the metadata, case-insensitive |
+
+**Response:** `{ "items": [{ "id": "6f0c2a…", "…": "…" }], "total": 1, "size": 31457280 }` — `total` and `size` (bytes) cover every match, not only this page.
+
+---
+
+### `POST /api/v1/library/trash/restore`
+
+Put songs back where they were. Works for `trashed`, `error` and still-`pending` operations (the last two only bring the song back into the library when nothing had moved).
+
+**Body:** `{ "ids": ["6f0c2a…"] }` (1–200)
+
+**Response** (`202`): `{ "state": "restore_pending" }`. `409` with `item_not_found`, `operation_in_progress` (still moving) or `retention_expired`. A file found at the old place meanwhile is never overwritten: that operation stops with `restore_collision`.
+
+---
+
+### `POST /api/v1/library/trash/retry`
+
+Resume operations that stopped (`state` `error`) once the cause is fixed.
+
+**Body:** `{ "ids": ["6f0c2a…"] }` (1–200)
+
+**Response** (`202`): `{ "state": "pending" }`. `409` (`operation_not_complete`) for one that isn't stopped.
+
+---
+
+### `GET /api/v1/library/trash/exclusions`
+
+Songs whose time in the trash ran out and that automatic downloads still skip.
+
+**Response:** `{ "items": [{ "id": "6f0c2a…", "state": "purged", "…": "…" }] }`
+
+---
+
+### `POST /api/v1/library/trash/allow-download`
+
+Let automatic downloads fetch songs again. Nothing is downloaded by this.
+
+**Body:** `{ "ids": ["6f0c2a…"] }` (1–200)
+
+**Response:** `{ "ok": true }`. `409` (`operation_not_complete`) for an operation that hasn't moved or been restored yet.
+
+---
+
+
 ## WebSocket
 
 ### `WS /api/ws`
@@ -2789,13 +2982,21 @@ The handshake needs a device token (`Authorization: Bearer …`), a web session 
 }
 ```
 
-`status` on a per-track event is `downloading`, `done`, or `error`. `filename` is set (non-null) on the final `done` event. A row that is still waiting has `status: "queued"` on [`GET /api/queue`](#get-apiqueue), not as its own socket event.
+`status` on a per-track event is `downloading`, `done`, or `error` (or `queued` for a job a paused queue holds back, see below). `filename` is set (non-null) on the final `done` event. A row that is still waiting has `status: "queued"` on [`GET /api/queue`](#get-apiqueue), not as its own socket event.
 
 Queuing a playlist batch or a CSV import registers every job, then broadcasts one reload so open pages fetch that list once:
 
 ```json
 { "type": "queue_reload" }
 ```
+
+Pausing or resuming the queue, and the moment a paused queue's last running download ends, broadcast its state (the [`GET /api/queue/state`](#get-apiqueuestate) object):
+
+```json
+{ "type": "queue_state", "paused": true, "state": "paused", "active": 0 }
+```
+
+A job held by a paused queue after it was announced as `downloading` (a single download) is sent again with `status: "queued"`.
 
 A [library upgrade](features/library-upgrade.md) broadcasts its progress on the same socket, tagged so download clients can ignore it:
 
@@ -2825,4 +3026,8 @@ When an app is paired, the web page showing the code learns it at once:
 ```json
 { "type": "device_paired", "pairing_id": "rfLmICXqGfRBXyXl", "device": { "id": "8uz4d35zjpn2", "name": "Pixel 8", "platform": "android", "…": "…" } }
 ```
+
+## Download policy
+
+See also the [administrative download policy API](./api-download-policy.md).
 

@@ -54,6 +54,14 @@
       <button
         type="button"
         role="columnheader"
+        class="text-left uppercase max-xl:hidden"
+        @click="sortBy('releaseDate')"
+      >
+        {{ t('track.releaseDate') }}<SortMark field="releaseDate" />
+      </button>
+      <button
+        type="button"
+        role="columnheader"
         class="text-right"
         @click="sortBy('duration')"
       >
@@ -135,7 +143,7 @@
               >{{
                 numbering === 'track'
                   ? row.track.trackNumber || '–'
-                  : row.index + 1
+                  : positions?.get(row.track.file) || row.index + 1
               }}</span
             >
             <button
@@ -221,6 +229,9 @@
         >
           {{ row.track.added ? timeAgo(row.track.added, locale) : '' }}
         </span>
+        <span class="truncate text-[13px] text-muted max-xl:hidden">
+          {{ row.track.releaseDate }}
+        </span>
         <span class="tabular text-right text-[13px] text-muted max-md:hidden">
           {{ row.track.duration ? formatDuration(row.track.duration) : '' }}
         </span>
@@ -273,6 +284,9 @@ const props = defineProps({
   showCover: { type: Boolean, default: true },
   linkArtist: { type: Boolean, default: true },
   numbering: { type: String, default: 'index' },
+  // file -> place in the whole list, numbered instead of the row's own
+  // place while a filtered list is shown (a playlist search).
+  positions: { type: Map, default: null },
   header: { type: Boolean, default: true },
   sort: { type: Object, default: null },
   hideMenu: { type: Array, default: () => [] },
@@ -353,18 +367,18 @@ const gridClass = computed(() => {
     selectable.value
       ? props.showAlbum
         ? props.showAdded
-          ? 'md:grid-cols-[28px_32px_minmax(0,1fr)_64px_72px] lg:grid-cols-[28px_32px_minmax(0,2fr)_minmax(0,1.3fr)_64px_72px] xl:grid-cols-[28px_32px_minmax(0,2fr)_minmax(0,1.3fr)_72px_120px_64px_72px]'
-          : 'md:grid-cols-[28px_32px_minmax(0,1fr)_64px_72px] lg:grid-cols-[28px_32px_minmax(0,2fr)_minmax(0,1.3fr)_64px_72px] xl:grid-cols-[28px_32px_minmax(0,2fr)_minmax(0,1.3fr)_72px_64px_72px]'
+          ? 'md:grid-cols-[28px_32px_minmax(0,1fr)_64px_72px] lg:grid-cols-[28px_32px_minmax(0,2fr)_minmax(0,1.3fr)_64px_72px] xl:grid-cols-[28px_32px_minmax(0,2fr)_minmax(0,1.3fr)_72px_120px_72px_72px_64px_72px]'
+          : 'md:grid-cols-[28px_32px_minmax(0,1fr)_64px_72px] lg:grid-cols-[28px_32px_minmax(0,2fr)_minmax(0,1.3fr)_64px_72px] xl:grid-cols-[28px_32px_minmax(0,2fr)_minmax(0,1.3fr)_72px_72px_64px_72px]'
         : props.showAdded
-          ? 'md:grid-cols-[28px_32px_minmax(0,1fr)_64px_72px] xl:grid-cols-[28px_32px_minmax(0,1fr)_72px_120px_64px_72px]'
-          : 'md:grid-cols-[28px_32px_minmax(0,1fr)_64px_72px] xl:grid-cols-[28px_32px_minmax(0,1fr)_72px_64px_72px]'
+          ? 'md:grid-cols-[28px_32px_minmax(0,1fr)_64px_72px] xl:grid-cols-[28px_32px_minmax(0,1fr)_72px_120px_72px_72px_64px_72px]'
+          : 'md:grid-cols-[28px_32px_minmax(0,1fr)_64px_72px] xl:grid-cols-[28px_32px_minmax(0,1fr)_72px_72px_64px_72px]'
       : props.showAlbum
         ? props.showAdded
-          ? 'md:grid-cols-[32px_minmax(0,1fr)_64px_72px] lg:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.3fr)_64px_72px] xl:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.3fr)_72px_120px_64px_72px]'
-          : 'md:grid-cols-[32px_minmax(0,1fr)_64px_72px] lg:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.3fr)_64px_72px] xl:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.3fr)_72px_64px_72px]'
+          ? 'md:grid-cols-[32px_minmax(0,1fr)_64px_72px] lg:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.3fr)_64px_72px] xl:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.3fr)_72px_120px_72px_72px_64px_72px]'
+          : 'md:grid-cols-[32px_minmax(0,1fr)_64px_72px] lg:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.3fr)_64px_72px] xl:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.3fr)_72px_72px_64px_72px]'
         : props.showAdded
-          ? 'md:grid-cols-[32px_minmax(0,1fr)_64px_72px] xl:grid-cols-[32px_minmax(0,1fr)_72px_120px_64px_72px]'
-          : 'md:grid-cols-[32px_minmax(0,1fr)_64px_72px] xl:grid-cols-[32px_minmax(0,1fr)_72px_64px_72px]',
+          ? 'md:grid-cols-[32px_minmax(0,1fr)_64px_72px] xl:grid-cols-[32px_minmax(0,1fr)_72px_120px_72px_72px_64px_72px]'
+          : 'md:grid-cols-[32px_minmax(0,1fr)_64px_72px] xl:grid-cols-[32px_minmax(0,1fr)_72px_72px_64px_72px]',
   ]
 })
 

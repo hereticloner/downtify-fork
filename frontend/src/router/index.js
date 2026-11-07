@@ -55,6 +55,13 @@ const routes = [
     component: () => import('/src/views/UpgradeView.vue'),
   },
   {
+    // The music trash (admins, when the server has it on): songs kept
+    // for a while after leaving the library, restorable until then.
+    path: '/library/trash',
+    name: 'Trash',
+    component: () => import('/src/views/TrashView.vue'),
+  },
+  {
     path: '/library/album',
     name: 'Album',
     component: () => import('/src/views/AlbumView.vue'),

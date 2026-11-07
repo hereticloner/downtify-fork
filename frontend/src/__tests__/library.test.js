@@ -76,6 +76,15 @@ describe('normalizeTrack', () => {
     const track = normalizeTrack('ext/abc123def456/Artist - Title.mp3')
     expect(track.url).toBe('/media/ext/abc123def456/Artist%20-%20Title.mp3')
   })
+
+  it('keeps the release date, falling back to the year', () => {
+    expect(
+      normalizeTrack({ file: 'a.mp3', release_date: '2022-10-07' }).releaseDate
+    ).toBe('2022-10-07')
+    expect(normalizeTrack({ file: 'b.mp3', year: '1997' }).releaseDate).toBe(
+      '1997'
+    )
+  })
 })
 
 describe('groupAlbums', () => {
@@ -152,6 +161,24 @@ describe('buildPlaylists', () => {
     expect(playlist.covers).toHaveLength(2)
     expect(tracked).toMatchObject({ name: 'Not downloaded yet', tracks: [] })
     expect(playlist.fileCount).toBe(2)
+  })
+
+  it('shows an uploaded cover on a manual playlist', () => {
+    const base = {
+      name: 'Mix',
+      manual: true,
+      files: [],
+      cover: 'Playlists/Mix.jpg',
+    }
+    const [without] = buildPlaylists([base], new Map())
+    expect(without.cover).toBe('')
+    expect(without.explicitCover).toBe(false)
+    const [withCover] = buildPlaylists(
+      [{ ...base, explicit_cover: true }],
+      new Map()
+    )
+    expect(withCover.cover).toContain('Mix.jpg')
+    expect(withCover.explicitCover).toBe(true)
   })
 
   it('keeps the M3U added time even when tracks are not loaded', () => {
@@ -275,6 +302,24 @@ describe('sortItems and filterItems', () => {
       'Undertow',
       'Harbor Lights',
       'Blue Hour',
+    ])
+  })
+
+  it('sorts by release date, including year-only dates', () => {
+    const dated = [
+      { file: 'b.mp3', title: 'B', releaseDate: '2002-05-01' },
+      { file: 'a.mp3', title: 'A', releaseDate: '2024-01-15' },
+      { file: 'c.mp3', title: 'C', releaseDate: '1997' },
+    ]
+    expect(sortItems(dated, 'releaseDate').map((t) => t.file)).toEqual([
+      'a.mp3',
+      'b.mp3',
+      'c.mp3',
+    ])
+    expect(sortItems(dated, 'releaseDate', 'desc').map((t) => t.file)).toEqual([
+      'c.mp3',
+      'b.mp3',
+      'a.mp3',
     ])
   })
 

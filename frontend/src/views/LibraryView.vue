@@ -12,6 +12,14 @@
         <span class="max-sm:sr-only">{{ t('library.upgrade') }}</span>
       </UiButton>
       <UiButton
+        v-if="auth.isAdmin.value && trashCapability.canManage.value"
+        variant="ghost"
+        icon="trash"
+        :to="{ name: 'Trash' }"
+      >
+        <span class="max-sm:sr-only">{{ t('trash.title') }}</span>
+      </UiButton>
+      <UiButton
         variant="ghost"
         icon="refresh"
         :loading="library.loading.value"
@@ -247,6 +255,7 @@ import {
 } from '/src/lib/library'
 import { artistPhotoSource } from '/src/lib/artistPhotoProxy'
 import { formatBytes, splitLength } from '/src/lib/format'
+import { useTrashCapability } from '/src/lib/trash'
 import { useI18n } from '/src/i18n'
 
 const { t } = useI18n()
@@ -256,6 +265,7 @@ const library = useLibrary()
 const player = usePlayer()
 const auth = useAuth()
 const actions = useTrackActions()
+const trashCapability = useTrashCapability()
 const playlistActions = usePlaylistActions()
 const ui = useUi()
 

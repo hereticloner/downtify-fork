@@ -1,4 +1,144 @@
 export default {
+  downloadPolicy: {
+    block: 'Stop downloading',
+    blocked: 'Downloads suspended for this track.',
+    confirm: 'Suspend downloads for this track?',
+    confirmHelp:
+      'New attempts will be blocked. A shared transfer already started may finish. Existing files will not be deleted.',
+    exclusions: 'Suspended tracks',
+    empty: 'No suspended tracks.',
+    resume: 'Allow again',
+    timeout: 'Attempt time limit reached',
+    manual: 'Suspended manually',
+    error: 'Could not change the suspension.',
+    alreadyActive: 'An attempt for this track is already in progress.',
+    budget: 'Cumulative attempt limit',
+    budgetHelp:
+      'Automatically suspend a track after this cumulative attempt time. Time between attempts is excluded. 0 disables the limit.',
+  },
+  trash: {
+    title: 'Lixeira',
+    subtitle:
+      'Músicas tiradas da biblioteca, guardadas por {days} dias depois de movidas. Restaure-as até lá.',
+    adminOnly: 'Só administradores podem ver isto',
+    adminOnlyHint:
+      'Peça a um administrador deste servidor para restaurar uma música.',
+    off: 'A lixeira está desligada',
+    offHint:
+      'Neste servidor as músicas são excluídas de vez. A lixeira é ligada na configuração do servidor (DOWNTIFY_TRASH).',
+    inTrash: 'Na lixeira',
+    exclusions: 'Fora dos downloads',
+    search: 'Buscar na lixeira',
+    restoreSelected: {
+      one: 'Restaurar {count} música',
+      other: 'Restaurar {count} músicas',
+    },
+    summary: {
+      one: '{count} música · {size}',
+      other: '{count} músicas · {size}',
+    },
+    empty: 'A lixeira está vazia',
+    emptyHint:
+      'As músicas movidas da biblioteca para a lixeira aparecem aqui até expirarem.',
+    noMatch: 'Nada na lixeira corresponde',
+    select: 'Selecionar “{title}”',
+    keptUntil: 'Guardada até {date}',
+    restore: 'Restaurar',
+    retry: 'Tentar de novo',
+    previous: 'Anterior',
+    next: 'Próxima',
+    exclusionsHint:
+      'Músicas cujo prazo na lixeira acabou. Os downloads automáticos (Monitor de Playlists, acompanhamentos) continuam pulando-as até você liberar de novo.',
+    exclusionsEmpty: 'Nada está fora dos downloads',
+    allowDownload: 'Liberar downloads',
+    allowTitle: 'Liberar “{title}” para ser baixada de novo?',
+    allowBody:
+      'Os downloads automáticos podem baixá-la outra vez. Nada é baixado agora.',
+    move: 'Mover para a lixeira',
+    preparing: 'Verificando os arquivos…',
+    confirmTitle: {
+      one: 'Mover {count} música para a lixeira?',
+      other: 'Mover {count} músicas para a lixeira?',
+    },
+    confirmBody:
+      'Só estes arquivos são movidos, com seus arquivos de letra. Eles saem da biblioteca para todos e podem ser restaurados por {days} dias. Playlists e curtidas voltam com eles, e os downloads automáticos os pulam enquanto isso.',
+    confirmMore: {
+      one: 'e mais {count}',
+      other: 'e mais {count}',
+    },
+    pending: {
+      one: 'Movendo {count} música para a lixeira',
+      other: 'Movendo {count} músicas para a lixeira',
+    },
+    downloadBlocked:
+      'Na lixeira de músicas: um administrador precisa liberar de novo.',
+    states: {
+      preview: 'Aguardando confirmação',
+      pending: 'Aguardando para mover',
+      moving: 'Movendo',
+      trashed: 'Na lixeira',
+      restore_pending: 'Aguardando para restaurar',
+      restoring: 'Restaurando',
+      restored: 'Restaurada',
+      purging: 'Expirando',
+      purged: 'Expirada',
+      error: 'Parada — arquivos mantidos',
+    },
+    errors: {
+      unavailable: 'A lixeira não está disponível agora. Nada foi movido.',
+      admin_required: 'Só um administrador pode usar a lixeira.',
+      admin_access_revoked: 'A conta que pediu não é mais administradora.',
+      atomic_move_unsupported:
+        'Este armazenamento não consegue mover arquivos com segurança. Nada foi movido.',
+      confirmation_expired:
+        'A verificação expirou. Escolha as músicas de novo.',
+      confirmation_invalid:
+        'Esta confirmação não é da sua conta ou da sua seleção.',
+      file_changed:
+        'O arquivo mudou depois de verificado. Ele ficou onde estava; escolha-o de novo.',
+      file_changed_during_move:
+        'O arquivo mudou enquanto era movido. Ele fica na lixeira para você conferir.',
+      file_missing:
+        'Falta um arquivo. Confira o armazenamento e tente de novo.',
+      filesystem_unavailable:
+        'O armazenamento não está disponível. Confira-o e tente de novo.',
+      identity_uncertain:
+        'As tags desta música são insuficientes para mantê-la fora dos downloads automáticos. Nada foi movido.',
+      invalid_path: 'Este arquivo está fora das pastas cobertas pela lixeira.',
+      invalid_selection: 'Escolha entre 1 e 200 músicas.',
+      item_not_found: 'Esta música não está mais na biblioteca.',
+      library_task_active:
+        'A melhoria da biblioteca está rodando. Espere ou pause-a antes.',
+      nas_marker_changed:
+        'O armazenamento não é o que a lixeira espera. Nada foi movido.',
+      nas_marker_missing:
+        'O armazenamento esperado não está montado. Nada foi movido.',
+      operation_already_pending: 'Esta música já está a caminho.',
+      operation_in_progress:
+        'A movimentação ainda está rodando. Espere antes de restaurar.',
+      operation_not_complete: 'Espere a etapa atual terminar.',
+      preview_busy: 'Outra verificação está rodando. Espere ela terminar.',
+      preview_unavailable:
+        'A verificação foi interrompida. Escolha as músicas de novo.',
+      restore_collision:
+        'Já existe outro arquivo lá. Nada foi sobrescrito; a música continua na lixeira.',
+      retention_expired: 'O prazo dela na lixeira acabou.',
+      root_unavailable: 'A pasta de músicas não está disponível.',
+      track_is_playing: 'Alguém está tocando esta música. Pause-a antes.',
+      trash_file_changed: 'A cópia na lixeira mudou. Ela não será excluída.',
+      trash_file_missing: 'Falta um arquivo na lixeira.',
+      trash_ignore_invalid:
+        'O arquivo .ignore da pasta da lixeira não está vazio. Nada foi movido.',
+      trash_not_configured: 'A lixeira está desligada neste servidor.',
+      trash_permissions_unsafe:
+        'Outros podem ler a pasta da lixeira. Confira as permissões dela.',
+      unsafe_symlink: 'O caminho tem um link simbólico, por isso não é tocado.',
+      unsupported_collection:
+        'A pasta desta música não é coberta pela lixeira.',
+      unsupported_lyrics_location:
+        'A pasta de letras não é coberta pela lixeira. Nada foi movido.',
+    },
+  },
   language: {
     name: 'Português (BR)',
   },
@@ -42,6 +182,18 @@ export default {
     spotify: {
       not_connected: 'Conecte o Spotify em Configurações primeiro.',
     },
+  },
+  playlistSearch: {
+    placeholder: 'Buscar nesta playlist',
+    all: 'Todas',
+    missing: 'Faltando',
+    failed: 'Falharam',
+    notInNavidrome: 'Fora do Navidrome',
+    fromFolders: 'Suas pastas',
+    unknownSource: 'Origem desconhecida',
+    showing: '{count} de {total}',
+    noMatch: 'Nada corresponde',
+    noMatchHint: 'Tente outras palavras ou outro filtro.',
   },
   common: {
     cancel: 'Cancelar',
@@ -295,6 +447,19 @@ export default {
     retryFailed: 'Repetir falhas ({count})',
     clearDone: 'Limpar concluídos ({count})',
     clearAll: 'Limpar fila',
+    pause: 'Pausar downloads',
+    resume: 'Retomar downloads',
+    pauseFailed: 'Não foi possível alterar a fila. Tente novamente.',
+    pausingTitle: 'Pausando downloads…',
+    pausingBody: {
+      one: 'Aguardando {count} download terminar. Nenhum download novo será iniciado.',
+      other:
+        'Aguardando {count} downloads terminarem. Nenhum download novo será iniciado.',
+    },
+    pausedTitle: 'Downloads pausados',
+    pausedBody: 'Nenhum download novo será iniciado até você retomar.',
+    pausedKept:
+      'As músicas em espera continuam na fila, mesmo se o Downtify for reiniciado ou atualizado.',
     emptyTitle: 'Nada na fila',
     emptyBody: 'Busque músicas ou cole um link — os downloads aparecem aqui.',
     emptyAction: 'Encontrar músicas',
@@ -311,6 +476,7 @@ export default {
     },
     showMore: 'Mostrar mais {count}',
     statusQueued: 'Aguardando',
+    statusPaused: 'Pausado',
     statusDone: 'Baixado',
     retry: 'Tentar de novo',
     remove: 'Remover da fila',
@@ -670,6 +836,12 @@ export default {
     nothingYet: 'Nenhuma faixa ainda',
     nothingYetHint: 'As faixas aparecem aqui conforme terminam de baixar.',
     nothingYetManualHint: 'Adicione músicas da biblioteca.',
+    uploadCover: 'Enviar capa',
+    removeCover: 'Remover capa',
+    coverSaved: 'Capa da lista salva',
+    coverRemoved: 'Capa removida',
+    coverInvalid: 'Escolha uma imagem JPEG, PNG ou WebP.',
+    coverTooLarge: 'As imagens de capa devem ter 10 MiB ou menos.',
   },
   track: {
     title: 'Título',
@@ -677,6 +849,7 @@ export default {
     album: 'Álbum',
     trackNumber: 'Faixa',
     year: 'Ano',
+    releaseDate: 'Data de lançamento',
     length: 'Duração',
     format: 'Formato',
     size: 'Tamanho',
@@ -1301,6 +1474,7 @@ export default {
     lyrics: 'Letra',
     queue: 'A seguir',
     search: 'Buscar',
+    findInPlaylist: 'Buscar na playlist (na página dela)',
     goLibrary: 'Ir para a biblioteca',
     goQueue: 'Ir para a fila',
     close: 'Fechar tocando agora',

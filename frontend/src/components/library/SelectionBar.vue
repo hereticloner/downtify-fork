@@ -54,12 +54,15 @@
           <span class="max-sm:sr-only">{{ t('library.downloadZip') }}</span>
         </UiButton>
         <UiButton
+          v-if="!trash.enabled.value || auth.isAdmin.value"
           size="sm"
           variant="danger"
           icon="trash"
           @click="$emit('delete')"
         >
-          <span class="max-sm:sr-only">{{ t('actions.delete') }}</span>
+          <span class="max-sm:sr-only">{{
+            trash.enabled.value ? t('trash.move') : t('actions.delete')
+          }}</span>
         </UiButton>
         <UiIconButton
           icon="x"
@@ -76,6 +79,7 @@
 import UiButton from '../ui/UiButton.vue'
 import UiIconButton from '../ui/UiIconButton.vue'
 import { useAuth } from '/src/model/auth'
+import { useTrashCapability } from '/src/lib/trash'
 import { useI18n } from '/src/i18n'
 
 defineProps({
@@ -94,4 +98,6 @@ defineEmits([
 ])
 const { t } = useI18n()
 const auth = useAuth()
+// With the music trash on, only admins remove songs, and to the trash.
+const trash = useTrashCapability()
 </script>

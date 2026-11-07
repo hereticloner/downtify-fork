@@ -344,6 +344,12 @@ function getPlaylistBatchDetails(spotifyPlaylistId, { tracks = true } = {}) {
   )
 }
 
+// What the playlist page filters by: who fetched each song and which ones
+// Navidrome hasn't matched - see downtify/file_providers.py.
+function getPlaylistDetails(name) {
+  return API.get('/api/library/playlists/details', { params: { name } })
+}
+
 function downloadMissingPlaylistTracks(payload) {
   return API.post('/api/playlists/incomplete/download-missing', payload)
 }
@@ -397,8 +403,61 @@ function deleteDownload(file) {
   return API.delete('/delete', { params: { file } })
 }
 
+function downloadExclusions() {
+  return API.get('/api/v1/download-policy/exclusions')
+}
+function excludeDownload(song) {
+  return API.post('/api/v1/download-policy/exclusions', song)
+}
+function resumeDownload(id) {
+  return API.delete(
+    '/api/v1/download-policy/exclusions/' + encodeURIComponent(id)
+  )
+}
+
 function deleteDownloadsBatch(files) {
   return API.delete('/delete/batch', { data: { files } })
+}
+
+function trashCapabilities() {
+  return API.get('/api/v1/library/trash/capabilities')
+}
+async function trashPreview(files) {
+  const started = await API.post('/api/v1/library/trash/preview', { files })
+  for (let attempt = 0; attempt < 1800; attempt++) {
+    const result = await API.get(
+      '/api/v1/library/trash/preview/' +
+        encodeURIComponent(started.data.request_id)
+    )
+    if (result.data.state === 'ready') return { data: result.data.preview }
+    if (result.data.state === 'failed') {
+      const error = new Error('preview_unavailable')
+      error.response = {
+        data: { detail: { code: result.data.error || 'preview_unavailable' } },
+      }
+      throw error
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+  throw new Error('preview_unavailable')
+}
+function trashConfirm(confirmation) {
+  return API.post('/api/v1/library/trash/confirm', { confirmation })
+}
+function trashList(params) {
+  return API.get('/api/v1/library/trash', { params })
+}
+function trashRestore(ids) {
+  return API.post('/api/v1/library/trash/restore', { ids })
+}
+function trashRetry(ids) {
+  return API.post('/api/v1/library/trash/retry', { ids })
+}
+function trashExclusions() {
+  return API.get('/api/v1/library/trash/exclusions')
+}
+function trashAllowDownload(ids) {
+  return API.post('/api/v1/library/trash/allow-download', { ids })
 }
 
 // Two steps: the selection is POSTed (too long for a URL), then the
@@ -431,6 +490,17 @@ function renameLibraryPlaylist(name, newName) {
     name,
     new_name: newName,
   })
+}
+
+function uploadLibraryPlaylistCover(name, file, contentType) {
+  return API.put('/api/library/playlists/cover', file, {
+    params: { name },
+    headers: { 'Content-Type': contentType },
+  })
+}
+
+function removeLibraryPlaylistCover(name) {
+  return API.delete('/api/library/playlists/cover', { params: { name } })
 }
 
 // ── Collections: named groups of library playlists ───────────────────
@@ -718,7 +788,11 @@ function getStats() {
 }
 
 function getQueueStatus() {
-  return API.get('/api/queue/status')
+  return API.get('/api/queue/state')
+}
+
+function getQueueState() {
+  return API.get('/api/queue/state')
 }
 
 function pauseQueue() {
@@ -824,6 +898,17 @@ function setSettings(settings) {
 }
 
 export default {
+  downloadExclusions,
+  excludeDownload,
+  resumeDownload,
+  trashCapabilities,
+  trashPreview,
+  trashConfirm,
+  trashList,
+  trashRestore,
+  trashRetry,
+  trashExclusions,
+  trashAllowDownload,
   search,
   searchAlbums,
   searchArtists,
@@ -859,6 +944,7 @@ export default {
   getIncompletePlaylists,
   getPlaylistBatches,
   getPlaylistBatchDetails,
+  getPlaylistDetails,
   downloadMissingPlaylistTracks,
   deletePlaylistBatch,
   downloadFileURL: fileURL,
@@ -878,6 +964,8 @@ export default {
   createLibraryPlaylist,
   editLibraryPlaylistTracks,
   renameLibraryPlaylist,
+  uploadLibraryPlaylistCover,
+  removeLibraryPlaylistCover,
   listCollections,
   createCollection,
   renameCollection,
@@ -951,6 +1039,7 @@ export default {
   clearCompletedQueue,
   getStats,
   getQueueStatus,
+  getQueueState,
   pauseQueue,
   resumeQueue,
   getSettings,

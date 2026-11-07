@@ -1,4 +1,144 @@
 export default {
+  downloadPolicy: {
+    block: 'Stop downloading',
+    blocked: 'Downloads suspended for this track.',
+    confirm: 'Suspend downloads for this track?',
+    confirmHelp:
+      'New attempts will be blocked. A shared transfer already started may finish. Existing files will not be deleted.',
+    exclusions: 'Suspended tracks',
+    empty: 'No suspended tracks.',
+    resume: 'Allow again',
+    timeout: 'Attempt time limit reached',
+    manual: 'Suspended manually',
+    error: 'Could not change the suspension.',
+    alreadyActive: 'An attempt for this track is already in progress.',
+    budget: 'Cumulative attempt limit',
+    budgetHelp:
+      'Automatically suspend a track after this cumulative attempt time. Time between attempts is excluded. 0 disables the limit.',
+  },
+  trash: {
+    title: 'Kuka',
+    subtitle:
+      'A könyvtárból kivett számok, az áthelyezés után {days} napig megmaradnak. Addig visszaállíthatod őket.',
+    adminOnly: 'Ezt csak adminisztrátorok láthatják',
+    adminOnlyHint:
+      'Kérd meg a szerver egyik adminisztrátorát, hogy állítson vissza egy számot.',
+    off: 'A kuka ki van kapcsolva',
+    offHint:
+      'Ezen a szerveren a számok véglegesen törlődnek. A kukát a szerver beállításaiban lehet bekapcsolni (DOWNTIFY_TRASH).',
+    inTrash: 'A kukában',
+    exclusions: 'Letöltésekből kizárva',
+    search: 'Keresés a kukában',
+    restoreSelected: {
+      one: '{count} szám visszaállítása',
+      other: '{count} szám visszaállítása',
+    },
+    summary: {
+      one: '{count} szám · {size}',
+      other: '{count} szám · {size}',
+    },
+    empty: 'A kuka üres',
+    emptyHint:
+      'A könyvtárból a kukába tett számok itt látszanak, amíg le nem járnak.',
+    noMatch: 'Semmi sem egyezik a kukában',
+    select: '„{title}” kijelölése',
+    keptUntil: 'Megőrizve eddig: {date}',
+    restore: 'Visszaállítás',
+    retry: 'Újrapróbálás',
+    previous: 'Előző',
+    next: 'Következő',
+    exclusionsHint:
+      'Számok, amelyek ideje lejárt a kukában. Az automatikus letöltések (lejátszásilista-figyelő, követések) továbbra is kihagyják őket, amíg újra nem engedélyezed.',
+    exclusionsEmpty: 'Semmi sincs kizárva a letöltésekből',
+    allowDownload: 'Letöltés engedélyezése',
+    allowTitle: 'Újra letölthető legyen ez: „{title}”?',
+    allowBody:
+      'Az automatikus letöltések újra letölthetik. Most semmi sem töltődik le.',
+    move: 'Áthelyezés a kukába',
+    preparing: 'Fájlok ellenőrzése…',
+    confirmTitle: {
+      one: 'Áthelyezel {count} számot a kukába?',
+      other: 'Áthelyezel {count} számot a kukába?',
+    },
+    confirmBody:
+      'Csak ezek a fájlok kerülnek át, a dalszövegfájljaikkal együtt. Mindenkinél eltűnnek a könyvtárból, és {days} napig visszaállíthatók. A lejátszási listáik és kedvenceik velük együtt térnek vissza, az automatikus letöltések addig kihagyják őket.',
+    confirmMore: {
+      one: 'és még {count}',
+      other: 'és még {count}',
+    },
+    pending: {
+      one: '{count} szám áthelyezése a kukába',
+      other: '{count} szám áthelyezése a kukába',
+    },
+    downloadBlocked:
+      'A zenekukában van: egy adminisztrátornak újra engedélyeznie kell.',
+    states: {
+      preview: 'Megerősítésre vár',
+      pending: 'Áthelyezésre vár',
+      moving: 'Áthelyezés',
+      trashed: 'A kukában',
+      restore_pending: 'Visszaállításra vár',
+      restoring: 'Visszaállítás',
+      restored: 'Visszaállítva',
+      purging: 'Lejár',
+      purged: 'Lejárt',
+      error: 'Leállt — a fájlok megmaradtak',
+    },
+    errors: {
+      unavailable: 'A kuka most nem érhető el. Semmi sem került át.',
+      admin_required: 'Csak adminisztrátor használhatja a kukát.',
+      admin_access_revoked: 'A kérést indító fiók már nem adminisztrátor.',
+      atomic_move_unsupported:
+        'Ez a tárhely nem tud biztonságosan fájlokat áthelyezni. Semmi sem került át.',
+      confirmation_expired: 'Az ellenőrzés lejárt. Válaszd ki újra a számokat.',
+      confirmation_invalid:
+        'Ez a megerősítés nem a te fiókodhoz vagy kijelölésedhez tartozik.',
+      file_changed:
+        'A fájl az ellenőrzés után megváltozott. A helyén maradt; válaszd ki újra.',
+      file_changed_during_move:
+        'A fájl áthelyezés közben megváltozott. A kukában marad, hogy ellenőrizhesd.',
+      file_missing:
+        'Hiányzik egy fájl. Ellenőrizd a tárhelyet, majd próbáld újra.',
+      filesystem_unavailable:
+        'A tárhely nem érhető el. Ellenőrizd, majd próbáld újra.',
+      identity_uncertain:
+        'Ennek a számnak a címkéi kevesek ahhoz, hogy kimaradjon az automatikus letöltésekből. Semmi sem került át.',
+      invalid_path: 'Ez a fájl a kuka által lefedett mappákon kívül van.',
+      invalid_selection: 'Válassz 1 és 200 közötti számot.',
+      item_not_found: 'Ez a szám már nincs a könyvtárban.',
+      library_task_active:
+        'A könyvtár feljavítása fut. Várd meg, vagy előbb szüneteltesd.',
+      nas_marker_changed:
+        'A tárhely nem az, amire a kuka számít. Semmi sem került át.',
+      nas_marker_missing: 'A várt tárhely nincs csatolva. Semmi sem került át.',
+      operation_already_pending: 'Ez a szám már úton van.',
+      operation_in_progress:
+        'Az áthelyezés még fut. Várd meg a visszaállítás előtt.',
+      operation_not_complete: 'Várd meg, amíg a mostani lépés befejeződik.',
+      preview_busy: 'Egy másik ellenőrzés fut. Várd meg, amíg befejeződik.',
+      preview_unavailable:
+        'Az ellenőrzés megszakadt. Válaszd ki újra a számokat.',
+      restore_collision:
+        'Ott már van egy másik fájl. Semmi sem lett felülírva; a szám a kukában marad.',
+      retention_expired: 'Lejárt az ideje a kukában.',
+      root_unavailable: 'A zenemappa nem érhető el.',
+      track_is_playing:
+        'Valaki épp ezt a számot hallgatja. Előbb szüneteltesd.',
+      trash_file_changed:
+        'A kukában lévő másolat megváltozott. Nem lesz törölve.',
+      trash_file_missing: 'Hiányzik egy fájl a kukából.',
+      trash_ignore_invalid:
+        'A kukamappa .ignore fájlja nem üres. Semmi sem került át.',
+      trash_not_configured: 'A kuka ki van kapcsolva ezen a szerveren.',
+      trash_permissions_unsafe:
+        'Mások is olvashatják a kukamappát. Ellenőrizd a jogosultságait.',
+      unsafe_symlink:
+        'Az útvonalban szimbolikus link van, ezért érintetlen marad.',
+      unsupported_collection: 'Ennek a számnak a mappáját nem fedi le a kuka.',
+      unsupported_lyrics_location:
+        'A dalszövegmappát nem fedi le a kuka. Semmi sem került át.',
+    },
+  },
   language: {
     name: 'Magyar',
   },
@@ -42,6 +182,18 @@ export default {
     spotify: {
       not_connected: 'Először kösd össze a Spotifyt a Beállításokban.',
     },
+  },
+  playlistSearch: {
+    placeholder: 'Keresés ebben a listában',
+    all: 'Mind',
+    missing: 'Hiányzó',
+    failed: 'Sikertelen',
+    notInNavidrome: 'Nincs a Navidrome-ban',
+    fromFolders: 'A mappáid',
+    unknownSource: 'Ismeretlen forrás',
+    showing: '{count} / {total}',
+    noMatch: 'Nincs találat',
+    noMatchHint: 'Próbálj más szavakat vagy másik szűrőt.',
   },
   common: {
     cancel: 'Mégse',
@@ -295,6 +447,18 @@ export default {
     retryFailed: 'Sikertelenek újra ({count})',
     clearDone: 'Készek törlése ({count})',
     clearAll: 'Sor ürítése',
+    pause: 'Letöltések szüneteltetése',
+    resume: 'Letöltések folytatása',
+    pauseFailed: 'Nem sikerült módosítani a sort. Próbáld újra.',
+    pausingTitle: 'Letöltések szüneteltetése…',
+    pausingBody: {
+      one: 'Várakozás {count} letöltés befejezésére. Új letöltés nem indul.',
+      other: 'Várakozás {count} letöltés befejezésére. Új letöltés nem indul.',
+    },
+    pausedTitle: 'Letöltések szüneteltetve',
+    pausedBody: 'A folytatásig nem indul új letöltés.',
+    pausedKept:
+      'A várakozó dalok a sorban maradnak, akkor is, ha a Downtify újraindul vagy frissül.',
     emptyTitle: 'A sor üres',
     emptyBody:
       'Keress zenét vagy illessz be egy linket — a letöltések itt jelennek meg.',
@@ -312,6 +476,7 @@ export default {
     },
     showMore: 'Még {count} megjelenítése',
     statusQueued: 'Várakozik',
+    statusPaused: 'Szüneteltetve',
     statusDone: 'Letöltve',
     retry: 'Újra',
     remove: 'Eltávolítás a sorból',
@@ -672,6 +837,12 @@ export default {
     nothingYet: 'Még nincs letöltött szám',
     nothingYetHint: 'A számok letöltés után itt jelennek meg.',
     nothingYetManualHint: 'Adj hozzá számokat a könyvtárból.',
+    uploadCover: 'Borító feltöltése',
+    removeCover: 'Borító eltávolítása',
+    coverSaved: 'A lejátszási lista borítója elmentve',
+    coverRemoved: 'Borító eltávolítva',
+    coverInvalid: 'Válasszon JPEG, PNG vagy WebP képet.',
+    coverTooLarge: 'A borítóképek legfeljebb 10 MiB-osak lehetnek.',
   },
   track: {
     title: 'Cím',
@@ -679,6 +850,7 @@ export default {
     album: 'Album',
     trackNumber: 'Sorszám',
     year: 'Év',
+    releaseDate: 'Megjelenési dátum',
     length: 'Hossz',
     format: 'Formátum',
     size: 'Méret',
@@ -1301,6 +1473,7 @@ export default {
     lyrics: 'Dalszöveg',
     queue: 'Következik',
     search: 'Keresés',
+    findInPlaylist: 'Keresés a listában (a lista oldalán)',
     goLibrary: 'Ugrás a könyvtárhoz',
     goQueue: 'Ugrás a sorhoz',
     close: 'Most szóló bezárása',

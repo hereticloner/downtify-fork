@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from mutagen.id3 import APIC, ID3, TIT2, TPE1
 
+from downtify import manual_playlists
 from downtify.library_catalog import LibraryContext
 from downtify.library_paths import library_stored_path
 from downtify.likes import LIKED_PLAYLIST_NAME
@@ -21,7 +22,13 @@ from downtify.manual_playlists import (
     rename_manual_playlist,
 )
 from downtify.playlist_listing import list_library_playlists
-from downtify.playlist_mosaic import _filter_complex, unique_cover_images
+from downtify.playlist_mosaic import (
+    _filter_complex,
+    has_explicit_cover,
+    keep_explicit_cover,
+    normalize_uploaded_cover,
+    unique_cover_images,
+)
 
 _JPEG = bytes.fromhex(
     'ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707'
@@ -155,6 +162,99 @@ def test_mosaic_filter_matches_spotify_layouts():
     assert 'hstack' in three
     assert four.count('hstack') == 2
     assert 'vstack' in four
+
+
+def test_uploaded_jpeg_is_normalized_and_invalid_images_are_rejected():
+    if not shutil.which('ffmpeg'):
+        pytest.skip('ffmpeg is not installed')
+    normalized = normalize_uploaded_cover(_JPEG, 'image/jpeg')
+    assert normalized.startswith(b'\xff\xd8')
+    with pytest.raises(ValueError, match='JPEG, PNG or WebP'):
+        normalize_uploaded_cover(_JPEG, 'image/png')
+
+
+def test_uploaded_cover_replaces_and_remove_restores_mosaic(
+    tmp_path, monkeypatch
+):
+    download = tmp_path / 'downloads'
+    ctx = LibraryContext(download_dir=download)
+    create_manual_playlist(ctx, 'Mix')
+    path = download / 'Playlists' / 'Mix.m3u'
+    monkeypatch.setattr(
+        manual_playlists, 'normalize_uploaded_cover', lambda *_: _JPEG
+    )
+
+    cover = manual_playlists.save_manual_playlist_cover(
+        ctx, 'Mix', b'validated image', 'image/png'
+    )
+
+    assert cover.read_bytes() == _JPEG
+    assert has_explicit_cover(path)
+    manual_playlists.remove_manual_playlist_cover(ctx, 'Mix')
+    assert not has_explicit_cover(path)
+    assert not cover.exists()
+
+
+def test_source_cover_survives_edits_rename_and_does_not_change_audio(
+    tmp_path,
+):
+    download = tmp_path / 'downloads'
+    extra = tmp_path / 'external'
+    native = download / 'One.mp3'
+    imported = extra / 'Two.mp3'
+    _mp3(native, title='One', artist='A')
+    _mp3(imported, title='Two', artist='B')
+    original = {
+        path: (path.read_bytes(), path.stat().st_mtime_ns)
+        for path in (native, imported)
+    }
+    ctx = LibraryContext(download_dir=download, extra_dirs=(extra,))
+    create_manual_playlist(ctx, 'Mix')
+    stored = library_stored_path(imported, download, extra_dirs=(extra,))
+    edit_manual_playlist(ctx, 'Mix', add=['One.mp3', stored])
+    path = download / 'Playlists' / 'Mix.m3u'
+    image = _jpeg(b'official-source')
+    path.with_suffix('.jpg').write_bytes(image)
+    keep_explicit_cover(path)
+    keep_explicit_cover(path)
+    listed = list_library_playlists(download, extra_dirs=(extra,))
+    assert listed[0]['explicit_cover'] is True
+    assert listed[0]['cover'].endswith('Mix.jpg')
+    result = edit_manual_playlist(ctx, 'Mix', add=['One.mp3', stored])
+    assert result['files'] == ['One.mp3', stored]
+    assert has_explicit_cover(path)
+    assert path.with_suffix('.jpg').read_bytes() == image
+    edit_manual_playlist(ctx, 'Mix', remove=['One.mp3'])
+    assert path.with_suffix('.jpg').read_bytes() == image
+    renamed = rename_manual_playlist(ctx, 'Mix', 'Acoustic')
+    assert renamed['files'] == [stored]
+    dest = download / 'Playlists' / 'Acoustic.m3u'
+    assert is_manual_m3u(dest)
+    assert has_explicit_cover(dest)
+    assert dest.with_suffix('.jpg').read_bytes() == image
+    assert not path.exists()
+    assert not path.with_suffix('.jpg').exists()
+    drop_manual_playlist(ctx, 'Acoustic')
+    assert not dest.with_suffix('.jpg').exists()
+    assert {
+        p: (p.read_bytes(), p.stat().st_mtime_ns) for p in original
+    } == original
+
+
+def test_missing_explicit_image_allows_normal_mosaic_fallback(tmp_path):
+    download = tmp_path / 'downloads'
+    _mp3(download / 'One.mp3', title='One', artist='A', cover=_JPEG)
+    ctx = LibraryContext(download_dir=download)
+    create_manual_playlist(ctx, 'Mix')
+    edit_manual_playlist(ctx, 'Mix', add=['One.mp3'])
+    path = download / 'Playlists' / 'Mix.m3u'
+    path.with_suffix('.jpg').write_bytes(_jpeg(b'official'))
+    keep_explicit_cover(path)
+    path.with_suffix('.jpg').unlink()
+    assert not has_explicit_cover(path)
+    edit_manual_playlist(ctx, 'Mix', add=['One.mp3'])
+    assert path.with_suffix('.jpg').read_bytes().startswith(b'\xff\xd8')
+    assert path.with_suffix('.jpg').read_bytes() != _jpeg(b'official')
 
 
 def test_manual_playlist_cover_uses_distinct_track_art(tmp_path):

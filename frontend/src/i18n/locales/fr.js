@@ -1,4 +1,150 @@
 export default {
+  downloadPolicy: {
+    block: 'Ne plus télécharger',
+    blocked: 'Téléchargements suspendus pour ce titre.',
+    confirm: 'Suspendre les téléchargements de ce titre ?',
+    confirmHelp:
+      'Les nouvelles tentatives seront bloquées. Un transfert partagé déjà lancé peut se terminer. Aucun fichier existant ne sera supprimé.',
+    exclusions: 'Titres suspendus',
+    empty: 'Aucun titre suspendu.',
+    resume: 'Réautoriser',
+    timeout: 'Limite de tentatives atteinte',
+    manual: 'Suspendu manuellement',
+    error: 'Impossible de modifier la suspension.',
+    alreadyActive: 'Une tentative pour ce titre est déjà en cours.',
+    budget: 'Limite cumulée des tentatives',
+    budgetHelp:
+      'Suspend automatiquement un titre après ce temps cumulé. Les périodes entre les tentatives ne comptent pas. 0 désactive la limite.',
+  },
+  trash: {
+    title: 'Corbeille',
+    subtitle:
+      'Les morceaux retirés de la bibliothèque, gardés {days} jours après leur déplacement. Restaurez-les d’ici là.',
+    adminOnly: 'Réservé aux administrateurs',
+    adminOnlyHint:
+      'Demandez à un administrateur de ce serveur de restaurer un morceau.',
+    off: 'La corbeille est désactivée',
+    offHint:
+      'Sur ce serveur, les morceaux sont supprimés définitivement. La corbeille s’active dans la configuration du serveur (DOWNTIFY_TRASH).',
+    inTrash: 'Dans la corbeille',
+    exclusions: 'Exclus des téléchargements',
+    search: 'Rechercher dans la corbeille',
+    restoreSelected: {
+      one: 'Restaurer {count} morceau',
+      other: 'Restaurer {count} morceaux',
+    },
+    summary: {
+      one: '{count} morceau · {size}',
+      other: '{count} morceaux · {size}',
+    },
+    empty: 'La corbeille est vide',
+    emptyHint:
+      'Les morceaux mis à la corbeille depuis la bibliothèque apparaissent ici jusqu’à leur expiration.',
+    noMatch: 'Rien dans la corbeille ne correspond',
+    select: 'Sélectionner « {title} »',
+    keptUntil: 'Gardé jusqu’au {date}',
+    restore: 'Restaurer',
+    retry: 'Réessayer',
+    previous: 'Précédent',
+    next: 'Suivant',
+    exclusionsHint:
+      'Les morceaux dont le délai dans la corbeille est écoulé. Les téléchargements automatiques (surveillance de playlists, suivis) les ignorent toujours, jusqu’à ce que vous les réautorisiez.',
+    exclusionsEmpty: 'Rien n’est exclu des téléchargements',
+    allowDownload: 'Réautoriser',
+    allowTitle: 'Autoriser « {title} » à être téléchargé de nouveau ?',
+    allowBody:
+      'Les téléchargements automatiques pourront le récupérer de nouveau. Rien n’est téléchargé maintenant.',
+    move: 'Mettre à la corbeille',
+    preparing: 'Vérification des fichiers…',
+    confirmTitle: {
+      one: 'Mettre {count} morceau à la corbeille ?',
+      other: 'Mettre {count} morceaux à la corbeille ?',
+    },
+    confirmBody:
+      'Seuls ces fichiers sont déplacés, avec leurs fichiers de paroles. Ils quittent la bibliothèque pour tout le monde et peuvent être restaurés pendant {days} jours. Leurs playlists et favoris reviennent avec eux, et les téléchargements automatiques les ignorent en attendant.',
+    confirmMore: {
+      one: 'et {count} autre',
+      other: 'et {count} autres',
+    },
+    pending: {
+      one: 'Mise à la corbeille de {count} morceau',
+      other: 'Mise à la corbeille de {count} morceaux',
+    },
+    downloadBlocked:
+      'Dans la corbeille : un administrateur doit le réautoriser.',
+    states: {
+      preview: 'En attente de confirmation',
+      pending: 'En attente de déplacement',
+      moving: 'Déplacement',
+      trashed: 'Dans la corbeille',
+      restore_pending: 'En attente de restauration',
+      restoring: 'Restauration',
+      restored: 'Restauré',
+      purging: 'Expiration',
+      purged: 'Expiré',
+      error: 'Arrêté — fichiers conservés',
+    },
+    errors: {
+      unavailable:
+        'La corbeille n’est pas disponible pour le moment. Rien n’a été déplacé.',
+      admin_required: 'Seul un administrateur peut utiliser la corbeille.',
+      admin_access_revoked:
+        'Le compte qui l’a demandé n’est plus administrateur.',
+      atomic_move_unsupported:
+        'Ce stockage ne peut pas déplacer les fichiers en sécurité. Rien n’a été déplacé.',
+      confirmation_expired:
+        'La vérification a expiré. Choisissez de nouveau les morceaux.',
+      confirmation_invalid:
+        'Cette confirmation ne correspond pas à votre compte ou à votre sélection.',
+      file_changed:
+        'Le fichier a changé après la vérification. Il est resté en place ; choisissez-le de nouveau.',
+      file_changed_during_move:
+        'Le fichier a changé pendant le déplacement. Il est gardé dans la corbeille pour vérification.',
+      file_missing: 'Un fichier manque. Vérifiez le stockage, puis réessayez.',
+      filesystem_unavailable:
+        'Le stockage n’est pas disponible. Vérifiez-le, puis réessayez.',
+      identity_uncertain:
+        'Les tags de ce morceau ne suffisent pas à l’exclure des téléchargements automatiques. Rien n’a été déplacé.',
+      invalid_path:
+        'Ce fichier est hors des dossiers couverts par la corbeille.',
+      invalid_selection: 'Choisissez entre 1 et 200 morceaux.',
+      item_not_found: 'Ce morceau n’est plus dans la bibliothèque.',
+      library_task_active:
+        'L’amélioration de la bibliothèque est en cours. Attendez-la ou mettez-la en pause.',
+      nas_marker_changed:
+        'Le stockage n’est pas celui qu’attend la corbeille. Rien n’a été déplacé.',
+      nas_marker_missing:
+        'Le stockage attendu n’est pas monté. Rien n’a été déplacé.',
+      operation_already_pending: 'Ce morceau est déjà en route.',
+      operation_in_progress:
+        'Le déplacement est en cours. Attendez-le avant de restaurer.',
+      operation_not_complete: 'Attendez la fin de l’étape en cours.',
+      preview_busy:
+        'Une autre vérification est en cours. Attendez qu’elle se termine.',
+      preview_unavailable:
+        'La vérification a été interrompue. Choisissez de nouveau les morceaux.',
+      restore_collision:
+        'Un autre fichier s’y trouve déjà. Rien n’a été écrasé ; le morceau reste dans la corbeille.',
+      retention_expired: 'Son délai dans la corbeille est écoulé.',
+      root_unavailable: 'Le dossier de musique n’est pas disponible.',
+      track_is_playing:
+        'Quelqu’un écoute ce morceau. Mettez-le en pause d’abord.',
+      trash_file_changed:
+        'La copie dans la corbeille a changé. Elle ne sera pas supprimée.',
+      trash_file_missing: 'Un fichier de la corbeille manque.',
+      trash_ignore_invalid:
+        'Le fichier .ignore du dossier de la corbeille n’est pas vide. Rien n’a été déplacé.',
+      trash_not_configured: 'La corbeille est désactivée sur ce serveur.',
+      trash_permissions_unsafe:
+        'D’autres peuvent lire le dossier de la corbeille. Vérifiez ses permissions.',
+      unsafe_symlink:
+        'Le chemin contient un lien symbolique : il n’est pas touché.',
+      unsupported_collection:
+        'Le dossier de ce morceau n’est pas couvert par la corbeille.',
+      unsupported_lyrics_location:
+        'Le dossier des paroles n’est pas couvert par la corbeille. Rien n’a été déplacé.',
+    },
+  },
   language: {
     name: 'Français',
   },
@@ -46,6 +192,18 @@ export default {
     spotify: {
       not_connected: "Connectez Spotify dans les paramètres d'abord.",
     },
+  },
+  playlistSearch: {
+    placeholder: 'Rechercher dans cette playlist',
+    all: 'Tous',
+    missing: 'Manquants',
+    failed: 'Échoués',
+    notInNavidrome: 'Absents de Navidrome',
+    fromFolders: 'Vos dossiers',
+    unknownSource: 'Source inconnue',
+    showing: '{count} sur {total}',
+    noMatch: 'Aucun résultat',
+    noMatchHint: 'Essayez d’autres mots ou un autre filtre.',
   },
   common: {
     cancel: 'Annuler',
@@ -306,6 +464,19 @@ export default {
     retryFailed: 'Relancer les échecs ({count})',
     clearDone: 'Retirer les terminés ({count})',
     clearAll: 'Vider la file',
+    pause: 'Mettre en pause',
+    resume: 'Reprendre les téléchargements',
+    pauseFailed: 'Impossible de modifier la file. Réessayez.',
+    pausingTitle: 'Mise en pause…',
+    pausingBody: {
+      one: 'En attente de la fin de {count} téléchargement. Aucun nouveau téléchargement ne démarrera.',
+      other:
+        'En attente de la fin de {count} téléchargements. Aucun nouveau téléchargement ne démarrera.',
+    },
+    pausedTitle: 'Téléchargements en pause',
+    pausedBody: 'Aucun nouveau téléchargement ne démarrera avant la reprise.',
+    pausedKept:
+      'Les morceaux en attente restent dans la file, même si Downtify redémarre ou est mis à jour.',
     emptyTitle: 'La file est vide',
     emptyBody:
       'Cherchez de la musique ou collez un lien — les téléchargements apparaissent ici.',
@@ -323,6 +494,7 @@ export default {
     },
     showMore: 'Afficher {count} de plus',
     statusQueued: 'En attente',
+    statusPaused: 'En pause',
     statusDone: 'Téléchargé',
     retry: 'Réessayer',
     remove: 'Retirer de la file',
@@ -688,6 +860,12 @@ export default {
     nothingYetHint:
       'Les titres apparaissent ici à mesure qu’ils sont téléchargés.',
     nothingYetManualHint: 'Ajoutez des titres depuis votre bibliothèque.',
+    uploadCover: 'Téléverser la pochette',
+    removeCover: 'Retirer la pochette',
+    coverSaved: 'Pochette de la liste enregistrée',
+    coverRemoved: 'Pochette retirée',
+    coverInvalid: 'Choisissez une image JPEG, PNG ou WebP.',
+    coverTooLarge: 'Les images de pochette doivent faire 10 MiB ou moins.',
   },
   track: {
     title: 'Titre',
@@ -695,6 +873,7 @@ export default {
     album: 'Album',
     trackNumber: 'Piste',
     year: 'Année',
+    releaseDate: 'Date de sortie',
     length: 'Durée',
     format: 'Format',
     size: 'Taille',
@@ -1329,6 +1508,7 @@ export default {
     lyrics: 'Paroles',
     queue: 'À suivre',
     search: 'Recherche',
+    findInPlaylist: 'Rechercher dans la playlist (sur sa page)',
     goLibrary: 'Aller à la bibliothèque',
     goQueue: 'Aller à la file',
     close: 'Fermer la lecture en cours',

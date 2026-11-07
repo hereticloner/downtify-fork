@@ -1,4 +1,149 @@
 export default {
+  downloadPolicy: {
+    block: 'Stop downloading',
+    blocked: 'Downloads suspended for this track.',
+    confirm: 'Suspend downloads for this track?',
+    confirmHelp:
+      'New attempts will be blocked. A shared transfer already started may finish. Existing files will not be deleted.',
+    exclusions: 'Suspended tracks',
+    empty: 'No suspended tracks.',
+    resume: 'Allow again',
+    timeout: 'Attempt time limit reached',
+    manual: 'Suspended manually',
+    error: 'Could not change the suspension.',
+    alreadyActive: 'An attempt for this track is already in progress.',
+    budget: 'Cumulative attempt limit',
+    budgetHelp:
+      'Automatically suspend a track after this cumulative attempt time. Time between attempts is excluded. 0 disables the limit.',
+  },
+  trash: {
+    title: 'Κάδος',
+    subtitle:
+      'Κομμάτια που βγήκαν από τη βιβλιοθήκη, φυλάσσονται {days} ημέρες αφού μετακινηθούν. Μέχρι τότε μπορείς να τα επαναφέρεις.',
+    adminOnly: 'Μόνο οι διαχειριστές μπορούν να το δουν αυτό',
+    adminOnlyHint:
+      'Ζήτησε από έναν διαχειριστή αυτού του διακομιστή να επαναφέρει ένα κομμάτι.',
+    off: 'Ο κάδος είναι απενεργοποιημένος',
+    offHint:
+      'Σε αυτόν τον διακομιστή τα κομμάτια διαγράφονται οριστικά. Ο κάδος ενεργοποιείται στις ρυθμίσεις του διακομιστή (DOWNTIFY_TRASH).',
+    inTrash: 'Στον κάδο',
+    exclusions: 'Εκτός λήψεων',
+    search: 'Αναζήτηση στον κάδο',
+    restoreSelected: {
+      one: 'Επαναφορά {count} κομματιού',
+      other: 'Επαναφορά {count} κομματιών',
+    },
+    summary: {
+      one: '{count} κομμάτι · {size}',
+      other: '{count} κομμάτια · {size}',
+    },
+    empty: 'Ο κάδος είναι άδειος',
+    emptyHint:
+      'Τα κομμάτια που μετακινείς από τη βιβλιοθήκη στον κάδο εμφανίζονται εδώ μέχρι να λήξουν.',
+    noMatch: 'Τίποτα στον κάδο δεν ταιριάζει',
+    select: 'Επιλογή «{title}»',
+    keptUntil: 'Φυλάσσεται έως {date}',
+    restore: 'Επαναφορά',
+    retry: 'Δοκίμασε ξανά',
+    previous: 'Προηγούμενη',
+    next: 'Επόμενη',
+    exclusionsHint:
+      'Κομμάτια των οποίων ο χρόνος στον κάδο έληξε. Οι αυτόματες λήψεις (παρακολούθηση λιστών, παρακολουθήσεις) συνεχίζουν να τα παραλείπουν μέχρι να τα επιτρέψεις ξανά.',
+    exclusionsEmpty: 'Τίποτα δεν είναι εκτός λήψεων',
+    allowDownload: 'Επίτρεψε λήψεις',
+    allowTitle: 'Να επιτραπεί ξανά η λήψη του «{title}»;',
+    allowBody:
+      'Οι αυτόματες λήψεις μπορεί να το κατεβάσουν ξανά. Τίποτα δεν κατεβαίνει τώρα.',
+    move: 'Μετακίνηση στον κάδο',
+    preparing: 'Έλεγχος αρχείων…',
+    confirmTitle: {
+      one: 'Μετακίνηση {count} κομματιού στον κάδο;',
+      other: 'Μετακίνηση {count} κομματιών στον κάδο;',
+    },
+    confirmBody:
+      'Μετακινούνται μόνο αυτά τα αρχεία, μαζί με τα αρχεία στίχων τους. Βγαίνουν από τη βιβλιοθήκη για όλους και μπορούν να επανέλθουν για {days} ημέρες. Οι λίστες και τα «μου αρέσει» τους επιστρέφουν μαζί τους, και στο μεταξύ οι αυτόματες λήψεις τα παραλείπουν.',
+    confirmMore: {
+      one: 'και {count} ακόμη',
+      other: 'και {count} ακόμη',
+    },
+    pending: {
+      one: 'Μετακίνηση {count} κομματιού στον κάδο',
+      other: 'Μετακίνηση {count} κομματιών στον κάδο',
+    },
+    downloadBlocked:
+      'Στον κάδο μουσικής: ένας διαχειριστής πρέπει να το επιτρέψει ξανά.',
+    states: {
+      preview: 'Αναμονή επιβεβαίωσης',
+      pending: 'Αναμονή μετακίνησης',
+      moving: 'Μετακινείται',
+      trashed: 'Στον κάδο',
+      restore_pending: 'Αναμονή επαναφοράς',
+      restoring: 'Επαναφέρεται',
+      restored: 'Επανήλθε',
+      purging: 'Λήγει',
+      purged: 'Έληξε',
+      error: 'Σταμάτησε — τα αρχεία κρατήθηκαν',
+    },
+    errors: {
+      unavailable:
+        'Ο κάδος δεν είναι διαθέσιμος τώρα. Δεν μετακινήθηκε τίποτα.',
+      admin_required:
+        'Μόνο ένας διαχειριστής μπορεί να χρησιμοποιήσει τον κάδο.',
+      admin_access_revoked:
+        'Ο λογαριασμός που το ζήτησε δεν είναι πια διαχειριστής.',
+      atomic_move_unsupported:
+        'Αυτός ο χώρος αποθήκευσης δεν μπορεί να μετακινήσει αρχεία με ασφάλεια. Δεν μετακινήθηκε τίποτα.',
+      confirmation_expired: 'Ο έλεγχος έληξε. Επίλεξε ξανά τα κομμάτια.',
+      confirmation_invalid:
+        'Αυτή η επιβεβαίωση δεν είναι για τον λογαριασμό ή την επιλογή σου.',
+      file_changed:
+        'Το αρχείο άλλαξε μετά τον έλεγχο. Έμεινε στη θέση του· επίλεξέ το ξανά.',
+      file_changed_during_move:
+        'Το αρχείο άλλαξε κατά τη μετακίνηση. Φυλάσσεται στον κάδο για να το ελέγξεις.',
+      file_missing:
+        'Λείπει ένα αρχείο. Έλεγξε τον χώρο αποθήκευσης και δοκίμασε ξανά.',
+      filesystem_unavailable:
+        'Ο χώρος αποθήκευσης δεν είναι διαθέσιμος. Έλεγξέ τον και δοκίμασε ξανά.',
+      identity_uncertain:
+        'Τα tags αυτού του κομματιού δεν αρκούν για να μείνει εκτός αυτόματων λήψεων. Δεν μετακινήθηκε τίποτα.',
+      invalid_path:
+        'Αυτό το αρχείο είναι εκτός των φακέλων που καλύπτει ο κάδος.',
+      invalid_selection: 'Επίλεξε από 1 έως 200 κομμάτια.',
+      item_not_found: 'Αυτό το κομμάτι δεν είναι πια στη βιβλιοθήκη.',
+      library_task_active:
+        'Η αναβάθμιση της βιβλιοθήκης τρέχει. Περίμενε ή βάλ’ την σε παύση πρώτα.',
+      nas_marker_changed:
+        'Ο χώρος αποθήκευσης δεν είναι αυτός που περιμένει ο κάδος. Δεν μετακινήθηκε τίποτα.',
+      nas_marker_missing:
+        'Ο αναμενόμενος χώρος αποθήκευσης δεν είναι προσαρτημένος. Δεν μετακινήθηκε τίποτα.',
+      operation_already_pending: 'Αυτό το κομμάτι είναι ήδη καθ’ οδόν.',
+      operation_in_progress:
+        'Η μετακίνηση τρέχει ακόμη. Περίμενε πριν την επαναφορά.',
+      operation_not_complete: 'Περίμενε να τελειώσει το τρέχον βήμα.',
+      preview_busy: 'Τρέχει άλλος έλεγχος. Περίμενε να τελειώσει.',
+      preview_unavailable: 'Ο έλεγχος διακόπηκε. Επίλεξε ξανά τα κομμάτια.',
+      restore_collision:
+        'Υπάρχει ήδη άλλο αρχείο εκεί. Δεν αντικαταστάθηκε τίποτα· το κομμάτι μένει στον κάδο.',
+      retention_expired: 'Ο χρόνος του στον κάδο έληξε.',
+      root_unavailable: 'Ο φάκελος μουσικής δεν είναι διαθέσιμος.',
+      track_is_playing:
+        'Κάποιος ακούει αυτό το κομμάτι. Βάλ’ το σε παύση πρώτα.',
+      trash_file_changed: 'Το αντίγραφο στον κάδο άλλαξε. Δεν θα διαγραφεί.',
+      trash_file_missing: 'Λείπει ένα αρχείο από τον κάδο.',
+      trash_ignore_invalid:
+        'Το αρχείο .ignore του φακέλου του κάδου δεν είναι κενό. Δεν μετακινήθηκε τίποτα.',
+      trash_not_configured:
+        'Ο κάδος είναι απενεργοποιημένος σε αυτόν τον διακομιστή.',
+      trash_permissions_unsafe:
+        'Άλλοι μπορούν να διαβάσουν τον φάκελο του κάδου. Έλεγξε τα δικαιώματά του.',
+      unsafe_symlink:
+        'Η διαδρομή έχει συμβολικό σύνδεσμο, γι’ αυτό δεν αγγίζεται.',
+      unsupported_collection:
+        'Ο φάκελος αυτού του κομματιού δεν καλύπτεται από τον κάδο.',
+      unsupported_lyrics_location:
+        'Ο φάκελος στίχων δεν καλύπτεται από τον κάδο. Δεν μετακινήθηκε τίποτα.',
+    },
+  },
   language: {
     name: 'Ελληνικά',
   },
@@ -44,6 +189,18 @@ export default {
     spotify: {
       not_connected: 'Συνδέστε το Spotify στις Ρυθμίσεις πρώτα.',
     },
+  },
+  playlistSearch: {
+    placeholder: 'Αναζήτηση σε αυτή τη λίστα',
+    all: 'Όλα',
+    missing: 'Λείπουν',
+    failed: 'Απέτυχαν',
+    notInNavidrome: 'Εκτός Navidrome',
+    fromFolders: 'Οι φάκελοί σας',
+    unknownSource: 'Άγνωστη πηγή',
+    showing: '{count} από {total}',
+    noMatch: 'Δεν βρέθηκε τίποτα',
+    noMatchHint: 'Δοκιμάστε άλλες λέξεις ή άλλο φίλτρο.',
   },
   common: {
     cancel: 'Ακύρωση',
@@ -298,6 +455,19 @@ export default {
     retryFailed: 'Επανάληψη αποτυχημένων ({count})',
     clearDone: 'Εκκαθάριση ολοκληρωμένων ({count})',
     clearAll: 'Άδειασμα ουράς',
+    pause: 'Παύση λήψεων',
+    resume: 'Συνέχιση λήψεων',
+    pauseFailed: 'Δεν ήταν δυνατή η αλλαγή της ουράς. Δοκιμάστε ξανά.',
+    pausingTitle: 'Παύση λήψεων…',
+    pausingBody: {
+      one: 'Αναμονή για να ολοκληρωθεί {count} λήψη. Δεν θα ξεκινήσει καμία νέα λήψη.',
+      other:
+        'Αναμονή για να ολοκληρωθούν {count} λήψεις. Δεν θα ξεκινήσει καμία νέα λήψη.',
+    },
+    pausedTitle: 'Οι λήψεις είναι σε παύση',
+    pausedBody: 'Καμία νέα λήψη δεν θα ξεκινήσει μέχρι τη συνέχιση.',
+    pausedKept:
+      'Τα τραγούδια σε αναμονή παραμένουν στην ουρά, ακόμη κι αν το Downtify επανεκκινηθεί ή ενημερωθεί.',
     emptyTitle: 'Η ουρά είναι άδεια',
     emptyBody:
       'Αναζήτησε μουσική ή επικόλλησε σύνδεσμο — οι λήψεις εμφανίζονται εδώ.',
@@ -315,6 +485,7 @@ export default {
     },
     showMore: 'Εμφάνιση {count} ακόμα',
     statusQueued: 'Σε αναμονή',
+    statusPaused: 'Σε παύση',
     statusDone: 'Ολοκληρώθηκε',
     retry: 'Επανάληψη',
     remove: 'Αφαίρεση από την ουρά',
@@ -673,6 +844,12 @@ export default {
     nothingYet: 'Δεν έχουν κατέβει κομμάτια ακόμα',
     nothingYetHint: 'Τα κομμάτια εμφανίζονται εδώ καθώς ολοκληρώνονται.',
     nothingYetManualHint: 'Προσθέστε κομμάτια από τη βιβλιοθήκη.',
+    uploadCover: 'Μεταφόρτωση εξωφύλλου',
+    removeCover: 'Κατάργηση εξωφύλλου',
+    coverSaved: 'Το εξώφυλλο της λίστας αναπαραγωγής αποθηκεύτηκε',
+    coverRemoved: 'Το εξώφυλλο καταργήθηκε',
+    coverInvalid: 'Επιλέξτε εικόνα JPEG, PNG ή WebP.',
+    coverTooLarge: 'Οι εικόνες εξωφύλλου πρέπει να είναι 10 MiB ή μικρότερες.',
   },
   track: {
     title: 'Τίτλος',
@@ -680,6 +857,7 @@ export default {
     album: 'Άλμπουμ',
     trackNumber: 'Κομμάτι',
     year: 'Έτος',
+    releaseDate: 'Ημερομηνία κυκλοφορίας',
     length: 'Διάρκεια',
     format: 'Μορφή',
     size: 'Μέγεθος',
@@ -1312,6 +1490,7 @@ export default {
     lyrics: 'Στίχοι',
     queue: 'Επόμενα',
     search: 'Αναζήτηση',
+    findInPlaylist: 'Αναζήτηση στη λίστα (στη σελίδα της)',
     goLibrary: 'Μετάβαση στη βιβλιοθήκη',
     goQueue: 'Μετάβαση στην ουρά',
     close: 'Κλείσιμο αναπαραγωγής',

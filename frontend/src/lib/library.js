@@ -83,6 +83,7 @@ export function normalizeTrack(row) {
     albumArtist,
     trackNumber: Number(raw.track_number) || 0,
     year: String(raw.year || ''),
+    releaseDate: String(raw.release_date || raw.year || ''),
     duration: Number(raw.duration) || 0,
     added: Number(raw.added) || 0,
     size: Number(raw.size) || 0,
@@ -215,12 +216,17 @@ export function buildPlaylists(playlists, tracksByFile, batches = []) {
       // The playlist of hearted songs, not a downloaded one.
       liked: Boolean(playlist.liked),
       manual: Boolean(playlist.manual),
+      explicitCover: Boolean(playlist.explicit_cover),
       fileCount: playlist.count != null ? Number(playlist.count) : files.length,
       tracks,
       // Downloaded playlists keep their own artwork. Manual ones leave
       // this empty so CoverArt mosaics up to four track covers (the
-      // sidecar JPEG is still written for Navidrome).
-      cover: playlist.manual ? '' : playlistCoverURL(playlist.cover),
+      // sidecar JPEG is still written for Navidrome) — unless the user
+      // uploaded their own cover, which takes precedence.
+      cover:
+        playlist.manual && !playlist.explicit_cover
+          ? ''
+          : playlistCoverURL(playlist.cover),
       covers,
       duration: tracks.reduce((sum, track) => sum + track.duration, 0),
       // M3U mtime from GET /playlists — not the resolved tracks, or the
@@ -258,6 +264,8 @@ const SORTERS = {
     compareText(a.title ?? a.name, b.title ?? b.name),
   album: (a, b) => compareText(a.album, b.album) || byTrackOrder(a, b),
   year: (a, b) => compareText(b.year, a.year) || compareText(a.title, b.title),
+  releaseDate: (a, b) =>
+    compareText(b.releaseDate, a.releaseDate) || compareText(a.title, b.title),
   duration: (a, b) => b.duration - a.duration,
   count: (a, b) => itemTrackCount(b) - itemTrackCount(a),
 }

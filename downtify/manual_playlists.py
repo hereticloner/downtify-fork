@@ -7,18 +7,43 @@ edited, and so deleting them never removes the audio files.
 
 from __future__ import annotations
 
+import functools
+import threading
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Optional
+from shutil import copyfile
+from typing import Any, Optional, ParamSpec, TypeVar
 
 from loguru import logger
 
 from . import m3u
 from .library_catalog import LibraryContext, resolve_library_file
 from .library_paths_cache import invalidate_library_paths_cache
-from .playlist_mosaic import refresh_manual_playlist_cover
+from .playlist_mosaic import (
+    EXPLICIT_COVER_MARKER,
+    has_explicit_cover,
+    keep_explicit_cover,
+    normalize_uploaded_cover,
+    refresh_manual_playlist_cover,
+)
 
 MAX_PLAYLIST_NAME_LEN = 120
 MAX_TRACKS_PER_EDIT = 500
+
+_P = ParamSpec('_P')
+_R = TypeVar('_R')
+_WRITE_LOCK = threading.RLock()
+
+
+def _serialized(func: Callable[_P, _R]) -> Callable[_P, _R]:
+    """Run *func* alone among this module's M3U rewrites."""
+
+    @functools.wraps(func)
+    def run(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+        with _WRITE_LOCK:
+            return func(*args, **kwargs)
+
+    return run
 
 
 class ManualPlaylistError(ValueError):
@@ -40,6 +65,7 @@ def _entries_for(files: list[str]) -> list[dict[str, str]]:
 
 
 def _write(ctx: LibraryContext, files: list[str], path: Path) -> Path:
+    explicit_cover = has_explicit_cover(path)
     content, _kept = m3u.build_m3u_content(
         _entries_for(files),
         download_dir=ctx.download_dir,
@@ -50,6 +76,8 @@ def _write(ctx: LibraryContext, files: list[str], path: Path) -> Path:
     lines = content.splitlines()
     if lines[:1] == ['#EXTM3U'] and m3u.MANUAL_M3U_MARKER not in lines[:4]:
         lines.insert(1, m3u.MANUAL_M3U_MARKER)
+        if explicit_cover:
+            lines.insert(2, EXPLICIT_COVER_MARKER)
         content = '\n'.join(lines) + '\n'
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding='utf-8', newline='\n')
@@ -71,6 +99,55 @@ def _require_manual(path: Path, name: str) -> None:
             f'Playlist {name!r} is imported and cannot be edited',
             status_code=403,
         )
+
+
+@_serialized
+def save_manual_playlist_cover(
+    ctx: LibraryContext,
+    name: str,
+    data: bytes,
+    content_type: str,
+) -> Path:
+    """Replace a manual playlist's generated cover with uploaded art."""
+
+    path = m3u.find_m3u_for_name(ctx.download_dir, name)
+    if path is None:
+        raise ManualPlaylistError(
+            f'Playlist {name!r} was not found', status_code=404
+        )
+    _require_manual(path, path.stem)
+    cover = path.with_suffix('.jpg')
+    cover.write_bytes(normalize_uploaded_cover(data, content_type))
+    keep_explicit_cover(path)
+    invalidate_library_paths_cache()
+    return cover
+
+
+@_serialized
+def remove_manual_playlist_cover(ctx: LibraryContext, name: str) -> None:
+    """Remove custom art and restore the manual playlist's track mosaic."""
+
+    path = m3u.find_m3u_for_name(ctx.download_dir, name)
+    if path is None:
+        raise ManualPlaylistError(
+            f'Playlist {name!r} was not found', status_code=404
+        )
+    _require_manual(path, path.stem)
+    path.with_suffix('.jpg').unlink(missing_ok=True)
+    text = None
+    try:
+        text = path.read_text(encoding='utf-8-sig')
+    except (OSError, UnicodeDecodeError):
+        text = None
+    if text is not None:
+        lines = [
+            line
+            for line in text.splitlines()
+            if line.strip() != EXPLICIT_COVER_MARKER
+        ]
+        path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    refresh_manual_playlist_cover(ctx, path, _read_files(ctx, path))
+    invalidate_library_paths_cache()
 
 
 def existing_playlist_names(download_dir: Path) -> set[str]:
@@ -181,9 +258,13 @@ def rename_manual_playlist(
                 f'A playlist named {safe!r} already exists', status_code=409
             )
     files = _read_files(ctx, path)
+    explicit_cover = has_explicit_cover(path)
     written = _write(ctx, files, dest)
     if written.resolve() != path.resolve():
         old_cover = path.with_suffix('.jpg')
+        if explicit_cover:
+            copyfile(old_cover, written.with_suffix('.jpg'))
+            keep_explicit_cover(written)
         try:
             path.unlink(missing_ok=True)
         except OSError as exc:

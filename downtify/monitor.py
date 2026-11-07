@@ -14,6 +14,8 @@ from loguru import logger
 
 from . import m3u, notifications, providers, spotify
 from .cover_cache import CoverArtCache
+from .download_policy import DownloadPolicy, DownloadPolicyBlocked
+from .download_queue import queue_pause
 from .downloader import (
     DOWNLOAD_EXECUTOR,
     Downloader,
@@ -316,6 +318,7 @@ class PlaylistMonitorDB:
         self._path = str(db_path)
         self._lock = asyncio.Lock()
         self._init_db()
+        self.download_policy = DownloadPolicy(self._connect)
 
     def _connect(self) -> sqlite3.Connection:
         # Shared tuning: WAL + a 30 s busy timeout. This DB is written
@@ -867,6 +870,8 @@ async def check_playlist(
     for index, song in enumerate(new_tracks):
         track_id = song['song_id']
         pl_name = playlist.name
+        # A paused download queue holds the sweep before each track.
+        await queue_pause.wait()
 
         # YouTube Music rows already carry their own video's metadata.
         if from_spotify:
@@ -876,12 +881,13 @@ async def check_playlist(
             return _progress_cb(s, name, broadcast, loop)
 
         try:
-            filename = await loop.run_in_executor(
-                DOWNLOAD_EXECUTOR,
-                lambda s=song: downloader.download(
-                    s, _make_cb(s, pl_name), subdir=pl_subdir
-                ),
-            )
+            async with queue_pause.running():
+                filename = await loop.run_in_executor(
+                    DOWNLOAD_EXECUTOR,
+                    lambda s=song: downloader.download(
+                        s, _make_cb(s, pl_name), subdir=pl_subdir
+                    ),
+                )
             await asyncio.to_thread(
                 db.mark_track_downloaded, playlist.id, track_id, filename
             )
@@ -1298,21 +1304,36 @@ async def check_artist(
                 continue
             if track_id in known_tracks:
                 continue
+            if await asyncio.to_thread(db.download_policy.blocked, song):
+                complete = False
+                continue
+            await queue_pause.wait()
             try:
-                filename = await loop.run_in_executor(
-                    DOWNLOAD_EXECUTOR,
-                    lambda s=song: downloader.download(
-                        s, _progress_cb(s, playlist.name, broadcast, loop)
-                    ),
-                )
+                async with queue_pause.running():
+                    filename = await loop.run_in_executor(
+                        DOWNLOAD_EXECUTOR,
+                        lambda s=song: downloader.download(
+                            s, _progress_cb(s, playlist.name, broadcast, loop)
+                        ),
+                    )
                 await asyncio.to_thread(
                     db.mark_track_downloaded, playlist.id, track_id, filename
                 )
+                await asyncio.to_thread(db.download_policy.succeeded, song)
                 invalidate_library_paths_cache()
                 known_tracks[track_id] = filename
                 downloaded += 1
                 if delay_seconds > 0:
                     await asyncio.sleep(delay_seconds)
+            except DownloadPolicyBlocked:
+                complete = False
+                await broadcast({
+                    'song': song,
+                    'status': 'failed',
+                    'progress': 0,
+                    'message': 'download_excluded',
+                    'playlist_name': playlist.name,
+                })
             except Exception:
                 complete = False
                 logger.exception(

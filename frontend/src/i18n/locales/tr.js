@@ -1,4 +1,139 @@
 export default {
+  downloadPolicy: {
+    block: 'Stop downloading',
+    blocked: 'Downloads suspended for this track.',
+    confirm: 'Suspend downloads for this track?',
+    confirmHelp:
+      'New attempts will be blocked. A shared transfer already started may finish. Existing files will not be deleted.',
+    exclusions: 'Suspended tracks',
+    empty: 'No suspended tracks.',
+    resume: 'Allow again',
+    timeout: 'Attempt time limit reached',
+    manual: 'Suspended manually',
+    error: 'Could not change the suspension.',
+    alreadyActive: 'An attempt for this track is already in progress.',
+    budget: 'Cumulative attempt limit',
+    budgetHelp:
+      'Automatically suspend a track after this cumulative attempt time. Time between attempts is excluded. 0 disables the limit.',
+  },
+  trash: {
+    title: 'Çöp kutusu',
+    subtitle:
+      'Kitaplıktan çıkarılan parçalar, taşındıktan sonra {days} gün saklanır. O zamana kadar geri yükleyebilirsin.',
+    adminOnly: 'Bunu yalnızca yöneticiler görebilir',
+    adminOnlyHint:
+      'Bir parçayı geri yüklemesi için bu sunucunun bir yöneticisine başvur.',
+    off: 'Çöp kutusu kapalı',
+    offHint:
+      'Bu sunucuda parçalar kalıcı olarak silinir. Çöp kutusu sunucu yapılandırmasından açılır (DOWNTIFY_TRASH).',
+    inTrash: 'Çöp kutusunda',
+    exclusions: 'İndirmelerin dışında',
+    search: 'Çöp kutusunda ara',
+    restoreSelected: {
+      one: '{count} parçayı geri yükle',
+      other: '{count} parçayı geri yükle',
+    },
+    summary: {
+      one: '{count} parça · {size}',
+      other: '{count} parça · {size}',
+    },
+    empty: 'Çöp kutusu boş',
+    emptyHint:
+      'Kitaplıktan çöp kutusuna taşınan parçalar süreleri dolana kadar burada görünür.',
+    noMatch: 'Çöp kutusunda eşleşen bir şey yok',
+    select: '“{title}” seç',
+    keptUntil: '{date} tarihine kadar saklanır',
+    restore: 'Geri yükle',
+    retry: 'Yeniden dene',
+    previous: 'Önceki',
+    next: 'Sonraki',
+    exclusionsHint:
+      'Çöp kutusundaki süresi dolan parçalar. Otomatik indirmeler (Çalma Listesi İzleyici, takipler) sen yeniden izin verene kadar onları atlamaya devam eder.',
+    exclusionsEmpty: 'İndirmelerin dışında tutulan bir şey yok',
+    allowDownload: 'İndirmelere izin ver',
+    allowTitle: '“{title}” yeniden indirilebilsin mi?',
+    allowBody:
+      'Otomatik indirmeler onu yeniden alabilir. Şu anda hiçbir şey indirilmez.',
+    move: 'Çöp kutusuna taşı',
+    preparing: 'Dosyalar denetleniyor…',
+    confirmTitle: {
+      one: '{count} parça çöp kutusuna taşınsın mı?',
+      other: '{count} parça çöp kutusuna taşınsın mı?',
+    },
+    confirmBody:
+      'Yalnızca bu dosyalar, şarkı sözü dosyalarıyla birlikte taşınır. Herkes için kitaplıktan çıkarlar ve {days} gün boyunca geri yüklenebilirler. Çalma listeleri ve beğenileri onlarla birlikte geri gelir; bu sırada otomatik indirmeler onları atlar.',
+    confirmMore: {
+      one: 've {count} tane daha',
+      other: 've {count} tane daha',
+    },
+    pending: {
+      one: '{count} parça çöp kutusuna taşınıyor',
+      other: '{count} parça çöp kutusuna taşınıyor',
+    },
+    downloadBlocked:
+      'Müzik çöp kutusunda: bir yöneticinin yeniden izin vermesi gerekir.',
+    states: {
+      preview: 'Onay bekliyor',
+      pending: 'Taşınmayı bekliyor',
+      moving: 'Taşınıyor',
+      trashed: 'Çöp kutusunda',
+      restore_pending: 'Geri yüklenmeyi bekliyor',
+      restoring: 'Geri yükleniyor',
+      restored: 'Geri yüklendi',
+      purging: 'Süresi doluyor',
+      purged: 'Süresi doldu',
+      error: 'Durdu — dosyalar korundu',
+    },
+    errors: {
+      unavailable: 'Çöp kutusu şu anda kullanılamıyor. Hiçbir şey taşınmadı.',
+      admin_required: 'Çöp kutusunu yalnızca bir yönetici kullanabilir.',
+      admin_access_revoked: 'İsteyen hesap artık yönetici değil.',
+      atomic_move_unsupported:
+        'Bu depolama dosyaları güvenle taşıyamıyor. Hiçbir şey taşınmadı.',
+      confirmation_expired: 'Denetimin süresi doldu. Parçaları yeniden seç.',
+      confirmation_invalid: 'Bu onay senin hesabına veya seçimine ait değil.',
+      file_changed:
+        'Dosya denetimden sonra değişti. Yerinde kaldı; yeniden seç.',
+      file_changed_during_move:
+        'Dosya taşınırken değişti. Denetleyebilmen için çöp kutusunda tutuluyor.',
+      file_missing: 'Bir dosya eksik. Depolamayı denetle, sonra yeniden dene.',
+      filesystem_unavailable:
+        'Depolama kullanılamıyor. Denetle, sonra yeniden dene.',
+      identity_uncertain:
+        'Bu parçanın etiketleri onu otomatik indirmelerin dışında tutmaya yetmiyor. Hiçbir şey taşınmadı.',
+      invalid_path: 'Bu dosya çöp kutusunun kapsadığı klasörlerin dışında.',
+      invalid_selection: '1 ile 200 arasında parça seç.',
+      item_not_found: 'Bu parça artık kitaplıkta değil.',
+      library_task_active:
+        'Kitaplık iyileştirme çalışıyor. Bitmesini bekle ya da önce duraklat.',
+      nas_marker_changed:
+        'Depolama, çöp kutusunun beklediği depolama değil. Hiçbir şey taşınmadı.',
+      nas_marker_missing:
+        'Beklenen depolama bağlı değil. Hiçbir şey taşınmadı.',
+      operation_already_pending: 'Bu parça zaten yolda.',
+      operation_in_progress: 'Taşıma hâlâ sürüyor. Geri yüklemeden önce bekle.',
+      operation_not_complete: 'Geçerli adımın bitmesini bekle.',
+      preview_busy: 'Başka bir denetim sürüyor. Bitmesini bekle.',
+      preview_unavailable: 'Denetim yarıda kesildi. Parçaları yeniden seç.',
+      restore_collision:
+        'Orada zaten başka bir dosya var. Hiçbir şeyin üzerine yazılmadı; parça çöp kutusunda kalıyor.',
+      retention_expired: 'Çöp kutusundaki süresi doldu.',
+      root_unavailable: 'Müzik klasörü kullanılamıyor.',
+      track_is_playing: 'Biri bu parçayı çalıyor. Önce duraklat.',
+      trash_file_changed: 'Çöp kutusundaki kopya değişti. Silinmeyecek.',
+      trash_file_missing: 'Çöp kutusunda bir dosya eksik.',
+      trash_ignore_invalid:
+        'Çöp kutusu klasörünün .ignore dosyası boş değil. Hiçbir şey taşınmadı.',
+      trash_not_configured: 'Bu sunucuda çöp kutusu kapalı.',
+      trash_permissions_unsafe:
+        'Başkaları çöp kutusu klasörünü okuyabiliyor. İzinlerini denetle.',
+      unsafe_symlink: 'Yolda sembolik bağlantı var, bu yüzden dokunulmuyor.',
+      unsupported_collection:
+        'Bu parçanın klasörü çöp kutusunun kapsamında değil.',
+      unsupported_lyrics_location:
+        'Şarkı sözü klasörü çöp kutusunun kapsamında değil. Hiçbir şey taşınmadı.',
+    },
+  },
   language: {
     name: 'Türkçe',
   },
@@ -42,6 +177,18 @@ export default {
     spotify: {
       not_connected: 'Önce Ayarlar’dan Spotify’ı bağla.',
     },
+  },
+  playlistSearch: {
+    placeholder: 'Bu listede ara',
+    all: 'Tümü',
+    missing: 'Eksik',
+    failed: 'Başarısız',
+    notInNavidrome: 'Navidrome’da yok',
+    fromFolders: 'Klasörlerin',
+    unknownSource: 'Bilinmeyen kaynak',
+    showing: '{count} / {total}',
+    noMatch: 'Eşleşen bir şey yok',
+    noMatchHint: 'Başka kelimeler ya da başka bir filtre dene.',
   },
   common: {
     cancel: 'İptal',
@@ -298,6 +445,19 @@ export default {
     retryFailed: 'Başarısızları yeniden dene ({count})',
     clearDone: 'Tamamlananları temizle ({count})',
     clearAll: 'Kuyruğu temizle',
+    pause: 'İndirmeleri duraklat',
+    resume: 'İndirmeleri sürdür',
+    pauseFailed: 'Kuyruk değiştirilemedi. Tekrar deneyin.',
+    pausingTitle: 'İndirmeler duraklatılıyor…',
+    pausingBody: {
+      one: '{count} indirmenin bitmesi bekleniyor. Yeni indirme başlamayacak.',
+      other:
+        '{count} indirmenin bitmesi bekleniyor. Yeni indirme başlamayacak.',
+    },
+    pausedTitle: 'İndirmeler duraklatıldı',
+    pausedBody: 'Sürdürülene kadar yeni indirme başlamayacak.',
+    pausedKept:
+      'Bekleyen şarkılar, Downtify yeniden başlasa veya güncellense bile kuyrukta kalır.',
     emptyTitle: 'Kuyrukta bir şey yok',
     emptyBody:
       'Müzik ara ya da bir bağlantı yapıştır — indirmeler burada görünür.',
@@ -315,6 +475,7 @@ export default {
     },
     showMore: '{count} tane daha göster',
     statusQueued: 'Bekliyor',
+    statusPaused: 'Duraklatıldı',
     statusDone: 'İndirildi',
     retry: 'Tekrar dene',
     remove: 'Kuyruktan kaldır',
@@ -674,6 +835,12 @@ export default {
     nothingYet: 'Henüz indirilen parça yok',
     nothingYetHint: 'Parçalar indirildikçe burada görünür.',
     nothingYetManualHint: 'Kitaplığından şarkı ekle.',
+    uploadCover: 'Kapak yükle',
+    removeCover: 'Kapağı kaldır',
+    coverSaved: 'Playlist kapağı kaydedildi',
+    coverRemoved: 'Kapak kaldırıldı',
+    coverInvalid: 'JPEG, PNG veya WebP görseli seçin.',
+    coverTooLarge: 'Kapak görselleri 10 MiB veya daha küçük olmalı.',
   },
   track: {
     title: 'Başlık',
@@ -681,6 +848,7 @@ export default {
     album: 'Albüm',
     trackNumber: 'Parça',
     year: 'Yıl',
+    releaseDate: 'Çıkış tarihi',
     length: 'Süre',
     format: 'Biçim',
     size: 'Boyut',
@@ -1300,6 +1468,7 @@ export default {
     lyrics: 'Şarkı sözleri',
     queue: 'Sıradaki',
     search: 'Ara',
+    findInPlaylist: 'Listede ara (liste sayfasında)',
     goLibrary: 'Kitaplığa git',
     goQueue: 'Kuyruğa git',
     close: 'Şimdi çalanı kapat',

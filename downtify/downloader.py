@@ -36,6 +36,7 @@ from yt_dlp.postprocessor.ffmpeg import FFmpegExtractAudioPP
 from . import lyrics as lyrics_mod
 from . import spotify as spotify_mod
 from .cookies import CookiesStore
+from .download_policy import DownloadPolicyBlocked
 from .file_naming import sanitize_file_name
 from .itunes import fetch_genre as _fetch_itunes_genre
 from .m3u import sanitize_playlist_name
@@ -323,8 +324,10 @@ class Downloader:
 
     #: Called as ``on_downloaded(song, filename)`` once a *new* file has been
     #: downloaded and tagged - not for a song that was already in the library.
+    #: ``song['download_provider']`` says which audio provider fetched it
+    #: (``youtube-music``, ``youtube``).
     #: Set by the app (``main.py``) to hook work on to a finished download
-    #: (see ``api.enrich_artist_after_download``); it runs on the download's
+    #: (see ``api.after_download``); it runs on the download's
     #: own thread, so it must only hand the work off and return. Whatever it
     #: raises is logged and never fails the download.
     on_downloaded: Optional[Callable[[dict[str, Any], str], None]] = None
@@ -390,6 +393,7 @@ class Downloader:
         self,
         song: dict[str, Any],
         progress_cb: Optional[ProgressCallback],
+        cancel_check=None,
     ) -> tuple[Optional[str], Optional[dict[str, Any]], Optional[str]]:
         """Try each audio provider in order.
 
@@ -400,6 +404,8 @@ class Downloader:
 
         youtube_searched = False
         for provider in self.audio_providers:
+            if cancel_check:
+                cancel_check()
             if provider == 'youtube-music':
                 # find_match falls back to standard YouTube on its own when
                 # YouTube Music has nothing (or only a far-off length).
@@ -710,6 +716,44 @@ class Downloader:
         progress_cb: Optional[ProgressCallback] = None,
         subdir: Optional[str] = None,
     ) -> str:
+        # A song sent to the music trash stays out until an admin restores
+        # it or allows it again; like an exclusion, not a failed attempt.
+        trash = getattr(self, 'trash_store', None)
+        if trash is not None and trash.blocked(song):
+            raise DownloadPolicyBlocked('library_trash_excluded')
+        policy = getattr(self, 'download_policy', None)
+        if policy is None:
+            return self._download_inner(song, progress_cb, subdir)
+        limit_getter = getattr(self, 'download_policy_limit', lambda: 0)
+        try:
+            limit_minutes = max(0, min(1440, int(limit_getter())))
+        except (TypeError, ValueError, OverflowError):
+            limit_minutes = 0
+        try:
+            attempt = policy.begin(song, limit_minutes * 60)
+        except ValueError as exc:
+            if str(exc) != 'identity_uncertain':
+                raise
+            return self._download_inner(song, progress_cb, subdir)
+        successful = False
+        try:
+            attempt.check(force=True)
+            result = self._download_inner(
+                song, progress_cb, subdir, attempt.check
+            )
+            attempt.check(force=True)
+            successful = bool(result) and not song.get('_monitor_release')
+            return result
+        finally:
+            attempt.finish(successful=successful)
+
+    def _download_inner(
+        self,
+        song: dict[str, Any],
+        progress_cb: Optional[ProgressCallback] = None,
+        subdir: Optional[str] = None,
+        cancel_check=None,
+    ) -> str:
         """Download ``song`` and return the resulting file name.
 
         When ``subdir`` is provided the file is written under
@@ -722,6 +766,13 @@ class Downloader:
         returned instead (see :meth:`find_existing_download`).
         """
 
+        def _progress(*args):
+            if cancel_check:
+                cancel_check()
+            if progress_cb:
+                progress_cb(*args)
+
+        progress_cb = _progress if cancel_check else progress_cb
         skip_existing = not self.overwrite_existing_files
         if skip_existing and self._can_resolve_path_early(song):
             existing = self.find_existing_download(song, subdir)
@@ -738,7 +789,11 @@ class Downloader:
             # Playlist rows lack year/track number; the per-track embed has
             # them, and they can feed the output path.
             song = spotify_mod.enrich_track_from_spotify_if_sparse(song)
-            video_id, match, provider = self._resolve_source(song, progress_cb)
+            video_id, match, provider = self._resolve_source(
+                song, progress_cb, cancel_check
+            )
+            if cancel_check:
+                cancel_check()
         elif not song.get('album_name') or not song.get('cover_url'):
             # We already have a target video, but the metadata is incomplete.
             # Look up the YT Music entry for THIS specific videoId so we
@@ -763,6 +818,7 @@ class Downloader:
                 self._fetch_and_tag(
                     song, video_id, progress_cb, subdir, provider
                 ),
+                provider,
             )
 
         # Re-checked after enrichment (which can fill in the album/track
@@ -779,16 +835,23 @@ class Downloader:
                 self._fetch_and_tag(
                     song, video_id, progress_cb, subdir, provider
                 ),
+                provider,
             )
 
-    def _downloaded(self, song: dict[str, Any], filename: str) -> str:
-        """Tell :attr:`on_downloaded` that *filename* is new; returns it.
-        A hook that fails is logged and ignored: the file is already there."""
+    def _downloaded(
+        self,
+        song: dict[str, Any],
+        filename: str,
+        provider: Optional[str] = None,
+    ) -> str:
+        """Tell :attr:`on_downloaded` that *filename* is new (and which
+        *provider* fetched it); returns it. A hook that fails is logged and
+        ignored: the file is already there."""
 
         hook = self.on_downloaded
         if hook is not None:
             try:
-                hook(song, filename)
+                hook({**song, 'download_provider': provider or ''}, filename)
             except Exception:
                 logger.opt(exception=True).warning(
                     'The after-download hook failed for {}', filename
