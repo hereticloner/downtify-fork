@@ -6,7 +6,10 @@
     >
       <!-- Progress: a hairline on phones, a scrubber on desktop. -->
       <div class="absolute inset-x-3 bottom-0 h-1 bg-line-2 md:hidden">
-        <div class="h-full bg-accent" :style="{ width: `${smoothPercent}%` }" />
+        <div
+          class="h-full bg-accent"
+          :style="[{ width: `${smoothPercent}%` }, progressStyle]"
+        />
       </div>
       <div
         class="absolute inset-x-0 -top-3 md:top-auto md:inset-x-0 md:bottom-0 z-10"
@@ -21,6 +24,8 @@
           track-class="bg-transparent"
           fill-class="bg-accent"
           thumb-class="bg-accent"
+          :fill-style="progressStyle"
+          :thumb-style="progressStyle"
           @update:model-value="(v) => (scrub = v)"
           @commit="commitSeek"
         />
@@ -91,7 +96,7 @@
         />
         <button
           type="button"
-          class="flex size-12 items-center justify-center rounded-full text-fg md:size-13 md:bg-invert md:text-on-invert md:transition-transform md:hover:scale-105"
+          class="pressable flex size-12 items-center justify-center rounded-full text-fg shadow-glow md:size-13 md:bg-invert md:text-on-invert md:transition-transform md:hover:scale-105"
           :aria-label="
             player.isPlaying.value ? t('player.pause') : t('player.play')
           "
@@ -199,6 +204,7 @@ import { usePlayer } from '/src/model/player'
 import { useDownloadManager, useProgressTracker } from '/src/model/download'
 import { useLibrary } from '/src/model/library'
 import { usePlayerPrefs } from '/src/model/playerPrefs'
+import { useCoverPalette } from '/src/model/coverPalette'
 import { useNowPlaying, useUi } from '/src/model/ui'
 import { formatDuration, widestClock } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
@@ -215,6 +221,13 @@ const ui = useUi()
 const scrub = ref(null)
 
 const track = computed(() => player.currentTrack.value)
+
+// Progress follows the cover palette; the accent classes in the template
+// stay as the fallback (no cover, palette miss).
+const palette = useCoverPalette(track)
+const progressStyle = computed(() =>
+  palette.value?.primary ? { backgroundColor: palette.value.primary } : null
+)
 
 const trackArtist = computed(
   () =>

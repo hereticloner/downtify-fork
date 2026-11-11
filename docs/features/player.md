@@ -16,7 +16,9 @@ Click the title or cover, or the expand button, to open **Now playing**.
 
 ## Now playing
 
-A full-screen view tinted with colours picked from the current album cover:
+A full-screen view tinted with colours picked from the current album cover.
+It follows the app theme: in light mode the stage, chips and text switch to
+light surfaces while the cover tint stays visible as a soft wash.
 
 - **Large cover art**, title and artist (click the artist or the *Playing from* label to jump to that artist, album or playlist), with a heart beside the title to [like the song](liked-songs.md). The cover and the lyrics shrink with the window — including when you only change its height — so they stay below the header.
 - **Seek bar** — click or drag, or use the arrow keys when it's focused. While a track plays, soft waves drift over the played part in colours picked from the album cover; they settle flat when paused, and stay still if your system asks for reduced motion

@@ -3,7 +3,7 @@
     <Transition name="now-playing">
       <div
         v-if="nowPlaying.isOpen.value && track"
-        class="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#07080b] text-white"
+        class="np-stage fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#07080b] text-white"
         role="dialog"
         aria-modal="true"
         :aria-label="t('player.nowPlaying')"
@@ -18,10 +18,10 @@
             v-if="track.hasCover"
             :src="track.cover"
             alt=""
-            class="absolute inset-0 size-full scale-125 object-cover opacity-55 blur-[90px] saturate-150"
+            class="np-art absolute inset-0 size-full scale-125 object-cover opacity-55 blur-[90px] saturate-150"
           />
           <div
-            class="absolute inset-0 bg-gradient-to-b from-black/25 via-black/45 to-black/80"
+            class="np-veil absolute inset-0 bg-gradient-to-b from-black/25 via-black/45 to-black/80"
           />
         </div>
 
@@ -59,7 +59,11 @@
                 class="size-8 shrink-0"
               />
               <span class="flex min-w-0 flex-col">
-                <span class="eyebrow !text-white/55">{{ contextLabel }}</span>
+                <span
+                  class="eyebrow"
+                  :class="isLight ? '' : '!text-white/55'"
+                  >{{ contextLabel }}</span
+                >
                 <span class="max-w-full truncate text-sm font-semibold">{{
                   contextTitle
                 }}</span>
@@ -265,7 +269,7 @@
                 </button>
                 <button
                   type="button"
-                  class="now-playing-play flex items-center justify-center rounded-full bg-white text-[#0b0c0e] shadow-[0_12px_30px_rgba(0,0,0,0.35)] transition-transform hover:scale-105 active:scale-95"
+                  class="pressable now-playing-play flex items-center justify-center rounded-full bg-white text-[#0b0c0e] shadow-glow-lg transition-transform hover:scale-105 hover:shadow-glow-lg active:scale-95"
                   :aria-label="
                     player.isPlaying.value
                       ? t('player.pause')
@@ -362,7 +366,7 @@
                   track-class="bg-white/20"
                   fill-class="bg-white"
                   thumb-class="bg-white"
-                  class="text-white [&_button]:text-white/80 [&_button:hover]:bg-white/10"
+                  class="np-vol text-white [&_button]:text-white/80 [&_button:hover]:bg-white/10"
                 />
               </div>
             </div>
@@ -400,7 +404,7 @@
                   class="flex h-10 items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold transition-colors"
                   :class="
                     panel === tab.id && mobilePanel
-                      ? 'bg-white text-[#0b0c0e]'
+                      ? 'np-mbtn-on bg-white text-[#0b0c0e]'
                       : 'bg-white/12 text-white'
                   "
                   :aria-pressed="panel === tab.id && mobilePanel"
@@ -437,6 +441,7 @@ import { useDownloadManager, useProgressTracker } from '/src/model/download'
 import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
 import { usePlayerPrefs } from '/src/model/playerPrefs'
+import { useTheme } from '/src/model/theme'
 import { useNowPlaying } from '/src/model/ui'
 import { formatBytes, formatDuration, hueFor } from '/src/lib/format'
 import { availablePanels, defaultPanel, requestedPanel } from '/src/lib/panels'
@@ -481,11 +486,19 @@ function goSimilar() {
   router.push({ name: 'Similar', query: { artist, track: title } })
 }
 const palette = useCoverPalette(track)
-const tint = computed(
-  () =>
-    palette.value?.background ||
-    `oklch(0.3 0.06 ${hueFor(track.value?.album || track.value?.title)})`
-)
+// Light theme: a deep tint would sink the stage, so wash with the soft
+// palette colour instead. Dark keeps the legacy deep shade.
+const { resolved } = useTheme()
+const isLight = computed(() => resolved.value === 'light')
+const tint = computed(() => {
+  const fallbackHue = hueFor(track.value?.album || track.value?.title)
+  if (!isLight.value)
+    return palette.value?.background || `oklch(0.3 0.06 ${fallbackHue})`
+  const soft = palette.value?.soft
+  return soft
+    ? `color-mix(in srgb, ${soft} 45%, transparent)`
+    : `oklch(0.85 0.04 ${fallbackHue})`
+})
 
 const PANEL_TABS = {
   lyrics: { icon: 'lyrics', label: 'player.lyrics' },

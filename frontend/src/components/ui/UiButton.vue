@@ -5,7 +5,7 @@
     :type="tag === 'button' ? type : undefined"
     :disabled="tag === 'button' ? disabled || loading : undefined"
     :aria-disabled="disabled || loading || undefined"
-    class="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control border font-semibold transition-colors duration-150 disabled:opacity-50"
+    class="pressable inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control border font-semibold transition-colors duration-150 disabled:opacity-50"
     :class="[sizeClass, variantClass]"
   >
     <span
@@ -67,7 +67,7 @@ const variantClass = computed(
   () =>
     ({
       primary:
-        'border-accent bg-accent text-on-accent hover:border-accent-hi hover:bg-accent-hi',
+        'border-accent bg-accent text-on-accent shadow-glow hover:border-accent-hi hover:bg-accent-hi hover:shadow-glow-lg',
       secondary: 'border-line-3 bg-surface-2 text-fg hover:bg-raised',
       ghost:
         'border-line-2 bg-transparent text-fg-3 hover:border-line-3 hover:bg-surface-2 hover:text-fg',

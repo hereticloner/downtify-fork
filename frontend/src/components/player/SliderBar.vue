@@ -23,7 +23,7 @@
       <div
         class="absolute inset-y-0 left-0 rounded-full"
         :class="fillClass"
-        :style="{ width: `${percent}%` }"
+        :style="[{ width: `${percent}%` }, fillStyle]"
       />
     </div>
     <span
@@ -34,7 +34,7 @@
           ? 'opacity-100'
           : 'opacity-0 group-hover:opacity-100',
       ]"
-      :style="{ left: `${percent}%` }"
+      :style="[{ left: `${percent}%` }, thumbStyle]"
     />
   </div>
 </template>
@@ -56,6 +56,10 @@ const props = defineProps({
   trackClass: { type: String, default: 'bg-raised' },
   fillClass: { type: String, default: 'bg-fg group-hover:bg-accent' },
   thumbClass: { type: String, default: 'bg-fg' },
+  // Optional inline overrides for the fill/thumb (MiniPlayer passes the
+  // cover palette here; classes stay as the fallback). Null = untouched.
+  fillStyle: { type: Object, default: null },
+  thumbStyle: { type: Object, default: null },
   // For playback progress: glide between time updates while true.
   playing: { type: Boolean, default: undefined },
 })

@@ -46,7 +46,7 @@ A user who tries something that needs an admin gets a message saying so.
 
 **Settings → General** starts with your **Account**: change your username or password, or sign out. You can also sign out from the sidebar (or **More** on a phone).
 
-The rest of **General** — theme, language, showing lyrics in the player, albums in search results — is **yours**: it follows your account to every browser you sign in to, and changes nothing for anyone else.
+The rest of **General** — theme, language, showing lyrics in the player, albums in search results — is **yours**: it follows your account to every browser you sign in to, and changes nothing for anyone else. The dark theme is a neon stage (deep surfaces, glowing accent); every button answers a press with a brief shrink and a soft accent wave.
 
 **Settings → Apps** lists the phones paired to your account (an admin sees everyone's, with their owner). **Sign out everywhere** unpairs your apps and signs you out of every browser.
 

@@ -94,6 +94,8 @@ import { computed } from 'vue'
 import AppIcon from '../ui/AppIcon.vue'
 import CoverArt from '../ui/CoverArt.vue'
 import { hueFor } from '/src/lib/format'
+import { heroTintColor } from '/src/lib/heroTint'
+import { useCoverPalette } from '/src/model/coverPalette'
 import { useI18n } from '/src/i18n'
 
 const props = defineProps({
@@ -122,7 +124,16 @@ defineEmits(['edit-photo', 'edit-banner'])
 
 const { t } = useI18n()
 
+// The wash behind the header comes from the real cover palette; the
+// name-hash hue stays as the fallback (no cover, mosaic, palette miss).
+// Banner headers keep their photo gradient and ignore the tint.
+const coverSource = computed(() =>
+  props.cover ? { hasCover: true, cover: props.cover } : null
+)
+const palette = useCoverPalette(coverSource)
 const tint = computed(
-  () => `oklch(0.45 0.08 ${hueFor(props.name || props.title)} / 0.55)`
+  () =>
+    heroTintColor(palette.value) ||
+    `oklch(0.45 0.08 ${hueFor(props.name || props.title)} / 0.55)`
 )
 </script>

@@ -1,0 +1,160 @@
+/*
+ * Light-theme stage for the Now playing overlay.
+ *
+ * NowPlaying.vue (and the panels it hosts: EqualizerPanel, LyricsPanel,
+ * UpNextPanel, TrackDetails, WaveSeekBar) is written with hardcoded dark
+ * styling - `bg-[#07080b]`, `text-white/70`, `bg-white/10` ... - because the
+ * overlay is a cover-art "stage". These overrides remap that stage onto the
+ * app's light tokens when <html data-theme="light">, without touching the
+ * dark look (dark keeps the utilities exactly as written).
+ *
+ * Convention: every `*-white[/N]` / `*-black[/N]` utility used inside the
+ * `.np-stage` subtree must have an override below. The drift guard
+ * `src/__tests__/nowPlayingLight.test.js` fails when a new hardcoded
+ * utility is added without one.
+ */
+
+/* The stage itself: app background + foreground instead of near-black. */
+:root[data-theme='light'] .np-stage {
+  background-color: var(--c-bg);
+  color: var(--c-text);
+}
+
+/* Cover wash: a light veil so dark artwork stays visible but text
+   (now dark) keeps contrast. The tint colour itself is theme-aware
+   in JS (see the `tint` computed in NowPlaying.vue). */
+:root[data-theme='light'] .np-stage .np-veil {
+  background-image: linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.3),
+    rgb(255 255 255 / 0.55),
+    rgb(255 255 255 / 0.88)
+  );
+}
+:root[data-theme='light'] .np-stage .np-art {
+  opacity: 0.32;
+}
+
+/* Solid white surfaces (play button, EQ knob, active phone tab) become
+   the theme foreground; the icon colour is fixed per hook below. */
+:root[data-theme='light'] .np-stage .bg-white {
+  background-color: var(--c-text);
+}
+:root[data-theme='light'] .np-stage .now-playing-play,
+:root[data-theme='light'] .np-stage .np-mbtn-on {
+  color: var(--c-bg);
+}
+
+/* Translucent white chips -> translucent black chips. */
+:root[data-theme='light'] .np-stage .bg-white\/6 {
+  background-color: rgb(0 0 0 / 0.06);
+}
+:root[data-theme='light'] .np-stage .bg-white\/8 {
+  background-color: rgb(0 0 0 / 0.08);
+}
+:root[data-theme='light'] .np-stage .bg-white\/10 {
+  background-color: rgb(0 0 0 / 0.1);
+}
+:root[data-theme='light'] .np-stage .bg-white\/12 {
+  background-color: rgb(0 0 0 / 0.12);
+}
+:root[data-theme='light'] .np-stage .bg-white\/15 {
+  background-color: rgb(0 0 0 / 0.12);
+}
+:root[data-theme='light'] .np-stage .bg-white\/20 {
+  background-color: rgb(0 0 0 / 0.18);
+}
+:root[data-theme='light'] .np-stage .hover\:bg-white\/8:hover {
+  background-color: rgb(0 0 0 / 0.08);
+}
+:root[data-theme='light'] .np-stage .hover\:bg-white\/10:hover {
+  background-color: rgb(0 0 0 / 0.1);
+}
+:root[data-theme='light'] .np-stage .hover\:bg-white\/15:hover {
+  background-color: rgb(0 0 0 / 0.12);
+}
+:root[data-theme='light'] .np-stage .hover\:bg-white\/20:hover {
+  background-color: rgb(0 0 0 / 0.18);
+}
+
+/* White text -> theme text at the same emphasis step. */
+:root[data-theme='light'] .np-stage .text-white {
+  color: var(--c-text);
+}
+:root[data-theme='light'] .np-stage .text-white\/35 {
+  color: color-mix(in srgb, var(--c-text) 35%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/40 {
+  color: color-mix(in srgb, var(--c-text) 40%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/45 {
+  color: color-mix(in srgb, var(--c-text) 45%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/50 {
+  color: color-mix(in srgb, var(--c-text) 50%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/55 {
+  color: color-mix(in srgb, var(--c-text) 55%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/60 {
+  color: color-mix(in srgb, var(--c-text) 60%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/65 {
+  color: color-mix(in srgb, var(--c-text) 65%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/70 {
+  color: color-mix(in srgb, var(--c-text) 70%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/75 {
+  color: color-mix(in srgb, var(--c-text) 75%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/80 {
+  color: color-mix(in srgb, var(--c-text) 80%, transparent);
+}
+:root[data-theme='light'] .np-stage .text-white\/90 {
+  color: color-mix(in srgb, var(--c-text) 90%, transparent);
+}
+:root[data-theme='light'] .np-stage .hover\:text-white:hover {
+  color: var(--c-text);
+}
+:root[data-theme='light'] .np-stage .hover\:text-white\/60:hover {
+  color: color-mix(in srgb, var(--c-text) 60%, transparent);
+}
+:root[data-theme='light'] .np-stage .hover\:text-white\/75:hover {
+  color: color-mix(in srgb, var(--c-text) 75%, transparent);
+}
+
+/* Borders follow the theme text instead of white. */
+:root[data-theme='light'] .np-stage .border-white\/10 {
+  border-color: color-mix(in srgb, var(--c-text) 14%, transparent);
+}
+:root[data-theme='light'] .np-stage .border-white\/20 {
+  border-color: color-mix(in srgb, var(--c-text) 24%, transparent);
+}
+
+/* Volume slider inside the overlay (its track/fill/thumb props are
+   `bg-white/20` / `bg-white` in the template). */
+:root[data-theme='light'] .np-stage .np-vol {
+  color: var(--c-text);
+}
+:root[data-theme='light'] .np-stage .np-vol button {
+  color: color-mix(in srgb, var(--c-text) 80%, transparent);
+}
+:root[data-theme='light'] .np-stage .np-vol button:hover {
+  background-color: rgb(0 0 0 / 0.1);
+}
+
+/* Seek-thumb focus ring: white-on-dark becomes accent-on-light, and the
+   dark offset becomes a light one. */
+:root[data-theme='light']
+  .np-stage
+  .group:focus-visible
+  .group-focus-visible\:ring-white {
+  --tw-ring-color: var(--c-accent);
+}
+:root[data-theme='light']
+  .np-stage
+  .group:focus-visible
+  .group-focus-visible\:ring-offset-black\/40 {
+  --tw-ring-offset-color: rgb(255 255 255 / 0.7);
+}
