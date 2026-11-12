@@ -1,15 +1,16 @@
 <template>
-  <div class="flex flex-wrap items-center gap-2">
-    <div class="flex flex-wrap gap-1.5">
+  <div class="flex flex-wrap items-stretch gap-2">
+    <!-- Presets are a block strip: one frame, 2px rules between. -->
+    <div class="flex flex-wrap items-stretch border-2 border-line">
       <button
         v-for="preset in presets"
         :key="preset"
         type="button"
-        class="tabular h-9 min-w-11 rounded-control border px-3 text-[13px] font-semibold transition-colors"
+        class="tabular h-10 min-w-11 border-l-2 border-line px-3 text-[12px] font-semibold transition-colors duration-100 first:border-l-0"
         :class="
           preset === modelValue
-            ? 'border-accent/50 bg-accent/12 text-accent'
-            : 'border-line-2 text-fg-3 hover:border-line-3 hover:bg-surface-2'
+            ? 'bg-invert text-on-invert'
+            : 'text-fg-3 hover:bg-surface-2 hover:text-fg'
         "
         :aria-pressed="preset === modelValue"
         @click="$emit('update:modelValue', preset)"
@@ -18,7 +19,7 @@
       </button>
     </div>
     <label
-      class="flex h-9 items-center gap-1.5 rounded-control border border-line-2 px-2.5 focus-within:border-accent"
+      class="flex h-10 items-center gap-1.5 border-2 border-line-2 px-2.5 transition-colors duration-100 focus-within:border-accent"
       :title="customLabel"
     >
       <span class="sr-only">{{ customLabel }}</span>
@@ -28,10 +29,10 @@
         :min="min"
         :max="max"
         :value="modelValue"
-        class="tabular w-14 bg-transparent text-[13px] outline-none"
+        class="mono tabular w-14 bg-transparent text-fg outline-none"
         @change="onChange"
       />
-      <span v-if="unit" class="text-xs text-faint">{{ unit }}</span>
+      <span v-if="unit" class="mono shrink-0 text-faint">{{ unit }}</span>
     </label>
   </div>
 </template>

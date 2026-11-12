@@ -10,41 +10,52 @@
       >
         {{ testing ? t('settings.test.testing') : t('settings.test.button') }}
       </UiButton>
-      <p v-if="!ready" class="text-[13px] text-muted">
+      <p v-if="!ready" class="text-[12px] text-muted">
         {{ t('settings.test.needFields') }}
       </p>
     </div>
 
     <!-- Announced as it arrives, since the result replaces nothing the
          person is looking at. -->
-    <ul class="flex flex-col gap-2" role="status" aria-live="polite">
+    <ul
+      class="flex flex-col"
+      :class="
+        lines.length || failed
+          ? 'border border-line-2 divide-y divide-line-2'
+          : ''
+      "
+      role="status"
+      aria-live="polite"
+    >
       <li
         v-for="(line, index) in lines"
         :key="`${line.key}-${index}`"
-        class="flex items-start gap-2.5 text-[13px] text-pretty"
+        class="flex items-start gap-2.5 px-3 py-1.5 text-[12px] text-pretty"
         :class="TONES[line.status]"
       >
         <AppIcon
           :name="ICONS[line.status]"
-          :size="16"
+          :size="14"
           stroke-width="2.2"
           class="mt-0.5 shrink-0"
         />
-        <span class="text-fg-3">{{
+        <span class="mono text-fg-3">{{
           t(`settings.test.${line.key}`, line.params)
         }}</span>
       </li>
       <li
         v-if="failed"
-        class="flex items-start gap-2.5 text-[13px] text-danger"
+        class="flex items-start gap-2.5 px-3 py-1.5 text-[12px] text-danger"
       >
         <AppIcon
           name="x"
-          :size="16"
+          :size="14"
           stroke-width="2.2"
           class="mt-0.5 shrink-0"
         />
-        <span class="text-fg-3">{{ t('settings.test.requestFailed') }}</span>
+        <span class="mono text-fg-3">{{
+          t('settings.test.requestFailed')
+        }}</span>
       </li>
     </ul>
   </div>

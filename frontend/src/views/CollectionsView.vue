@@ -1,114 +1,168 @@
 <template>
-  <div
-    class="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-6 sm:px-6 md:pt-8 lg:px-10"
-  >
-    <PageHeader :title="t('collections.title')" />
+  <div class="flex flex-col">
+    <PageHeader
+      :title="t('collections.title')"
+      class="border-b-2 border-line"
+    />
 
-    <div class="flex items-center gap-2">
-      <input
-        v-model="newName"
-        type="search"
-        :placeholder="t('collections.placeholder')"
-        class="h-10 min-w-0 flex-1 rounded-control border border-line-2 bg-surface px-3 text-sm outline-none placeholder:text-faint sm:max-w-xs"
-        @keyup.enter="create"
-      />
+    <!-- New collection: the name block, then the primary action. -->
+    <div
+      class="flex flex-col gap-2 border-b-2 border-line px-4 py-3 sm:flex-row sm:items-center"
+    >
+      <label
+        class="flex h-10 min-w-0 flex-1 items-center gap-2 border-2 border-line px-3 transition-colors duration-100 focus-within:border-accent sm:max-w-md"
+      >
+        <AppIcon name="playlist" :size="15" class="text-faint" />
+        <span class="sr-only">{{ t('collections.placeholder') }}</span>
+        <input
+          v-model="newName"
+          type="search"
+          :placeholder="t('collections.placeholder')"
+          class="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-faint"
+          @keyup.enter="create"
+        />
+      </label>
       <UiButton variant="primary" icon="plus" @click="create">
         {{ t('collections.create') }}
       </UiButton>
     </div>
 
-    <div v-if="loading" class="flex flex-col gap-3" aria-busy="true">
-      <UiSkeleton v-for="n in 3" :key="n" class="h-28 w-full !rounded-panel" />
+    <div
+      v-if="loading"
+      class="grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
+      aria-busy="true"
+    >
+      <div
+        v-for="n in 3"
+        :key="n"
+        class="flex flex-col border-r-2 border-b-2 border-line"
+      >
+        <UiSkeleton class="aspect-[4/3]" />
+        <UiSkeleton class="m-3 h-4 w-1/2" />
+        <UiSkeleton class="mx-3 mb-3 h-3 w-1/3" />
+      </div>
     </div>
 
-    <UiEmpty
-      v-else-if="error"
-      icon="alert"
-      :title="t('library.loadFailed')"
-      :body="t('library.loadFailedHint')"
-    >
-      <UiButton icon="refresh" @click="load">{{ t('common.retry') }}</UiButton>
-    </UiEmpty>
+    <div v-else-if="error" class="border-b-2 border-line p-4">
+      <UiEmpty
+        icon="alert"
+        :title="t('library.loadFailed')"
+        :body="t('library.loadFailedHint')"
+      >
+        <UiButton icon="refresh" @click="load">{{
+          t('common.retry')
+        }}</UiButton>
+      </UiEmpty>
+    </div>
 
-    <div v-else class="flex flex-col gap-3">
-      <UiPanel v-for="col in collections" :key="col.name" class="p-4">
-        <div class="flex flex-wrap items-center gap-3">
+    <div v-else-if="!collections.length" class="border-b-2 border-line p-4">
+      <UiEmpty icon="playlist" :title="t('collections.none')" />
+    </div>
+
+    <!-- Cluster grid: flush cards, a four-up mosaic cover each. -->
+    <div
+      v-else
+      class="grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
+    >
+      <article
+        v-for="col in collections"
+        :key="col.name"
+        class="flex min-w-0 flex-col border-r-2 border-b-2 border-line"
+      >
+        <div class="relative border-b-2 border-line">
           <CoverArt
             :covers="collectionCoversFor(col)"
             :name="col.name"
             icon="playlist"
-            rounded="rounded-[10px]"
-            :letter-size="20"
-            :icon-size="22"
-            class="size-12 shrink-0"
+            :letter-size="24"
+            :icon-size="28"
+            class="aspect-[4/3] w-full"
           />
-          <h2 class="text-lg font-medium">{{ col.name }}</h2>
-          <span class="text-sm text-faint">
-            {{ col.playlists.length }}
-          </span>
-          <UiBadge v-if="col.rules?.length" tone="accent">
+          <UiBadge
+            v-if="col.rules?.length"
+            tone="accent"
+            class="absolute top-0 right-0 border-b border-l-2 border-line bg-surface"
+          >
             {{ t('collections.smart') }}
           </UiBadge>
-          <div class="ml-auto flex items-center gap-2">
-            <input
-              v-model="col._add"
-              type="search"
-              list="collection-playlist-names"
-              :placeholder="t('collections.addPlaylist')"
-              class="h-9 min-w-0 flex-1 rounded-control border border-line-2 bg-surface px-3 text-sm outline-none placeholder:text-faint sm:max-w-[16rem]"
-              @keyup.enter="add(col)"
-            />
-            <UiButton
-              v-if="missingMembers(col).length"
-              variant="ghost"
-              icon="download"
-              :loading="downloadingCollection === col.name"
-              @click="downloadMissing(col)"
-            >
-              {{
-                t('collections.downloadMissing', { count: missingCount(col) })
-              }}
-            </UiButton>
-            <UiButton
-              variant="ghost"
-              icon="sliders"
-              :title="t('collections.rules')"
-              :class="col.rules?.length ? 'text-accent' : ''"
-              @click="openRules(col)"
-            />
-            <UiButton
-              variant="ghost"
-              icon="pencil"
-              :title="t('collections.rename')"
-              @click="openRename(col)"
-            />
-            <UiButton
-              variant="ghost"
-              icon="trash"
-              :title="t('common.delete')"
-              @click="remove(col)"
-            />
-          </div>
         </div>
-        <div class="mt-2 flex flex-wrap gap-2">
-          <div v-if="col.playlists.length" class="flex flex-wrap gap-2">
+
+        <div class="flex items-stretch border-b border-line-2">
+          <h2
+            class="text-display min-w-0 flex-1 truncate px-3 py-2 text-[17px] font-bold"
+          >
+            {{ col.name }}
+          </h2>
+          <span
+            class="mono tabular flex shrink-0 items-center border-l border-line-2 px-3 text-faint"
+            >{{ col.playlists.length }}</span
+          >
+        </div>
+
+        <label
+          class="flex h-9 items-center border-b border-line-2 transition-colors duration-100 focus-within:border-accent"
+        >
+          <span class="sr-only">{{ t('collections.addPlaylist') }}</span>
+          <input
+            v-model="col._add"
+            type="search"
+            list="collection-playlist-names"
+            :placeholder="t('collections.addPlaylist')"
+            class="h-full min-w-0 flex-1 bg-transparent px-3 text-[13px] outline-none placeholder:text-faint"
+            @keyup.enter="add(col)"
+          />
+        </label>
+
+        <div class="flex flex-1 flex-wrap content-start gap-1 px-3 py-2">
+          <template v-if="col.playlists.length">
             <router-link
               v-for="pl in col.playlists"
               :key="pl"
               :to="{ name: 'Playlist', query: { name: pl } }"
-              class="rounded-control border border-line-2 bg-surface px-2.5 py-1 text-sm transition-colors hover:border-accent hover:text-accent"
+              class="mono max-w-full truncate border border-line-2 px-1.5 py-1 text-muted transition-colors duration-100 hover:border-line hover:text-fg"
             >
               {{ pl }}
             </router-link>
-          </div>
-          <span v-else class="text-sm text-faint">
+          </template>
+          <span v-else class="text-[13px] text-faint">
             {{ t('collections.empty') }}
           </span>
         </div>
-      </UiPanel>
-      <p v-if="!collections.length" class="text-sm text-faint">
-        {{ t('collections.none') }}
-      </p>
+
+        <div class="flex items-stretch gap-1 border-t-2 border-line p-1">
+          <UiButton
+            v-if="missingMembers(col).length"
+            size="sm"
+            variant="ghost"
+            icon="download"
+            :loading="downloadingCollection === col.name"
+            @click="downloadMissing(col)"
+          >
+            {{ t('collections.downloadMissing', { count: missingCount(col) }) }}
+          </UiButton>
+          <div class="ml-auto flex items-center gap-1">
+            <UiIconButton
+              icon="sliders"
+              size="sm"
+              :label="t('collections.rules')"
+              :active="!!col.rules?.length"
+              @click="openRules(col)"
+            />
+            <UiIconButton
+              icon="pencil"
+              size="sm"
+              :label="t('collections.rename')"
+              @click="openRename(col)"
+            />
+            <UiIconButton
+              icon="trash"
+              size="sm"
+              :label="t('common.delete')"
+              @click="remove(col)"
+            />
+          </div>
+        </div>
+      </article>
     </div>
 
     <datalist id="collection-playlist-names">
@@ -152,11 +206,11 @@
       width="sm:max-w-xl"
       @close="closeRules"
     >
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-2">
         <div
           v-for="(rule, index) in rulesDraft"
           :key="index"
-          class="flex flex-col gap-2 rounded-panel border border-line-2 p-3 sm:flex-row sm:items-end"
+          class="flex flex-col gap-2 border-2 border-line-2 p-3 sm:flex-row sm:items-end"
         >
           <UiSelect
             :model-value="rule.type"
@@ -207,7 +261,7 @@
             @click="removeRule(index)"
           />
         </div>
-        <p v-if="!rulesDraft.length" class="text-sm text-faint">
+        <p v-if="!rulesDraft.length" class="mono text-faint">
           {{ t('collections.noRules') }}
         </p>
         <UiButton variant="ghost" icon="plus" @click="addRule">
@@ -236,6 +290,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '/src/i18n'
 import PageHeader from '/src/components/library/PageHeader.vue'
+import AppIcon from '/src/components/ui/AppIcon.vue'
 import CoverArt from '/src/components/ui/CoverArt.vue'
 import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
@@ -245,7 +300,6 @@ import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiIconButton from '/src/components/ui/UiIconButton.vue'
 import UiInput from '/src/components/ui/UiInput.vue'
 import UiModal from '/src/components/ui/UiModal.vue'
-import UiPanel from '/src/components/ui/UiPanel.vue'
 import UiSelect from '/src/components/ui/UiSelect.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import {

@@ -3,13 +3,13 @@
     :title="t('settings.externalLibraryTitle')"
     :description="t('settings.externalLibraryHint')"
   >
-    <div class="flex flex-col gap-3 px-5 py-4">
+    <div class="flex flex-col gap-3 px-4 py-4">
       <div
         v-for="(folder, index) in folders"
         :key="index"
         class="flex flex-col gap-1.5"
       >
-        <label v-if="index === 0" class="text-[13px] font-semibold text-fg-3">{{
+        <label v-if="index === 0" class="eyebrow text-fg-3">{{
           t('settings.externalLibraryFolder')
         }}</label>
         <div class="flex items-center gap-2">
@@ -18,14 +18,14 @@
             :placeholder="t('settings.externalLibraryPlaceholder')"
             @update:model-value="setFolder(index, $event)"
           />
-          <UiButton
-            variant="ghost"
+          <UiIconButton
             icon="trash"
-            :aria-label="t('settings.externalLibraryRemove')"
+            :label="t('settings.externalLibraryRemove')"
+            size="sm"
             @click="removeFolder(index)"
           />
         </div>
-        <p v-if="index === folders.length - 1" class="text-xs text-muted">
+        <p v-if="index === folders.length - 1" class="text-[12px] text-muted">
           {{ folderHint }}
         </p>
       </div>
@@ -45,12 +45,12 @@
       </div>
       <p
         v-if="statusLine"
-        class="text-[13px]"
+        class="text-[12px]"
         :class="syncFailed ? 'text-danger' : 'text-accent'"
       >
         {{ statusLine }}
       </p>
-      <p v-if="syncing && progress.total" class="text-[13px] text-muted">
+      <p v-if="syncing && progress.total" class="mono text-muted">
         {{
           t('settings.externalLibrarySyncProgress', {
             done: progress.done,
@@ -58,31 +58,32 @@
           })
         }}
       </p>
+      <!-- The log is a diagnostic: monospaced lines inside a framed block. -->
       <div
         v-if="!syncing && syncLog.length"
-        class="max-h-64 overflow-y-auto rounded-lg border border-line-3 bg-surface-2"
+        class="flex max-h-64 flex-col overflow-y-auto border border-line-2 bg-surface-2"
         role="status"
         aria-live="polite"
       >
         <p
-          class="sticky top-0 border-b border-line-3 bg-surface-2 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted"
+          class="eyebrow sticky top-0 border-b border-line-2 bg-surface-2 px-3 py-2"
         >
           {{ t('settings.externalLibraryLogTitle') }}
         </p>
-        <ul class="flex flex-col gap-0 px-3 py-2">
+        <ul class="flex flex-col">
           <li
             v-for="(item, index) in syncLog"
             :key="`${item.status}-${item.file}-${index}`"
-            class="flex items-start gap-2 py-1 text-[13px]"
+            class="flex items-start gap-2 border-b border-line-2 px-3 py-1.5 last:border-b-0"
             :class="logTone(item.status)"
           >
             <AppIcon
               :name="logIcon(item.status)"
-              :size="15"
+              :size="14"
               stroke-width="2.2"
               class="mt-0.5 shrink-0"
             />
-            <span class="min-w-0 text-pretty text-fg-3">
+            <span class="mono min-w-0 text-pretty text-fg-3">
               {{ logLine(item) }}
             </span>
           </li>
@@ -98,6 +99,7 @@ import PathSuggestInput from '/src/components/settings/PathSuggestInput.vue'
 import SettingGroup from '/src/components/settings/SettingGroup.vue'
 import AppIcon from '/src/components/ui/AppIcon.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
+import UiIconButton from '/src/components/ui/UiIconButton.vue'
 import API from '/src/model/api'
 import { useLibrary } from '/src/model/library'
 import { useSettingsManager } from '/src/model/settings'

@@ -1,44 +1,57 @@
 <template>
-  <article class="tile group relative flex min-w-0 flex-col gap-2.5">
-    <RouterLink :to="linkTo" class="block" :aria-label="item.name">
-      <CoverArt
-        :src="item.cover_url"
-        :name="item.name"
-        :round="round"
-        :icon="icon"
-        shadow
-        :letter-size="round ? 40 : 52"
-        class="aspect-square w-full"
-      >
-        <span
-          v-if="rank && !round"
-          class="absolute top-2.5 left-2.5 rounded-full bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur"
-          >{{ rank }}</span
+  <!-- One cell of a flush grid: the 2px rules on its right and bottom edges
+       are drawn here, the grid supplies the left one. The rank sits in an
+       inverted block on the cover's corner. -->
+  <article
+    class="group relative flex min-w-0 flex-col border-r-2 border-b-2 border-line bg-surface"
+  >
+    <div class="relative p-2">
+      <RouterLink :to="linkTo" class="block" :aria-label="item.name">
+        <CoverArt
+          :src="item.cover_url"
+          :name="item.name"
+          :round="round"
+          :icon="icon"
+          :letter-size="round ? 40 : 52"
+          class="aspect-square w-full"
         >
-      </CoverArt>
-    </RouterLink>
-    <button
-      v-if="downloadable"
-      type="button"
-      class="tile-play absolute right-3 bottom-[4.25rem] flex size-11 items-center justify-center rounded-full shadow-float transition-transform hover:scale-105"
-      :class="queued ? 'bg-surface text-accent' : 'bg-accent text-on-accent'"
-      :aria-label="t('actions.downloadItem', { name: item.name })"
-      :disabled="queued"
-      @click="download"
-    >
-      <AppIcon
-        :name="queued ? 'check' : 'download'"
-        :size="18"
-        stroke-width="2.2"
-      />
-    </button>
+          <span
+            v-if="rank"
+            class="mono tabular absolute top-0 left-0 flex h-6 min-w-8 items-center justify-center border-r-2 border-b-2 border-line bg-invert px-1.5 text-on-invert"
+            >{{ String(rank).padStart(2, '0') }}</span
+          >
+        </CoverArt>
+      </RouterLink>
+      <button
+        v-if="downloadable"
+        type="button"
+        class="absolute right-3.5 bottom-3.5 flex size-9 items-center justify-center border-2 border-line transition-colors duration-100"
+        :class="
+          queued
+            ? 'border-accent bg-surface text-accent'
+            : 'bg-invert text-on-invert hover:bg-fg-3'
+        "
+        :aria-label="t('actions.downloadItem', { name: item.name })"
+        :disabled="queued"
+        @click="download"
+      >
+        <AppIcon
+          :name="queued ? 'check' : 'download'"
+          :size="18"
+          stroke-width="2.2"
+        />
+      </button>
+    </div>
     <RouterLink
       :to="linkTo"
-      class="flex min-w-0 flex-col gap-0.5"
+      class="flex min-w-0 flex-1 flex-col gap-1 border-t-2 border-line px-2.5 py-2"
       :class="round ? 'items-center text-center' : ''"
     >
-      <span class="w-full truncate text-sm font-semibold">{{ item.name }}</span>
-      <span class="w-full truncate text-[13px] text-muted">{{ subtitle }}</span>
+      <span
+        class="text-display line-clamp-2 text-[14px] leading-tight font-bold"
+        >{{ item.name }}</span
+      >
+      <span class="mono w-full truncate text-muted">{{ subtitle }}</span>
     </RouterLink>
   </article>
 </template>
@@ -47,8 +60,8 @@
 // A Deezer chart card (album, artist or playlist), styled and wired like
 // search's ReleaseCard: a cover that opens the item's /link page, and -
 // for kinds /link can turn into a flat downloadable tracklist (album,
-// playlist) - a green download button over it, same as ReleaseCard's. An
-// artist resolves to release summaries, not songs (like ReleaseCard's own
+// playlist) - a download block over it, same as ReleaseCard's. An artist
+// resolves to release summaries, not songs (like ReleaseCard's own
 // round/artist tiles), so it only navigates. Chart tracks are the only
 // immediately-downloadable kind and use TrackDownPlay instead, not this
 // card.

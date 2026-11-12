@@ -1,14 +1,14 @@
 <template>
-  <div class="flex flex-col gap-3 px-5 py-4">
+  <div class="flex flex-col gap-3 px-4 py-4">
     <div class="flex items-start justify-between gap-4">
       <div class="min-w-0">
-        <p class="flex items-center gap-2 text-sm font-semibold">
-          {{ t('settings.cookies') }}
+        <p class="flex items-center gap-2">
+          <span class="eyebrow text-fg">{{ t('settings.cookies') }}</span>
           <UiBadge v-if="status.configured" tone="accent" icon="check">{{
             t('settings.cookiesOn')
           }}</UiBadge>
         </p>
-        <p class="mt-0.5 text-[13px] text-pretty text-muted">
+        <p class="mt-1 text-[12px] text-pretty text-muted">
           {{ t('settings.cookiesHint') }}
         </p>
       </div>
@@ -16,15 +16,15 @@
 
     <div
       v-if="status.locked"
-      class="flex items-start gap-2.5 rounded-[12px] bg-surface-2 p-3 text-[13px]"
+      class="flex items-start gap-2.5 border border-line-2 bg-surface-2 p-3 text-[12px]"
     >
-      <AppIcon name="lock" :size="16" class="mt-0.5 text-muted" />
+      <AppIcon name="lock" :size="15" class="mt-0.5 text-muted" />
       <div class="min-w-0">
         <p>{{ t('settings.cookiesLocked') }}</p>
-        <p class="mt-0.5 truncate font-mono text-xs text-muted">
+        <p class="mono mt-1 truncate text-muted">
           {{ status.path }}
         </p>
-        <p v-if="!status.configured" class="mt-1 text-xs text-danger">
+        <p v-if="!status.configured" class="mt-1 text-[12px] text-danger">
           {{ t('settings.cookiesEnvMissing') }}
         </p>
       </div>
@@ -61,7 +61,7 @@
       </UiButton>
       <span
         v-if="status.configured && status.updated_at"
-        class="text-xs text-muted"
+        class="mono text-muted"
       >
         {{
           t('settings.cookiesUpdated', {
@@ -71,13 +71,13 @@
       </span>
     </div>
 
-    <p v-if="error" class="text-[13px] text-danger">{{ error }}</p>
+    <p v-if="error" class="text-[12px] text-danger">{{ error }}</p>
     <p
       v-for="warning in warnings"
       :key="warning"
-      class="flex items-start gap-2 text-[13px] text-warn"
+      class="flex items-start gap-2 text-[12px] text-warn"
     >
-      <AppIcon name="alert" :size="15" class="mt-0.5" />{{ warning }}
+      <AppIcon name="alert" :size="14" class="mt-0.5" />{{ warning }}
     </p>
   </div>
 </template>

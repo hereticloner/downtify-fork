@@ -1,18 +1,18 @@
 <template>
-  <div>
-    <div class="mx-auto max-w-[1680px] px-4 pt-6 sm:px-6 md:pt-8 lg:px-10">
-      <div
-        class="grid gap-4 lg:grid-cols-[minmax(0,42rem)_minmax(0,1fr)] lg:items-start lg:gap-10"
-      >
-        <FinderSearchBar v-model="text" @submit="search" @clear="clearSearch" />
-        <FinderRecentSearches
-          v-if="recent.length"
-          :terms="recent"
-          :active="query"
-          @clear="clearRecent"
-        />
-      </div>
-    </div>
+  <div class="flex flex-col">
+    <!-- The entry block: the Finder's search field at full width, with the
+         recent searches as ruled blocks under it. -->
+    <section
+      class="flex flex-col gap-3 border-b-2 border-line px-4 py-4 sm:px-6"
+    >
+      <FinderSearchBar v-model="text" @submit="search" @clear="clearSearch" />
+      <FinderRecentSearches
+        v-if="recent.length"
+        :terms="recent"
+        :active="query"
+        @clear="clearRecent"
+      />
+    </section>
     <Transition name="page" mode="out-in">
       <FinderResults
         v-if="query || artist"

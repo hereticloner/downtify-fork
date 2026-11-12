@@ -15,7 +15,6 @@
           :src="track.hasCover ? track.cover : ''"
           :name="track.title"
           class="size-11 shrink-0"
-          rounded="rounded-[7px]"
           :letter-size="16"
           :icon-size="18"
         />
@@ -106,7 +105,7 @@
                 :src="item.thumbnail"
                 alt=""
                 loading="lazy"
-                class="h-11 w-[4.5rem] shrink-0 rounded-[6px] bg-surface-2 object-cover"
+                class="h-11 w-[4.5rem] shrink-0 border-2 border-line bg-surface-2 object-cover"
               />
               <span class="flex min-w-0 flex-1 flex-col">
                 <span class="truncate text-sm font-medium">{{

@@ -1,13 +1,13 @@
 <template>
   <form
     role="search"
-    class="flex min-w-0 items-center gap-2"
+    class="flex min-w-0 items-stretch"
     @submit.prevent="submit"
   >
     <span
-      class="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-[12px] border border-line-2 bg-surface pr-1.5 pl-3.5 transition-colors focus-within:border-accent"
+      class="flex h-12 min-w-0 flex-1 items-center gap-2.5 border-2 border-line bg-bg px-3 transition-colors duration-100 focus-within:border-accent"
     >
-      <AppIcon name="search" :size="18" class="text-faint" />
+      <AppIcon name="search" :size="17" class="text-faint" />
       <label for="finder-search" class="sr-only">{{
         t('finder.placeholder')
       }}</label>
@@ -19,23 +19,26 @@
         enterkeyhint="search"
         autocomplete="off"
         :placeholder="t('finder.placeholder')"
-        class="h-full min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
+        class="mono h-full min-w-0 flex-1 bg-transparent text-fg outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
         @input="emit('update:modelValue', $event.target.value)"
       />
       <button
         v-if="modelValue"
         type="button"
-        class="flex size-8 items-center justify-center rounded-control text-faint hover:text-fg"
+        class="flex size-7 shrink-0 items-center justify-center border-l border-line-2 text-faint transition-colors duration-100 hover:text-fg"
         :aria-label="t('common.clear')"
         @click="clear"
       >
-        <AppIcon name="x" :size="16" />
+        <AppIcon name="x" :size="14" />
       </button>
     </span>
+    <!-- The action block shares the field's right rule (-ml-0.5): one 2px
+         line between them, not two. -->
     <UiButton
       type="submit"
       variant="primary"
-      icon="search"
+      size="lg"
+      class="-ml-0.5"
       :disabled="!modelValue.trim()"
     >
       {{ t('search.searchButton') }}

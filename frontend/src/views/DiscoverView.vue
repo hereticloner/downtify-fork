@@ -1,9 +1,11 @@
 <template>
-  <div
-    class="mx-auto flex max-w-[1680px] flex-col gap-8 px-4 pt-6 pb-10 sm:px-6 md:pt-8 lg:px-10"
-  >
-    <PageHeader :title="t('discover.title')" :subtitle="t('discover.subtitle')">
-      <UiButton variant="ghost" icon="eye" @click="hiddenOpen = true">
+  <div class="flex flex-col">
+    <PageHeader
+      :title="t('discover.title')"
+      :subtitle="t('discover.subtitle')"
+      class="border-b-2 border-line"
+    >
+      <UiButton variant="secondary" icon="eye" @click="hiddenOpen = true">
         {{
           t('discover.hiddenButton', { count: discover.blocked.value.length })
         }}
@@ -20,179 +22,286 @@
 
     <div
       v-if="!library.loaded.value || (discover.loading.value && !items.length)"
-      class="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6"
+      class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6"
       aria-busy="true"
     >
-      <div v-for="n in 12" :key="n" class="flex flex-col gap-2.5">
-        <UiSkeleton class="aspect-square w-full rounded-full" />
-        <UiSkeleton class="mx-auto h-4 w-2/3" />
+      <div
+        v-for="n in 12"
+        :key="n"
+        class="flex flex-col gap-2 border-r-2 border-b-2 border-line p-2"
+      >
+        <UiSkeleton class="aspect-square w-full" />
+        <UiSkeleton class="h-3 w-3/4" />
+        <UiSkeleton class="h-2.5 w-1/2" />
       </div>
     </div>
 
-    <UiEmpty
-      v-else-if="!canSuggest"
-      icon="sparkle"
-      :title="t('discover.emptyLibraryTitle')"
-      :body="t('discover.emptyLibraryBody')"
-    >
-      <UiButton icon="search" :to="{ name: 'Search' }">
-        {{ t('discover.findMusic') }}
-      </UiButton>
-    </UiEmpty>
+    <div v-else-if="!canSuggest" class="border-b-2 border-line p-4">
+      <UiEmpty
+        icon="sparkle"
+        :title="t('discover.emptyLibraryTitle')"
+        :body="t('discover.emptyLibraryBody')"
+      >
+        <UiButton icon="search" :to="{ name: 'Search' }">
+          {{ t('discover.findMusic') }}
+        </UiButton>
+      </UiEmpty>
+    </div>
 
-    <UiEmpty
+    <div
       v-else-if="discover.error.value && !items.length"
-      icon="alert"
-      :title="t('discover.failed')"
-      :body="discover.error.value"
+      class="border-b-2 border-line p-4"
     >
-      <UiButton icon="refresh" @click="refresh">{{
-        t('common.retry')
-      }}</UiButton>
-    </UiEmpty>
+      <UiEmpty
+        icon="alert"
+        :title="t('discover.failed')"
+        :body="discover.error.value"
+      >
+        <UiButton icon="refresh" @click="refresh">{{
+          t('common.retry')
+        }}</UiButton>
+      </UiEmpty>
+    </div>
 
-    <UiEmpty
+    <div
       v-else-if="discover.loaded.value && !items.length"
-      icon="sparkle"
-      :title="t('discover.noneTitle')"
-      :body="t('discover.noneBody')"
-    />
+      class="border-b-2 border-line p-4"
+    >
+      <UiEmpty
+        icon="sparkle"
+        :title="t('discover.noneTitle')"
+        :body="t('discover.noneBody')"
+      />
+    </div>
 
-    <template v-else-if="items.length">
-      <p
-        v-if="discover.partial.value"
-        class="flex items-center gap-2 text-[13px] text-muted"
-        role="status"
-      >
-        <AppIcon name="info" :size="16" />
-        {{ t('discover.partial') }}
-      </p>
-
-      <section class="flex flex-col gap-4">
-        <div class="flex items-end justify-between gap-3">
-          <h2 class="text-display text-xl font-semibold">
-            {{ t('discover.artistsTitle') }}
-          </h2>
-          <UiButton
-            v-if="items.length > ARTISTS_SHOWN"
-            size="sm"
-            variant="ghost"
-            @click="showAllArtists = !showAllArtists"
-          >
-            {{
-              showAllArtists
-                ? t('discover.showLess')
-                : t('discover.showAll', { count: items.length })
-            }}
-          </UiButton>
-        </div>
-        <div :class="GRID">
-          <MediaTile
-            v-for="item in shownArtists"
-            :key="item.name"
-            :to="artistRoute(item)"
-            :title="item.name"
-            :subtitle="because(item)"
-            v-bind="artistPhoto(item)"
-            :name="item.name"
-            icon="user"
-            round
-            :playable="false"
-          >
-            <template #overlay>
-              <UiMenu
-                :items="menuFor(item)"
-                :label="t('discover.moreFor', { name: item.name })"
-              >
-                <template #trigger>
-                  <button
-                    type="button"
-                    class="flex size-9 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/75"
-                    :aria-label="t('discover.moreFor', { name: item.name })"
-                  >
-                    <AppIcon name="more" :size="18" />
-                  </button>
-                </template>
-              </UiMenu>
-            </template>
-          </MediaTile>
-        </div>
-      </section>
-
-      <section
-        v-for="shelf in shelves"
-        :key="shelf.id"
-        class="flex flex-col gap-4"
-      >
-        <div>
-          <h2 class="text-display text-xl font-semibold">{{ shelf.title }}</h2>
-          <p class="mt-1 text-[13px] text-muted">{{ shelf.body }}</p>
-        </div>
-        <div
-          v-if="shelf.loading && !shelf.items.length"
-          :class="GRID"
-          aria-busy="true"
-        >
-          <div v-for="n in 6" :key="n" class="flex flex-col gap-2.5">
-            <UiSkeleton class="aspect-square w-full" />
-            <UiSkeleton class="h-4 w-2/3" />
+    <div
+      v-else-if="items.length"
+      class="grid xl:grid-cols-[minmax(0,1fr)_340px]"
+    >
+      <div class="flex min-w-0 flex-col">
+        <!-- Suggested artists: four to a row, flush -->
+        <section class="flex flex-col">
+          <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+            <span
+              class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+              >01</span
+            >
+            <h2
+              class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+            >
+              {{ t('discover.artistsTitle') }}
+            </h2>
+            <UiButton
+              v-if="items.length > ARTISTS_SHOWN"
+              variant="ghost"
+              size="sm"
+              class="my-1 mr-1 border-line-2"
+              @click="showAllArtists = !showAllArtists"
+            >
+              {{
+                showAllArtists
+                  ? t('discover.showLess')
+                  : t('discover.showAll', { count: items.length })
+              }}
+            </UiButton>
+            <span
+              class="mono flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+              >{{ items.length }}</span
+            >
           </div>
-        </div>
-        <div v-else :class="GRID" :aria-busy="shelf.pending || undefined">
-          <MediaTile
-            v-for="item in shelf.items"
-            :key="item.key || item.url"
-            :to="collectionRoute(item)"
-            :title="item.name"
-            :subtitle="shelf.subtitle(item)"
-            :cover="item.cover_url"
-            :name="item.name"
-            :icon="shelf.icon"
-            :playable="false"
-          >
-            <!-- Which service it's from. A Deezer album opens in the
-                 Finder, a Spotify one - and any playlist - on its Link
-                 page. -->
-            <template v-if="shelf.badge && item.source" #badge>
+          <div :class="ARTIST_GRID">
+            <MediaTile
+              v-for="item in shownArtists"
+              :key="item.name"
+              :to="artistRoute(item)"
+              :title="item.name"
+              :subtitle="because(item)"
+              v-bind="artistPhoto(item)"
+              :name="item.name"
+              icon="user"
+              round
+              :playable="false"
+            >
+              <template #overlay>
+                <UiMenu
+                  :items="menuFor(item)"
+                  :label="t('discover.moreFor', { name: item.name })"
+                >
+                  <template #trigger>
+                    <button
+                      type="button"
+                      class="flex size-8 items-center justify-center border-2 border-line bg-bg text-fg transition-colors duration-100 hover:bg-surface-2 active:bg-raised"
+                      :aria-label="t('discover.moreFor', { name: item.name })"
+                    >
+                      <AppIcon name="more" :size="16" />
+                    </button>
+                  </template>
+                </UiMenu>
+              </template>
+            </MediaTile>
+          </div>
+        </section>
+
+        <!-- Album and playlist shelves: the same flush grid under a ruled
+             header, with the shelf's note in mono under the title. -->
+        <section
+          v-for="(shelf, i) in shelves"
+          :key="shelf.id"
+          class="flex flex-col"
+        >
+          <div class="border-b-2 border-line bg-surface-2">
+            <div class="flex items-stretch">
               <span
-                class="absolute bottom-2.5 left-2.5 flex size-7 items-center justify-center rounded-full bg-black/60 backdrop-blur"
-                :class="
-                  item.source === 'spotify' ? 'text-spotify' : 'text-deezer'
-                "
-                :title="t('discover.onPlatform', { name: platformName(item) })"
+                class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+                >0{{ i + 2 }}</span
               >
-                <AppIcon :name="item.source" :size="15" />
-                <span class="sr-only">{{
-                  t('discover.onPlatform', { name: platformName(item) })
-                }}</span>
-              </span>
-            </template>
-          </MediaTile>
-          <!-- Spotify's suggestions are still on their way: they'll be
-               added here, at the end. -->
-          <template v-if="shelf.pending">
+              <h2
+                class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+              >
+                {{ shelf.title }}
+              </h2>
+              <span
+                class="mono flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+                >{{ shelf.items.length }}</span
+              >
+            </div>
+            <p
+              class="border-t border-line-2 px-3 py-1.5 text-[12px] text-muted"
+            >
+              {{ shelf.body }}
+            </p>
+          </div>
+          <div
+            v-if="shelf.loading && !shelf.items.length"
+            class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6"
+            aria-busy="true"
+          >
             <div
-              v-for="n in 2"
-              :key="`pending-${n}`"
-              class="flex flex-col gap-2.5"
+              v-for="n in 6"
+              :key="n"
+              class="flex flex-col gap-2 border-r-2 border-b-2 border-line p-2"
             >
               <UiSkeleton class="aspect-square w-full" />
-              <UiSkeleton class="h-4 w-2/3" />
+              <UiSkeleton class="h-3 w-3/4" />
             </div>
-          </template>
-        </div>
-      </section>
+          </div>
+          <div
+            v-else
+            :class="SHELF_GRID"
+            :aria-busy="shelf.pending || undefined"
+          >
+            <MediaTile
+              v-for="item in shelf.items"
+              :key="item.key || item.url"
+              :to="collectionRoute(item)"
+              :title="item.name"
+              :subtitle="shelf.subtitle(item)"
+              :cover="item.cover_url"
+              :name="item.name"
+              :icon="shelf.icon"
+              :playable="false"
+            >
+              <!-- Which service it's from. A Deezer album opens in the
+                   Finder, a Spotify one - and any playlist - on its Link
+                   page. -->
+              <template v-if="shelf.badge && item.source" #badge>
+                <span
+                  class="absolute top-0 right-0 flex h-6 items-center gap-1 border-b-2 border-l-2 border-line bg-surface px-1.5"
+                  :class="
+                    item.source === 'spotify' ? 'text-spotify' : 'text-deezer'
+                  "
+                  :title="
+                    t('discover.onPlatform', { name: platformName(item) })
+                  "
+                >
+                  <AppIcon :name="item.source" :size="12" />
+                  <span class="sr-only">{{
+                    t('discover.onPlatform', { name: platformName(item) })
+                  }}</span>
+                </span>
+              </template>
+            </MediaTile>
+            <!-- Spotify's suggestions are still on their way: they'll be
+                 added here, at the end. -->
+            <template v-if="shelf.pending">
+              <div
+                v-for="n in 2"
+                :key="`pending-${n}`"
+                class="flex flex-col gap-2 border-r-2 border-b-2 border-line p-2"
+              >
+                <UiSkeleton class="aspect-square w-full" />
+                <UiSkeleton class="h-3 w-3/4" />
+              </div>
+            </template>
+          </div>
+        </section>
 
-      <p
-        v-if="discover.collectionsError.value"
-        class="flex items-center gap-2 text-[13px] text-muted"
-        role="status"
-      >
-        <AppIcon name="info" :size="16" />
-        {{ t('discover.collectionsFailed') }}
-      </p>
-      <p class="text-[13px] text-faint">{{ t('discover.poweredBy') }}</p>
-    </template>
+        <p class="px-3 py-2 text-[11px] text-faint">
+          {{ t('discover.poweredBy') }}
+        </p>
+      </div>
+
+      <!-- Apparatus: what the suggestions are made of, and what is held
+           back. -->
+      <aside class="flex min-w-0 flex-col xl:border-l-2 xl:border-line">
+        <p
+          v-if="discover.partial.value"
+          class="flex items-center gap-2 border-b-2 border-line px-3 py-2 text-[12px] text-muted"
+          role="status"
+        >
+          <AppIcon name="info" :size="14" class="shrink-0 text-faint" />
+          {{ t('discover.partial') }}
+        </p>
+        <p
+          v-if="discover.collectionsError.value"
+          class="flex items-center gap-2 border-b-2 border-line px-3 py-2 text-[12px] text-muted"
+          role="status"
+        >
+          <AppIcon name="info" :size="14" class="shrink-0 text-faint" />
+          {{ t('discover.collectionsFailed') }}
+        </p>
+
+        <section class="flex flex-col">
+          <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+            <h2
+              class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+            >
+              {{ t('discover.hiddenTitle') }}
+            </h2>
+            <UiButton
+              variant="ghost"
+              size="sm"
+              class="my-1 mr-1 border-line-2"
+              @click="hiddenOpen = true"
+            >
+              {{ t('discover.hide') }}
+            </UiButton>
+          </div>
+          <ul v-if="discover.blocked.value.length" class="flex flex-col px-3">
+            <li
+              v-for="row in discover.blocked.value"
+              :key="row.name"
+              class="mono flex items-center gap-2 border-b border-line-2 py-1.5 last:border-b-0"
+            >
+              <span class="size-2 shrink-0 bg-line-3" aria-hidden="true" />
+              <span class="min-w-0 flex-1 truncate text-fg-3">{{
+                row.name
+              }}</span>
+              <button
+                type="button"
+                class="eyebrow shrink-0 text-muted transition-colors duration-100 hover:text-fg"
+                @click="unhide(row.name)"
+              >
+                {{ t('discover.unhide') }}
+              </button>
+            </li>
+          </ul>
+          <p v-else class="mono px-3 py-2 text-faint">
+            {{ t('discover.hiddenEmpty') }}
+          </p>
+        </section>
+      </aside>
+    </div>
 
     <UiModal
       :open="hiddenOpen"
@@ -213,11 +322,11 @@
           </UiButton>
         </form>
 
-        <ul v-if="discover.blocked.value.length" class="-mx-2 flex flex-col">
+        <ul v-if="discover.blocked.value.length" class="flex flex-col">
           <li
             v-for="row in discover.blocked.value"
             :key="row.name"
-            class="flex items-center gap-3 rounded-[10px] px-2 py-2 hover:bg-surface-2"
+            class="flex items-center gap-3 border-b border-line-2 py-2 last:border-b-0"
           >
             <CoverArt
               :src="proxiedArtistPhotoUrl(row.name)"
@@ -227,7 +336,7 @@
               :letter-size="14"
               class="size-10"
             />
-            <span class="min-w-0 flex-1 truncate text-sm font-semibold">{{
+            <span class="mono min-w-0 flex-1 truncate text-fg">{{
               row.name
             }}</span>
             <UiButton size="sm" variant="ghost" @click="unhide(row.name)">
@@ -235,9 +344,9 @@
             </UiButton>
           </li>
         </ul>
-        <p v-else class="text-sm text-muted">{{ t('discover.hiddenEmpty') }}</p>
+        <p v-else class="mono text-faint">{{ t('discover.hiddenEmpty') }}</p>
 
-        <div class="flex flex-col gap-2 border-t border-line pt-4">
+        <div class="flex flex-col gap-2 border-t-2 border-line pt-4">
           <p class="text-[13px] text-muted">{{ t('discover.listensBody') }}</p>
           <div>
             <UiButton
@@ -295,8 +404,12 @@ const library = useLibrary()
 const likes = useLikes()
 const discover = useDiscover()
 
-const GRID =
-  'grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6'
+// Flush grids: every cell draws its own right/bottom rule, the grid (or the
+// section header above it) the left one.
+const ARTIST_GRID =
+  'grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4'
+const SHELF_GRID =
+  'grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6'
 // Artists shown before "Show all": two rows on a wide screen.
 const ARTISTS_SHOWN = 12
 

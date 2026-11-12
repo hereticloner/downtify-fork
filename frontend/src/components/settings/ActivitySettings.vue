@@ -1,34 +1,34 @@
 <template>
-  <div class="flex min-w-0 flex-col gap-8">
+  <div class="flex min-w-0 flex-col gap-5">
     <!-- Now playing -->
     <SettingGroup
       :title="t('activity.nowTitle')"
       :description="t('activity.nowHint')"
     >
-      <p v-if="!playing.length" class="px-5 py-4 text-sm text-muted">
+      <p v-if="!playing.length" class="px-4 py-4 text-[13px] text-muted">
         {{ t('activity.nowEmpty') }}
       </p>
       <ul v-else class="flex flex-col">
         <li
           v-for="entry in playing"
           :key="`${entry.user_id}-${entry.client}-${entry.track.file || entry.track.track_id}`"
-          class="flex items-center gap-3 px-5 py-3"
+          class="flex items-center gap-3 px-4 py-2.5"
         >
           <span
-            class="flex size-10 shrink-0 items-center justify-center rounded-full"
+            class="flex size-8 shrink-0 items-center justify-center border-2"
             :class="
               entry.paused
-                ? 'bg-surface-2 text-muted'
-                : 'bg-accent/15 text-accent'
+                ? 'border-line-2 text-muted'
+                : 'border-line bg-invert text-on-invert'
             "
           >
-            <AppIcon :name="entry.paused ? 'pause' : 'play'" :size="16" />
+            <AppIcon :name="entry.paused ? 'pause' : 'play'" :size="14" />
           </span>
           <span class="flex min-w-0 flex-1 flex-col">
-            <span class="truncate text-sm font-semibold">
+            <span class="truncate text-[13px] font-semibold">
               {{ trackText(entry.track) }}
             </span>
-            <span class="truncate text-[12px] text-muted">
+            <span class="mono truncate text-muted">
               {{ entry.username }} · {{ entry.client }}
               <template v-if="entry.track.duration">
                 · {{ formatDuration(entry.position) }} /
@@ -46,7 +46,7 @@
       :title="t('activity.logTitle')"
       :description="t('activity.logHint')"
     >
-      <div class="flex flex-wrap items-center gap-2 px-5 py-4">
+      <div class="flex flex-wrap items-center gap-2 px-4 py-3">
         <UiSelect
           v-model="userFilter"
           :options="userOptions"
@@ -70,7 +70,7 @@
       </div>
       <p
         v-if="!entries.length && !loading"
-        class="px-5 py-4 text-sm text-muted"
+        class="px-4 py-4 text-[13px] text-muted"
       >
         {{ t('activity.logEmpty') }}
       </p>
@@ -78,26 +78,26 @@
         <li
           v-for="entry in entries"
           :key="entry.id"
-          class="flex items-start gap-3 px-5 py-3"
+          class="flex items-start gap-3 px-4 py-2.5"
         >
           <span
-            class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full"
+            class="mt-0.5 flex size-7 shrink-0 items-center justify-center border"
             :class="
               entry.kind === 'login_failed'
-                ? 'bg-danger/12 text-danger'
-                : 'bg-surface-2 text-muted'
+                ? 'border-danger text-danger'
+                : 'border-line-2 text-muted'
             "
           >
-            <AppIcon :name="iconFor(entry.kind)" :size="15" />
+            <AppIcon :name="iconFor(entry.kind)" :size="14" />
           </span>
           <span class="flex min-w-0 flex-1 flex-col">
-            <span class="text-sm text-pretty">
+            <span class="text-[13px] text-pretty">
               <span class="font-semibold">{{
                 entry.username || t('activity.someone')
               }}</span>
               {{ ' ' }}{{ describe(entry) }}
             </span>
-            <span class="truncate text-[12px] text-muted">
+            <span class="mono truncate text-muted">
               <time :datetime="entry.at" :title="exact(entry.at)">{{
                 timeAgo(entry.at, locale)
               }}</time>
@@ -107,8 +107,8 @@
           </span>
         </li>
       </ul>
-      <div v-if="next" class="flex justify-center px-5 py-4">
-        <UiButton variant="ghost" :loading="loading" @click="more">
+      <div v-if="next" class="flex justify-center px-4 py-3">
+        <UiButton variant="secondary" :loading="loading" @click="more">
           {{ t('activity.more') }}
         </UiButton>
       </div>
