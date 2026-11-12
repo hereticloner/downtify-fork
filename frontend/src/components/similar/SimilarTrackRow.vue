@@ -45,6 +45,25 @@
       class="hidden w-[30%] truncate text-[13px] text-muted lg:block"
       >{{ song.album_name }}</span
     >
+    <span class="hidden shrink-0 items-center gap-1.5 sm:flex">
+      <span class="flex gap-0.5" aria-hidden="true">
+        <span
+          v-for="block in 5"
+          :key="block"
+          class="size-2"
+          :class="
+            block <= matchBlocks
+              ? isCurrent
+                ? 'bg-on-invert'
+                : 'bg-fg'
+              : isCurrent
+                ? 'border border-on-invert/40'
+                : 'border border-line-2'
+          "
+        />
+      </span>
+      <span class="mono tabular text-faint">{{ matchPct }}%</span>
+    </span>
     <span
       class="tabular hidden w-12 text-right text-[13px] text-muted sm:block"
     >
@@ -118,6 +137,15 @@ const props = defineProps({
 
 const { t } = useI18n()
 const player = usePlayer()
+
+// YouTube ranks the radio mix, so `match` (0..1) decays down the list; a
+// five-block meter reads that at a glance without a legend.
+const matchPct = computed(() =>
+  Math.round((Number(props.song.match) || 0) * 100)
+)
+const matchBlocks = computed(() =>
+  Math.round((Number(props.song.match) || 0) * 5)
+)
 const library = useLibrary()
 const dm = useDownloadManager()
 const actions = useTrackActions()

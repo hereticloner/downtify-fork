@@ -47,6 +47,7 @@
         :selected="selected.has(keyOf(song, i))"
         :marked="!!markedKey && keyOf(song, i) === markedKey"
         :hide-album="hideAlbum"
+        :rank-lead="rankLead"
         @toggle="toggleSelected(keyOf(song, i))"
       />
     </div>
@@ -152,6 +153,8 @@ const props = defineProps({
   collectionName: { type: String, default: '' },
   markedKey: { type: String, default: '' },
   hideAlbum: { type: Boolean, default: false },
+  // Charts: the first three rows get an inverted rank block.
+  rankLead: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['download'])

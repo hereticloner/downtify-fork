@@ -85,6 +85,17 @@
       </button>
       <template v-else>
         <span
+          v-if="rankLead && index < 3"
+          class="mono tabular flex size-6 items-center justify-center border-2 border-line"
+          :class="
+            highlighted
+              ? 'border-on-invert text-on-invert'
+              : 'bg-invert text-on-invert'
+          "
+          >{{ index + 1 }}</span
+        >
+        <span
+          v-else
           class="mono tabular"
           :class="[
             playable ? 'group-hover:hidden' : '',
@@ -238,6 +249,8 @@ const props = defineProps({
   song: { type: Object, required: true },
   // Its position in the list, shown as the number; `null` hides it.
   index: { type: Number, default: null },
+  // Charts pass this so the top three ranks read as inverted blocks.
+  rankLead: { type: Boolean, default: false },
   // The library tracks playing this song starts a queue from (typically the
   // list's other downloaded songs, in order). Without it, just this song.
   queue: { type: Array, default: () => [] },

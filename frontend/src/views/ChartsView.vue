@@ -86,6 +86,7 @@
               :queue="trackQueue"
               :collection-name="t('charts.title')"
               selectable
+              rank-lead
               :toolbar-mode="TOOLBAR_LAZY"
             />
           </div>

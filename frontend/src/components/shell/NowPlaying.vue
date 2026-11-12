@@ -87,8 +87,8 @@
                     {{ track.title }}
                   </h2>
                   <RouterLink
-                    v-if="track.albumArtist"
-                    :to="{ name: 'Artist', query: { name: track.albumArtist } }"
+                    v-if="artistName"
+                    :to="{ name: 'Artist', query: { name: artistName } }"
                     class="mt-1 block truncate text-sm text-muted hover:text-fg hover:underline"
                     @click="nowPlaying.close()"
                     >{{ track.artist }}</RouterLink
@@ -560,6 +560,12 @@ const sleepMenu = computed(() => [
   },
 ])
 
+// The library keys artists by album artist, but a downloaded file may only
+// carry the plain artist tag - fall back so the name always opens a page.
+const artistName = computed(
+  () => track.value?.albumArtist || track.value?.artist || ''
+)
+
 const trackMenu = computed(() => {
   const tr = track.value
   if (!tr) return []
@@ -571,15 +577,15 @@ const trackMenu = computed(() => {
       action: () =>
         navigate({
           name: 'Album',
-          query: { artist: tr.albumArtist, title: tr.album },
+          query: { artist: artistName.value, title: tr.album },
         }),
     },
     {
       label: t('player.goToArtist'),
       icon: 'user',
-      hidden: !tr.albumArtist,
+      hidden: !artistName.value,
       action: () =>
-        navigate({ name: 'Artist', query: { name: tr.albumArtist } }),
+        navigate({ name: 'Artist', query: { name: artistName.value } }),
     },
     {
       label: t('library.saveToDevice'),
