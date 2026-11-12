@@ -4,13 +4,14 @@
     role="table"
     :aria-rowcount="tracks.length"
     :aria-describedby="hintId"
+    class="border-2 border-line"
   >
     <p :id="hintId" class="sr-only">{{ t('library.keyboardHint') }}</p>
     <!-- Column headings (desktop) -->
     <div
       v-if="header"
       role="row"
-      class="grid h-9 items-center gap-3 border-b border-line px-3 text-[11px] font-semibold tracking-[0.06em] text-faint uppercase max-md:hidden"
+      class="grid h-9 items-center gap-3 border-b-2 border-line bg-surface-2 px-3 max-md:hidden"
       :class="gridClass"
     >
       <span v-if="selectable" role="columnheader">
@@ -21,11 +22,11 @@
           @toggle="toggleAll"
         />
       </span>
-      <span role="columnheader" class="text-center">#</span>
+      <span role="columnheader" class="eyebrow text-center">#</span>
       <button
         type="button"
         role="columnheader"
-        class="text-left uppercase"
+        class="eyebrow text-left transition-colors duration-100 hover:text-fg"
         @click="sortBy('title')"
       >
         {{ t('track.title') }}<SortMark field="title" />
@@ -34,19 +35,19 @@
         v-if="showAlbum"
         type="button"
         role="columnheader"
-        class="text-left uppercase max-lg:hidden"
+        class="eyebrow text-left transition-colors duration-100 hover:text-fg max-lg:hidden"
         @click="sortBy('album')"
       >
         {{ t('track.album') }}<SortMark field="album" />
       </button>
-      <span role="columnheader" class="max-xl:hidden">{{
+      <span role="columnheader" class="eyebrow max-xl:hidden">{{
         t('track.format')
       }}</span>
       <button
         v-if="showAdded"
         type="button"
         role="columnheader"
-        class="text-left uppercase max-xl:hidden"
+        class="eyebrow text-left transition-colors duration-100 hover:text-fg max-xl:hidden"
         @click="sortBy('added')"
       >
         {{ t('track.added') }}<SortMark field="added" />
@@ -54,7 +55,7 @@
       <button
         type="button"
         role="columnheader"
-        class="text-left uppercase max-xl:hidden"
+        class="eyebrow text-left transition-colors duration-100 hover:text-fg max-xl:hidden"
         @click="sortBy('releaseDate')"
       >
         {{ t('track.releaseDate') }}<SortMark field="releaseDate" />
@@ -62,10 +63,10 @@
       <button
         type="button"
         role="columnheader"
-        class="text-right"
+        class="eyebrow text-right transition-colors duration-100 hover:text-fg"
         @click="sortBy('duration')"
       >
-        <AppIcon name="clock" :size="14" class="inline" /><SortMark
+        <AppIcon name="clock" :size="13" class="inline" /><SortMark
           field="duration"
         />
       </button>
@@ -84,15 +85,15 @@
         role="row"
         :tabindex="roving.tabindexFor(row.index)"
         :aria-selected="selectable ? String(isSelected(row.track)) : undefined"
-        class="group grid h-14 items-center gap-3 rounded-[10px] px-3 transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="group relative grid h-14 items-center gap-3 border-b border-line-2 px-3 transition-colors duration-100 select-none last:border-b-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         :class="[
           gridClass,
           virtual ? 'absolute inset-x-0 top-0' : '',
           isSelected(row.track)
-            ? 'bg-accent/10'
+            ? 'bg-surface-2'
             : isCurrent(row.track)
-              ? 'bg-surface'
-              : 'hover:bg-surface',
+              ? 'bg-invert text-on-invert'
+              : 'hover:bg-surface-2',
         ]"
         :style="
           virtual ? { transform: `translateY(${row.start}px)` } : undefined
@@ -108,6 +109,13 @@
         @pointercancel="longPress.up()"
         @pointerleave="longPress.up()"
       >
+        <!-- The playing (or selected) row carries a 4px accent mark on its
+             leading edge; it is drawn over the row, so no column shifts. -->
+        <span
+          v-if="isCurrent(row.track) || isSelected(row.track)"
+          class="absolute inset-y-0 left-0 w-1 bg-accent"
+          aria-hidden="true"
+        />
         <span
           v-if="selectable"
           class="flex items-center justify-center max-md:min-h-11 max-md:min-w-11"
@@ -116,7 +124,7 @@
           <button
             v-if="!selectionMode"
             type="button"
-            class="flex size-11 items-center justify-center rounded-control text-faint transition-colors hover:text-fg md:hidden"
+            class="flex size-11 items-center justify-center border-2 border-line-2 text-muted transition-colors duration-100 hover:border-line hover:text-fg md:hidden"
             :aria-label="t('library.selectTrack', { title: row.track.title })"
             @click.stop="beginSelection(row)"
           >
@@ -130,7 +138,8 @@
           />
         </span>
         <span
-          class="flex w-6 items-center justify-center text-[13px] text-faint max-md:hidden"
+          class="mono flex w-6 items-center justify-center max-md:hidden"
+          :class="isCurrent(row.track) ? 'text-on-invert' : 'text-faint'"
         >
           <EqBars
             v-if="isCurrent(row.track)"
@@ -152,7 +161,7 @@
               :aria-label="t('actions.playItem', { name: row.track.title })"
               @click.stop="playRow(row)"
             >
-              <AppIcon name="play" :size="14" />
+              <AppIcon name="play" :size="13" />
             </button>
           </template>
         </span>
@@ -167,34 +176,36 @@
             <CoverArt
               :src="row.track.hasCover ? row.track.cover : ''"
               :name="row.track.album || row.track.title"
-              rounded="rounded-[6px]"
-              :letter-size="13"
-              :icon-size="16"
+              :letter-size="11"
+              :icon-size="14"
               class="size-10"
             />
             <span
               v-if="isSelected(row.track)"
-              class="absolute inset-0 flex items-center justify-center rounded-[6px] bg-accent/80 text-on-accent md:hidden"
+              class="absolute inset-0 flex items-center justify-center bg-invert text-on-invert md:hidden"
             >
               <AppIcon name="check" :size="18" stroke-width="3" />
             </span>
           </button>
           <div class="min-w-0">
             <p
-              class="truncate text-sm font-semibold"
-              :class="isCurrent(row.track) ? 'text-accent' : 'text-fg'"
+              class="truncate text-[13px] font-semibold"
+              :class="isCurrent(row.track) ? 'text-on-invert' : 'text-fg'"
             >
               {{ row.track.title }}
             </p>
-            <p class="truncate text-[13px] text-muted">
+            <p
+              class="truncate text-[12px]"
+              :class="isCurrent(row.track) ? 'text-on-invert/70' : 'text-muted'"
+            >
               <span
-                class="mr-1.5 inline-block rounded-[4px] border border-line-3 px-1 text-[10px] font-semibold text-faint md:hidden"
+                class="mono mr-1.5 inline-block border border-line-2 px-1 text-[10px] md:hidden"
                 >{{ row.track.format }}</span
               >
               <RouterLink
                 v-if="row.track.albumArtist && linkArtist"
                 :to="{ name: 'Artist', query: { name: row.track.albumArtist } }"
-                class="hover:text-fg hover:underline"
+                class="hover:underline"
                 @click.stop
                 >{{ row.track.artist }}</RouterLink
               >
@@ -204,7 +215,8 @@
         </div>
         <span
           v-if="showAlbum"
-          class="truncate text-[13px] text-muted max-lg:hidden"
+          class="truncate text-[12px] max-lg:hidden"
+          :class="isCurrent(row.track) ? 'text-on-invert/70' : 'text-muted'"
         >
           <RouterLink
             v-if="row.track.album"
@@ -212,27 +224,39 @@
               name: 'Album',
               query: { artist: row.track.albumArtist, title: row.track.album },
             }"
-            class="hover:text-fg hover:underline"
+            class="hover:underline"
             @click.stop
             >{{ row.track.album }}</RouterLink
           >
         </span>
         <span class="max-xl:hidden">
           <span
-            class="rounded-[5px] border border-line-3 px-1.5 py-0.5 text-[11px] font-semibold text-muted"
+            class="mono inline-flex h-[20px] items-center border px-1.5 whitespace-nowrap"
+            :class="
+              isCurrent(row.track)
+                ? 'border-on-invert/40 text-on-invert'
+                : 'border-line-3 text-muted'
+            "
             >{{ row.track.format }}</span
           >
         </span>
         <span
           v-if="showAdded"
-          class="truncate text-[13px] text-faint max-xl:hidden"
+          class="mono truncate max-xl:hidden"
+          :class="isCurrent(row.track) ? 'text-on-invert/70' : 'text-faint'"
         >
           {{ row.track.added ? timeAgo(row.track.added, locale) : '' }}
         </span>
-        <span class="truncate text-[13px] text-muted max-xl:hidden">
+        <span
+          class="mono truncate max-xl:hidden"
+          :class="isCurrent(row.track) ? 'text-on-invert/70' : 'text-muted'"
+        >
           {{ row.track.releaseDate }}
         </span>
-        <span class="tabular text-right text-[13px] text-muted max-md:hidden">
+        <span
+          class="mono tabular text-right max-md:hidden"
+          :class="isCurrent(row.track) ? 'text-on-invert' : 'text-muted'"
+        >
           {{ row.track.duration ? formatDuration(row.track.duration) : '' }}
         </span>
         <span class="flex items-center justify-end" @click.stop>
@@ -583,10 +607,10 @@ const Checkbox = defineComponent({
             : String(boxProps.checked),
           'aria-label': boxProps.label,
           class: [
-            'flex size-[18px] items-center justify-center rounded-[5px] border-[1.5px] transition-colors',
+            'flex size-[18px] items-center justify-center border-2 transition-colors duration-100',
             boxProps.checked || boxProps.indeterminate
-              ? 'border-accent bg-accent text-on-accent'
-              : 'border-line-3 hover:border-fg-3',
+              ? 'border-line bg-invert text-on-invert'
+              : 'border-line-3 hover:border-line',
           ],
           // Toggling the box must not also reach the row's click handler
           // (which would toggle it a second time).
@@ -596,9 +620,9 @@ const Checkbox = defineComponent({
           },
         },
         boxProps.checked
-          ? [h(AppIcon, { name: 'check', size: 13, strokeWidth: 3 })]
+          ? [h(AppIcon, { name: 'check', size: 12, strokeWidth: 3 })]
           : boxProps.indeterminate
-            ? [h('span', { class: 'h-0.5 w-2 rounded bg-on-accent' })]
+            ? [h('span', { class: 'h-0.5 w-2 bg-current' })]
             : []
       )
   },

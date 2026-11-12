@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="mx-auto flex w-full max-w-[1680px] flex-col">
     <DetailState
       :loaded="ready"
       :found="!!album"
@@ -13,13 +13,41 @@
         :name="album.title"
       >
         <template #subtitle>
-          <RouterLink
-            v-if="album.artist"
-            :to="{ name: 'Artist', query: { name: album.artist } }"
-            class="font-semibold text-fg hover:underline"
-            >{{ album.artist }}</RouterLink
+          <dl
+            class="grid w-full grid-cols-1 border-t-2 border-l-2 border-line sm:grid-cols-2"
           >
-          <span v-for="part in facts" :key="part"> · {{ part }}</span>
+            <div
+              class="flex min-w-0 items-baseline gap-3 border-r-2 border-b-2 border-line px-2 py-1"
+            >
+              <dt class="eyebrow shrink-0">{{ t('track.artist') }}</dt>
+              <dd class="min-w-0 truncate">
+                <RouterLink
+                  v-if="album.artist"
+                  :to="{ name: 'Artist', query: { name: album.artist } }"
+                  class="text-fg hover:underline"
+                  >{{ album.artist }}</RouterLink
+                >
+              </dd>
+            </div>
+            <div
+              class="flex min-w-0 items-baseline gap-3 border-r-2 border-b-2 border-line px-2 py-1"
+            >
+              <dt class="eyebrow shrink-0">{{ t('track.format') }}</dt>
+              <dd class="min-w-0 truncate">{{ albumFormats }}</dd>
+            </div>
+            <div
+              class="flex min-w-0 items-baseline gap-3 border-r-2 border-b-2 border-line px-2 py-1"
+            >
+              <dt class="eyebrow shrink-0">{{ t('track.year') }}</dt>
+              <dd class="min-w-0 truncate">{{ album.year }}</dd>
+            </div>
+            <div
+              class="flex min-w-0 items-baseline gap-3 border-r-2 border-b-2 border-line px-2 py-1"
+            >
+              <dt class="eyebrow shrink-0">{{ t('track.size') }}</dt>
+              <dd class="min-w-0 truncate">{{ formatBytes(album.size) }}</dd>
+            </div>
+          </dl>
         </template>
         <template #actions>
           <PlayButton
@@ -35,14 +63,14 @@
             @click="actions.play(album.tracks, 0, context, { shuffled: true })"
           />
           <UiButton
-            variant="ghost"
+            variant="secondary"
             icon="queue"
             @click="actions.enqueue(album.tracks)"
           >
             {{ t('actions.addToQueue') }}
           </UiButton>
           <UiButton
-            variant="ghost"
+            variant="secondary"
             icon="zip"
             class="max-sm:hidden"
             @click="actions.downloadZip(album.tracks)"
@@ -53,9 +81,19 @@
         </template>
       </CollectionHero>
 
-      <section
-        class="mx-auto flex max-w-[1680px] flex-col gap-4 px-4 sm:px-6 lg:px-10"
-      >
+      <!-- The recording sequence: a strip naming the table, then the ruled
+           rows themselves. -->
+      <section class="flex flex-col border-b-2 border-line">
+        <div
+          class="flex h-10 items-stretch gap-3 border-b-2 border-line bg-surface-2 px-3"
+        >
+          <h2 class="eyebrow flex min-w-0 flex-1 items-center text-fg">
+            {{ t('common.tracks', { count: album.tracks.length }) }}
+          </h2>
+          <span class="mono flex shrink-0 items-center text-faint">{{
+            albumLength
+          }}</span>
+        </div>
         <SelectionBar
           :count="selectedCount"
           :total="total"
@@ -81,36 +119,67 @@
         />
       </section>
 
-      <section
-        v-if="moreByArtist.length"
-        class="mx-auto mt-12 flex max-w-[1680px] flex-col gap-4 px-4 sm:px-6 lg:px-10"
-      >
-        <div class="flex items-baseline justify-between">
-          <h2 class="text-display text-xl font-semibold">
+      <!-- More by the same artist: contiguous square cells, whole cell is
+           one link, the play block sits in its own corner. -->
+      <section v-if="moreByArtist.length" class="flex flex-col">
+        <div
+          class="flex h-10 items-stretch gap-3 border-b-2 border-line bg-surface-2 px-3"
+        >
+          <h2 class="eyebrow flex min-w-0 flex-1 items-center text-fg">
             {{ t('album.moreBy', { artist: album.artist }) }}
           </h2>
           <RouterLink
             :to="{ name: 'Artist', query: { name: album.artist } }"
-            class="text-[13px] font-semibold text-muted hover:text-fg"
+            class="eyebrow flex shrink-0 items-center text-muted transition-colors duration-100 hover:text-fg"
             >{{ t('common.seeAll') }}</RouterLink
           >
         </div>
         <div
-          class="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6"
+          class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
         >
-          <MediaTile
+          <article
             v-for="other in moreByArtist"
             :key="other.key"
-            :to="{
-              name: 'Album',
-              query: { artist: other.artist, title: other.title },
-            }"
-            :title="other.title"
-            :subtitle="other.year"
-            :cover="other.cover"
-            :name="other.title"
-            @play="actions.play(other.tracks, 0, albumContext(other))"
-          />
+            class="flex min-w-0 flex-col gap-2 border-r-2 border-b-2 border-line p-2.5 transition-colors duration-100 hover:bg-surface-2"
+          >
+            <RouterLink
+              :to="{
+                name: 'Album',
+                query: { artist: other.artist, title: other.title },
+              }"
+              :aria-label="other.title"
+              class="block"
+            >
+              <CoverArt
+                :src="other.cover"
+                :name="other.title"
+                :letter-size="48"
+                class="aspect-square w-full"
+              />
+            </RouterLink>
+            <div class="flex items-start gap-2">
+              <RouterLink
+                :to="{
+                  name: 'Album',
+                  query: { artist: other.artist, title: other.title },
+                }"
+                class="min-w-0 flex-1"
+              >
+                <span class="block truncate text-sm font-semibold">{{
+                  other.title
+                }}</span>
+                <span class="mono mt-0.5 block truncate text-faint">{{
+                  other.year
+                }}</span>
+              </RouterLink>
+              <UiIconButton
+                icon="play"
+                size="sm"
+                :label="t('actions.playItem', { name: other.title })"
+                @click="actions.play(other.tracks, 0, albumContext(other))"
+              />
+            </div>
+          </article>
         </div>
       </section>
     </DetailState>
@@ -120,12 +189,12 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import CoverArt from '/src/components/ui/CoverArt.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiIconButton from '/src/components/ui/UiIconButton.vue'
 import UiMenu from '/src/components/ui/UiMenu.vue'
 import CollectionHero from '/src/components/library/CollectionHero.vue'
 import DetailState from '/src/components/library/DetailState.vue'
-import MediaTile from '/src/components/library/MediaTile.vue'
 import PlayButton from '/src/components/library/PlayButton.vue'
 import SelectionBar from '/src/components/library/SelectionBar.vue'
 import TrackList from '/src/components/library/TrackList.vue'
@@ -202,19 +271,21 @@ const {
   addSelectedToPlaylist,
 } = selection
 
-const facts = computed(() => {
+// The mono catalogue line under the title: how long the record is, what it
+// was encoded at, and how much disk it takes.
+const albumLength = computed(() => {
   const a = album.value
   const { hours, minutes } = splitLength(a.duration)
-  const formats = [...new Set(a.tracks.map((track) => track.format))].join(', ')
-  return [
-    t('common.tracks', { count: a.tracks.length }),
-    hours
-      ? t('common.lengthHours', { hours, minutes })
-      : t('common.lengthMinutes', { minutes }),
-    formats,
-    formatBytes(a.size),
-  ].filter(Boolean)
+  return hours
+    ? t('common.lengthHours', { hours, minutes })
+    : t('common.lengthMinutes', { minutes })
 })
+
+// The mono spec table in the header: what it was encoded at, and what the
+// files take on disk.
+const albumFormats = computed(() =>
+  [...new Set(album.value.tracks.map((track) => track.format))].join(', ')
+)
 
 const isThisPlaying = computed(() => {
   const current = player.currentTrack.value

@@ -29,8 +29,9 @@ import { useI18n } from '/src/i18n'
 
 defineProps({
   width: { type: String, default: 'w-24' },
-  trackClass: { type: String, default: 'bg-raised' },
-  fillClass: { type: String, default: 'bg-fg-3 group-hover:bg-accent' },
+  // Square rail, square fill: no rounded track, no glow.
+  trackClass: { type: String, default: 'bg-line-2' },
+  fillClass: { type: String, default: 'bg-fg group-hover:bg-accent' },
   thumbClass: { type: String, default: 'bg-fg' },
 })
 

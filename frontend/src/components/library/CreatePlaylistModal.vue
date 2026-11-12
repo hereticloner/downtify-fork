@@ -6,11 +6,14 @@
     @close="close"
   >
     <form class="flex flex-col gap-4" @submit.prevent="submit">
-      <ul v-if="files.length && manuals.length" class="flex flex-col gap-1">
+      <ul
+        v-if="files.length && manuals.length"
+        class="flex flex-col border-y-2 border-line"
+      >
         <li v-for="playlist in manuals" :key="playlist.name">
           <button
             type="button"
-            class="flex h-11 w-full items-center gap-3 rounded-[10px] px-2 text-left text-sm hover:bg-surface-2"
+            class="flex h-11 w-full items-center gap-3 border-b border-line-2 px-2 text-left text-[13px] transition-colors duration-100 last:border-b-0 hover:bg-surface-2"
             @click="addTo(playlist)"
           >
             <AppIcon name="playlist" :size="17" />

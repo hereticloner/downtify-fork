@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="mx-auto flex w-full max-w-[1680px] flex-col">
     <DetailState
       :loaded="ready"
       :found="!!artist"
@@ -21,7 +21,28 @@
         @edit-banner="openArtModal('banner')"
       >
         <template #subtitle>
-          {{ facts }}
+          <dl
+            class="grid w-full grid-cols-1 border-t-2 border-l-2 border-line sm:grid-cols-3"
+          >
+            <div
+              class="flex min-w-0 flex-col gap-1 border-r-2 border-b-2 border-line px-2 py-1.5"
+            >
+              <dt class="eyebrow">{{ t('library.albums') }}</dt>
+              <dd class="truncate text-fg">{{ spec.albums }}</dd>
+            </div>
+            <div
+              class="flex min-w-0 flex-col gap-1 border-r-2 border-b-2 border-line px-2 py-1.5"
+            >
+              <dt class="eyebrow">{{ t('library.tracks') }}</dt>
+              <dd class="truncate text-fg">{{ spec.tracks }}</dd>
+            </div>
+            <div
+              class="flex min-w-0 flex-col gap-1 border-r-2 border-b-2 border-line px-2 py-1.5"
+            >
+              <dt class="eyebrow">{{ t('track.length') }}</dt>
+              <dd class="truncate text-fg">{{ spec.length }}</dd>
+            </div>
+          </dl>
         </template>
         <template #actions>
           <PlayButton
@@ -38,14 +59,14 @@
             @click="actions.play(allTracks, 0, context, { shuffled: true })"
           />
           <UiButton
-            :variant="artBannerUrl ? 'photo' : 'ghost'"
+            :variant="artBannerUrl ? 'photo' : 'secondary'"
             icon="queue"
             @click="actions.enqueue(allTracks)"
           >
             {{ t('actions.addToQueue') }}
           </UiButton>
           <UiButton
-            :variant="artBannerUrl ? 'photo' : 'ghost'"
+            :variant="artBannerUrl ? 'photo' : 'secondary'"
             icon="search"
             :to="{ name: 'Search', params: { query: artist.name } }"
           >
@@ -65,101 +86,156 @@
         </template>
       </CollectionHero>
 
-      <div
-        class="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 sm:px-6 lg:px-10"
-      >
-        <UiTabs class="mt-4" :items="tabs" :model-value="tab" />
+      <div class="flex flex-col">
+        <UiTabs :items="tabs" :model-value="tab" />
 
         <template v-if="tab === 'albums'">
           <div
-            class="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6"
+            class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
           >
-            <MediaTile
+            <article
               v-for="album in artist.albums"
               :key="album.key"
-              :to="{
-                name: 'Album',
-                query: { artist: album.artist, title: album.title },
-              }"
-              :title="album.title"
-              :subtitle="
-                [album.year, t('common.tracks', { count: album.tracks.length })]
-                  .filter(Boolean)
-                  .join(' · ')
-              "
-              :cover="album.cover"
-              :name="album.title"
-              @play="playAlbum(album)"
-            />
+              class="flex min-w-0 flex-col gap-2 border-r-2 border-b-2 border-line p-2.5 transition-colors duration-100 hover:bg-surface-2"
+            >
+              <RouterLink
+                :to="{
+                  name: 'Album',
+                  query: { artist: album.artist, title: album.title },
+                }"
+                :aria-label="album.title"
+                class="block"
+              >
+                <CoverArt
+                  :src="album.cover"
+                  :name="album.title"
+                  :letter-size="48"
+                  class="aspect-square w-full"
+                />
+              </RouterLink>
+              <div class="flex items-start gap-2">
+                <RouterLink
+                  :to="{
+                    name: 'Album',
+                    query: { artist: album.artist, title: album.title },
+                  }"
+                  class="min-w-0 flex-1"
+                >
+                  <span class="block truncate text-sm font-semibold">{{
+                    album.title
+                  }}</span>
+                  <span class="mono mt-0.5 block truncate text-faint">{{
+                    [
+                      album.year,
+                      t('common.tracks', { count: album.tracks.length }),
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')
+                  }}</span>
+                </RouterLink>
+                <UiIconButton
+                  icon="play"
+                  size="sm"
+                  :label="t('actions.playItem', { name: album.title })"
+                  @click="playAlbum(album)"
+                />
+              </div>
+            </article>
           </div>
         </template>
 
         <template v-else-if="tab === 'related'">
           <div
-            class="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6"
+            class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
           >
-            <MediaTile
+            <article
               v-for="item in relatedArtistItems"
               :key="item.name"
-              v-bind="item"
-              :playable="false"
-            />
+              class="flex min-w-0 flex-col gap-2 border-r-2 border-b-2 border-line p-2.5 transition-colors duration-100 hover:bg-surface-2"
+            >
+              <RouterLink :to="item.to" :aria-label="item.title" class="block">
+                <CoverArt
+                  :src="item.cover"
+                  :name="item.name"
+                  icon="user"
+                  :letter-size="40"
+                  class="aspect-square w-full"
+                />
+              </RouterLink>
+              <RouterLink :to="item.to" class="min-w-0">
+                <span class="block truncate text-sm font-semibold">{{
+                  item.title
+                }}</span>
+                <span class="mono mt-0.5 block truncate text-faint">{{
+                  item.subtitle
+                }}</span>
+              </RouterLink>
+            </article>
           </div>
         </template>
 
         <template v-else-if="tab === 'topsongs'">
           <div
             v-if="topSongsLoading || !profileReady"
-            class="flex flex-col gap-2"
+            class="flex flex-col gap-2 border-b-2 border-line p-3 sm:p-4"
             aria-busy="true"
           >
-            <UiSkeleton v-for="n in 5" :key="n" class="h-16 w-full" />
+            <UiSkeleton v-for="n in 5" :key="n" class="h-14 w-full" />
           </div>
-          <UiEmpty
+          <div
             v-else-if="topSongsError"
-            icon="alert"
-            :title="t('link.failed')"
-            :body="topSongsError"
+            class="border-b-2 border-line p-3 sm:p-4"
           >
-            <UiButton icon="refresh" @click="loadTopSongs(true)">{{
-              t('common.retry')
-            }}</UiButton>
-          </UiEmpty>
-          <TopSongsShelf
+            <UiEmpty
+              icon="alert"
+              :title="t('link.failed')"
+              :body="topSongsError"
+            >
+              <UiButton icon="refresh" @click="loadTopSongs(true)">{{
+                t('common.retry')
+              }}</UiButton>
+            </UiEmpty>
+          </div>
+          <div
             v-else-if="topSongsData?.songs.length"
-            :data="topSongsData"
-            :context="context"
-          />
-          <UiEmpty v-else icon="music" :title="t('link.topSongsEmpty')" />
+            class="border-b-2 border-line p-3 sm:p-4"
+          >
+            <TopSongsShelf :data="topSongsData" :context="context" />
+          </div>
+          <div v-else class="border-b-2 border-line p-3 sm:p-4">
+            <UiEmpty icon="music" :title="t('link.topSongsEmpty')" />
+          </div>
         </template>
 
         <template v-else-if="tab === 'bio'">
           <div
             v-if="!profileReady"
-            class="flex flex-col gap-3"
+            class="flex flex-col gap-3 border-b-2 border-line p-3 sm:p-4"
             aria-busy="true"
           >
-            <UiSkeleton class="h-4 w-1/3" />
-            <UiSkeleton class="h-4 w-full" />
-            <UiSkeleton class="h-4 w-5/6" />
+            <UiSkeleton class="h-3 w-1/3" />
+            <UiSkeleton class="h-3 w-full" />
+            <UiSkeleton class="h-3 w-5/6" />
           </div>
-          <UiEmpty
+          <div
             v-else-if="profileError"
-            icon="alert"
-            :title="t('link.failed')"
+            class="border-b-2 border-line p-3 sm:p-4"
           >
-            <UiButton icon="refresh" @click="seedProfile">{{
-              t('common.retry')
-            }}</UiButton>
-          </UiEmpty>
-          <section v-else class="flex flex-col gap-3">
+            <UiEmpty icon="alert" :title="t('link.failed')">
+              <UiButton icon="refresh" @click="seedProfile">{{
+                t('common.retry')
+              }}</UiButton>
+            </UiEmpty>
+          </div>
+          <section
+            v-else
+            class="flex max-w-[72ch] flex-col gap-3 border-b-2 border-line p-3 sm:p-4"
+          >
             <div v-if="profile.genre" class="flex items-center gap-2">
-              <span class="text-[13px] text-muted">{{
-                t('artistBio.genre')
-              }}</span>
+              <span class="eyebrow">{{ t('artistBio.genre') }}</span>
               <UiBadge>{{ profile.genre }}</UiBadge>
             </div>
-            <p v-if="bioFacts" class="text-[13px] text-muted">
+            <p v-if="bioFacts" class="mono text-faint">
               {{ bioFacts }}
             </p>
             <!-- profile.bio is plain text: a blank line separates
@@ -235,6 +311,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import CoverArt from '/src/components/ui/CoverArt.vue'
 import UiBadge from '/src/components/ui/UiBadge.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
@@ -246,7 +323,6 @@ import ArtistArtModal from '/src/components/library/ArtistArtModal.vue'
 import ArtistLinks from '/src/components/library/ArtistLinks.vue'
 import CollectionHero from '/src/components/library/CollectionHero.vue'
 import DetailState from '/src/components/library/DetailState.vue'
-import MediaTile from '/src/components/library/MediaTile.vue'
 import PlayButton from '/src/components/library/PlayButton.vue'
 import SelectionBar from '/src/components/library/SelectionBar.vue'
 import TopSongsShelf from '/src/components/library/TopSongsShelf.vue'
@@ -336,18 +412,17 @@ const {
   addSelectedToPlaylist,
 } = selection
 
-const facts = computed(() => {
+// The mono spec table in the header: what the artist's library amounts to.
+const spec = computed(() => {
   const a = artist.value
   const { hours, minutes } = splitLength(a.duration)
-  return [
-    a.albums.length ? t('common.albums', { count: a.albums.length }) : '',
-    t('common.tracks', { count: a.tracks.length }),
-    hours
+  return {
+    albums: a.albums.length,
+    tracks: a.tracks.length,
+    length: hours
       ? t('common.lengthHours', { hours, minutes })
       : t('common.lengthMinutes', { minutes }),
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  }
 })
 
 // The profile's links, for the Links tab (and the icons on the banner).

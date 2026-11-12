@@ -1,85 +1,26 @@
 <template>
-  <nav
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-side/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
-    :aria-label="t('nav.main')"
-  >
-    <div class="flex h-[4.75rem] items-stretch px-1 pt-1.5">
-      <RouterLink
-        v-for="item in items"
-        :key="item.name"
-        :to="{ name: item.name }"
-        class="relative flex flex-1 flex-col items-center gap-1 pt-1.5"
-        :class="isActive(item) ? 'text-fg' : 'text-faint'"
-      >
-        <AppIcon
-          :name="item.icon"
-          :size="22"
-          :class="isActive(item) ? 'text-accent' : ''"
-        />
-        <span
-          class="text-[10px]"
-          :class="isActive(item) ? 'font-semibold' : 'font-medium'"
-        >
-          {{ t(item.label) }}
-        </span>
-        <span
-          v-if="item.name === 'Queue' && pending"
-          class="tabular absolute top-0 left-[calc(50%+4px)] flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-          :class="
-            queuePaused ? 'bg-surface-2 text-muted' : 'bg-accent text-on-accent'
-          "
-          :title="queuePaused ? t('queue.pausedTitle') : undefined"
-          >{{ pending }}</span
-        >
-        >
-      </RouterLink>
-      <button
-        type="button"
-        class="relative flex flex-1 flex-col items-center gap-1 pt-1.5"
-        :class="moreActive ? 'text-fg' : 'text-faint'"
-        @click="sheet = true"
-      >
-        <AppIcon
-          name="more"
-          :size="22"
-          :class="moreActive ? 'text-accent' : ''"
-        />
-        <span
-          class="text-[10px]"
-          :class="moreActive ? 'font-semibold' : 'font-medium'"
-        >
-          {{ t('nav.more') }}
-        </span>
-        <span
-          v-if="hasUpdate"
-          class="absolute top-1 left-[calc(50%+6px)] size-2 rounded-full bg-accent"
-        />
-      </button>
-    </div>
-
-    <MoreSheet :open="sheet" :links="moreLinks" @close="sheet = false" />
-  </nav>
+  <MoreSheet :open="open" :links="links" @close="$emit('close')" />
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+// Phones have no tab bar: the ☰ block in the header opens this full-height
+// menu, which carries every destination the desktop strip shows plus the
+// theme and sign-out blocks.
+import { computed, watch } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { useRoute } from 'vue-router'
-import AppIcon from '../ui/AppIcon.vue'
 import MoreSheet from './MoreSheet.vue'
-import { useI18n } from '/src/i18n'
 import { useQueuePause } from '/src/model/queuePause'
-import { useUpdateCheck } from '/src/model/updateCheck'
 import { usePendingCount } from './navState'
 
-const { t } = useI18n()
+defineProps({ open: { type: Boolean, default: false } })
+const emit = defineEmits(['close'])
+
 const route = useRoute()
 const pending = usePendingCount()
 const queuePaused = useQueuePause().paused
-const sheet = ref(false)
-const update = useUpdateCheck().status
-const hasUpdate = computed(() => Boolean(update.value?.update_available))
 
-const items = [
+const destinations = [
   { name: 'Home', icon: 'home', label: 'nav.home' },
   {
     name: 'Search',
@@ -94,8 +35,6 @@ const items = [
     match: ['Album', 'Artist', 'Playlist'],
   },
   { name: 'Queue', icon: 'download', label: 'nav.queue' },
-]
-const moreLinks = [
   {
     name: 'Discover',
     icon: 'sparkle',
@@ -109,14 +48,28 @@ const moreLinks = [
   { name: 'Settings', icon: 'settings', label: 'nav.settings' },
 ]
 
-function isActive(item) {
-  return route.name === item.name || (item.match || []).includes(route.name)
-}
+const links = computed(() =>
+  destinations.map((item) => ({
+    ...item,
+    active: route.name === item.name || (item.match || []).includes(route.name),
+    count:
+      item.name === 'Queue' && pending.value && !queuePaused.value
+        ? pending.value
+        : 0,
+  }))
+)
 
-const moreActive = computed(() => moreLinks.some(isActive))
-
+// Following a link closes the panel; the route watch also covers links
+// opened from elsewhere while the menu was up.
 watch(
   () => route.fullPath,
-  () => (sheet.value = false)
+  () => emit('close')
 )
+
+// Growing past the phone layout reveals the desktop strip; a menu left
+// open would sit on top of it.
+const isDesktop = useMediaQuery('(min-width: 768px)')
+watch(isDesktop, (desktop) => {
+  if (desktop) emit('close')
+})
 </script>

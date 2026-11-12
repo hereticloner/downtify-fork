@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col gap-6">
-    <div class="rounded-[12px] bg-surface p-4">
+  <div class="flex flex-col gap-4">
+    <div class="border-2 border-line bg-surface-2 p-3">
       <UiSwitch
         v-model="state.createPlaylist"
         class="flex-row-reverse"
@@ -16,7 +16,7 @@
         @update:model-value="state.onSelectionChip"
       />
       <span class="ml-auto flex items-center gap-2">
-        <span class="tabular text-sm text-muted">{{
+        <span class="mono text-muted">{{
           t('library.selectedCount', { count: state.selected.size })
         }}</span>
         <UiButton
@@ -31,30 +31,37 @@
       </span>
     </div>
 
-    <ol class="-mx-3 flex flex-col">
+    <ol class="flex flex-col border-2 border-line">
       <li
         v-for="row in state.rows"
         :key="row.key"
-        class="group flex h-16 items-center gap-3 rounded-[12px] px-3 transition-colors hover:bg-surface"
-        :class="state.selected.has(row.key) ? 'bg-accent/8' : ''"
+        class="relative flex h-14 items-center gap-3 border-b border-line-2 px-3 transition-colors duration-100 last:border-b-0"
+        :class="
+          state.selected.has(row.key) ? 'bg-surface-2' : 'hover:bg-surface-2'
+        "
       >
+        <span
+          v-if="state.selected.has(row.key)"
+          class="absolute inset-y-0 left-0 w-1 bg-accent"
+          aria-hidden="true"
+        />
         <button
           type="button"
           role="checkbox"
           :aria-checked="state.selected.has(row.key)"
           :aria-label="t('library.selectTrack', { title: row.song.name })"
-          class="flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-colors"
+          class="flex size-4 shrink-0 items-center justify-center border-2 transition-colors duration-100"
           :class="
             state.selected.has(row.key)
-              ? 'border-accent bg-accent text-on-accent'
-              : 'border-line-3 hover:border-fg-3'
+              ? 'border-line bg-invert text-on-invert'
+              : 'border-line-3 hover:border-line'
           "
           @click="state.toggle(row.key)"
         >
           <AppIcon
             v-if="state.selected.has(row.key)"
             name="check"
-            :size="13"
+            :size="11"
             stroke-width="3"
           />
         </button>
@@ -62,9 +69,8 @@
         <CoverArt
           :src="row.song.cover_url"
           :name="row.song.album_name || row.song.name"
-          rounded="rounded-[8px]"
           :letter-size="14"
-          class="size-11"
+          class="size-10"
         />
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold">
@@ -74,12 +80,10 @@
             {{ (row.song.artists || []).join(', ') || row.song.artist }}
           </p>
         </div>
-        <span class="hidden w-[28%] truncate text-[13px] text-muted lg:block">{{
+        <span class="hidden w-[26%] truncate text-[13px] text-muted lg:block">{{
           row.song.album_name
         }}</span>
-        <span
-          class="tabular hidden w-12 text-right text-[13px] text-muted sm:block"
-        >
+        <span class="mono tabular hidden w-12 text-right text-muted sm:block">
           {{ row.song.duration ? formatDuration(row.song.duration) : '' }}
         </span>
         <div

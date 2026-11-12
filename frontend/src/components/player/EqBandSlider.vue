@@ -1,11 +1,11 @@
 <template>
   <div class="flex min-w-0 flex-col items-center gap-2 select-none">
     <span
-      class="tabular h-4 text-[11px] leading-4 font-semibold transition-opacity"
+      class="mono tabular h-4 leading-4 transition-opacity"
       :class="
         dragging || modelValue !== 0
-          ? 'text-white/85'
-          : 'text-white/0 group-hover/eq:text-white/35'
+          ? 'text-fg-2'
+          : 'text-transparent group-hover/eq:text-faint'
       "
       aria-hidden="true"
       >{{ shortValue }}</span
@@ -20,37 +20,29 @@
       :aria-valuemax="limit"
       :aria-valuenow="modelValue"
       :aria-valuetext="formatGain(modelValue)"
-      class="group relative flex w-9 cursor-pointer touch-none justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+      class="group relative flex w-6 cursor-pointer touch-none justify-center outline-none"
       :style="{ height: `${height}px` }"
       @pointerdown="onDown"
       @keydown="onKey"
       @dblclick="reset"
     >
       <!-- Track -->
-      <span
-        class="absolute inset-y-0 w-1.5 rounded-full bg-white/15"
-        aria-hidden="true"
-      />
+      <span class="absolute inset-y-0 w-1 bg-raised" aria-hidden="true" />
       <!-- 0 dB mark -->
       <span
-        class="absolute top-1/2 h-px w-4 -translate-y-1/2 bg-white/35"
+        class="absolute top-1/2 h-px w-3 -translate-y-1/2 bg-line-3"
         aria-hidden="true"
       />
       <!-- Fill from 0 dB to the value -->
+      <span class="absolute w-1" :style="fillStyle" aria-hidden="true" />
       <span
-        class="absolute w-1.5 rounded-full"
-        :style="fillStyle"
-        aria-hidden="true"
-      />
-      <span
-        class="absolute size-4 -translate-y-1/2 rounded-full bg-white shadow-[0_2px_8px_rgb(0_0_0/0.4)] transition-transform duration-150"
-        :class="dragging ? 'scale-125' : 'group-hover:scale-110'"
+        class="absolute left-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 border border-line bg-fg"
         :style="{ top: `${100 - percent}%` }"
         aria-hidden="true"
       />
     </div>
     <span
-      class="tabular text-[11px] font-medium whitespace-nowrap text-white/60"
+      class="mono whitespace-nowrap tabular text-faint"
       aria-hidden="true"
       >{{ caption }}</span
     >
@@ -67,7 +59,8 @@ const props = defineProps({
   limit: { type: Number, required: true },
   label: { type: String, required: true },
   caption: { type: String, required: true },
-  color: { type: String, default: '#ffffff' },
+  // A colour or `currentColor`; the band fill follows the slider's ink.
+  color: { type: String, default: 'currentColor' },
   height: { type: Number, default: 180 },
 })
 const emit = defineEmits(['update:modelValue', 'commit'])

@@ -1,11 +1,13 @@
 <template>
-  <div
-    class="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-6 sm:px-6 md:pt-8 lg:px-10"
-  >
-    <PageHeader :title="t('library.title')" :subtitle="summary">
+  <div class="flex flex-col">
+    <PageHeader
+      :title="t('library.title')"
+      :subtitle="summary"
+      class="border-b-2 border-line"
+    >
       <UiButton
         v-if="library.trackCount.value"
-        variant="ghost"
+        variant="secondary"
         icon="wand"
         :to="{ name: 'Upgrade' }"
       >
@@ -13,14 +15,14 @@
       </UiButton>
       <UiButton
         v-if="auth.isAdmin.value && trashCapability.canManage.value"
-        variant="ghost"
+        variant="secondary"
         icon="trash"
         :to="{ name: 'Trash' }"
       >
         <span class="max-sm:sr-only">{{ t('trash.title') }}</span>
       </UiButton>
       <UiButton
-        variant="ghost"
+        variant="secondary"
         icon="refresh"
         :loading="library.loading.value"
         @click="library.load({ force: true })"
@@ -31,26 +33,24 @@
 
     <UiTabs :items="tabs" :model-value="tab" />
 
-    <div class="flex flex-wrap items-center gap-2">
+    <!-- Archive filters: one ruled strip, each control a block. -->
+    <div
+      class="flex flex-wrap items-center gap-2 px-4 py-2"
+      :class="showFormatChips ? '' : 'border-b-2 border-line'"
+    >
       <label
-        class="flex h-10 min-w-0 flex-1 basis-56 items-center gap-2.5 rounded-control border border-line-2 bg-surface px-3 focus-within:border-accent sm:max-w-xs"
+        class="flex h-9 min-w-0 flex-1 basis-48 items-center gap-2 border-2 border-line-2 px-2.5 transition-colors duration-100 focus-within:border-accent sm:max-w-xs"
       >
-        <AppIcon name="filter" :size="16" class="text-faint" />
+        <AppIcon name="filter" :size="15" class="text-faint" />
         <span class="sr-only">{{ t('library.filterPlaceholder') }}</span>
         <input
           v-model="filter"
           type="search"
           :placeholder="t('library.filterPlaceholder')"
-          class="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
+          class="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-faint"
         />
       </label>
-      <UiChips
-        v-if="tab === 'tracks' && formatChips.length > 2"
-        v-model="format"
-        :items="formatChips"
-        class="max-w-full"
-      />
-      <div class="ml-auto flex items-center gap-2">
+      <div class="ml-auto flex flex-wrap items-center gap-2">
         <UiButton
           v-if="tab === 'playlists' && auth.isAdmin.value"
           variant="primary"
@@ -65,6 +65,7 @@
           :options="sortOptions"
           :label="t('library.sortBy')"
           icon="sort"
+          size="sm"
         />
         <UiSegmented
           v-if="tab !== 'tracks'"
@@ -77,54 +78,79 @@
       </div>
     </div>
 
+    <!-- Format filter: its own ruled strip, so the chips' frames read as the
+         rules above and below. -->
+    <UiChips
+      v-if="showFormatChips"
+      v-model="format"
+      :items="formatChips"
+      class="px-3 pb-1"
+    />
+
     <!-- Loading -->
     <div
       v-if="!catalogReady && library.loading.value"
-      class="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
+      class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
     >
-      <div v-for="n in 12" :key="n" class="flex flex-col gap-2.5">
-        <UiSkeleton class="aspect-square !rounded-cover" />
-        <UiSkeleton class="h-4 w-3/4" />
-        <UiSkeleton class="h-3 w-1/2" />
+      <div
+        v-for="n in 12"
+        :key="n"
+        class="flex flex-col gap-2 border-r-2 border-b-2 border-line p-2"
+      >
+        <UiSkeleton class="aspect-square" />
+        <UiSkeleton class="h-3 w-3/4" />
+        <UiSkeleton class="h-2.5 w-1/2" />
       </div>
     </div>
 
-    <UiEmpty
+    <div
       v-else-if="library.error.value && !library.trackCount.value"
-      icon="alert"
-      :title="t('library.loadFailed')"
-      :body="t('library.loadFailedHint')"
+      class="border-b-2 border-line p-4"
     >
-      <UiButton icon="refresh" @click="library.load({ force: true })">
-        {{ t('common.retry') }}
-      </UiButton>
-    </UiEmpty>
+      <UiEmpty
+        icon="alert"
+        :title="t('library.loadFailed')"
+        :body="t('library.loadFailedHint')"
+      >
+        <UiButton icon="refresh" @click="library.load({ force: true })">
+          {{ t('common.retry') }}
+        </UiButton>
+      </UiEmpty>
+    </div>
 
-    <UiEmpty
+    <div
       v-else-if="
         tab !== 'playlists' &&
         !library.trackCount.value &&
         !library.playlists.value.length
       "
-      icon="library"
-      :title="t('library.emptyTitle')"
-      :body="t('library.emptyBody')"
+      class="border-b-2 border-line p-4"
     >
-      <UiButton variant="primary" icon="search" @click="ui.focusSearch()">
-        {{ t('library.emptyAction') }}
-      </UiButton>
-    </UiEmpty>
+      <UiEmpty
+        icon="library"
+        :title="t('library.emptyTitle')"
+        :body="t('library.emptyBody')"
+      >
+        <UiButton variant="primary" icon="search" @click="ui.focusSearch()">
+          {{ t('library.emptyAction') }}
+        </UiButton>
+      </UiEmpty>
+    </div>
 
-    <UiEmpty
+    <div
       v-else-if="!items.length && !(tab === 'playlists' && !filter)"
-      icon="filter"
-      :title="t('library.noMatches')"
-      :body="t('library.noMatchesHint')"
+      class="border-b-2 border-line p-4"
     >
-      <UiButton variant="ghost" @click="clearFilters">{{
-        t('library.clearFilters')
-      }}</UiButton>
-    </UiEmpty>
+      <UiEmpty
+        icon="filter"
+        :title="t('library.noMatches')"
+        :body="t('library.noMatchesHint')"
+      >
+        <UiButton variant="ghost" @click="clearFilters">{{
+          t('library.clearFilters')
+        }}</UiButton>
+      </UiEmpty>
+    </div>
 
     <!-- Tracks -->
     <template v-else-if="tab === 'tracks'">
@@ -140,7 +166,7 @@
         @delete="deleteSelected"
         @add-to-playlist="addSelectedToPlaylist"
       />
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2 px-4 py-2.5">
         <UiButton
           variant="primary"
           icon="play"
@@ -155,7 +181,7 @@
         >
           {{ t('actions.shuffle') }}
         </UiButton>
-        <span class="tabular ml-auto text-[13px] text-muted">
+        <span class="mono ml-auto text-muted">
           {{ t('common.tracks', { count: items.length }) }}
         </span>
       </div>
@@ -167,10 +193,10 @@
       />
     </template>
 
-    <!-- Albums / artists / playlists: grid -->
+    <!-- Albums / artists / playlists: flush grid -->
     <div
       v-else-if="view === 'grid'"
-      class="grid grid-cols-2 gap-x-4 gap-y-7 xs:gap-x-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 min-[1900px]:grid-cols-7"
+      class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 min-[1900px]:grid-cols-7"
     >
       <MediaTile
         v-for="item in items"
@@ -184,7 +210,7 @@
           #badge
         >
           <span
-            class="absolute right-2.5 bottom-2.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-warn backdrop-blur"
+            class="mono absolute right-0 bottom-0 border-l-2 border-t-2 border-line bg-warn px-1.5 py-0.5 text-[10px] text-bg"
           >
             {{
               t('playlists.missingShort', { count: item.batch.missing_count })
@@ -194,8 +220,8 @@
       </MediaTile>
     </div>
 
-    <!-- Albums / artists / playlists: list -->
-    <div v-else class="-mx-3 flex flex-col">
+    <!-- Albums / artists / playlists: ruled list -->
+    <div v-else class="border-x-2 border-b-2 border-line">
       <MediaRow
         v-for="item in items"
         :key="item.key"
@@ -442,6 +468,10 @@ const sortOptions = computed(() => {
   return base
 })
 
+const showFormatChips = computed(
+  () => tab.value === 'tracks' && formatChips.value.length > 2
+)
+
 const formatChips = computed(() => {
   const counts = new Map()
   for (const track of library.tracks.value) {
@@ -499,7 +529,16 @@ function tileProps(item) {
     return {
       to: { name: 'Album', query: { artist: item.artist, title: item.title } },
       title: item.title,
-      subtitle: [item.artist, item.year].filter(Boolean).join(' · '),
+      subtitle: [
+        item.artist,
+        item.year,
+        item.tracks?.length
+          ? t('common.tracks', { count: item.tracks.length })
+          : '',
+        item.size ? formatBytes(item.size) : '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
       cover: item.cover,
       name: item.title,
       icon: 'disc',

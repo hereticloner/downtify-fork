@@ -2,101 +2,50 @@
   <Transition name="now-playing">
     <div
       v-if="track && !nowPlaying.isOpen.value"
-      class="relative flex h-20 items-center gap-3 overflow-hidden rounded-[16px] border border-line-3 bg-glass pr-2 pl-2 shadow-float backdrop-blur-xl md:h-24 md:gap-5 md:rounded-[18px] md:pr-5 md:pl-3"
+      class="fixed inset-x-0 bottom-0 z-40 flex flex-col border-t-2 border-line bg-invert text-on-invert"
+      role="region"
+      :aria-label="t('player.nowPlaying')"
     >
-      <!-- Progress: a hairline on phones, a scrubber on desktop. -->
-      <div class="absolute inset-x-3 bottom-0 h-1 bg-line-2 md:hidden">
-        <div
-          class="h-full bg-accent"
-          :style="[{ width: `${smoothPercent}%` }, progressStyle]"
-        />
-      </div>
-      <div
-        class="absolute inset-x-0 -top-3 md:top-auto md:inset-x-0 md:bottom-0 z-10"
-      >
-        <SliderBar
-          :model-value="scrub ?? player.currentTime.value"
-          :max="player.duration.value || 1"
-          :label="t('player.seek')"
-          :value-text="formatDuration(player.currentTime.value)"
-          :hit-height="24"
-          :playing="player.isPlaying.value"
-          track-class="bg-transparent"
-          fill-class="bg-accent"
-          thumb-class="bg-accent"
-          :fill-style="progressStyle"
-          :thumb-style="progressStyle"
-          @update:model-value="(v) => (scrub = v)"
-          @commit="commitSeek"
-        />
-      </div>
-
-      <!-- The heart sits beside the button that opens Now playing, not
-           inside it, so tapping it never opens the overlay. -->
-      <div
-        class="flex min-w-0 flex-1 items-center gap-1 md:w-[300px] md:flex-none"
-      >
+      <!-- Phones: 56px — cover, title, three transport buttons, then the
+           thin segmented line along the bottom edge. -->
+      <div class="flex h-11 items-center gap-2 px-2 md:hidden">
         <button
           type="button"
-          class="flex min-w-0 flex-1 items-center gap-3 text-left"
+          class="flex min-w-0 flex-1 items-center gap-2 text-left"
           :aria-label="t('player.openNowPlaying')"
           @click="nowPlaying.open()"
         >
           <CoverArt
             :src="track.hasCover ? track.cover : ''"
             :name="track.album || track.title"
-            rounded="rounded-[10px]"
-            :letter-size="18"
-            :icon-size="18"
-            class="size-14 md:size-16"
+            :letter-size="12"
+            :icon-size="14"
+            class="size-10"
           />
-          <span class="flex min-w-0 flex-col">
-            <span class="flex items-center gap-2">
-              <span class="truncate text-sm font-semibold">{{
+          <span class="min-w-0 flex-1">
+            <span class="flex items-center gap-1.5">
+              <span class="truncate text-[13px] leading-tight font-medium">{{
                 track.title
               }}</span>
-              <EqBars
-                v-if="player.isPlaying.value"
-                :size="10"
-                class="hidden md:inline-flex"
-              />
+              <EqBars v-if="player.isPlaying.value" :size="8" />
             </span>
-            <span class="truncate text-xs text-muted">
-              {{ [track.artist, track.album].filter(Boolean).join(' · ') }}
-            </span>
+            <span
+              class="block truncate text-[11px] leading-tight text-on-invert/70"
+              >{{ trackArtist }}</span
+            >
           </span>
         </button>
-        <!-- Phones have no room for it beside the transport buttons;
-             the rows and the full player carry the heart there. -->
-        <span v-if="!track?.stream" class="hidden sm:contents"
-          ><LikeButton :file="track.file"
-        /></span>
-      </div>
-
-      <div class="flex items-center justify-center gap-1 md:flex-1 md:gap-3">
-        <UiIconButton
-          v-if="canSimilar"
-          icon="wand"
-          :label="t('similar.findSimilar')"
-          @click="goSimilar"
-        />
-        <UiIconButton
-          icon="shuffle"
-          :label="t('player.shuffle')"
-          :active="player.shuffle.value"
-          toggle
-          class="hidden md:inline-flex"
-          @click="player.toggleShuffle()"
-        />
-        <UiIconButton
-          icon="prev"
-          :label="t('player.previous')"
-          class="hidden md:inline-flex"
-          @click="player.prev()"
-        />
         <button
           type="button"
-          class="pressable flex size-12 items-center justify-center rounded-full text-fg shadow-glow md:size-13 md:bg-invert md:text-on-invert md:transition-transform md:hover:scale-105"
+          class="flex size-8 shrink-0 items-center justify-center border-2 border-on-invert/40 text-on-invert transition-colors duration-100 hover:border-on-invert hover:bg-on-invert/10"
+          :aria-label="t('player.previous')"
+          @click="player.prev()"
+        >
+          <AppIcon name="prev" :size="16" />
+        </button>
+        <button
+          type="button"
+          class="flex size-9 shrink-0 items-center justify-center border-2 border-on-invert bg-on-invert text-invert transition-colors duration-100 hover:bg-on-invert/80"
           :aria-label="
             player.isPlaying.value ? t('player.pause') : t('player.play')
           "
@@ -104,85 +53,240 @@
         >
           <span
             v-if="player.isBuffering.value && player.isPlaying.value"
-            class="size-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+            class="size-2.5 animate-pulse bg-current"
+            aria-hidden="true"
           />
           <AppIcon
             v-else
             :name="player.isPlaying.value ? 'pause' : 'play'"
-            :size="18"
+            :size="16"
           />
         </button>
-        <UiIconButton
-          icon="next"
-          :label="t('player.next')"
+        <button
+          type="button"
+          class="flex size-8 shrink-0 items-center justify-center border-2 border-on-invert/40 text-on-invert transition-colors duration-100 hover:border-on-invert hover:bg-on-invert/10"
+          :aria-label="t('player.next')"
           @click="player.next()"
-        />
-        <UiIconButton
-          :icon="player.repeatMode.value === 'one' ? 'repeat-one' : 'repeat'"
-          :label="repeatLabel"
-          :active="player.repeatMode.value !== 'off'"
-          toggle
-          class="hidden md:inline-flex"
-          @click="player.cycleRepeat()"
-        />
-        <UiIconButton
-          v-if="showMiniDownload"
-          :icon="downloadBusy ? 'refresh' : 'download'"
-          :label="t('actions.downloadItem', { name: trackTitle })"
-          :disabled="downloadBusy"
-          :class="downloadBusy ? '[&_svg]:animate-spin' : ''"
-          @click="downloadCurrent"
-        />
-        <!-- Downloaded tracks show a static check in the download
-             button's slot: it does nothing, deleting happens from the
-             library rows. -->
-        <span
-          v-if="showDownloadedCheck"
-          class="inline-flex size-10 shrink-0 items-center justify-center text-accent"
-          :title="t('search.inLibrary')"
-          aria-hidden="true"
         >
-          <AppIcon name="check" :size="18" />
-        </span>
+          <AppIcon name="next" :size="16" />
+        </button>
       </div>
+      <WaveSeekBar
+        class="md:hidden"
+        :model-value="scrub ?? player.currentTime.value"
+        :max="player.duration.value || 1"
+        :label="t('player.seek')"
+        :value-text="formatDuration(player.currentTime.value)"
+        :playing="player.isPlaying.value"
+        @update:model-value="(v) => (scrub = v)"
+        @commit="commitSeek"
+      />
 
-      <div class="hidden items-center justify-end gap-1 md:flex md:w-[300px]">
-        <!-- Never wraps, and keeps one width for the whole track: the
-             invisible copy is the widest the text will get, so the
-             controls beside it don't shift as it ticks past 10:00. -->
-        <span
-          class="tabular mr-2 hidden shrink-0 text-xs whitespace-nowrap text-muted lg:inline-grid"
-        >
-          <span class="invisible col-start-1 row-start-1" aria-hidden="true">{{
-            clockSizer
-          }}</span>
-          <span class="col-start-1 row-start-1 text-right"
-            >{{ formatDuration(player.currentTime.value) }} /
-            {{ formatDuration(player.duration.value) }}</span
+      <!-- Desktop: 64px transport bar, cover + meta, centred controls over
+           the segmented meter, volume and queue on the right. -->
+      <div class="hidden h-16 items-center gap-4 px-4 md:flex lg:px-6">
+        <div class="flex w-[204px] shrink-0 items-center gap-1.5 lg:w-[264px]">
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+            :aria-label="t('player.openNowPlaying')"
+            @click="nowPlaying.open()"
           >
-        </span>
-        <UiIconButton
-          v-if="showLyrics"
-          icon="lyrics"
-          :label="t('player.lyrics')"
-          size="sm"
-          @click="nowPlaying.open('lyrics')"
-        />
-        <UiIconButton
-          icon="queue"
-          :label="t('player.upNext')"
-          size="sm"
-          @click="nowPlaying.open('queue')"
-        />
-        <!-- The slider is what gives when the row is tight, so the time
-             next to it never has to. -->
-        <VolumeControl class="hidden min-w-0 lg:flex" width="w-20 min-w-8" />
-        <UiIconButton
-          icon="expand"
-          :label="t('player.openNowPlaying')"
-          size="sm"
-          @click="nowPlaying.open()"
-        />
+            <CoverArt
+              :src="track.hasCover ? track.cover : ''"
+              :name="track.album || track.title"
+              :letter-size="12"
+              :icon-size="14"
+              class="size-10"
+            />
+            <span class="flex min-w-0 flex-col">
+              <span class="flex items-center gap-1.5">
+                <span class="truncate text-sm leading-tight font-medium">{{
+                  track.title
+                }}</span>
+                <EqBars v-if="player.isPlaying.value" :size="9" />
+              </span>
+              <span
+                class="truncate text-[11px] leading-tight text-on-invert/70"
+                >{{ trackArtist }}</span
+              >
+            </span>
+          </button>
+          <!-- The heart sits beside the button that opens Now playing, so
+               tapping it never opens the overlay. -->
+          <span
+            v-if="!track?.stream"
+            class="hidden shrink-0 lg:flex [&_button]:border-on-invert/40 [&_button]:text-on-invert"
+            ><LikeButton :file="track.file"
+          /></span>
+        </div>
+
+        <div class="flex min-w-0 flex-1 flex-col justify-center">
+          <div class="flex items-center justify-center gap-1">
+            <button
+              v-if="canSimilar"
+              type="button"
+              class="hidden size-8 items-center justify-center border-2 border-transparent text-on-invert/80 transition-colors duration-100 hover:border-on-invert/40 hover:bg-on-invert/10 hover:text-on-invert lg:flex"
+              :aria-label="t('similar.findSimilar')"
+              @click="goSimilar"
+            >
+              <AppIcon name="wand" :size="16" />
+            </button>
+            <button
+              type="button"
+              class="flex size-8 items-center justify-center border-2 transition-colors duration-100"
+              :class="
+                player.shuffle.value
+                  ? 'border-on-invert bg-on-invert text-invert'
+                  : 'border-transparent text-on-invert/80 hover:border-on-invert/40 hover:bg-on-invert/10 hover:text-on-invert'
+              "
+              :aria-label="t('player.shuffle')"
+              :aria-pressed="player.shuffle.value"
+              @click="player.toggleShuffle()"
+            >
+              <AppIcon name="shuffle" :size="16" />
+            </button>
+            <button
+              type="button"
+              class="flex size-9 items-center justify-center border-2 border-transparent text-on-invert transition-colors duration-100 hover:border-on-invert/40 hover:bg-on-invert/10"
+              :aria-label="t('player.previous')"
+              @click="player.prev()"
+            >
+              <AppIcon name="prev" :size="18" />
+            </button>
+            <button
+              type="button"
+              class="flex size-10 items-center justify-center border-2 border-on-invert bg-on-invert text-invert transition-colors duration-100 hover:bg-on-invert/80"
+              :aria-label="
+                player.isPlaying.value ? t('player.pause') : t('player.play')
+              "
+              @click="player.toggle()"
+            >
+              <span
+                v-if="player.isBuffering.value && player.isPlaying.value"
+                class="size-3 animate-pulse bg-current"
+                aria-hidden="true"
+              />
+              <AppIcon
+                v-else
+                :name="player.isPlaying.value ? 'pause' : 'play'"
+                :size="18"
+              />
+            </button>
+            <button
+              type="button"
+              class="flex size-9 items-center justify-center border-2 border-transparent text-on-invert transition-colors duration-100 hover:border-on-invert/40 hover:bg-on-invert/10"
+              :aria-label="t('player.next')"
+              @click="player.next()"
+            >
+              <AppIcon name="next" :size="18" />
+            </button>
+            <button
+              type="button"
+              class="flex size-8 items-center justify-center border-2 transition-colors duration-100"
+              :class="
+                player.repeatMode.value !== 'off'
+                  ? 'border-on-invert bg-on-invert text-invert'
+                  : 'border-transparent text-on-invert/80 hover:border-on-invert/40 hover:bg-on-invert/10 hover:text-on-invert'
+              "
+              :aria-label="repeatLabel"
+              :aria-pressed="player.repeatMode.value !== 'off'"
+              @click="player.cycleRepeat()"
+            >
+              <AppIcon
+                :name="
+                  player.repeatMode.value === 'one' ? 'repeat-one' : 'repeat'
+                "
+                :size="16"
+              />
+            </button>
+            <button
+              v-if="showMiniDownload"
+              type="button"
+              class="hidden size-8 items-center justify-center border-2 border-transparent text-on-invert/80 transition-colors duration-100 hover:border-on-invert/40 hover:bg-on-invert/10 hover:text-on-invert disabled:opacity-40 lg:flex"
+              :aria-label="t('actions.downloadItem', { name: trackTitle })"
+              :disabled="downloadBusy"
+              @click="downloadCurrent"
+            >
+              <AppIcon
+                :name="downloadBusy ? 'refresh' : 'download'"
+                :size="16"
+                :class="downloadBusy ? 'animate-spin' : ''"
+              />
+            </button>
+            <!-- Downloaded tracks show a static check in the download
+                 button's slot: it does nothing, deleting happens from the
+                 library rows. -->
+            <span
+              v-if="showDownloadedCheck"
+              class="hidden size-8 items-center justify-center text-accent lg:flex"
+              :title="t('search.inLibrary')"
+              aria-hidden="true"
+            >
+              <AppIcon name="check" :size="16" />
+            </span>
+          </div>
+
+          <div class="mt-0.5 flex items-center gap-3">
+            <span
+              class="mono tabular w-10 shrink-0 text-right text-on-invert/70"
+              >{{ formatDuration(scrub ?? player.currentTime.value) }}</span
+            >
+            <WaveSeekBar
+              class="flex-1"
+              :model-value="scrub ?? player.currentTime.value"
+              :max="player.duration.value || 1"
+              :label="t('player.seek')"
+              :value-text="formatDuration(player.currentTime.value)"
+              :playing="player.isPlaying.value"
+              @update:model-value="(v) => (scrub = v)"
+              @commit="commitSeek"
+            />
+            <span class="mono tabular w-10 shrink-0 text-on-invert/70">{{
+              formatDuration(player.duration.value)
+            }}</span>
+          </div>
+        </div>
+
+        <div
+          class="flex w-[204px] shrink-0 items-center justify-end gap-1 lg:w-[264px]"
+        >
+          <div
+            class="hidden items-center gap-1 [&_button:hover]:bg-on-invert/10 [&_button]:border-on-invert/40 [&_button]:text-on-invert lg:flex"
+          >
+            <VolumeControl
+              width="w-20 min-w-8"
+              track-class="bg-on-invert/25"
+              fill-class="bg-on-invert"
+              thumb-class="bg-on-invert"
+            />
+          </div>
+          <button
+            v-if="showLyrics"
+            type="button"
+            class="hidden size-8 items-center justify-center border-2 border-on-invert/40 text-on-invert transition-colors duration-100 hover:border-on-invert hover:bg-on-invert/10 lg:flex"
+            :aria-label="t('player.lyrics')"
+            @click="nowPlaying.open('lyrics')"
+          >
+            <AppIcon name="lyrics" :size="16" />
+          </button>
+          <button
+            type="button"
+            class="flex size-8 items-center justify-center border-2 border-on-invert/40 text-on-invert transition-colors duration-100 hover:border-on-invert hover:bg-on-invert/10"
+            :aria-label="t('player.upNext')"
+            @click="nowPlaying.open('queue')"
+          >
+            <AppIcon name="queue" :size="16" />
+          </button>
+          <button
+            type="button"
+            class="flex size-8 items-center justify-center border-2 border-on-invert/40 text-on-invert transition-colors duration-100 hover:border-on-invert hover:bg-on-invert/10"
+            :aria-label="t('player.openNowPlaying')"
+            @click="nowPlaying.open()"
+          >
+            <AppIcon name="expand" :size="16" />
+          </button>
+        </div>
       </div>
     </div>
   </Transition>
@@ -190,23 +294,19 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useMediaQuery } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import AppIcon from '../ui/AppIcon.vue'
 import CoverArt from '../ui/CoverArt.vue'
 import EqBars from '../ui/EqBars.vue'
-import UiIconButton from '../ui/UiIconButton.vue'
 import LikeButton from '../player/LikeButton.vue'
-import SliderBar from '../player/SliderBar.vue'
-import { useSmoothTime } from '../player/useSmoothTime'
+import WaveSeekBar from '../player/WaveSeekBar.vue'
 import VolumeControl from '../player/VolumeControl.vue'
 import { usePlayer } from '/src/model/player'
 import { useDownloadManager, useProgressTracker } from '/src/model/download'
 import { useLibrary } from '/src/model/library'
 import { usePlayerPrefs } from '/src/model/playerPrefs'
-import { useCoverPalette } from '/src/model/coverPalette'
 import { useNowPlaying, useUi } from '/src/model/ui'
-import { formatDuration, widestClock } from '/src/lib/format'
+import { formatDuration } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
 
 const player = usePlayer()
@@ -221,13 +321,6 @@ const ui = useUi()
 const scrub = ref(null)
 
 const track = computed(() => player.currentTrack.value)
-
-// Progress follows the cover palette; the accent classes in the template
-// stay as the fallback (no cover, palette miss).
-const palette = useCoverPalette(track)
-const progressStyle = computed(() =>
-  palette.value?.primary ? { backgroundColor: palette.value.primary } : null
-)
 
 const trackArtist = computed(
   () =>
@@ -304,22 +397,6 @@ const showDownloadedCheck = computed(
     (!track.value.stream ||
       library.hasSong(trackArtist.value, trackTitle.value))
 )
-
-// The phone hairline glides like the desktop scrubber (only animated
-// while it's the one on screen).
-const isPhone = useMediaQuery('(max-width: 767px)')
-const smoothTime = useSmoothTime(
-  () => player.currentTime.value,
-  () => isPhone.value && player.isPlaying.value,
-  () => player.duration.value || 0
-)
-const smoothPercent = computed(() =>
-  isPhone.value && player.duration.value
-    ? Math.min(100, (smoothTime.value / player.duration.value) * 100)
-    : player.progressPct.value
-)
-
-const clockSizer = computed(() => widestClock(player.duration.value))
 
 const repeatLabel = computed(
   () =>

@@ -1,28 +1,21 @@
 <template>
   <SignIn v-if="auth.mustSignIn.value" />
-  <div v-else class="flex min-h-dvh bg-bg text-fg">
+  <div v-else class="flex min-h-dvh flex-col bg-bg text-fg">
+    <TopBar @menu="menuOpen = true" />
     <SideNav class="hidden md:flex" />
-    <div class="flex min-w-0 flex-1 flex-col">
-      <TopBar />
-      <main class="flex-1 pb-8">
-        <RouterView v-slot="{ Component, route: viewRoute }">
-          <Transition name="page" mode="out-in">
-            <component :is="Component" :key="viewKey(viewRoute)" />
-          </Transition>
-        </RouterView>
-      </main>
-      <!-- Sticky at the end of the content column, so it floats over the
-           page yet lines up with the content next to the sidebar. -->
-      <MiniPlayer
-        v-if="settings.mini_player_enabled !== false"
-        class="sticky bottom-[calc(6rem+env(safe-area-inset-bottom))] z-40 mx-2 mb-2 md:bottom-6 md:mx-6 md:mb-6"
-      />
-      <div
-        v-if="settings.mini_player_enabled !== false"
-        class="h-[calc(4.75rem+env(safe-area-inset-bottom))] md:hidden"
-      />
-    </div>
-    <BottomNav class="md:hidden" />
+    <main class="min-w-0 flex-1" :class="contentPad">
+      <RouterView v-slot="{ Component, route: viewRoute }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" :key="viewKey(viewRoute)" />
+        </Transition>
+      </RouterView>
+    </main>
+
+    <!-- Transport: MiniPlayer owns the fixed bottom bar (56px on a phone,
+         64px on desktop); the content column reserves that height. -->
+    <MiniPlayer v-if="hasTransport" />
+
+    <BottomNav :open="menuOpen" @close="menuOpen = false" />
     <NowPlaying />
     <ShortcutsDialog v-model:open="shortcutsOpen" />
     <UiToasts />
@@ -36,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SideNav from './SideNav.vue'
 import TopBar from './TopBar.vue'
@@ -76,6 +69,17 @@ const router = useRouter()
 const ui = useUi()
 const nowPlaying = useNowPlaying()
 const shortcutsOpen = ref(false)
+const menuOpen = ref(false)
+
+// The transport only takes room when there is a bar to show; the content
+// column reserves exactly that height so nothing ends underneath it.
+const hasTransport = computed(
+  () =>
+    settings.mini_player_enabled !== false && Boolean(player.currentTrack.value)
+)
+const contentPad = computed(() =>
+  hasTransport.value ? 'pb-14 md:pb-16' : 'pb-8'
+)
 
 // The Now playing overlay lives in the query string (?np=1); it must not
 // remount the page underneath it.

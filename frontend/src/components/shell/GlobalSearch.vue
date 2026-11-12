@@ -1,15 +1,20 @@
 <template>
   <form
     role="search"
-    class="group relative flex h-11 items-center gap-2.5 rounded-[12px] border bg-surface pr-1.5 pl-3.5 transition-colors focus-within:border-accent"
-    :class="kind.type === 'link' ? 'border-accent/60' : 'border-line-2'"
+    class="group relative flex h-9 items-stretch border-2 bg-bg transition-colors duration-100 focus-within:border-accent"
+    :class="kind.type === 'link' ? 'border-accent' : 'border-line-2'"
     @submit.prevent="submit"
   >
-    <AppIcon
-      :name="kind.type === 'link' ? 'link' : 'search'"
-      :size="18"
-      :class="kind.type === 'link' ? 'text-accent' : 'text-faint'"
-    />
+    <span
+      class="flex w-9 shrink-0 items-center justify-center border-r-2"
+      :class="
+        kind.type === 'link'
+          ? 'border-accent text-accent'
+          : 'border-line-2 text-faint'
+      "
+    >
+      <AppIcon :name="kind.type === 'link' ? 'link' : 'search'" :size="16" />
+    </span>
     <label for="global-search" class="sr-only">{{
       t('search.placeholder')
     }}</label>
@@ -21,28 +26,28 @@
       enterkeyhint="search"
       autocomplete="off"
       :placeholder="t('search.placeholder')"
-      class="h-full min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
+      class="h-full min-w-0 flex-1 bg-transparent px-2.5 text-[13px] text-fg outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
     />
     <button
       v-if="text"
       type="button"
-      class="flex size-8 items-center justify-center rounded-control text-faint hover:text-fg"
+      class="flex w-8 shrink-0 items-center justify-center text-faint transition-colors duration-100 hover:bg-surface-2 hover:text-fg"
       :aria-label="t('common.clear')"
       @click="clear"
     >
-      <AppIcon name="x" :size="16" />
+      <AppIcon name="x" :size="15" />
     </button>
     <span
       v-if="!text"
-      class="hidden rounded-md border border-line-3 px-1.5 py-0.5 text-[11px] text-faint lg:inline"
+      class="mono hidden shrink-0 items-center border-l-2 border-line-2 px-2 text-faint lg:flex"
       >{{ isMac ? '⌘K' : 'Ctrl K' }}</span
     >
     <button
       v-else-if="kind.type === 'link'"
       type="submit"
-      class="flex h-8 items-center gap-1.5 rounded-[8px] bg-accent px-3 text-[13px] font-semibold text-on-accent"
+      class="eyebrow flex shrink-0 items-center gap-1.5 border-l-2 border-line bg-invert px-2.5 text-on-invert"
     >
-      <AppIcon name="arrow-up-right" :size="14" stroke-width="2.2" />
+      <AppIcon name="arrow-up-right" :size="13" stroke-width="2.2" />
       {{ t('search.open') }}
     </button>
   </form>

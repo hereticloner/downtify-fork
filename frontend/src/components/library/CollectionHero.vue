@@ -1,86 +1,69 @@
 <template>
-  <header
-    class="relative isolate flex flex-col justify-end overflow-hidden"
-    :class="banner ? 'min-h-[300px] sm:min-h-[380px] lg:min-h-[440px]' : ''"
-  >
-    <img
-      v-if="banner"
-      :src="banner"
-      alt=""
-      class="absolute inset-0 -z-20 size-full object-cover object-[center_20%]"
-    />
+  <header class="border-b-2 border-line bg-surface">
     <div
-      class="absolute inset-0 -z-10"
-      :class="banner ? '' : 'opacity-70'"
-      :style="{
-        background: banner
-          ? 'linear-gradient(180deg, rgba(11,12,14,0.05) 0%, rgba(11,12,14,0.55) 65%, rgba(11,12,14,0.92) 100%)'
-          : `linear-gradient(180deg, ${tint} 0%, transparent 100%)`,
-      }"
-      aria-hidden="true"
-    />
-    <button
-      v-if="bannerEditable"
-      type="button"
-      :title="t('artistArt.editArtist')"
-      :aria-label="t('artistArt.editArtist')"
-      class="absolute top-4 right-4 z-10 flex size-10 items-center justify-center rounded-full border border-line-2 bg-black/55 text-white backdrop-blur transition-colors hover:bg-black/70"
-      @click="$emit('edit-banner')"
+      class="grid grid-cols-1 md:grid-cols-[minmax(0,248px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,304px)_minmax(0,1fr)]"
     >
-      <AppIcon name="pencil" :size="16" />
-    </button>
-    <div
-      class="mr-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-6 pb-6 sm:px-6 md:flex-row md:items-end md:gap-8 md:pt-10 lg:px-10"
-    >
+      <!-- The plate: a banner when one is set, the cover otherwise. Square
+           frame, no wash over it, no overlay text. -->
       <div
-        v-if="!banner"
-        class="group/cover relative size-48 shrink-0 self-center sm:size-56 md:self-auto lg:size-[232px]"
+        class="relative border-b-2 border-line p-3 md:border-r-2 md:border-b-0"
       >
-        <CoverArt
-          :src="cover"
-          :fallback="coverFallback"
-          :covers="covers"
-          :name="name || title"
-          :round="round"
-          :icon="icon"
-          :symbol="symbol"
-          shadow
-          :letter-size="96"
-          :icon-size="64"
-          rounded="rounded-[16px]"
-          class="size-full shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
-        />
-        <button
-          v-if="photoEditable"
-          type="button"
-          class="absolute inset-0 flex items-center justify-center rounded-[16px] bg-black/0 text-white opacity-0 transition-all group-hover/cover:bg-black/45 group-hover/cover:opacity-100"
-          :class="round ? 'rounded-full' : ''"
-          @click="$emit('edit-photo')"
-        >
-          <span class="flex items-center gap-2 text-base font-semibold">
-            <AppIcon name="pencil" :size="17" />{{ t('artistArt.editPhoto') }}
-          </span>
-        </button>
+        <div v-if="banner" class="relative border-2 border-line bg-surface-2">
+          <img :src="banner" alt="" class="aspect-video w-full object-cover" />
+          <button
+            v-if="bannerEditable"
+            type="button"
+            :title="t('artistArt.editArtist')"
+            :aria-label="t('artistArt.editArtist')"
+            class="absolute right-0 bottom-0 flex size-9 items-center justify-center border-t-2 border-l-2 border-line bg-bg text-fg transition-colors duration-100 hover:bg-surface-2 active:bg-raised"
+            @click="$emit('edit-banner')"
+          >
+            <AppIcon name="pencil" :size="15" />
+          </button>
+        </div>
+        <div v-else class="relative mx-auto w-full max-w-56 md:max-w-none">
+          <CoverArt
+            :src="cover"
+            :fallback="coverFallback"
+            :covers="covers"
+            :name="name || title"
+            :round="round"
+            :icon="icon"
+            :symbol="symbol"
+            :letter-size="88"
+            :icon-size="56"
+            class="aspect-square w-full"
+          />
+          <button
+            v-if="photoEditable"
+            type="button"
+            class="absolute right-0 bottom-0 flex size-9 items-center justify-center border-t-2 border-l-2 border-line bg-bg text-fg transition-colors duration-100 hover:bg-surface-2 active:bg-raised"
+            @click="$emit('edit-photo')"
+          >
+            <span class="sr-only">{{ t('artistArt.editPhoto') }}</span>
+            <AppIcon name="pencil" :size="15" />
+          </button>
+        </div>
       </div>
-      <div
-        class="flex min-w-0 flex-col gap-3 max-md:items-center max-md:text-center"
-      >
-        <span
-          class="eyebrow"
-          :class="banner ? '!text-white/70' : '!text-fg-3'"
-          >{{ kicker }}</span
-        >
+
+      <!-- The record: kicker label, title, the mono catalogue line and the
+           action blocks. -->
+      <div class="flex min-w-0 flex-col justify-center gap-3 p-4 sm:p-6 lg:p-8">
+        <span v-if="kicker" class="eyebrow">{{ kicker }}</span>
         <h1
-          class="text-display line-clamp-2 text-4xl leading-[1.05] font-bold text-balance break-words sm:text-5xl xl:text-[64px]"
-          :class="banner ? 'text-white' : 'text-fg'"
+          class="text-display line-clamp-2 text-3xl leading-[1.04] font-bold text-balance break-words sm:text-4xl xl:text-[46px]"
         >
           {{ title }}
         </h1>
-        <p class="text-[15px]" :class="banner ? 'text-white/75' : 'text-fg-3'">
-          <slot name="subtitle" />
-        </p>
         <div
-          class="mt-3 flex flex-wrap items-center gap-2.5 max-md:justify-center"
+          v-if="$slots.subtitle"
+          class="mono flex flex-wrap items-center gap-x-2 gap-y-1 text-fg-3"
+        >
+          <slot name="subtitle" />
+        </div>
+        <div
+          v-if="$slots.actions"
+          class="mt-2 flex flex-wrap items-center gap-2"
         >
           <slot name="actions" />
         </div>
@@ -90,15 +73,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import AppIcon from '../ui/AppIcon.vue'
 import CoverArt from '../ui/CoverArt.vue'
-import { hueFor } from '/src/lib/format'
-import { heroTintColor } from '/src/lib/heroTint'
-import { useCoverPalette } from '/src/model/coverPalette'
 import { useI18n } from '/src/i18n'
 
-const props = defineProps({
+defineProps({
   title: { type: String, required: true },
   kicker: { type: String, default: '' },
   name: { type: String, default: '' },
@@ -109,13 +88,15 @@ const props = defineProps({
   covers: { type: Array, default: () => [] },
   icon: { type: String, default: 'disc' },
   symbol: { type: Boolean, default: false },
+  // Kept for the call sites; every plate in this language is square, so
+  // nothing about the frame changes with it.
   round: { type: Boolean, default: false },
   // Optional background photo (artist page only - see ArtistView) and
-  // whether each hover "edit photo/banner" affordance is shown at all -
-  // each mirrors its own settings toggle independently. When a banner
-  // is set, the round photo (and its own edit affordance) is hidden
-  // entirely to de-clutter the header - ArtistArtModal's "Profile" tab
-  // is still reachable from the banner's edit button.
+  // whether each "edit photo/banner" affordance is shown at all - each
+  // mirrors its own settings toggle independently. When a banner is set,
+  // the photo (and its own edit affordance) is hidden entirely to
+  // de-clutter the plate - ArtistArtModal's "Profile" tab is still
+  // reachable from the banner's edit block.
   banner: { type: String, default: '' },
   photoEditable: { type: Boolean, default: false },
   bannerEditable: { type: Boolean, default: false },
@@ -123,17 +104,4 @@ const props = defineProps({
 defineEmits(['edit-photo', 'edit-banner'])
 
 const { t } = useI18n()
-
-// The wash behind the header comes from the real cover palette; the
-// name-hash hue stays as the fallback (no cover, mosaic, palette miss).
-// Banner headers keep their photo gradient and ignore the tint.
-const coverSource = computed(() =>
-  props.cover ? { hasCover: true, cover: props.cover } : null
-)
-const palette = useCoverPalette(coverSource)
-const tint = computed(
-  () =>
-    heroTintColor(palette.value) ||
-    `oklch(0.45 0.08 ${hueFor(props.name || props.title)} / 0.55)`
-)
 </script>

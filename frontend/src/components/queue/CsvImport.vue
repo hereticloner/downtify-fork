@@ -15,7 +15,7 @@
     >
       {{ t('queue.importButton') }}
     </UiButton>
-    <p v-if="error" class="text-xs text-danger">{{ error }}</p>
+    <p v-if="error" class="mono text-danger">{{ error }}</p>
   </div>
 </template>
 

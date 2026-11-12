@@ -3,145 +3,97 @@
     <Transition name="now-playing">
       <div
         v-if="nowPlaying.isOpen.value && track"
-        class="np-stage fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#07080b] text-white"
+        class="fixed inset-0 z-50 flex flex-col overflow-hidden bg-bg text-fg"
         role="dialog"
         aria-modal="true"
         :aria-label="t('player.nowPlaying')"
       >
-        <!-- Backdrop: the artwork, blown up and blurred. -->
-        <div class="pointer-events-none absolute inset-0" aria-hidden="true">
-          <div
-            class="absolute inset-0 transition-colors duration-700"
-            :style="{ backgroundColor: tint }"
-          />
-          <img
-            v-if="track.hasCover"
-            :src="track.cover"
-            alt=""
-            class="np-art absolute inset-0 size-full scale-125 object-cover opacity-55 blur-[90px] saturate-150"
-          />
-          <div
-            class="np-veil absolute inset-0 bg-gradient-to-b from-black/25 via-black/45 to-black/80"
-          />
-        </div>
-
-        <div
-          class="relative flex h-full flex-col px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:px-10 lg:pt-6 lg:pb-8"
+        <!-- Header: 44px inverted band, close on the left, what is playing
+             in the middle, the track menu on the right. -->
+        <header
+          class="flex h-11 shrink-0 items-stretch border-b-2 border-line bg-invert text-on-invert"
         >
-          <!-- Header -->
-          <header class="relative z-10 flex h-12 shrink-0 items-center gap-3">
-            <button
-              ref="closeButton"
-              type="button"
-              class="flex size-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
-              :aria-label="t('player.closeNowPlaying')"
-              @click="nowPlaying.close()"
-            >
-              <AppIcon name="chevron-down" :size="22" />
-            </button>
-            <component
-              :is="contextRoute ? RouterLink : 'div'"
-              :to="contextRoute || undefined"
-              class="flex min-w-0 items-center gap-2 max-lg:flex-1 max-lg:justify-center"
-              @click="contextRoute && nowPlaying.close()"
-            >
-              <CoverArt
-                v-if="
-                  context?.type === 'playlist' &&
-                  (context.cover || context.covers?.length)
-                "
-                :src="context.cover || ''"
-                :covers="context.covers || []"
-                :name="context.title"
-                rounded="rounded-[5px]"
-                :letter-size="10"
-                :icon-size="12"
-                class="size-8 shrink-0"
-              />
-              <span class="flex min-w-0 flex-col">
-                <span
-                  class="eyebrow"
-                  :class="isLight ? '' : '!text-white/55'"
-                  >{{ contextLabel }}</span
-                >
-                <span class="max-w-full truncate text-sm font-semibold">{{
-                  contextTitle
-                }}</span>
-              </span>
-            </component>
-            <div
-              class="ml-auto hidden gap-1 rounded-[12px] bg-white/8 p-1 lg:flex"
-              role="tablist"
-            >
-              <button
-                v-for="tab in panels"
-                :key="tab.id"
-                type="button"
-                role="tab"
-                :aria-selected="panel === tab.id"
-                class="flex h-9 items-center gap-2 rounded-[9px] px-3.5 text-[13px] transition-colors"
-                :class="
-                  panel === tab.id
-                    ? 'bg-white/15 font-semibold text-white'
-                    : 'font-medium text-white/65 hover:text-white'
-                "
-                @click="setPanel(tab.id)"
-              >
-                <AppIcon :name="tab.icon" :size="16" />{{ tab.label }}
-              </button>
-            </div>
-            <UiMenu
-              :items="trackMenu"
-              :label="t('common.more')"
-              class="lg:hidden"
-            >
-              <template #trigger>
-                <button
-                  type="button"
-                  class="flex size-10 items-center justify-center rounded-full hover:bg-white/10"
-                  :aria-label="t('common.more')"
-                >
-                  <AppIcon name="more" :size="22" />
-                </button>
-              </template>
-            </UiMenu>
-          </header>
-
-          <!-- Body -->
-          <div
-            class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] gap-6 overflow-hidden py-4 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-stretch lg:gap-10 lg:py-4 xl:grid-cols-[auto_minmax(0,1fr)_minmax(220px,340px)] xl:gap-12"
+          <button
+            ref="closeButton"
+            type="button"
+            class="flex w-11 shrink-0 items-center justify-center border-r-2 border-on-invert/25 transition-colors duration-100 hover:bg-on-invert/10"
+            :aria-label="t('player.closeNowPlaying')"
+            @click="nowPlaying.close()"
           >
-            <!-- Artwork + title (hidden on phones while a panel is open) -->
+            <AppIcon name="chevron-down" :size="18" />
+          </button>
+          <component
+            :is="contextRoute ? RouterLink : 'div'"
+            :to="contextRoute || undefined"
+            class="flex min-w-0 flex-1 items-center justify-center gap-2 px-3"
+            @click="contextRoute && nowPlaying.close()"
+          >
+            <CoverArt
+              v-if="
+                context?.type === 'playlist' &&
+                (context.cover || context.covers?.length)
+              "
+              :src="context.cover || ''"
+              :covers="context.covers || []"
+              :name="context.title"
+              :letter-size="8"
+              :icon-size="10"
+              class="size-6 shrink-0"
+            />
+            <span class="flex min-w-0 flex-col">
+              <span class="eyebrow text-on-invert/60">{{ contextLabel }}</span>
+              <span class="truncate text-[12px] leading-tight font-medium">{{
+                contextTitle
+              }}</span>
+            </span>
+          </component>
+          <UiMenu :items="trackMenu" :label="t('common.more')">
+            <template #trigger>
+              <button
+                type="button"
+                class="flex h-11 w-11 items-center justify-center border-l-2 border-on-invert/25 transition-colors duration-100 hover:bg-on-invert/10"
+                :aria-label="t('common.more')"
+              >
+                <AppIcon name="more" :size="18" />
+              </button>
+            </template>
+          </UiMenu>
+        </header>
+
+        <!-- Body: square artwork and its plate on the left, the panel block
+             on the right; phones show one or the other. -->
+        <div
+          class="flex min-h-0 flex-1 justify-center overflow-hidden px-4 lg:px-8"
+        >
+          <div
+            class="flex min-h-0 w-full max-w-[1200px] flex-col gap-5 py-4 lg:flex-row lg:gap-8 lg:py-6"
+          >
             <div
-              class="now-playing-stage flex h-full min-h-0 w-full min-w-0 max-w-full flex-col justify-center gap-4 overflow-hidden lg:gap-5"
+              class="flex min-h-0 flex-col gap-4 overflow-y-auto lg:w-[380px] lg:shrink-0 lg:justify-center"
               :class="mobilePanel ? 'max-lg:hidden' : ''"
             >
-              <div class="now-playing-cover mx-auto">
-                <CoverArt
-                  :src="track.hasCover ? track.cover : ''"
-                  :name="track.album || track.title"
-                  rounded="rounded-[20px]"
-                  :letter-size="140"
-                  :icon-size="72"
-                  class="aspect-square w-full min-h-0 min-w-0 transition-transform duration-500 ease-out-soft"
-                  :class="player.isPlaying.value ? 'scale-100' : 'scale-[0.94]'"
-                />
-              </div>
-              <div
-                class="flex w-full min-w-0 shrink-0 items-end justify-between gap-4"
-              >
+              <CoverArt
+                :src="track.hasCover ? track.cover : ''"
+                :name="track.album || track.title"
+                :letter-size="120"
+                :icon-size="64"
+                class="mx-auto aspect-square w-full max-w-[22rem] lg:max-w-none"
+              />
+              <div class="flex items-end justify-between gap-3">
                 <div class="min-w-0 flex-1">
-                  <h2 class="now-playing-title text-display truncate font-bold">
+                  <h2
+                    class="text-display truncate text-3xl font-bold lg:text-4xl"
+                  >
                     {{ track.title }}
                   </h2>
                   <RouterLink
                     v-if="track.albumArtist"
                     :to="{ name: 'Artist', query: { name: track.albumArtist } }"
-                    class="mt-1 block truncate text-base text-white/70 hover:text-white hover:underline"
+                    class="mt-1 block truncate text-sm text-muted hover:text-fg hover:underline"
                     @click="nowPlaying.close()"
                     >{{ track.artist }}</RouterLink
                   >
-                  <p v-else class="mt-1 truncate text-base text-white/70">
+                  <p v-else class="mt-1 truncate text-sm text-muted">
                     {{ track.artist }}
                   </p>
                 </div>
@@ -151,23 +103,14 @@
                     :file="track.file"
                     size="lg"
                   />
-                  <UiMenu
-                    :items="trackMenu"
-                    :label="t('common.more')"
-                    class="hidden lg:inline-flex"
-                  >
-                    <template #trigger>
-                      <button
-                        type="button"
-                        class="flex size-10 items-center justify-center rounded-full hover:bg-white/10"
-                        :aria-label="t('common.more')"
-                      >
-                        <AppIcon name="more" :size="22" />
-                      </button>
-                    </template>
-                  </UiMenu>
                 </div>
               </div>
+              <p
+                v-if="techLine"
+                class="mono flex flex-wrap items-center gap-x-2 gap-y-1 text-faint"
+              >
+                {{ techLine }}
+              </p>
               <p
                 v-if="player.playError.value"
                 class="flex items-center gap-2 text-sm text-danger"
@@ -176,33 +119,54 @@
               </p>
             </div>
 
-            <!-- Main panel -->
+            <!-- Panel: three block tabs over the existing panel components. -->
             <div
-              class="min-h-0 lg:h-full"
+              class="flex min-h-0 flex-1 flex-col border-2 border-line"
               :class="mobilePanel ? '' : 'max-lg:hidden'"
             >
-              <LyricsPanel v-if="panel === 'lyrics'" :compact="isMobile" />
-              <UpNextPanel v-else-if="panel === 'queue'" />
-              <TrackDetails v-else-if="panel === 'details'" class="lg:pt-10" />
-              <EqualizerPanel
-                v-else-if="panel === 'equalizer'"
-                :palette="palette"
-              />
+              <div
+                role="tablist"
+                class="flex shrink-0 items-stretch border-b-2 border-line"
+              >
+                <button
+                  v-for="tab in panels"
+                  :key="tab.id"
+                  type="button"
+                  role="tab"
+                  :aria-selected="panelActive(tab.id)"
+                  class="flex h-11 min-w-0 flex-1 items-center justify-center gap-2 border-l-2 border-line px-2 transition-colors duration-100 first:border-l-0"
+                  :class="
+                    panelActive(tab.id)
+                      ? 'bg-invert text-on-invert'
+                      : 'text-muted hover:bg-surface-2 hover:text-fg'
+                  "
+                  @click="onTab(tab.id)"
+                >
+                  <AppIcon :name="tab.icon" :size="15" />
+                  <span
+                    class="eyebrow truncate"
+                    :class="panelActive(tab.id) ? 'text-on-invert' : ''"
+                    >{{ tab.label }}</span
+                  >
+                </button>
+              </div>
+              <div class="flex min-h-0 flex-1 flex-col p-2 lg:p-3">
+                <LyricsPanel v-if="panel === 'lyrics'" :compact="isMobile" />
+                <UpNextPanel v-else-if="panel === 'queue'" />
+                <TrackDetails v-else-if="panel === 'details'" />
+                <EqualizerPanel v-else-if="panel === 'equalizer'" />
+              </div>
             </div>
-
-            <!-- Up next always visible on wide screens -->
-            <aside
-              v-if="panel !== 'queue'"
-              class="hidden h-full min-h-0 max-h-full rounded-panel border border-white/10 bg-white/6 p-3 backdrop-blur-xl xl:block"
-            >
-              <UpNextPanel />
-            </aside>
           </div>
+        </div>
 
-          <!-- Transport -->
-          <footer class="relative z-10 shrink-0">
+        <!-- Transport: segmented meter and the squared controls. -->
+        <footer class="shrink-0 border-t-2 border-line">
+          <div
+            class="mx-auto flex max-w-[1200px] flex-col gap-1.5 px-4 py-2 lg:px-8"
+          >
             <div class="flex items-center gap-3">
-              <span class="tabular w-12 text-xs text-white/65">{{
+              <span class="mono tabular w-10 shrink-0 text-right text-muted">{{
                 formatDuration(scrub ?? player.currentTime.value)
               }}</span>
               <WaveSeekBar
@@ -212,64 +176,61 @@
                 :label="t('player.seek')"
                 :value-text="formatDuration(player.currentTime.value)"
                 :playing="player.isPlaying.value"
-                :palette="palette"
                 @update:model-value="(v) => (scrub = v)"
                 @commit="commitSeek"
               />
-              <span class="tabular w-12 text-right text-xs text-white/65">{{
+              <span class="mono tabular w-10 shrink-0 text-muted">{{
                 formatDuration(player.duration.value)
               }}</span>
             </div>
 
-            <div class="mt-3 flex items-center lg:mt-4">
+            <div class="flex items-center gap-2">
               <div class="hidden flex-1 items-center gap-2 lg:flex">
-                <span
-                  v-if="track.format"
-                  class="rounded-md border border-white/20 px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-white/75"
-                  >{{ track.format }}</span
-                >
-                <span v-if="track.size" class="text-xs text-white/55">
-                  {{ formatBytes(track.size) }}
-                </span>
+                <UiBadge v-if="track.format">{{ track.format }}</UiBadge>
+                <span v-if="track.size" class="mono text-faint">{{
+                  formatBytes(track.size)
+                }}</span>
               </div>
 
               <div
-                class="flex flex-1 items-center justify-between lg:flex-none lg:justify-center lg:gap-7"
+                class="flex flex-1 items-center justify-center gap-1 lg:flex-none lg:gap-2"
               >
-                <!-- Left of shuffle: tracks like this one (podcasts and
-                     anonymous streams have none). -->
+                <!-- Tracks like this one (podcasts and anonymous streams
+                     have none). -->
                 <button
                   v-if="similarArtist && similarTitle"
                   type="button"
-                  class="flex size-11 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10"
+                  class="flex size-9 items-center justify-center border-2 border-line-2 text-muted transition-colors duration-100 hover:border-line hover:bg-surface-2 hover:text-fg"
                   :aria-label="t('similar.findSimilar')"
                   @click="goSimilar"
                 >
-                  <AppIcon name="wand" :size="22" />
+                  <AppIcon name="wand" :size="17" />
                 </button>
                 <button
                   type="button"
-                  class="flex size-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                  class="flex size-9 items-center justify-center border-2 transition-colors duration-100"
                   :class="
-                    player.shuffle.value ? 'text-accent' : 'text-white/80'
+                    player.shuffle.value
+                      ? 'border-line bg-invert text-on-invert'
+                      : 'border-line-2 text-muted hover:border-line hover:bg-surface-2 hover:text-fg'
                   "
                   :aria-label="t('player.shuffle')"
                   :aria-pressed="player.shuffle.value"
                   @click="player.toggleShuffle()"
                 >
-                  <AppIcon name="shuffle" :size="22" />
+                  <AppIcon name="shuffle" :size="17" />
                 </button>
                 <button
                   type="button"
-                  class="flex size-13 items-center justify-center rounded-full hover:bg-white/10"
+                  class="flex size-11 items-center justify-center border-2 border-line-2 text-muted transition-colors duration-100 hover:border-line hover:bg-surface-2 hover:text-fg"
                   :aria-label="t('player.previous')"
                   @click="player.prev()"
                 >
-                  <AppIcon name="prev" :size="28" />
+                  <AppIcon name="prev" :size="22" />
                 </button>
                 <button
                   type="button"
-                  class="pressable now-playing-play flex items-center justify-center rounded-full bg-white text-[#0b0c0e] shadow-glow-lg transition-transform hover:scale-105 hover:shadow-glow-lg active:scale-95"
+                  class="flex size-12 items-center justify-center border-2 border-line bg-invert text-on-invert transition-colors duration-100 hover:bg-fg-3 active:bg-surface active:text-fg"
                   :aria-label="
                     player.isPlaying.value
                       ? t('player.pause')
@@ -279,29 +240,30 @@
                 >
                   <span
                     v-if="player.isBuffering.value && player.isPlaying.value"
-                    class="size-6 animate-spin rounded-full border-2 border-current border-r-transparent"
+                    class="size-3.5 animate-pulse bg-current"
+                    aria-hidden="true"
                   />
                   <AppIcon
                     v-else
                     :name="player.isPlaying.value ? 'pause' : 'play'"
-                    :size="26"
+                    :size="22"
                   />
                 </button>
                 <button
                   type="button"
-                  class="flex size-13 items-center justify-center rounded-full hover:bg-white/10"
+                  class="flex size-11 items-center justify-center border-2 border-line-2 text-muted transition-colors duration-100 hover:border-line hover:bg-surface-2 hover:text-fg"
                   :aria-label="t('player.next')"
                   @click="player.next()"
                 >
-                  <AppIcon name="next" :size="28" />
+                  <AppIcon name="next" :size="22" />
                 </button>
                 <button
                   type="button"
-                  class="relative flex size-11 items-center justify-center rounded-full transition-colors hover:bg-white/10"
+                  class="flex size-9 items-center justify-center border-2 transition-colors duration-100"
                   :class="
                     player.repeatMode.value !== 'off'
-                      ? 'text-accent'
-                      : 'text-white/80'
+                      ? 'border-line bg-invert text-on-invert'
+                      : 'border-line-2 text-muted hover:border-line hover:bg-surface-2 hover:text-fg'
                   "
                   :aria-label="repeatLabel"
                   :aria-pressed="player.repeatMode.value !== 'off'"
@@ -313,67 +275,37 @@
                         ? 'repeat-one'
                         : 'repeat'
                     "
-                    :size="22"
+                    :size="17"
                   />
                 </button>
-                <!-- Right of repeat: a stream queues its download (once -
-                     while queued it spins instead), a downloaded track
-                     shows a static check that does nothing. -->
+                <!-- A stream queues its download (once - while queued it
+                     pulses instead), a downloaded track shows a static
+                     check that does nothing. -->
                 <button
                   v-if="showPlayerDownload"
                   type="button"
-                  class="flex size-11 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10 disabled:opacity-50"
+                  class="flex size-9 items-center justify-center border-2 border-line-2 text-muted transition-colors duration-100 hover:border-line hover:bg-surface-2 hover:text-fg disabled:opacity-40"
                   :aria-label="t('actions.downloadItem', { name: track.title })"
                   :disabled="downloadBusy"
                   @click="downloadCurrent"
                 >
                   <AppIcon
                     :name="downloadBusy ? 'refresh' : 'download'"
-                    :size="22"
+                    :size="17"
                     :class="downloadBusy ? 'animate-spin' : ''"
                   />
                 </button>
                 <span
                   v-else-if="showDownloadedCheck"
-                  class="flex size-11 items-center justify-center rounded-full text-accent"
+                  class="flex size-9 items-center justify-center text-accent"
                   :title="t('search.inLibrary')"
                   aria-hidden="true"
                 >
-                  <AppIcon name="check" :size="22" />
+                  <AppIcon name="check" :size="17" />
                 </span>
               </div>
 
               <div class="hidden flex-1 items-center justify-end gap-2 lg:flex">
-                <UiMenu :items="sleepMenu" :label="t('player.sleepTimer')">
-                  <template #trigger>
-                    <button
-                      type="button"
-                      class="flex h-10 items-center gap-2 rounded-full px-3 text-xs font-semibold transition-colors hover:bg-white/10"
-                      :class="
-                        player.sleepAt.value ? 'text-accent' : 'text-white/75'
-                      "
-                      :aria-label="t('player.sleepTimer')"
-                    >
-                      <AppIcon name="timer" :size="20" />
-                      <span v-if="sleepLabel" class="tabular">{{
-                        sleepLabel
-                      }}</span>
-                    </button>
-                  </template>
-                </UiMenu>
-                <VolumeControl
-                  width="w-28"
-                  track-class="bg-white/20"
-                  fill-class="bg-white"
-                  thumb-class="bg-white"
-                  class="np-vol text-white [&_button]:text-white/80 [&_button:hover]:bg-white/10"
-                />
-              </div>
-            </div>
-
-            <!-- Phone extras -->
-            <div class="mt-4 flex items-center justify-between lg:hidden">
-              <div class="flex items-center gap-1">
                 <UiMenu
                   :items="sleepMenu"
                   :label="t('player.sleepTimer')"
@@ -382,41 +314,54 @@
                   <template #trigger>
                     <button
                       type="button"
-                      class="flex h-10 items-center gap-2 rounded-full px-3 text-xs font-semibold"
+                      class="flex h-9 items-center gap-1.5 border-2 px-2 transition-colors duration-100"
                       :class="
-                        player.sleepAt.value ? 'text-accent' : 'text-white/75'
+                        player.sleepAt.value
+                          ? 'border-accent text-accent'
+                          : 'border-line-2 text-muted hover:border-line hover:text-fg'
                       "
                       :aria-label="t('player.sleepTimer')"
                     >
-                      <AppIcon name="timer" :size="20" />
-                      <span v-if="sleepLabel" class="tabular">{{
+                      <AppIcon name="timer" :size="17" />
+                      <span v-if="sleepLabel" class="mono tabular">{{
                         sleepLabel
                       }}</span>
                     </button>
                   </template>
                 </UiMenu>
-              </div>
-              <div class="flex gap-2">
-                <button
-                  v-for="tab in panels"
-                  :key="tab.id"
-                  type="button"
-                  class="flex h-10 items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold transition-colors"
-                  :class="
-                    panel === tab.id && mobilePanel
-                      ? 'np-mbtn-on bg-white text-[#0b0c0e]'
-                      : 'bg-white/12 text-white'
-                  "
-                  :aria-pressed="panel === tab.id && mobilePanel"
-                  @click="toggleMobilePanel(tab.id)"
-                >
-                  <AppIcon :name="tab.icon" :size="16" />
-                  <span class="max-xs:sr-only">{{ tab.label }}</span>
-                </button>
+                <VolumeControl width="w-28" />
               </div>
             </div>
-          </footer>
-        </div>
+
+            <!-- Phone extras: sleep timer and volume under the transport. -->
+            <div class="flex items-center justify-between gap-3 lg:hidden">
+              <UiMenu
+                :items="sleepMenu"
+                :label="t('player.sleepTimer')"
+                align="start"
+              >
+                <template #trigger>
+                  <button
+                    type="button"
+                    class="flex h-8 items-center gap-1.5 border-2 px-2 transition-colors duration-100"
+                    :class="
+                      player.sleepAt.value
+                        ? 'border-accent text-accent'
+                        : 'border-line-2 text-muted hover:border-line hover:text-fg'
+                    "
+                    :aria-label="t('player.sleepTimer')"
+                  >
+                    <AppIcon name="timer" :size="15" />
+                    <span v-if="sleepLabel" class="mono tabular">{{
+                      sleepLabel
+                    }}</span>
+                  </button>
+                </template>
+              </UiMenu>
+              <VolumeControl width="w-28" />
+            </div>
+          </div>
+        </footer>
       </div>
     </Transition>
   </Teleport>
@@ -428,6 +373,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useMediaQuery, useNow } from '@vueuse/core'
 import AppIcon from '../ui/AppIcon.vue'
 import CoverArt from '../ui/CoverArt.vue'
+import UiBadge from '../ui/UiBadge.vue'
 import UiMenu from '../ui/UiMenu.vue'
 import WaveSeekBar from '../player/WaveSeekBar.vue'
 import VolumeControl from '../player/VolumeControl.vue'
@@ -441,11 +387,9 @@ import { useDownloadManager, useProgressTracker } from '/src/model/download'
 import { useLibrary } from '/src/model/library'
 import { useUi } from '/src/model/ui'
 import { usePlayerPrefs } from '/src/model/playerPrefs'
-import { useTheme } from '/src/model/theme'
 import { useNowPlaying } from '/src/model/ui'
-import { formatBytes, formatDuration, hueFor } from '/src/lib/format'
+import { formatBytes, formatDuration } from '/src/lib/format'
 import { availablePanels, defaultPanel, requestedPanel } from '/src/lib/panels'
-import { useCoverPalette } from '/src/model/coverPalette'
 import { saveName } from '/src/lib/paths'
 import { useI18n } from '/src/i18n'
 
@@ -485,19 +429,19 @@ function goSimilar() {
   if (!artist || !title) return
   router.push({ name: 'Similar', query: { artist, track: title } })
 }
-const palette = useCoverPalette(track)
-// Light theme: a deep tint would sink the stage, so wash with the soft
-// palette colour instead. Dark keeps the legacy deep shade.
-const { resolved } = useTheme()
-const isLight = computed(() => resolved.value === 'light')
-const tint = computed(() => {
-  const fallbackHue = hueFor(track.value?.album || track.value?.title)
-  if (!isLight.value)
-    return palette.value?.background || `oklch(0.3 0.06 ${fallbackHue})`
-  const soft = palette.value?.soft
-  return soft
-    ? `color-mix(in srgb, ${soft} 45%, transparent)`
-    : `oklch(0.85 0.04 ${fallbackHue})`
+
+// Technical values, in mono: what the file is, not how it feels.
+const techLine = computed(() => {
+  const tr = track.value
+  if (!tr) return ''
+  return [
+    tr.format,
+    tr.size ? formatBytes(tr.size) : '',
+    tr.duration ? formatDuration(tr.duration) : '',
+    tr.year,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 })
 
 const PANEL_TABS = {
@@ -535,6 +479,12 @@ const panel = computed(
 )
 const mobilePanel = computed(() => isMobile.value && !!requested.value)
 
+// On phones the panel replaces the artwork, so the tab for the open panel
+// is the only one that reads as selected (tapping it again goes back).
+function panelActive(id) {
+  return panel.value === id && (!isMobile.value || mobilePanel.value)
+}
+
 function setPanel(id) {
   router.replace({ query: { ...route.query, panel: id } })
 }
@@ -546,6 +496,11 @@ function toggleMobilePanel(id) {
   } else {
     setPanel(id)
   }
+}
+
+function onTab(id) {
+  if (isMobile.value) toggleMobilePanel(id)
+  else setPanel(id)
 }
 
 const context = computed(() => player.context.value)
@@ -697,7 +652,7 @@ const pendingSong = computed(() => {
 })
 
 // The queued/finished job behind the button, if any - while one exists
-// the button spins instead of queueing a duplicate.
+// the button pulses instead of queueing a duplicate.
 const downloadJob = computed(() => {
   tracker.queueVersion.value
   return pendingSong.value ? tracker.getBySong(pendingSong.value) : null

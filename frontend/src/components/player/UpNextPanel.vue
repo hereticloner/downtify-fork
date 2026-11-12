@@ -1,16 +1,16 @@
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <div class="flex items-center justify-between gap-3 px-2 pb-3">
+    <div
+      class="flex items-end justify-between gap-3 border-b-2 border-line px-2 pb-2"
+    >
       <div class="min-w-0">
-        <p class="text-sm font-semibold text-white">{{ t('player.upNext') }}</p>
-        <p class="truncate text-xs text-white/55">
-          {{ summary }}
-        </p>
+        <p class="eyebrow text-fg">{{ t('player.upNext') }}</p>
+        <p class="mono truncate text-faint">{{ summary }}</p>
       </div>
       <button
         v-if="upcoming.length"
         type="button"
-        class="shrink-0 rounded-control px-2.5 py-1.5 text-xs font-semibold text-white/70 hover:bg-white/10 hover:text-white"
+        class="mono h-7 shrink-0 border border-line-2 px-2 tracking-[0.06em] text-faint uppercase transition-colors duration-100 hover:border-line hover:text-fg"
         @click="player.clearUpcoming()"
       >
         {{ t('player.clearUpcoming') }}
@@ -18,27 +18,26 @@
     </div>
 
     <div
-      class="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
+      class="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:thin]"
     >
       <div
         v-if="current"
-        class="mb-1 flex h-14 items-center gap-3 rounded-[10px] bg-white/10 px-2.5"
+        class="flex h-12 items-center gap-2.5 border-b border-line-2 bg-surface-2 px-2"
       >
         <CoverArt
           :src="current.hasCover ? current.cover : ''"
           :name="current.album || current.title"
-          rounded="rounded-[6px]"
-          :letter-size="12"
-          :icon-size="14"
-          class="size-10"
+          :letter-size="10"
+          :icon-size="12"
+          class="size-8"
         />
         <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-semibold text-accent">
+          <p class="truncate text-[13px] font-medium text-accent">
             {{ current.title }}
           </p>
-          <p class="truncate text-xs text-white/55">{{ current.artist }}</p>
+          <p class="truncate text-[11px] text-muted">{{ current.artist }}</p>
         </div>
-        <EqBars :size="12" :playing="player.isPlaying.value" />
+        <EqBars :size="11" :playing="player.isPlaying.value" />
       </div>
 
       <TransitionGroup
@@ -52,8 +51,8 @@
         <li
           v-for="(item, position) in upcoming"
           :key="`${item.track.file}-${item.index}`"
-          class="group flex h-14 items-center gap-3 rounded-[10px] px-2.5 transition-colors hover:bg-white/8"
-          :class="dragOver === position ? 'bg-white/12' : ''"
+          class="group flex h-12 items-center gap-2 border-b border-line-2 px-2 transition-colors duration-100 hover:bg-surface-2"
+          :class="dragOver === position ? 'bg-raised' : ''"
           :draggable="!player.shuffle.value"
           @keydown="onRowKeydown($event, item.index)"
           @dragstart="onDragStart($event, item.index)"
@@ -64,65 +63,66 @@
         >
           <button
             type="button"
-            class="flex min-w-0 flex-1 items-center gap-3 text-left"
+            class="flex min-w-0 flex-1 items-center gap-2.5 text-left"
             @click="player.playAt(item.index)"
           >
             <CoverArt
               :src="item.track.hasCover ? item.track.cover : ''"
               :name="item.track.album || item.track.title"
-              rounded="rounded-[6px]"
-              :letter-size="12"
-              :icon-size="14"
-              class="size-10"
+              :letter-size="10"
+              :icon-size="12"
+              class="size-8"
             />
             <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-medium text-white">{{
+              <span class="block truncate text-[13px] font-medium text-fg">{{
                 item.track.title
               }}</span>
-              <span class="block truncate text-xs text-white/55">{{
+              <span class="block truncate text-[11px] text-muted">{{
                 item.track.artist
               }}</span>
             </span>
           </button>
-          <span class="tabular text-xs text-white/45 group-hover:hidden">
+          <span
+            class="mono tabular shrink-0 text-faint group-hover:hidden group-focus-within:hidden"
+          >
             {{ item.track.duration ? formatDuration(item.track.duration) : '' }}
           </span>
           <div
             v-if="!player.shuffle.value"
-            class="hidden items-center group-hover:flex group-focus-within:flex max-sm:flex"
+            class="hidden shrink-0 items-center group-hover:flex group-focus-within:flex max-sm:flex"
           >
             <button
               type="button"
-              class="flex size-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30"
+              class="flex size-7 items-center justify-center border border-transparent text-muted transition-colors duration-100 hover:border-line hover:text-fg disabled:opacity-30"
               :aria-label="t('player.moveUp')"
               :disabled="!reorder.canMove(item.index, -1)"
               @click="reorder.move(item.index, -1)"
             >
-              <AppIcon name="chevron-up" :size="16" />
+              <AppIcon name="chevron-up" :size="14" />
             </button>
             <button
               type="button"
-              class="flex size-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-30"
+              class="flex size-7 items-center justify-center border border-transparent text-muted transition-colors duration-100 hover:border-line hover:text-fg disabled:opacity-30"
               :aria-label="t('player.moveDown')"
               :disabled="!reorder.canMove(item.index, 1)"
               @click="reorder.move(item.index, 1)"
             >
-              <AppIcon name="chevron-down" :size="16" />
+              <AppIcon name="chevron-down" :size="14" />
             </button>
           </div>
           <button
             type="button"
-            class="hidden size-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white group-hover:flex"
+            class="hidden size-7 shrink-0 items-center justify-center border border-transparent text-muted transition-colors duration-100 group-hover:flex group-focus-within:flex hover:border-line hover:text-fg"
             :aria-label="t('player.removeFromQueue')"
             @click="player.removeAt(item.index)"
           >
-            <AppIcon name="x" :size="16" />
+            <AppIcon name="x" :size="14" />
           </button>
           <AppIcon
             v-if="!player.shuffle.value"
             name="grip"
-            :size="16"
-            class="hidden cursor-grab text-white/35 sm:block"
+            :size="14"
+            class="hidden shrink-0 cursor-grab text-faint sm:block"
           />
         </li>
       </TransitionGroup>
@@ -137,7 +137,7 @@
 
       <p
         v-if="!upcoming.length"
-        class="px-2 py-8 text-center text-sm text-white/50"
+        class="px-2 py-8 text-center text-sm text-muted"
       >
         {{ t('player.queueEnds') }}
       </p>

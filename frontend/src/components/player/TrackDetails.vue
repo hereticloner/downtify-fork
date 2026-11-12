@@ -1,38 +1,48 @@
 <template>
   <div
     v-if="track"
-    class="flex h-full min-h-0 flex-col gap-5 overflow-y-auto px-2"
+    class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto [scrollbar-width:thin]"
   >
-    <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm">
-      <template v-for="row in rows" :key="row.label">
-        <dt class="text-white/50">{{ row.label }}</dt>
-        <dd class="min-w-0 break-words text-white/90">{{ row.value }}</dd>
-      </template>
+    <!-- Technical sheet: label cell, value cell, 1px rules. -->
+    <dl class="border-t border-line-2">
+      <div
+        v-for="row in rows"
+        :key="row.label"
+        class="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-baseline gap-3 border-b border-line-2 py-2"
+      >
+        <dt class="eyebrow">{{ row.label }}</dt>
+        <dd class="mono min-w-0 break-words text-fg-2">{{ row.value }}</dd>
+      </div>
     </dl>
     <div class="flex flex-wrap gap-2">
-      <RouterLink
+      <UiButton
         v-if="track.album"
+        variant="secondary"
+        size="sm"
+        icon="disc"
         :to="{
           name: 'Album',
           query: { artist: track.albumArtist, title: track.album },
         }"
-        class="flex h-9 items-center gap-2 rounded-full bg-white/10 px-3.5 text-[13px] font-semibold text-white hover:bg-white/15"
       >
-        <AppIcon name="disc" :size="15" />{{ t('player.goToAlbum') }}
-      </RouterLink>
-      <RouterLink
+        {{ t('player.goToAlbum') }}
+      </UiButton>
+      <UiButton
         v-if="track.albumArtist"
+        variant="secondary"
+        size="sm"
+        icon="user"
         :to="{ name: 'Artist', query: { name: track.albumArtist } }"
-        class="flex h-9 items-center gap-2 rounded-full bg-white/10 px-3.5 text-[13px] font-semibold text-white hover:bg-white/15"
       >
-        <AppIcon name="user" :size="15" />{{ t('player.goToArtist') }}
-      </RouterLink>
+        {{ t('player.goToArtist') }}
+      </UiButton>
       <a
         :href="track.url"
         :download="saveName(track.file)"
-        class="flex h-9 items-center gap-2 rounded-full bg-white/10 px-3.5 text-[13px] font-semibold text-white hover:bg-white/15"
+        class="eyebrow inline-flex h-8 shrink-0 items-center justify-center gap-2 border-2 border-line bg-transparent px-3 whitespace-nowrap text-fg transition-colors duration-100 hover:bg-surface-2 active:bg-raised"
       >
-        <AppIcon name="download" :size="15" />{{ t('library.saveToDevice') }}
+        <AppIcon name="download" :size="14" stroke-width="2" />
+        {{ t('library.saveToDevice') }}
       </a>
     </div>
   </div>
@@ -41,6 +51,7 @@
 <script setup>
 import { computed } from 'vue'
 import AppIcon from '../ui/AppIcon.vue'
+import UiButton from '../ui/UiButton.vue'
 import { usePlayer } from '/src/model/player'
 import { formatBytes, formatDuration, timeAgo } from '/src/lib/format'
 import { saveName } from '/src/lib/paths'

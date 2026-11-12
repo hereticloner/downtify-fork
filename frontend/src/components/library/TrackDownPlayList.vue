@@ -13,7 +13,7 @@
         @update:model-value="onChipClick"
       />
       <span v-if="selected.size" class="ml-auto flex items-center gap-2">
-        <span class="tabular text-sm text-muted">{{
+        <span class="mono text-muted">{{
           t('library.selectedCount', { count: selected.size })
         }}</span>
         <UiButton
@@ -34,7 +34,7 @@
       </span>
     </div>
 
-    <div class="-mx-3 flex flex-col">
+    <div class="flex flex-col border-2 border-line">
       <TrackDownPlayHeader :selectable="selectable" :hide-album="hideAlbum" />
       <TrackDownPlay
         v-for="(song, i) in songs"

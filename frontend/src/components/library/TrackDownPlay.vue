@@ -1,41 +1,54 @@
 <template>
   <div
-    class="group flex h-16 items-center gap-3 rounded-[12px] px-3 transition-colors"
+    class="group relative flex h-14 items-center gap-3 border-b border-line-2 px-3 transition-colors duration-100 last:border-b-0"
     :class="
-      selected ? 'bg-accent/8' : highlighted ? 'bg-surface' : 'hover:bg-surface'
+      highlighted
+        ? 'bg-invert text-on-invert'
+        : selected
+          ? 'bg-surface-2'
+          : 'hover:bg-surface-2'
     "
     :data-marked="marked || undefined"
     @click="onRowClick"
     @dblclick="ensurePlaying"
   >
+    <!-- The playing row carries a 4px accent bar on its left edge; a ticked
+         one, while nothing is playing on it, the same mark. -->
+    <span
+      v-if="highlighted || (selectable && selected)"
+      class="absolute inset-y-0 left-0 w-1 bg-accent"
+      aria-hidden="true"
+    />
     <button
       v-if="selectable"
       type="button"
       role="checkbox"
       :aria-checked="selected"
       :aria-label="t('library.selectTrack', { title: song.name })"
-      class="flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-colors"
+      class="flex size-4 shrink-0 items-center justify-center border-2 transition-colors duration-100"
       :class="
         selected
-          ? 'border-accent bg-accent text-on-accent'
-          : 'border-line-3 hover:border-fg-3'
+          ? 'border-line bg-invert text-on-invert'
+          : highlighted
+            ? 'border-on-invert hover:border-accent'
+            : 'border-line-3 hover:border-line'
       "
       @click.stop="emit('toggle')"
       @dblclick.stop
     >
-      <AppIcon v-if="selected" name="check" :size="13" stroke-width="3" />
+      <AppIcon v-if="selected" name="check" :size="11" stroke-width="3" />
     </button>
     <span
       v-if="index !== null"
-      class="flex w-6 items-center justify-center text-[13px] text-faint max-sm:hidden"
+      class="flex w-6 items-center justify-center max-sm:hidden"
     >
       <EqBars v-if="isCurrent" :size="12" :playing="player.isPlaying.value" />
       <!-- A clip that isn't downloaded yet, while it is loaded: play/pause
-           with a ring that fills as the clip goes, where the number was. -->
+           with a frame that fills as the clip goes, where the number was. -->
       <button
         v-else-if="previewActive"
         type="button"
-        class="relative grid size-6 place-items-center text-fg"
+        class="relative grid size-6 place-items-center"
         :aria-label="playLabel"
         @click.stop="toggle"
       >
@@ -58,7 +71,7 @@
             cy="12"
             :r="PREVIEW_RING_RADIUS"
             class="stroke-accent"
-            stroke-linecap="round"
+            stroke-linecap="butt"
             :stroke-dasharray="PREVIEW_RING_LENGTH"
             :stroke-dashoffset="ringOffset(progress)"
             style="transition: stroke-dashoffset 250ms linear"
@@ -71,13 +84,19 @@
         />
       </button>
       <template v-else>
-        <span class="tabular" :class="playable ? 'group-hover:hidden' : ''">{{
-          index + 1
-        }}</span>
+        <span
+          class="mono tabular"
+          :class="[
+            playable ? 'group-hover:hidden' : '',
+            highlighted ? 'text-on-invert' : 'text-faint',
+          ]"
+          >{{ index + 1 }}</span
+        >
         <button
           v-if="playable"
           type="button"
-          class="hidden text-fg group-hover:block"
+          class="hidden group-hover:block"
+          :class="highlighted ? 'text-on-invert' : 'text-fg'"
           :aria-label="playLabel"
           @click.stop="toggle"
         >
@@ -96,18 +115,16 @@
       <CoverArt
         :src="cover"
         :name="song.album_name || song.name"
-        rounded="rounded-[8px]"
         :letter-size="14"
-        class="size-11"
+        class="size-10"
       />
     </button>
     <CoverArt
       v-else
       :src="cover"
       :name="song.album_name || song.name"
-      rounded="rounded-[8px]"
       :letter-size="14"
-      class="size-11"
+      class="size-10"
     />
 
     <div class="min-w-0 flex-1">
@@ -116,25 +133,25 @@
           v-if="to"
           :to="to"
           class="truncate text-sm font-semibold hover:underline"
-          :class="highlighted ? 'text-accent' : ''"
           @click.stop
           @dblclick.stop
           >{{ song.name }}</RouterLink
         >
-        <span
-          v-else
-          class="truncate text-sm font-semibold"
-          :class="highlighted ? 'text-accent' : ''"
-          >{{ song.name }}</span
-        >
+        <span v-else class="truncate text-sm font-semibold">{{
+          song.name
+        }}</span>
         <span
           v-if="song.explicit"
-          class="shrink-0 rounded-[3px] bg-muted px-1 text-[9px] leading-[14px] font-bold text-bg"
+          class="flex size-4 shrink-0 items-center justify-center border text-[9px] leading-none font-bold"
+          :class="highlighted ? 'border-on-invert' : 'border-line-2 text-muted'"
           :title="t('search.explicit')"
           >E</span
         >
       </p>
-      <p class="truncate text-[13px] text-muted">
+      <p
+        class="truncate text-[13px]"
+        :class="highlighted ? 'text-on-invert' : 'text-muted'"
+      >
         {{ artists
         }}<span v-if="song.album_name && !hideAlbum" class="lg:hidden">
           · {{ song.album_name }}</span
@@ -143,11 +160,13 @@
     </div>
     <span
       v-if="!hideAlbum"
-      class="hidden w-[30%] truncate text-[13px] text-muted lg:block"
+      class="hidden w-[26%] truncate text-[13px] lg:block"
+      :class="highlighted ? 'text-on-invert' : 'text-muted'"
       >{{ song.album_name }}</span
     >
     <span
-      class="tabular relative hidden w-12 text-right text-[13px] text-muted sm:block"
+      class="mono relative hidden w-12 text-right sm:block"
+      :class="highlighted ? 'text-on-invert' : 'text-muted'"
     >
       <!-- Only a clip to hear (not downloaded): its length gives way to
            "Preview" while the row is hovered, and for as long as the clip is
@@ -167,7 +186,7 @@
       >
       <span
         v-if="previewable"
-        class="pointer-events-none absolute inset-y-0 right-0 items-center text-[10px] font-semibold tracking-[0.06em] whitespace-nowrap uppercase"
+        class="eyebrow pointer-events-none absolute inset-y-0 right-0 items-center whitespace-nowrap"
         :class="previewActive ? 'flex' : 'hidden group-hover:flex'"
         >{{ t('actions.previewLabel') }}</span
       >
@@ -182,21 +201,22 @@
 </template>
 
 <script setup>
-// One song as a row that downloads, then plays: minimal like a search
-// result (SongRow), with the play affordances TrackList has on an album page
-// once the song is in the library (the number turns into a play button on
-// hover, the cover plays, a double click plays, a tap plays on a touch
-// screen). On the right it shows the download state - the button, its
-// progress, or the "In library" label - the way a search result does.
+// One song as a row that downloads, then plays: a ruled line in a table of
+// results, with the play affordances TrackList has on an album page once the
+// song is in the library (the number turns into a play button on hover, the
+// cover plays, a double click plays, a tap plays on a touch screen). On the
+// right it shows the download state - the button, its progress, or the "In
+// library" label - the way a search result does.
 //
 // Until the song is downloaded the same affordances play its 30 s preview
 // clip: on the row itself, without the built-in player - see
 // model/songPlay.js and model/preview.js.
 //
-// Deliberately standalone: it borrows the look of SongRow and the behaviour
-// of TrackList without importing or editing either, so neither grid can be
-// affected by it. It takes a *song* (what a search or link result is), not a
-// library track, and finds the file behind it once it has been downloaded.
+// Deliberately standalone: it borrows the structure of SongRow and the
+// behaviour of TrackList without importing or editing either, so neither
+// grid can be affected by it. It takes a *song* (what a search or link
+// result is), not a library track, and finds the file behind it once it has
+// been downloaded.
 import { computed } from 'vue'
 import AppIcon from '../ui/AppIcon.vue'
 import CoverArt from '../ui/CoverArt.vue'
@@ -264,10 +284,11 @@ const artists = computed(
     props.song.artist ||
     t('common.unknownArtist')
 )
-// A Deezer cover at its medium size, for the 44px thumbnail - display only:
+// A Deezer cover at its medium size, for the 40px thumbnail - display only:
 // the song's own `cover_url` is what its download embeds.
 const cover = computed(() => deezerImage(props.song.cover_url))
 // Lit up while it plays (or its clip does), and when the caller points at it.
+// Inverted, like every playing row: the plate turns to ink.
 const highlighted = computed(() => props.marked || playing.value)
 
 // On a touch screen a tap on the row plays it (a double click can't).

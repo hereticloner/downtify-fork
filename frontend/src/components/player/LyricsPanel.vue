@@ -2,13 +2,14 @@
   <div class="flex h-full min-h-0 flex-col">
     <div
       v-if="loading"
-      class="flex flex-1 flex-col justify-center gap-5 px-2"
+      class="flex flex-1 flex-col justify-center gap-4 px-2"
       aria-hidden="true"
     >
       <div
         v-for="n in 6"
         :key="n"
-        class="h-7 animate-pulse rounded-lg bg-white/10"
+        class="h-6 bg-surface-2"
+        :class="n % 2 ? 'shimmer' : ''"
         :style="{ width: `${50 + ((n * 37) % 45)}%` }"
       />
     </div>
@@ -16,7 +17,7 @@
     <div
       v-else-if="lines.length"
       ref="scroller"
-      class="relative flex-1 overflow-y-auto overscroll-contain px-2 py-[min(30vh,9rem)] [mask-image:linear-gradient(transparent,#000_18%,#000_82%,transparent)] [scrollbar-width:none]"
+      class="relative flex-1 overflow-y-auto overscroll-contain px-2 py-8 [scrollbar-width:none]"
       @wheel.passive="userScrolled"
       @touchmove.passive="userScrolled"
     >
@@ -25,14 +26,14 @@
         :key="i"
         :ref="(el) => (lineEls[i] = el)"
         type="button"
-        class="text-display block w-full origin-left py-2 text-left leading-tight font-semibold transition-all duration-300"
+        class="text-display block w-full border-l-2 py-1.5 pl-3 text-left leading-snug font-semibold transition-colors duration-100"
         :class="[
-          compact ? 'now-playing-lyric-compact' : 'now-playing-lyric',
+          compact ? 'text-lg' : 'text-xl lg:text-2xl',
           i === active
-            ? 'scale-100 text-white'
+            ? 'border-accent text-fg'
             : i < active
-              ? 'scale-[0.97] text-white/35 hover:text-white/60'
-              : 'scale-[0.97] text-white/55 hover:text-white/75',
+              ? 'border-transparent text-faint hover:text-muted'
+              : 'border-transparent text-muted hover:text-fg',
         ]"
         @click="player.seek(line.time)"
       >
@@ -45,22 +46,24 @@
       class="flex-1 overflow-y-auto px-2 py-6 [scrollbar-width:thin]"
     >
       <p
-        class="now-playing-lyric text-display leading-relaxed font-medium whitespace-pre-line text-white/80"
+        class="text-display leading-relaxed font-medium whitespace-pre-line text-fg-3"
       >
         {{ plain }}
       </p>
-      <p class="mt-6 text-xs text-white/45">
-        {{ t('player.lyricsNotSynced') }}
-      </p>
+      <p class="mono mt-6 text-faint">{{ t('player.lyricsNotSynced') }}</p>
     </div>
 
     <div
       v-else
-      class="flex flex-1 flex-col items-center justify-center gap-3 text-center"
+      class="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center"
     >
-      <AppIcon name="lyrics" :size="32" class="text-white/35" />
-      <p class="text-sm text-white/60">{{ t('player.noLyrics') }}</p>
-      <p class="max-w-xs text-xs text-white/40">
+      <span
+        class="flex size-10 items-center justify-center border border-line-2 text-muted"
+      >
+        <AppIcon name="lyrics" :size="20" />
+      </span>
+      <p class="eyebrow text-fg">{{ t('player.noLyrics') }}</p>
+      <p class="max-w-xs text-[13px] text-muted">
         {{ t('player.noLyricsHint') }}
       </p>
     </div>

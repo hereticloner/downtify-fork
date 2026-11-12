@@ -1,51 +1,60 @@
 <template>
-  <article class="tile group relative flex min-w-0 flex-col gap-2.5">
-    <RouterLink :to="to" class="relative block" :aria-label="title">
-      <CoverArt
-        :src="cover"
-        :fallback="fallback"
-        :covers="covers"
-        :name="name || title"
-        :round="round"
-        :icon="icon"
-        :symbol="symbol"
-        shadow
-        :letter-size="round ? 40 : 56"
-        class="aspect-square w-full"
-      >
-        <span
-          v-if="playing"
-          class="absolute top-2.5 left-2.5 flex h-6 items-center gap-1.5 rounded-full bg-black/55 px-2 text-[11px] font-semibold text-white backdrop-blur"
+  <!-- One cell of a flush grid: 2px rules on the right/bottom are drawn by
+       the tile itself, the grid supplies the top/left ones. Cover sits in a
+       frame of its own, the catalogue line below it. -->
+  <article
+    class="group relative flex min-w-0 flex-col border-r-2 border-b-2 border-line bg-surface"
+  >
+    <div class="relative p-2">
+      <RouterLink :to="to" class="block" :aria-label="title">
+        <CoverArt
+          :src="cover"
+          :fallback="fallback"
+          :covers="covers"
+          :name="name || title"
+          :round="round"
+          :icon="icon"
+          :symbol="symbol"
+          :letter-size="round ? 40 : 56"
+          class="aspect-square w-full"
         >
-          <EqBars :size="10" />{{ t('player.playing') }}
-        </span>
-        <slot name="badge" />
-      </CoverArt>
-    </RouterLink>
-    <button
-      v-if="playable"
-      type="button"
-      class="tile-play absolute flex size-11 items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_8px_24px_color-mix(in_srgb,var(--c-accent)_40%,transparent)] transition-transform hover:scale-105"
-      :class="round ? 'right-1 bottom-[4.25rem]' : 'right-3 bottom-[4.25rem]'"
-      :aria-label="t('actions.playItem', { name: title })"
-      @click="$emit('play')"
-    >
-      <AppIcon name="play" :size="16" />
-    </button>
-    <!-- Controls over the cover (e.g. a menu): outside the link, so a
-    click on one doesn't also open the tile. -->
-    <div v-if="$slots.overlay" class="absolute top-2 right-2">
-      <slot name="overlay" />
+          <span
+            v-if="playing"
+            class="absolute top-0 left-0 flex h-5 items-center gap-1.5 border-l-4 border-accent bg-invert pr-2 pl-1.5 text-on-invert"
+          >
+            <EqBars :size="9" />
+            <span class="eyebrow text-on-invert">{{
+              t('player.playing')
+            }}</span>
+          </span>
+          <slot name="badge" />
+        </CoverArt>
+      </RouterLink>
+      <button
+        v-if="playable"
+        type="button"
+        class="absolute right-3.5 bottom-3.5 flex size-9 items-center justify-center border-2 border-line bg-invert text-on-invert transition-colors duration-100 hover:bg-fg-3 focus-visible:opacity-100 max-md:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
+        :aria-label="t('actions.playItem', { name: title })"
+        @click="$emit('play')"
+      >
+        <AppIcon name="play" :size="15" />
+      </button>
+      <!-- Controls over the cover (e.g. a menu): outside the link, so a
+      click on one doesn't also open the tile. -->
+      <div v-if="$slots.overlay" class="absolute top-3.5 right-3.5">
+        <slot name="overlay" />
+      </div>
     </div>
     <RouterLink
       :to="to"
-      class="flex min-w-0 flex-col gap-0.5"
+      class="flex min-w-0 flex-1 flex-col gap-1 border-t-2 border-line px-2.5 py-2"
       :class="round ? 'items-center text-center' : ''"
     >
-      <span class="w-full truncate text-sm font-semibold text-fg">{{
-        title
-      }}</span>
-      <span class="w-full truncate text-[13px] text-muted">{{ subtitle }}</span>
+      <span
+        class="text-display line-clamp-2 text-[14px] leading-tight font-bold text-fg"
+        >{{ title }}</span
+      >
+      <span class="mono w-full truncate text-muted">{{ subtitle }}</span>
     </RouterLink>
   </article>
 </template>
