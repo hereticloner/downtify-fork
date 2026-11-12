@@ -1,105 +1,24 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/sora';
-@import '@fontsource-variable/dm-sans';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/inter-tight';
+@import '@fontsource-variable/jetbrains-mono';
 
 @import './styles/tokens.css';
-@import './styles/nowPlayingLight.css';
 
-/* Every press answers: buttons (and link-buttons) shrink briefly while
-   held, with a quick colour transition. One rule covers all ~90 buttons
-   so no control is left dead. The `scale` property (not `transform`) is
-   used so existing translate/hover utilities keep working. */
-@layer base {
-  button:not(:disabled),
-  [role='button']:not([aria-disabled='true']) {
-    -webkit-tap-highlight-color: transparent;
-    transition:
-      scale 160ms var(--ease-out-soft),
-      background-color 180ms ease,
-      color 180ms ease,
-      border-color 180ms ease,
-      box-shadow 220ms ease;
-  }
-  button:not(:disabled):active,
-  [role='button']:not([aria-disabled='true']):active {
-    scale: 0.94;
-  }
-}
-
-/* Touch wave for the shared controls (UiIconButton, UiButton) and the
-   two play buttons: a soft accent ring blooms while the press lands. */
-@layer components {
-  .pressable {
-    position: relative;
-  }
-  .pressable::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: radial-gradient(
-      circle,
-      color-mix(in srgb, var(--c-accent) 45%, transparent) 0%,
-      transparent 65%
-    );
-    opacity: 0;
-    transform: scale(0.6);
-    pointer-events: none;
-  }
-  .pressable:active::after {
-    animation: press-wave 450ms ease-out;
-  }
-}
-
-@keyframes press-wave {
-  from {
-    opacity: 0.8;
-    transform: scale(0.6);
-  }
-  to {
-    opacity: 0;
-    transform: scale(1.35);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  button:not(:disabled):active,
-  [role='button']:not([aria-disabled='true']):active {
-    scale: 1;
-  }
-}
-
-@layer components {
-  /* Cover tiles: lift on hover and slide the play button in. */
-  .tile {
-    transition: transform 220ms var(--ease-out-soft);
-  }
-  .tile:hover {
-    transform: translateY(-4px);
-  }
-  .tile .tile-play {
-    opacity: 0;
-    transform: translateY(6px);
-    transition: all 220ms var(--ease-out-soft);
-  }
-  .tile:hover .tile-play,
-  .tile:focus-within .tile-play {
-    opacity: 1;
-    transform: none;
-  }
-}
+/* Downtify 4.0 — "Technical Gazette".
+   Motion is diagnostic, not decorative: short linear fades only. The old
+   neon language (press wave, tile lift, glow) is gone by design; components
+   that still carry those classes simply have no animation now. */
 
 /* Now playing overlay */
 .now-playing-enter-active,
 .now-playing-leave-active {
-  transition:
-    opacity 260ms ease,
-    transform 360ms var(--ease-out-soft);
+  transition: opacity 100ms linear;
 }
 .now-playing-enter-from,
 .now-playing-leave-to {
   opacity: 0;
-  transform: translateY(24px) scale(0.98);
 }
 
 /* Cover and lyrics follow leftover height, not only width breakpoints.
