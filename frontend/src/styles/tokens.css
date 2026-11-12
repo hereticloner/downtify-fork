@@ -24,9 +24,9 @@
   --c-text-3: #b5b8bf;
   --c-muted: #8b8f98;
   --c-faint: #5d616a;
-  --c-accent: #22e584;
-  --c-accent-hi: #5cff9d;
-  --c-on-accent: #04140a;
+  --c-accent: #a855f7;
+  --c-accent-hi: #c084fc;
+  --c-on-accent: #ffffff;
   --c-danger: #f26d6d;
   --c-warn: #e8b04b;
   --c-glass: rgb(10 11 15 / 0.86);
@@ -39,8 +39,8 @@
   --c-deezer: #a238ff;
   --sh-float: 0 20px 50px rgb(0 0 0 / 0.5);
   --sh-cover: 0 10px 30px rgb(0 0 0 / 0.35);
-  --sh-glow: 0 0 16px rgb(34 229 132 / 0.35);
-  --sh-glow-lg: 0 0 30px rgb(34 229 132 / 0.5), 0 8px 28px rgb(0 0 0 / 0.4);
+  --sh-glow: 0 0 16px rgb(168 85 247 / 0.45);
+  --sh-glow-lg: 0 0 32px rgb(168 85 247 / 0.6), 0 8px 28px rgb(0 0 0 / 0.45);
 }
 
 :root[data-theme='light'] {
@@ -58,8 +58,8 @@
   --c-text-3: #3e434a;
   --c-muted: #5e636c;
   --c-faint: #8d939c;
-  --c-accent: #0aa34e;
-  --c-accent-hi: #087a3c;
+  --c-accent: #7c3aed;
+  --c-accent-hi: #6d28d9;
   --c-on-accent: #ffffff;
   --c-danger: #d0393a;
   --c-warn: #b7791f;
@@ -73,8 +73,9 @@
   --c-deezer: #7a1fd1;
   --sh-float: 0 16px 40px rgb(16 24 40 / 0.12);
   --sh-cover: 0 8px 20px rgb(16 24 40 / 0.12);
-  --sh-glow: 0 0 14px rgb(10 163 78 / 0.3);
-  --sh-glow-lg: 0 0 26px rgb(10 163 78 / 0.38), 0 8px 24px rgb(16 24 40 / 0.16);
+  --sh-glow: 0 0 14px rgb(124 58 237 / 0.3);
+  --sh-glow-lg:
+    0 0 26px rgb(124 58 237 / 0.38), 0 8px 24px rgb(16 24 40 / 0.16);
 }
 
 @theme inline {

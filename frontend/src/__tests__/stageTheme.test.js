@@ -28,8 +28,9 @@ describe('neon stage tokens', () => {
   })
 
   it('uses the neon accent, not the old green', () => {
-    expect(tokens).toContain('#22e584')
+    expect(tokens).toContain('#a855f7')
     expect(tokens).not.toContain('#1ad05c')
+    expect(tokens).not.toContain('#22e584')
   })
 
   it('deepens the dark stage surfaces', () => {
