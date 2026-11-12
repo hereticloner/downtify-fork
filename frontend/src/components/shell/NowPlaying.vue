@@ -26,7 +26,6 @@
             :is="contextRoute ? RouterLink : 'div'"
             :to="contextRoute || undefined"
             class="flex min-w-0 flex-1 items-center justify-center gap-2 px-3"
-            @click="contextRoute && nowPlaying.close()"
           >
             <CoverArt
               v-if="
@@ -90,7 +89,6 @@
                     v-if="artistName"
                     :to="{ name: 'Artist', query: { name: artistName } }"
                     class="mt-1 block truncate text-sm text-muted hover:text-fg hover:underline"
-                    @click="nowPlaying.close()"
                     >{{ track.artist }}</RouterLink
                   >
                   <p v-else class="mt-1 truncate text-sm text-muted">
