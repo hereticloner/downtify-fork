@@ -1,6 +1,6 @@
 <template>
   <div
-    class="inline-flex h-10 shrink-0 gap-0.5 rounded-control border border-line-2 bg-surface p-[3px]"
+    class="inline-flex h-10 shrink-0 items-stretch border-2 border-line"
     role="radiogroup"
   >
     <button
@@ -11,16 +11,18 @@
       :aria-checked="option.value === modelValue"
       :title="option.label"
       :aria-label="option.label"
-      class="flex min-w-9 items-center justify-center gap-1.5 rounded-[7px] px-2 text-[13px] font-medium transition-colors"
+      class="flex min-w-9 items-center justify-center gap-1.5 border-l-2 border-line px-3 transition-colors duration-100 first:border-l-0"
       :class="
         option.value === modelValue
-          ? 'bg-raised text-fg'
-          : 'text-faint hover:text-fg-3'
+          ? 'bg-invert text-on-invert'
+          : 'bg-transparent text-muted hover:bg-surface-2 hover:text-fg'
       "
       @click="$emit('update:modelValue', option.value)"
     >
       <AppIcon v-if="option.icon" :name="option.icon" :size="16" />
-      <span v-if="showLabels">{{ option.label }}</span>
+      <span v-if="showLabels" class="eyebrow text-current">{{
+        option.label
+      }}</span>
     </button>
   </div>
 </template>

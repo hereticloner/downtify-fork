@@ -7,15 +7,14 @@
     :aria-label="label"
     :aria-pressed="toggle ? active : undefined"
     :disabled="to ? undefined : disabled"
-    class="pressable inline-flex shrink-0 items-center justify-center transition-colors duration-150 disabled:opacity-40"
+    class="inline-flex shrink-0 items-center justify-center border-2 transition-colors duration-100 disabled:cursor-not-allowed disabled:border-line-2 disabled:text-faint"
     :class="[
-      round ? 'rounded-full' : 'rounded-control',
       sizeClass,
       photo
-        ? 'bg-white/95 text-neutral-900 hover:bg-white'
+        ? 'border-line bg-glass text-fg hover:bg-surface-2 active:bg-raised'
         : active
-          ? 'text-accent hover:bg-accent/10'
-          : 'text-muted hover:bg-surface-2 hover:text-fg',
+          ? 'border-line bg-invert text-on-invert active:bg-surface active:text-fg'
+          : 'border-line-2 text-muted hover:border-line hover:bg-surface-2 hover:text-fg active:bg-raised active:text-fg',
     ]"
   >
     <AppIcon :name="icon" :size="iconSize" />
@@ -35,13 +34,15 @@ const props = defineProps({
   active: { type: Boolean, default: false },
   toggle: { type: Boolean, default: false },
   round: { type: Boolean, default: false },
-  // Fixed light pill, independent of theme - see UiButton's 'photo'
+  // Solid block, independent of theme - see UiButton's 'photo'
   // variant for why (a control sitting on a banner image).
   photo: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   to: { type: [String, Object], default: null },
 })
 
+// Every control is square: the `round` prop is kept for compatibility,
+// the language has no circles.
 const sizeClass = computed(
   () =>
     ({ sm: 'size-8', md: 'size-10', lg: 'size-11' })[props.size] || 'size-10'

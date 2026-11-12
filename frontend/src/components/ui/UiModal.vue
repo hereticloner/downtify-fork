@@ -3,7 +3,7 @@
     <Transition name="fade">
       <div
         v-if="open"
-        class="fixed inset-0 z-[80] flex items-end justify-center bg-black/55 backdrop-blur-sm sm:items-center sm:p-4"
+        class="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 sm:items-center sm:p-4"
         @pointerdown.self="pressedBackdrop = true"
         @click.self="onBackdrop"
       >
@@ -13,37 +13,40 @@
           aria-modal="true"
           :aria-labelledby="titleId"
           tabindex="-1"
-          class="flex max-h-[92dvh] outline-none w-full animate-rise flex-col overflow-hidden rounded-t-[22px] border border-line-3 bg-surface shadow-float sm:rounded-panel"
+          class="flex max-h-[92dvh] w-full animate-rise flex-col overflow-hidden border-2 border-line bg-surface outline-none"
           :class="width"
           @keydown="onKeydown"
         >
-          <header
-            class="flex shrink-0 items-start gap-3 border-b border-line-2 px-5 py-4 sm:px-6"
-          >
-            <div class="min-w-0 flex-1">
+          <header class="flex shrink-0 items-stretch border-b-2 border-line">
+            <div
+              class="min-w-0 flex-1 bg-invert px-5 py-4 text-on-invert sm:px-6"
+            >
               <h2
                 :id="titleId"
-                class="text-display text-lg font-semibold text-fg"
+                class="text-display text-lg font-bold text-on-invert"
               >
                 {{ title }}
               </h2>
-              <p v-if="description" class="mt-0.5 text-[13px] text-muted">
+              <p v-if="description" class="mt-1 text-[13px] text-on-invert/70">
                 {{ description }}
               </p>
             </div>
-            <UiIconButton
-              icon="x"
-              :label="t('common.close')"
-              class="-mr-2 -mt-1"
-              @click="$emit('close')"
-            />
+            <div
+              class="flex shrink-0 items-center border-l-2 border-line bg-surface px-2"
+            >
+              <UiIconButton
+                icon="x"
+                :label="t('common.close')"
+                @click="$emit('close')"
+              />
+            </div>
           </header>
           <div class="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
             <slot />
           </div>
           <footer
             v-if="$slots.footer"
-            class="flex shrink-0 flex-col-reverse gap-2 border-t border-line-2 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6"
+            class="flex shrink-0 flex-col-reverse gap-2 border-t-2 border-line px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6"
           >
             <slot name="footer" />
           </footer>
