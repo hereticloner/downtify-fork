@@ -1,9 +1,9 @@
 <template>
   <label
-    class="relative inline-flex shrink-0 items-center rounded-control border border-line-2 bg-transparent text-fg-3 transition-colors focus-within:border-accent hover:border-line-3"
+    class="relative inline-flex shrink-0 items-center border-2 border-line-2 bg-transparent text-fg transition-colors duration-100 focus-within:border-accent hover:border-line"
     :class="[
       block ? 'w-full' : '',
-      size === 'sm' ? 'h-8 text-xs' : 'h-10 text-[13px]',
+      size === 'sm' ? 'h-8 text-[11px]' : 'h-10 text-[12px]',
     ]"
   >
     <AppIcon
@@ -15,8 +15,8 @@
     <span class="sr-only">{{ label }}</span>
     <select
       :value="modelValue"
-      class="h-full w-full cursor-pointer appearance-none bg-transparent pr-9 outline-none"
-      :class="icon ? 'pl-9' : 'pl-3.5'"
+      class="h-full w-full cursor-pointer appearance-none bg-transparent pr-10 outline-none"
+      :class="icon ? 'pl-9' : 'pl-3'"
       @change="onChange"
     >
       <option
@@ -28,12 +28,12 @@
         {{ option.label }}
       </option>
     </select>
-    <AppIcon
-      name="chevron-down"
-      :size="14"
-      stroke-width="2"
-      class="pointer-events-none absolute right-3 text-muted"
-    />
+    <span
+      class="pointer-events-none absolute inset-y-0 right-0 flex w-8 items-center justify-center border-l border-line-2 text-muted"
+      aria-hidden="true"
+    >
+      <AppIcon name="chevron-down" :size="14" stroke-width="2" />
+    </span>
   </label>
 </template>
 

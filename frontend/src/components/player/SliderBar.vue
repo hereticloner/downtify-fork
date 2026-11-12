@@ -13,26 +13,25 @@
     @pointerdown="onDown"
     @keydown="onKey"
   >
+    <!-- A square rail with a square fill: the only thing that changes on
+         hover is colour, never height. -->
     <div
-      class="relative w-full overflow-hidden rounded-full transition-[height] duration-150"
-      :class="[
-        trackClass,
-        dragging ? 'h-1.5' : thin ? 'h-1 group-hover:h-1.5' : 'h-1.5',
-      ]"
+      class="relative w-full overflow-hidden"
+      :class="[trackClass, thin ? 'h-0.5' : 'h-1']"
     >
       <div
-        class="absolute inset-y-0 left-0 rounded-full"
+        class="absolute inset-y-0 left-0"
         :class="fillClass"
         :style="[{ width: `${percent}%` }, fillStyle]"
       />
     </div>
     <span
-      class="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full shadow transition-opacity group-focus-visible:opacity-100"
+      class="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 border border-line transition-opacity"
       :class="[
         thumbClass,
         dragging || alwaysThumb
           ? 'opacity-100'
-          : 'opacity-0 group-hover:opacity-100',
+          : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
       ]"
       :style="[{ left: `${percent}%` }, thumbStyle]"
     />
@@ -56,8 +55,8 @@ const props = defineProps({
   trackClass: { type: String, default: 'bg-raised' },
   fillClass: { type: String, default: 'bg-fg group-hover:bg-accent' },
   thumbClass: { type: String, default: 'bg-fg' },
-  // Optional inline overrides for the fill/thumb (MiniPlayer passes the
-  // cover palette here; classes stay as the fallback). Null = untouched.
+  // Optional inline overrides for the fill/thumb (callers can tint them;
+  // classes stay as the fallback). Null = untouched.
   fillStyle: { type: Object, default: null },
   thumbStyle: { type: Object, default: null },
   // For playback progress: glide between time updates while true.

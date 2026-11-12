@@ -50,6 +50,12 @@ describe('SliderBar palette overrides', () => {
     expect(html).not.toContain('background-color')
   })
 
+  it('keeps the rail square - no rounded track, no shadow', async () => {
+    const html = await render({ modelValue: 30, max: 100 })
+    expect(html).not.toContain('rounded')
+    expect(html).not.toContain('shadow')
+  })
+
   it('paints fill and thumb from the given styles', async () => {
     const html = await render({
       modelValue: 30,

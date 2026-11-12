@@ -273,15 +273,15 @@ describe('TrackList mobile selection affordance', () => {
 })
 
 describe('SelectionBar mobile position', () => {
-  it('clears the mobile top bar plus the notch inset', async () => {
+  it('clears the masthead (44px phone, 48px + 40px strip) plus the notch inset', async () => {
     const SelectionBar = (
       await import('/src/components/library/SelectionBar.vue')
     ).default
     const html = await render(SelectionBar, { count: 2, total: 5 })
-    expect(html).toContain('top-[calc(4rem+env(safe-area-inset-top)+0.5rem)]')
-    expect(html).toContain(
-      'md:top-[calc(4.5rem+env(safe-area-inset-top)+0.5rem)]'
-    )
+    // 4.0 chrome: 44px masthead on a phone; 48px masthead + 40px nav strip
+    // from md up. The bar sticks right under it.
+    expect(html).toContain('top-[calc(2.75rem+env(safe-area-inset-top))]')
+    expect(html).toContain('md:top-[calc(5.5rem+env(safe-area-inset-top))]')
     expect(html).not.toContain('top-[76px]')
   })
 })

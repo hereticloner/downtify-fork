@@ -8,20 +8,20 @@
   <UiBadge v-else-if="state === 'queued'" tone="neutral">
     {{ t('queue.statusQueued') }}
   </UiBadge>
-  <div v-else-if="state === 'active'" class="flex w-28 items-center gap-2">
+  <div v-else-if="state === 'active'" class="flex w-24 items-center gap-2">
     <UiProgress :value="item.progress" :indeterminate="!item.progress" />
-    <span class="tabular w-9 text-right text-xs text-muted">{{
+    <span class="mono tabular w-8 text-right text-muted">{{
       item.progress ? `${Math.round(item.progress)}%` : ''
     }}</span>
   </div>
   <button
     v-else
     type="button"
-    class="flex size-9 shrink-0 items-center justify-center rounded-full transition-colors"
+    class="flex size-8 shrink-0 items-center justify-center border-2 transition-colors duration-100"
     :class="
       state === 'failed'
-        ? 'bg-danger/12 text-danger hover:bg-danger/20'
-        : 'bg-surface-2 text-fg-3 hover:bg-accent hover:text-on-accent'
+        ? 'border-danger text-danger hover:bg-surface-2'
+        : 'border-line-2 text-muted hover:border-line hover:bg-invert hover:text-on-invert'
     "
     :title="state === 'failed' ? t('queue.retry') : t('actions.download')"
     :aria-label="
@@ -33,7 +33,7 @@
   >
     <AppIcon
       :name="state === 'failed' ? 'retry' : 'download'"
-      :size="16"
+      :size="15"
       stroke-width="2"
     />
   </button>

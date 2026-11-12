@@ -7,7 +7,7 @@
     <span
       v-for="n in 3"
       :key="n"
-      class="block w-[3px] origin-bottom rounded-[1px] bg-accent"
+      class="block w-[3px] origin-bottom bg-accent"
       :class="playing ? 'animate-eq' : 'scale-y-[0.35]'"
       :style="{ height: `${size}px`, animationDelay: `${-0.3 * (n - 1)}s` }"
     />

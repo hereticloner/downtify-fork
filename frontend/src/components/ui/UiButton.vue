@@ -5,12 +5,13 @@
     :type="tag === 'button' ? type : undefined"
     :disabled="tag === 'button' ? disabled || loading : undefined"
     :aria-disabled="disabled || loading || undefined"
-    class="pressable inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control border font-semibold transition-colors duration-150 disabled:opacity-50"
+    class="eyebrow inline-flex shrink-0 items-center justify-center gap-2 border-2 whitespace-nowrap transition-colors duration-100 disabled:cursor-not-allowed disabled:border-line-2 disabled:bg-transparent disabled:text-faint"
     :class="[sizeClass, variantClass]"
   >
     <span
       v-if="loading"
-      class="size-4 animate-spin rounded-full border-2 border-current border-r-transparent"
+      class="size-2.5 shrink-0 animate-pulse bg-current"
+      aria-hidden="true"
     />
     <AppIcon v-else-if="icon" :name="icon" :size="iconSize" stroke-width="2" />
     <slot />
@@ -52,13 +53,15 @@ const linkAttrs = computed(() => {
   return {}
 })
 
+// Labels are small apparatus type: 10-12px, uppercase, letter-spaced.
+// Sizes only control the block's height and padding.
 const sizeClass = computed(
   () =>
     ({
-      sm: 'h-8 px-3 text-[13px]',
-      md: 'h-10 px-4 text-sm',
-      lg: 'h-12 px-5 text-[15px]',
-    })[props.size] || 'h-10 px-4 text-sm'
+      sm: 'h-8 px-3 text-[10px]',
+      md: 'h-10 px-4 text-[11px]',
+      lg: 'h-12 px-5 text-[12px]',
+    })[props.size] || 'h-10 px-4 text-[11px]'
 )
 
 const iconSize = computed(() => (props.size === 'sm' ? 14 : 16))
@@ -67,19 +70,20 @@ const variantClass = computed(
   () =>
     ({
       primary:
-        'border-accent bg-accent text-on-accent shadow-glow hover:border-accent-hi hover:bg-accent-hi hover:shadow-glow-lg',
-      secondary: 'border-line-3 bg-surface-2 text-fg hover:bg-raised',
+        'border-line bg-invert text-on-invert hover:bg-fg-3 active:bg-surface active:text-fg',
+      secondary:
+        'border-line bg-transparent text-fg hover:bg-surface-2 active:bg-raised',
       ghost:
-        'border-line-2 bg-transparent text-fg-3 hover:border-line-3 hover:bg-surface-2 hover:text-fg',
-      danger: 'border-transparent bg-danger/12 text-danger hover:bg-danger/20',
-      invert: 'border-invert bg-invert text-on-invert hover:opacity-90',
-      // Fixed light pill, independent of the app's own theme - for
-      // controls sitting directly on a photo (e.g. an artist banner),
-      // where a transparent/ghost button reads poorly against whatever
-      // the image happens to look like.
-      photo: 'border-transparent bg-white/95 text-neutral-900 hover:bg-white',
+        'border-transparent bg-transparent text-fg-3 hover:bg-surface-2 hover:text-fg active:bg-raised active:text-fg',
+      danger:
+        'border-danger bg-transparent text-danger hover:bg-surface-2 active:bg-raised',
+      invert:
+        'border-invert bg-invert text-on-invert hover:bg-fg-3 active:bg-surface active:text-fg',
+      // Solid block for controls sitting on a photo (e.g. an artist
+      // banner), where a transparent button reads poorly.
+      photo: 'border-line bg-glass text-fg hover:bg-surface-2 active:bg-raised',
       plain:
-        'border-transparent bg-transparent text-muted hover:bg-surface-2 hover:text-fg',
+        'border-transparent bg-transparent text-muted hover:bg-surface-2 hover:text-fg active:bg-raised active:text-fg',
     })[props.variant]
 )
 </script>

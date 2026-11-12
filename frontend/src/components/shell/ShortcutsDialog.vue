@@ -3,37 +3,43 @@
     <Transition name="fade">
       <div
         v-if="open"
-        class="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-[80] flex items-center justify-center bg-invert/60 p-4"
         @click.self="$emit('update:open', false)"
       >
         <div
           role="dialog"
           aria-modal="true"
-          class="w-full max-w-lg animate-rise rounded-panel border border-line-3 bg-surface p-6 shadow-float"
+          class="max-h-[92dvh] w-full max-w-lg animate-rise overflow-y-auto border-2 border-line bg-surface"
         >
-          <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-display text-lg font-semibold">
-              {{ t('shortcuts.title') }}
-            </h2>
-            <UiIconButton
-              ref="closeButton"
-              icon="x"
-              :label="t('common.close')"
-              @click="$emit('update:open', false)"
-            />
-          </div>
-          <ul class="grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
+          <header class="flex items-stretch border-b-2 border-line">
+            <div class="min-w-0 flex-1 bg-invert px-4 py-3">
+              <h2 class="text-display text-base font-bold text-on-invert">
+                {{ t('shortcuts.title') }}
+              </h2>
+            </div>
+            <div class="flex shrink-0 items-center border-l-2 border-line px-1">
+              <UiIconButton
+                ref="closeButton"
+                icon="x"
+                :label="t('common.close')"
+                @click="$emit('update:open', false)"
+              />
+            </div>
+          </header>
+          <ul class="grid gap-x-6 p-4 sm:grid-cols-2">
             <li
               v-for="item in shortcuts"
               :key="item.label"
-              class="flex items-center justify-between gap-4 text-sm"
+              class="flex items-center justify-between gap-3 border-b border-line-2 py-2 text-[13px]"
             >
-              <span class="text-fg-3">{{ t(item.label) }}</span>
-              <span class="flex gap-1">
+              <span class="min-w-0 truncate text-fg-3">{{
+                t(item.label)
+              }}</span>
+              <span class="flex shrink-0 gap-1">
                 <kbd
                   v-for="key in item.keys"
                   :key="key"
-                  class="min-w-6 rounded-md border border-line-3 bg-surface-2 px-1.5 py-0.5 text-center font-sans text-xs text-muted"
+                  class="mono flex h-6 min-w-6 items-center justify-center border-2 border-line bg-surface-2 px-1.5 text-fg"
                   >{{ key }}</kbd
                 >
               </span>

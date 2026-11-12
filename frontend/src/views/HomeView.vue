@@ -1,35 +1,34 @@
 <template>
-  <div
-    class="mx-auto flex max-w-[1680px] flex-col gap-10 px-4 pt-6 sm:px-6 md:pt-8 lg:px-10"
-  >
-    <!-- Hero: paste or search -->
-    <div
-      class="grid gap-4 animate-rise lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]"
+  <div class="flex flex-col">
+    <!-- Entry block: the greeting, the paste-or-search field, and the
+         sources it understands. -->
+    <section
+      class="flex flex-col gap-4 border-b-2 border-line px-4 py-5 sm:px-6"
     >
-      <section
-        class="relative flex flex-col gap-5 overflow-hidden rounded-panel border border-line-2 bg-surface p-6 sm:p-8"
+      <div
+        class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
       >
-        <div
-          class="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full bg-accent/10 blur-3xl"
-          aria-hidden="true"
-        />
-        <div class="relative flex flex-col gap-1.5">
-          <h1 class="text-display text-3xl font-bold sm:text-[32px]">
+        <div class="min-w-0">
+          <h1
+            class="text-display text-[26px] leading-[1.05] font-bold tracking-[-0.02em] sm:text-[34px]"
+          >
             {{ greeting }}
           </h1>
-          <p class="text-[15px] text-muted">{{ t('home.lead') }}</p>
+          <p class="mt-2 max-w-lg text-[13px] text-pretty text-muted">
+            {{ t('home.lead') }}
+          </p>
         </div>
         <form
-          class="relative flex flex-col gap-2 sm:flex-row"
+          class="flex w-full min-w-0 flex-col gap-2 sm:flex-row lg:max-w-2xl"
           @submit.prevent="submit"
         >
           <label
-            class="flex h-14 min-w-0 flex-none items-center gap-3 rounded-[14px] sm:flex-1 border bg-bg px-4 transition-colors focus-within:border-accent"
-            :class="kind.type === 'link' ? 'border-accent/60' : 'border-line-3'"
+            class="flex h-12 min-w-0 flex-1 items-center gap-2 border-2 px-3 transition-colors duration-100 focus-within:border-accent"
+            :class="kind.type === 'link' ? 'border-accent' : 'border-line'"
           >
             <AppIcon
               :name="kind.type === 'link' ? 'link' : 'search'"
-              :size="20"
+              :size="16"
               :class="kind.type === 'link' ? 'text-accent' : 'text-faint'"
             />
             <span class="sr-only">{{ t('home.inputLabel') }}</span>
@@ -39,14 +38,13 @@
               enterkeyhint="go"
               autocomplete="off"
               :placeholder="t('home.inputPlaceholder')"
-              class="h-full min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint"
+              class="h-full min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint"
             />
           </label>
           <UiButton
             type="submit"
             variant="primary"
             size="lg"
-            class="!h-14 sm:!px-6"
             :icon="kind.type === 'link' ? 'download' : 'search'"
             :disabled="kind.type === 'empty'"
           >
@@ -55,61 +53,242 @@
             }}
           </UiButton>
         </form>
-        <p v-if="unsupported" class="relative -mt-2 text-[13px] text-danger">
-          {{ unsupported }}
-        </p>
-        <div
-          class="relative flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-faint"
-        >
-          <span class="flex items-center gap-1.5">
-            <AppIcon name="spotify" :size="14" class="text-spotify" />{{
-              t('home.hintSpotify')
-            }}
-          </span>
-          <span class="flex items-center gap-1.5">
-            <AppIcon name="youtube" :size="14" class="text-src-ytm" />{{
-              t('home.hintYoutube')
-            }}
-          </span>
-          <span class="flex items-center gap-1.5">
-            <AppIcon name="deezer" :size="14" class="text-deezer" />{{
-              t('home.hintDeezer')
-            }}
-          </span>
-          <button
-            type="button"
-            class="flex items-center gap-1.5 hover:text-fg"
-            @click="csvPicker?.click()"
-          >
-            <AppIcon name="file-music" :size="14" />{{ t('home.hintCsv') }}
-          </button>
-          <input
-            ref="csvPicker"
-            type="file"
-            accept=".csv,text/csv"
-            class="hidden"
-            @change="importCsv"
-          />
-        </div>
-      </section>
-
-      <section
-        class="flex flex-col gap-4 rounded-panel border border-line-2 bg-surface p-6"
+      </div>
+      <p v-if="unsupported" class="text-[12px] text-danger">
+        {{ unsupported }}
+      </p>
+      <div
+        class="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-line-2 pt-3"
       >
-        <div class="flex items-center justify-between">
-          <h2 class="text-[15px] font-semibold">
-            {{ pending ? t('home.downloading') : t('home.yourLibrary') }}
-          </h2>
-          <RouterLink
-            :to="{ name: pending ? 'Queue' : 'Library' }"
-            class="text-[13px] font-semibold text-accent hover:text-accent-hi"
-            >{{
-              pending ? t('home.openQueue') : t('home.openLibrary')
-            }}</RouterLink
-          >
-        </div>
+        <span class="eyebrow flex items-center gap-1.5">
+          <AppIcon name="spotify" :size="13" />{{ t('home.hintSpotify') }}
+        </span>
+        <span class="eyebrow flex items-center gap-1.5">
+          <AppIcon name="youtube" :size="13" />{{ t('home.hintYoutube') }}
+        </span>
+        <span class="eyebrow flex items-center gap-1.5">
+          <AppIcon name="deezer" :size="13" />{{ t('home.hintDeezer') }}
+        </span>
+        <button
+          type="button"
+          class="eyebrow flex items-center gap-1.5 transition-colors duration-100 hover:text-fg"
+          @click="csvPicker?.click()"
+        >
+          <AppIcon name="file-music" :size="13" />{{ t('home.hintCsv') }}
+        </button>
+        <input
+          ref="csvPicker"
+          type="file"
+          accept=".csv,text/csv"
+          class="hidden"
+          @change="importCsv"
+        />
+      </div>
+    </section>
 
-        <template v-if="pending">
+    <!-- First run: three numbered blocks -->
+    <section
+      v-if="library.loaded.value && !library.trackCount.value"
+      class="grid border-b-2 border-line md:grid-cols-3"
+    >
+      <div
+        v-for="(step, i) in onboarding"
+        :key="step.title"
+        class="flex flex-col gap-2 border-b-2 border-line p-4 md:border-r-2 md:border-b-0 md:last:border-r-0"
+      >
+        <span class="mono tabular text-faint">0{{ i + 1 }}</span>
+        <p class="text-display text-[15px] font-bold">{{ step.title }}</p>
+        <p class="text-[13px] text-pretty text-muted">{{ step.body }}</p>
+      </div>
+    </section>
+
+    <div class="grid xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div class="flex min-w-0 flex-col">
+        <!-- Continue listening -->
+        <section v-if="jumpBackIn.length" class="flex flex-col">
+          <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+            <span
+              class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+              >01</span
+            >
+            <h2
+              class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+            >
+              {{ t('home.jumpBackIn') }}
+            </h2>
+            <span
+              class="mono hidden items-center border-l-2 border-line px-3 text-faint sm:flex"
+              >{{ jumpBackIn.length }}</span
+            >
+          </div>
+          <div
+            class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 lg:grid-cols-5"
+          >
+            <MediaTile
+              v-for="entry in jumpBackIn"
+              :key="entry.id"
+              :to="entry.route || { name: 'Home' }"
+              :title="entry.title"
+              :subtitle="entry.subtitle || t(`home.kind.${entry.type}`)"
+              :cover="entry.cover"
+              :covers="entry.covers"
+              :name="entry.title"
+              :icon="
+                entry.type === 'artist'
+                  ? 'user'
+                  : entry.type === 'playlist'
+                    ? 'playlist'
+                    : 'disc'
+              "
+              :playing="isPlaying(entry)"
+              :playable="false"
+            >
+              <template #badge>
+                <span
+                  class="eyebrow absolute top-0 right-0 border-b-2 border-l-2 border-line bg-surface px-1.5 py-0.5 text-fg-3"
+                  >{{ t(`home.kind.${entry.type}`) }}</span
+                >
+              </template>
+            </MediaTile>
+          </div>
+        </section>
+
+        <!-- Recently added: ruled table -->
+        <section v-if="recentAlbums.length" class="flex flex-col">
+          <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+            <span
+              class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+              >02</span
+            >
+            <h2
+              class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+            >
+              {{ t('home.recentlyAdded') }}
+            </h2>
+            <RouterLink
+              :to="{ name: 'Library', params: { tab: 'albums' } }"
+              class="eyebrow flex items-center border-l-2 border-line px-3 text-muted transition-colors duration-100 hover:text-fg"
+              >{{ t('common.seeAll') }}</RouterLink
+            >
+          </div>
+          <div class="border-l-2 border-line">
+            <div
+              class="eyebrow grid h-8 items-center gap-3 border-b border-line-2 bg-surface-2 px-3 max-md:hidden md:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.4fr)_72px_80px_88px]"
+            >
+              <span class="text-center">#</span>
+              <span>{{ t('track.title') }}</span>
+              <span>{{ t('track.artist') }}</span>
+              <span>{{ t('track.year') }}</span>
+              <span class="text-right">{{ t('library.tracks') }}</span>
+              <span class="text-right">{{ t('home.size') }}</span>
+            </div>
+            <RouterLink
+              v-for="(album, i) in recentAlbums"
+              :key="album.key"
+              :to="{
+                name: 'Album',
+                query: { artist: album.artist, title: album.title },
+              }"
+              class="mono grid min-h-12 grid-cols-[minmax(0,1fr)_88px] items-center gap-3 border-r-2 border-b border-line-2 px-3 transition-colors duration-100 last:border-b-0 hover:bg-surface-2 md:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.4fr)_72px_80px_88px]"
+            >
+              <span class="tabular hidden text-center text-faint md:block">{{
+                String(i + 1).padStart(2, '0')
+              }}</span>
+              <span
+                class="flex min-w-0 flex-col gap-0.5 md:flex-row md:items-center md:gap-2"
+              >
+                <span
+                  class="min-w-0 truncate text-display text-[13px] font-bold text-fg"
+                  >{{ album.title }}</span
+                >
+                <span
+                  v-if="album.key === currentAlbumKey"
+                  class="eyebrow shrink-0 self-start border border-accent px-1 text-accent"
+                  >{{ t('player.playing') }}</span
+                >
+                <span class="truncate text-muted md:hidden">{{
+                  album.artist
+                }}</span>
+              </span>
+              <span class="truncate text-muted max-md:hidden">{{
+                album.artist
+              }}</span>
+              <span class="tabular hidden text-muted md:block">{{
+                album.year || '—'
+              }}</span>
+              <span class="tabular hidden text-right text-muted md:block">{{
+                album.tracks?.length || 0
+              }}</span>
+              <span class="tabular truncate text-right text-fg-3 md:block">{{
+                formatBytes(album.size)
+              }}</span>
+            </RouterLink>
+          </div>
+        </section>
+
+        <!-- Your playlists -->
+        <section v-if="recentPlaylists.length" class="flex flex-col">
+          <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+            <span
+              class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+              >03</span
+            >
+            <h2
+              class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+            >
+              {{ t('home.playlists') }}
+            </h2>
+            <RouterLink
+              :to="{ name: 'Library', params: { tab: 'playlists' } }"
+              class="eyebrow flex items-center border-l-2 border-line px-3 text-muted transition-colors duration-100 hover:text-fg"
+              >{{ t('common.seeAll') }}</RouterLink
+            >
+          </div>
+          <div
+            class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 lg:grid-cols-5"
+          >
+            <MediaTile
+              v-for="playlist in recentPlaylists"
+              :key="playlist.key"
+              :to="{ name: 'Playlist', query: { name: playlist.name } }"
+              :title="playlist.title"
+              :subtitle="
+                t('common.tracks', { count: itemTrackCount(playlist) })
+              "
+              :cover="playlist.cover"
+              :covers="playlist.covers"
+              :name="playlist.title"
+              :icon="playlist.liked ? 'heart' : 'playlist'"
+              :symbol="playlist.liked"
+              :playing="
+                player.context.value?.type === 'playlist' &&
+                player.context.value?.title === playlist.title
+              "
+              @play="playlistActions.play(playlist)"
+            />
+          </div>
+        </section>
+      </div>
+
+      <!-- Apparatus column: download queue, up next, most played, storage -->
+      <aside
+        class="flex min-w-0 flex-col xl:-ml-0.5 xl:border-l-2 xl:border-line"
+      >
+        <UiPanel
+          v-if="pending"
+          :title="t('home.downloading')"
+          class="-mt-0.5 first:mt-0"
+        >
+          <template #actions>
+            <UiButton
+              variant="ghost"
+              size="sm"
+              icon-right="chevron-right"
+              :to="{ name: 'Queue' }"
+            >
+              {{ t('home.openQueue') }}
+            </UiButton>
+          </template>
           <ul class="flex flex-col gap-3">
             <li
               v-for="item in activeItems"
@@ -119,13 +298,13 @@
               <CoverArt
                 :src="item.song.cover_url"
                 :name="item.song.album_name || item.song.name"
-                rounded="rounded-[8px]"
-                :letter-size="13"
-                class="size-11"
+                :letter-size="11"
+                :icon-size="14"
+                class="size-9"
               />
               <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="truncate text-[13px] font-semibold">{{
+                  <span class="min-w-0 truncate text-[13px] font-semibold">{{
                     item.song.name
                   }}</span>
                   <SourceBadge
@@ -142,172 +321,129 @@
               </div>
             </li>
           </ul>
-          <p
-            v-if="waiting"
-            class="border-t border-line pt-3 text-[13px] text-muted"
-          >
+          <p v-if="waiting" class="mono mt-3 text-faint">
             {{ t('home.waiting', { count: waiting }) }}
           </p>
-        </template>
+        </UiPanel>
 
-        <dl v-else class="grid grid-cols-2 gap-4">
-          <div
-            v-for="stat in stats"
-            :key="stat.label"
-            class="flex flex-col gap-0.5"
-          >
-            <dt class="text-xs text-muted">{{ stat.label }}</dt>
-            <dd class="text-display tabular text-2xl font-semibold">
-              {{ stat.value }}
-            </dd>
+        <UiPanel
+          v-if="upNext.length"
+          :title="t('player.upNext')"
+          class="-mt-0.5 first:mt-0"
+        >
+          <ul class="flex flex-col">
+            <li
+              v-for="(entry, i) in upNext"
+              :key="entry.track.file || i"
+              class="flex items-center gap-3 border-b border-line-2 py-2 first:pt-0 last:border-b-0 last:pb-0"
+            >
+              <CoverArt
+                :src="entry.track.cover"
+                :name="entry.track.album || entry.track.title"
+                :letter-size="10"
+                :icon-size="13"
+                class="size-8"
+              />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-[13px] font-semibold">{{
+                  entry.track.title
+                }}</span>
+                <span class="mono block truncate text-muted">{{
+                  entry.track.artist
+                }}</span>
+              </span>
+              <span class="mono tabular shrink-0 text-faint">{{
+                entry.track.duration ? formatDuration(entry.track.duration) : ''
+              }}</span>
+            </li>
+          </ul>
+        </UiPanel>
+
+        <UiPanel
+          v-if="mostPlayed.length"
+          :title="t('stats.topTracks')"
+          class="-mt-0.5 first:mt-0"
+        >
+          <ol class="flex flex-col">
+            <li
+              v-for="(row, i) in mostPlayed"
+              :key="row.summary"
+              class="flex items-center gap-3 border-b border-line-2 py-2 first:pt-0 last:border-b-0 last:pb-0"
+            >
+              <span class="mono tabular w-5 shrink-0 text-faint">{{
+                String(i + 1).padStart(2, '0')
+              }}</span>
+              <span class="min-w-0 flex-1 truncate text-[13px]">{{
+                row.summary
+              }}</span>
+              <span class="mono tabular shrink-0 text-muted">{{
+                row.count
+              }}</span>
+            </li>
+          </ol>
+        </UiPanel>
+
+        <UiPanel :title="t('settings.storage')" class="-mt-0.5 first:mt-0">
+          <dl class="mb-3 grid grid-cols-3 gap-2 border-b border-line-2 pb-3">
+            <div v-for="stat in counts" :key="stat.label" class="min-w-0">
+              <dt class="eyebrow truncate">{{ stat.label }}</dt>
+              <dd class="mono tabular mt-0.5 text-[14px] text-fg">
+                {{ stat.value }}
+              </dd>
+            </div>
+          </dl>
+          <dl class="flex flex-col gap-1">
+            <div class="flex items-baseline justify-between gap-3">
+              <dt class="eyebrow">{{ t('home.size') }}</dt>
+              <dd class="mono tabular text-[13px] text-fg">
+                {{ formatBytes(library.totalSize.value) }}
+              </dd>
+            </div>
+          </dl>
+          <div class="mt-3 flex h-3 gap-0.5" aria-hidden="true">
+            <span
+              v-for="(row, i) in storageByFormat"
+              :key="row.format"
+              class="min-w-0"
+              :class="i === 0 ? 'bg-fg' : 'bg-line-3'"
+              :style="{ flexGrow: Math.max(row.size, 1) }"
+            />
           </div>
-        </dl>
-      </section>
+          <ul class="mt-3 flex flex-col">
+            <li
+              v-for="row in storageByFormat"
+              :key="row.format"
+              class="mono flex items-center justify-between gap-3 border-b border-line-2 py-1.5 last:border-b-0"
+            >
+              <span class="text-muted">{{ row.format }}</span>
+              <span class="tabular text-fg-3">{{ formatBytes(row.size) }}</span>
+            </li>
+            <li v-if="!storageByFormat.length" class="mono py-1.5 text-faint">
+              {{ t('stats.empty') }}
+            </li>
+          </ul>
+          <UiButton
+            variant="secondary"
+            icon-right="chevron-right"
+            :to="{ name: 'Library' }"
+            class="mt-3 w-full"
+          >
+            {{ t('home.openLibrary') }}
+          </UiButton>
+        </UiPanel>
+      </aside>
     </div>
-
-    <!-- Jump back in -->
-    <section
-      v-if="jumpBackIn.length"
-      class="flex flex-col gap-4 animate-rise [animation-delay:80ms]"
-    >
-      <h2 class="text-display text-xl font-semibold">
-        {{ t('home.jumpBackIn') }}
-      </h2>
-      <div class="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-        <RouterLink
-          v-for="entry in jumpBackIn"
-          :key="entry.id"
-          :to="entry.route || { name: 'Home' }"
-          class="group flex h-16 items-center gap-3 overflow-hidden rounded-[12px] bg-surface pr-3 transition-colors hover:bg-surface-2"
-        >
-          <CoverArt
-            :src="entry.cover"
-            :covers="entry.covers"
-            :name="entry.title"
-            :icon="
-              entry.type === 'artist'
-                ? 'user'
-                : entry.type === 'playlist'
-                  ? 'playlist'
-                  : 'disc'
-            "
-            rounded="rounded-none"
-            :letter-size="18"
-            :icon-size="20"
-            class="size-16"
-          />
-          <span class="flex min-w-0 flex-1 flex-col">
-            <span class="truncate text-sm font-semibold">{{
-              entry.title
-            }}</span>
-            <span class="truncate text-xs text-muted">
-              {{ t(`home.kind.${entry.type}`)
-              }}<template v-if="entry.subtitle">
-                · {{ entry.subtitle }}</template
-              >
-            </span>
-          </span>
-          <EqBars v-if="isPlaying(entry)" :size="12" />
-        </RouterLink>
-      </div>
-    </section>
-
-    <!-- Recently added -->
-    <section
-      v-if="recentAlbums.length"
-      class="flex flex-col gap-4 animate-rise [animation-delay:160ms]"
-    >
-      <div class="flex items-baseline justify-between gap-4">
-        <h2 class="text-display text-xl font-semibold">
-          {{ t('home.recentlyAdded') }}
-        </h2>
-        <RouterLink
-          :to="{ name: 'Library', params: { tab: 'albums' } }"
-          class="text-[13px] font-semibold text-muted hover:text-fg"
-          >{{ t('common.seeAll') }}</RouterLink
-        >
-      </div>
-      <div
-        class="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6"
-      >
-        <MediaTile
-          v-for="album in recentAlbums"
-          :key="album.key"
-          :to="{
-            name: 'Album',
-            query: { artist: album.artist, title: album.title },
-          }"
-          :title="album.title"
-          :subtitle="[album.artist, album.year].filter(Boolean).join(' · ')"
-          :cover="album.cover"
-          :name="album.title"
-          @play="playAlbum(album)"
-        />
-      </div>
-    </section>
-
-    <!-- Playlists -->
-    <section
-      v-if="recentPlaylists.length"
-      class="flex flex-col gap-4 animate-rise [animation-delay:240ms]"
-    >
-      <div class="flex items-baseline justify-between gap-4">
-        <h2 class="text-display text-xl font-semibold">
-          {{ t('home.playlists') }}
-        </h2>
-        <RouterLink
-          :to="{ name: 'Library', params: { tab: 'playlists' } }"
-          class="text-[13px] font-semibold text-muted hover:text-fg"
-          >{{ t('common.seeAll') }}</RouterLink
-        >
-      </div>
-      <div
-        class="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6"
-      >
-        <MediaTile
-          v-for="playlist in recentPlaylists"
-          :key="playlist.key"
-          :to="{ name: 'Playlist', query: { name: playlist.name } }"
-          :title="playlist.title"
-          :subtitle="t('common.tracks', { count: itemTrackCount(playlist) })"
-          :cover="playlist.cover"
-          :covers="playlist.covers"
-          :name="playlist.title"
-          :icon="playlist.liked ? 'heart' : 'playlist'"
-          :symbol="playlist.liked"
-          @play="playlistActions.play(playlist)"
-        />
-      </div>
-    </section>
-
-    <!-- First run -->
-    <section
-      v-if="library.loaded.value && !library.trackCount.value"
-      class="grid gap-4 md:grid-cols-3"
-    >
-      <div
-        v-for="(step, i) in onboarding"
-        :key="step.title"
-        class="flex flex-col gap-2 rounded-panel border border-dashed border-line-3 p-5"
-      >
-        <span class="text-display tabular text-sm font-semibold text-accent"
-          >0{{ i + 1 }}</span
-        >
-        <p class="text-[15px] font-semibold">{{ step.title }}</p>
-        <p class="text-[13px] text-pretty text-muted">{{ step.body }}</p>
-      </div>
-    </section>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '/src/components/ui/AppIcon.vue'
 import CoverArt from '/src/components/ui/CoverArt.vue'
-import EqBars from '/src/components/ui/EqBars.vue'
 import SourceBadge from '/src/components/ui/SourceBadge.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
+import UiPanel from '/src/components/ui/UiPanel.vue'
 import UiProgress from '/src/components/ui/UiProgress.vue'
 import MediaTile from '/src/components/library/MediaTile.vue'
 import { useDownloadManager, useProgressTracker } from '/src/model/download'
@@ -315,11 +451,11 @@ import { useHistory } from '/src/model/history'
 import { useLibrary } from '/src/model/library'
 import { usePlayer } from '/src/model/player'
 import { usePlaylistActions } from '/src/model/playlistActions'
-import { useTrackActions } from '/src/model/trackActions'
+import { useStats } from '/src/model/stats'
 import { useUi } from '/src/model/ui'
 import { classifyInput } from '/src/lib/input'
-import { formatBytes } from '/src/lib/format'
-import { itemTrackCount } from '/src/lib/library'
+import { albumKey, itemTrackCount } from '/src/lib/library'
+import { formatBytes, formatDuration } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
 import { friendlyError } from '/src/lib/errors'
 
@@ -330,8 +466,8 @@ const history = useHistory()
 const player = usePlayer()
 const tracker = useProgressTracker()
 const dm = useDownloadManager()
-const actions = useTrackActions()
 const playlistActions = usePlaylistActions()
+const statsStore = useStats()
 const ui = useUi()
 
 const text = ref('')
@@ -388,24 +524,8 @@ const waiting = computed(
 )
 const pending = computed(() => activeItems.value.length + waiting.value)
 
-const stats = computed(() => [
-  {
-    label: t('library.tracks'),
-    value: library.trackCount.value.toLocaleString(),
-  },
-  {
-    label: t('library.albums'),
-    value: library.albumCount.value.toLocaleString(),
-  },
-  {
-    label: t('library.artists'),
-    value: library.artistCount.value.toLocaleString(),
-  },
-  { label: t('home.size'), value: formatBytes(library.totalSize.value) },
-])
-
 const recentAlbums = computed(() =>
-  [...library.albums.value].sort((a, b) => b.added - a.added).slice(0, 12)
+  [...library.albums.value].sort((a, b) => b.added - a.added).slice(0, 7)
 )
 const recentPlaylists = computed(() =>
   [...library.playlists.value]
@@ -430,7 +550,7 @@ const jumpBackIn = computed(() =>
       }
     })
     .filter(Boolean)
-    .slice(0, 6)
+    .slice(0, 5)
 )
 
 function isPlaying(entry) {
@@ -442,21 +562,55 @@ function isPlaying(entry) {
   )
 }
 
-async function playAlbum(album) {
-  await library.loadArtistTracks(album.artist)
-  const live = library.findAlbum(album.artist, album.title) || album
-  if (!live.tracks.length) return
-  actions.play(live.tracks, 0, {
-    type: 'album',
-    title: live.title,
-    subtitle: live.artist,
-    cover: live.cover,
-    route: {
-      name: 'Album',
-      query: { artist: live.artist, title: live.title },
-    },
-  })
-}
+const currentAlbumKey = computed(() =>
+  player.currentTrack.value
+    ? albumKey(
+        player.currentTrack.value.albumArtist,
+        player.currentTrack.value.album
+      )
+    : ''
+)
+
+const upNext = computed(() => player.upcoming.value.slice(0, 3))
+
+// The play counts live in /stats; load them once if the Stats tab has not.
+const mostPlayed = computed(() =>
+  (statsStore.stats.value?.playback?.top_tracks || []).slice(0, 5)
+)
+onMounted(() => {
+  if (!statsStore.stats.value?.playback) statsStore.load()
+})
+
+const counts = computed(() => [
+  {
+    label: t('library.tracks'),
+    value: library.trackCount.value.toLocaleString(),
+  },
+  {
+    label: t('library.albums'),
+    value: library.albumCount.value.toLocaleString(),
+  },
+  {
+    label: t('library.artists'),
+    value: library.artistCount.value.toLocaleString(),
+  },
+])
+
+const storageByFormat = computed(() => {
+  const map = new Map()
+  for (const track of library.tracks.value) {
+    const entry = map.get(track.format) || {
+      format: track.format,
+      size: 0,
+    }
+    entry.size += track.size || 0
+    map.set(track.format, entry)
+  }
+  return [...map.values()]
+    .filter((row) => row.size > 0)
+    .sort((a, b) => b.size - a.size)
+    .slice(0, 4)
+})
 
 const onboarding = computed(() => [
   { title: t('home.step1Title'), body: t('home.step1Body') },

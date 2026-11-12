@@ -1,14 +1,18 @@
 <template>
-  <div class="flex gap-2 overflow-x-auto [scrollbar-width:none]">
+  <!-- A row of square blocks: each chip is a 1px frame, the selected one
+       inverts. Gaps are 2px so the row reads as a ruled strip. -->
+  <div
+    class="flex items-stretch gap-0.5 overflow-x-auto border-y-2 border-line py-0.5 [scrollbar-width:none]"
+  >
     <button
       v-for="item in items"
       :key="item.id"
       type="button"
-      class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium whitespace-nowrap transition-colors"
+      class="eyebrow inline-flex h-7 shrink-0 items-center gap-2 border px-3 whitespace-nowrap transition-colors duration-100"
       :class="
         item.id === modelValue
-          ? 'bg-fg text-bg'
-          : 'bg-surface-2 text-fg-3 hover:bg-raised'
+          ? 'border-line bg-invert text-on-invert'
+          : 'border-line-2 bg-transparent text-muted hover:border-line hover:text-fg'
       "
       :aria-pressed="item.id === modelValue"
       @click="$emit('update:modelValue', item.id)"
@@ -16,7 +20,7 @@
       {{ item.label }}
       <span
         v-if="item.count !== undefined && item.count !== null"
-        class="tabular opacity-60"
+        class="mono"
         >{{ item.count }}</span
       >
     </button>

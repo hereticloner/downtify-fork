@@ -1,6 +1,6 @@
 <template>
   <div
-    class="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-6 sm:px-6 md:pt-8 lg:px-10"
+    class="mx-auto flex max-w-[1680px] flex-col gap-5 px-4 pt-5 sm:px-6 md:pt-6 lg:px-8"
   >
     <PageHeader :title="t('queue.title')" :subtitle="subtitle">
       <template v-if="auth.isAdmin.value">
@@ -52,15 +52,15 @@
     <div
       v-if="queuePause.paused.value"
       role="status"
-      class="flex items-start gap-3 rounded-[14px] border border-line-2 bg-surface p-4"
+      class="flex items-start gap-3 border-2 border-line bg-surface-2 p-3"
     >
       <AppIcon
         :name="queuePause.draining.value ? 'clock' : 'pause'"
-        :size="20"
+        :size="18"
         class="mt-0.5 text-muted"
       />
       <div class="min-w-0">
-        <p class="text-sm font-semibold">
+        <p class="text-sm font-medium">
           {{
             queuePause.draining.value
               ? t('queue.pausingTitle')
@@ -82,8 +82,8 @@
 
     <UiTabs :items="tabs" :model-value="tab" />
 
-    <div class="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <div class="flex min-w-0 flex-col gap-3">
+    <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="flex min-w-0 flex-col">
         <UiEmpty
           v-if="!queue.length"
           icon="download"
@@ -108,31 +108,46 @@
           "
         />
 
-        <div
-          v-else
-          ref="listRoot"
-          class="relative"
-          :style="{ height: `${totalSize}px` }"
-        >
+        <template v-else>
+          <!-- Table head: the open tab and how many rows it holds. -->
           <div
-            v-for="row in rows"
-            :key="row.item.key"
-            :ref="measureRow"
-            :data-index="row.index"
-            class="absolute inset-x-0 top-0 pb-2"
-            :style="{ transform: `translateY(${row.start}px)` }"
+            class="flex h-10 items-stretch border-2 border-b-0 border-line bg-surface-2"
           >
-            <QueueItem
-              :item="row.item"
-              :compact="
-                row.item.state === 'queued' || row.item.state === 'done'
-              "
-            />
+            <span class="eyebrow flex min-w-0 flex-1 items-center px-3 text-fg">
+              {{ tabs.find((entry) => entry.id === tab)?.label }}
+            </span>
+            <span
+              class="mono tabular flex shrink-0 items-center border-l-2 border-line px-3 text-fg-3"
+            >
+              {{ items.length }}
+            </span>
           </div>
-        </div>
+
+          <div
+            ref="listRoot"
+            class="relative border-2 border-line"
+            :style="{ height: `${totalSize}px` }"
+          >
+            <div
+              v-for="row in rows"
+              :key="row.item.key"
+              :ref="measureRow"
+              :data-index="row.index"
+              class="absolute inset-x-0 top-0"
+              :style="{ transform: `translateY(${row.start}px)` }"
+            >
+              <QueueItem
+                :item="row.item"
+                :compact="
+                  row.item.state === 'queued' || row.item.state === 'done'
+                "
+              />
+            </div>
+          </div>
+        </template>
       </div>
 
-      <aside class="flex flex-col gap-4 xl:sticky xl:top-[96px]">
+      <aside class="flex flex-col gap-4 xl:sticky xl:top-[104px]">
         <DownloadExclusions />
         <UiPanel
           v-if="activeBatches.length"
@@ -144,10 +159,10 @@
                 :to="{ name: 'Playlist', query: { name: batch.playlist_name } }"
                 class="flex items-center justify-between gap-3 text-sm"
               >
-                <span class="truncate font-semibold hover:underline">{{
+                <span class="truncate font-medium hover:underline">{{
                   batch.playlist_name
                 }}</span>
-                <span class="tabular shrink-0 text-xs text-muted">
+                <span class="mono tabular shrink-0 text-muted">
                   {{ batch.downloaded_count }} / {{ batch.expected_count }}
                 </span>
               </RouterLink>
@@ -172,15 +187,15 @@
             <li
               v-for="pl in incomplete"
               :key="pl.spotify_playlist_id"
-              class="flex items-center gap-3"
+              class="flex flex-wrap items-center gap-2 border-b border-line-2 pb-3 last:border-b-0 last:pb-0"
             >
               <RouterLink
                 :to="{ name: 'Playlist', query: { name: pl.playlist_name } }"
-                class="min-w-0 flex-1 truncate text-sm font-semibold hover:underline"
+                class="min-w-0 flex-1 truncate text-sm font-medium hover:underline"
               >
                 {{ pl.playlist_name }}
               </RouterLink>
-              <span class="tabular shrink-0 text-xs text-warn">
+              <span class="mono tabular shrink-0 text-warn">
                 {{ t('playlists.missingShort', { count: pl.missing_count }) }}
               </span>
               <UiButton
@@ -199,14 +214,14 @@
         </UiPanel>
 
         <UiPanel v-if="queue.length" :title="t('queue.sources')">
-          <ul class="flex flex-col gap-2.5">
+          <ul class="flex flex-col">
             <li
               v-for="source in sourceCounts"
               :key="source.id"
-              class="flex items-center justify-between gap-3"
+              class="flex items-center justify-between gap-3 border-b border-line-2 py-2 last:border-b-0"
             >
               <SourceBadge :source="source.id" />
-              <span class="tabular text-sm text-muted">{{ source.count }}</span>
+              <span class="mono tabular text-muted">{{ source.count }}</span>
             </li>
             <li v-if="!sourceCounts.length" class="text-[13px] text-muted">
               {{ t('queue.noSourcesYet') }}
@@ -257,7 +272,6 @@ import { queueRowEstimate } from '/src/lib/queueList'
 import { shouldJumpToActive } from '/src/lib/queueTab'
 import { friendlyError } from '/src/lib/errors'
 import { useI18n } from '/src/i18n'
-import API from '/src/model/api'
 
 const { t } = useI18n()
 const route = useRoute()

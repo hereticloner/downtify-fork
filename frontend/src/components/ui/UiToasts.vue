@@ -5,11 +5,11 @@
     class="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+9.5rem)] z-[100] flex flex-col items-center gap-2 px-4 lg:bottom-28"
     aria-live="polite"
   >
-    <TransitionGroup name="list">
+    <TransitionGroup name="fade">
       <div
         v-for="item in toasts"
         :key="item.id"
-        class="pointer-events-auto flex max-w-md items-center gap-3 rounded-[12px] border border-line-3 bg-surface py-2.5 pr-2 pl-4 text-sm text-fg shadow-float"
+        class="pointer-events-auto flex max-w-md items-center gap-3 border-y-2 border-r-2 border-l-4 border-line border-l-accent bg-surface py-2.5 pr-2 pl-3 text-sm text-fg"
       >
         <AppIcon
           :name="icons[item.kind] || 'info'"
@@ -20,7 +20,7 @@
         <button
           v-if="item.action"
           type="button"
-          class="rounded-control px-2.5 py-1.5 text-[13px] font-semibold text-accent hover:bg-accent/10"
+          class="border border-line px-2 py-1 text-[11px] font-semibold tracking-[0.06em] uppercase transition-colors duration-100 hover:bg-surface-2"
           @click="runAction(item)"
         >
           {{ item.action.label }}

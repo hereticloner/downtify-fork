@@ -1,7 +1,7 @@
 <template>
   <div class="flex min-w-0 flex-col gap-1.5">
-    <div class="flex items-center justify-between gap-2 text-xs">
-      <span class="tabular truncate text-muted">
+    <div class="flex items-center justify-between gap-2">
+      <span class="mono tabular truncate text-muted">
         <template v-if="batch?.expected_count">
           {{
             t('playlists.progress', {
@@ -29,7 +29,7 @@
     <UiProgress
       v-if="batch?.expected_count"
       :value="percent"
-      :color="state === 'missing' ? 'bg-warn' : 'bg-accent'"
+      :color="state === 'missing' ? 'bg-warn' : 'bg-fg'"
     />
   </div>
 </template>

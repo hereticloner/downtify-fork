@@ -1,128 +1,110 @@
 <template>
   <article
-    class="rounded-[14px] border transition-colors"
-    :class="[
-      item.state === 'failed'
-        ? 'border-danger/25 bg-danger/6'
-        : item.state === 'active'
-          ? 'border-line-2 bg-surface'
-          : 'border-transparent hover:bg-surface',
-      compact ? 'px-3 py-2' : 'p-3.5',
-    ]"
+    class="flex flex-wrap items-center gap-3 border-b-2 border-line-2 px-3 transition-colors duration-100 sm:px-4"
+    :class="[rowClass, compact ? 'min-h-20 py-2' : 'min-h-22 py-3']"
   >
-    <div class="flex items-center gap-3.5">
-      <CoverArt
-        :src="deezerImage(song.cover_url)"
-        :name="song.album_name || song.name"
-        :rounded="compact ? 'rounded-[6px]' : 'rounded-[8px]'"
-        :letter-size="compact ? 12 : 18"
-        :class="compact ? 'size-10' : 'size-14'"
-      />
-      <div class="min-w-0 flex-1">
-        <div class="flex min-w-0 items-center gap-2">
-          <span
-            class="truncate text-sm font-semibold"
-            :class="compact ? '' : 'text-[15px]'"
-            >{{ song.name }}</span
-          >
-          <SourceBadge
-            v-if="item.provider"
-            :source="item.provider"
-            :compact="compact"
-          />
-        </div>
-        <p class="truncate text-[13px] text-muted">
-          {{ artists
-          }}<span v-if="song.album_name"> · {{ song.album_name }}</span>
-        </p>
-        <template v-if="item.state === 'active'">
-          <div class="mt-2 flex items-center gap-3">
-            <UiProgress
-              :value="item.progress"
-              :indeterminate="!item.progress"
-            />
-            <span class="tabular w-9 shrink-0 text-right text-xs text-fg-3">
-              {{ item.progress ? `${Math.round(item.progress)}%` : '' }}
-            </span>
-          </div>
-          <p v-if="item.message" class="mt-1 truncate text-xs text-muted">
-            {{ item.message }}
-          </p>
-        </template>
-        <p
-          v-else-if="item.state === 'failed'"
-          class="mt-1 flex items-start gap-1.5 text-xs text-danger"
-        >
-          <AppIcon name="alert" :size="14" class="mt-px" />
-          <span class="line-clamp-2">{{ failure }}</span>
-        </p>
-      </div>
-
-      <div class="flex shrink-0 items-center gap-1">
-        <span
-          v-if="item.state === 'queued'"
-          class="text-xs text-faint max-sm:hidden"
-        >
-          {{
-            queuePause.paused.value
-              ? t('queue.statusPaused')
-              : t('queue.statusQueued')
-          }}
-        </span>
-        <template v-if="item.state === 'done' && item.filename">
-          <UiIconButton
-            icon="play"
-            :label="t('actions.play')"
-            size="sm"
-            @click="play"
-          />
-          <a
-            :href="item.web_download_url"
-            :download="saveName(item.filename)"
-            class="flex size-8 items-center justify-center rounded-control text-muted hover:bg-surface-2 hover:text-fg"
-            :title="t('library.saveToDevice')"
-            :aria-label="t('library.saveToDevice')"
-          >
-            <AppIcon name="download" :size="16" />
-          </a>
-        </template>
-        <UiButton
-          v-if="item.state === 'failed'"
-          size="sm"
-          variant="secondary"
-          icon="retry"
-          @click="dm.retry(song)"
-        >
-          {{ t('queue.retry') }}
-        </UiButton>
-        <UiButton
-          v-if="
-            auth.isAdmin.value &&
-            (item.state === 'failed' || item.state === 'active')
-          "
-          size="sm"
-          variant="secondary"
-          :disabled="suspending"
-          @click="suspendDownload"
-        >
-          {{ t('downloadPolicy.block') }}
-        </UiButton>
-        <UiIconButton
-          icon="x"
-          :label="t('queue.remove')"
-          size="sm"
-          @click="dm.remove(song)"
+    <CoverArt
+      :src="deezerImage(song.cover_url)"
+      :name="song.album_name || song.name"
+      :letter-size="11"
+      :icon-size="13"
+      class="size-10"
+    />
+    <div class="min-w-0 flex-1">
+      <div class="flex min-w-0 items-center gap-2">
+        <span class="truncate text-[15px] font-medium">{{ song.name }}</span>
+        <SourceBadge
+          v-if="item.provider"
+          :source="item.provider"
+          :compact="compact"
         />
       </div>
+      <p class="truncate text-[13px] leading-snug text-muted">
+        {{ artists
+        }}<span v-if="song.album_name"> · {{ song.album_name }}</span>
+      </p>
+      <p v-if="tech" class="mono truncate text-faint">{{ tech }}</p>
+      <p
+        v-if="item.state === 'failed'"
+        class="mt-1 flex min-w-0 items-start gap-1.5 text-[12px] text-danger"
+      >
+        <span
+          class="mono inline-flex h-[20px] shrink-0 items-center bg-invert px-1.5 text-[10px] tracking-[0.06em] text-on-invert uppercase"
+          >{{ t('queue.tabFailed') }}</span
+        >
+        <AppIcon name="alert" :size="13" class="mt-0.5 shrink-0" />
+        <span class="line-clamp-2">{{ failure }}</span>
+      </p>
+    </div>
+
+    <div
+      v-if="item.state === 'active'"
+      class="order-last flex w-full shrink-0 items-center gap-3 sm:order-none sm:w-44"
+    >
+      <UiProgress
+        class="flex-1"
+        :value="item.progress"
+        :indeterminate="!item.progress"
+      />
+      <span class="mono tabular w-9 shrink-0 text-right text-fg-3">
+        {{ item.progress ? `${Math.round(item.progress)}%` : '' }}
+      </span>
+    </div>
+
+    <div class="flex shrink-0 items-center gap-1">
+      <template v-if="item.state === 'done' && item.filename">
+        <UiIconButton
+          icon="play"
+          :label="t('actions.play')"
+          size="sm"
+          @click="play"
+        />
+        <a
+          :href="item.web_download_url"
+          :download="saveName(item.filename)"
+          class="flex size-8 items-center justify-center border-2 border-line-2 text-muted transition-colors duration-100 hover:border-line hover:text-fg"
+          :title="t('library.saveToDevice')"
+          :aria-label="t('library.saveToDevice')"
+        >
+          <AppIcon name="download" :size="16" />
+        </a>
+      </template>
+      <UiButton
+        v-if="item.state === 'failed'"
+        size="sm"
+        variant="secondary"
+        icon="retry"
+        @click="dm.retry(song)"
+      >
+        {{ t('queue.retry') }}
+      </UiButton>
+      <UiButton
+        v-if="
+          auth.isAdmin.value &&
+          (item.state === 'failed' || item.state === 'active')
+        "
+        size="sm"
+        variant="secondary"
+        :disabled="suspending"
+        @click="suspendDownload"
+      >
+        {{ t('downloadPolicy.block') }}
+      </UiButton>
+      <UiIconButton
+        icon="x"
+        :label="t('queue.remove')"
+        size="sm"
+        @click="dm.remove(song)"
+      />
     </div>
 
     <form
       v-if="item.state === 'failed'"
-      class="mt-3 flex flex-wrap items-center gap-2 pl-[70px] max-sm:pl-0"
+      class="flex basis-full flex-wrap items-center gap-2"
       @submit.prevent="useLink"
     >
       <label
-        class="flex h-9 min-w-0 flex-1 basis-60 items-center gap-2 rounded-control border border-line-3 bg-bg px-3 focus-within:border-accent"
+        class="flex h-9 min-w-0 flex-1 basis-60 items-center gap-2 border-2 border-line-3 px-3 focus-within:border-accent"
       >
         <AppIcon name="link" :size="15" class="text-faint" />
         <span class="sr-only">{{ t('queue.overridePlaceholder') }}</span>
@@ -130,7 +112,7 @@
           v-model="override"
           type="url"
           :placeholder="t('queue.overridePlaceholder')"
-          class="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-faint"
+          class="mono h-full min-w-0 flex-1 bg-transparent text-fg outline-none placeholder:text-faint"
         />
       </label>
       <UiButton size="sm" variant="ghost" type="submit" :disabled="!override">
@@ -192,6 +174,27 @@ const override = ref('')
 const overrideError = ref('')
 
 const song = computed(() => props.item.song)
+
+// One row language: a 2px accent edge while downloading, a 2px danger
+// edge when it failed - the row itself stays paper.
+const rowClass = computed(() =>
+  props.item.state === 'failed'
+    ? 'border-l-2 border-l-danger bg-surface-2'
+    : props.item.state === 'active'
+      ? 'border-l-2 border-l-accent bg-surface-2'
+      : 'border-l-2 border-l-transparent hover:bg-surface-2'
+)
+
+// Technical line: the server's own words, or the job's file name.
+const tech = computed(() => {
+  const item = props.item
+  if (item.state === 'done') return item.filename ? saveName(item.filename) : ''
+  if (item.state === 'active' || item.state === 'failed') return item.message
+  return queuePause.paused.value
+    ? t('queue.statusPaused')
+    : t('queue.statusQueued')
+})
+
 async function suspendDownload() {
   if (
     !(await ui.confirm({

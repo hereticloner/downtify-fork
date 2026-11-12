@@ -1,17 +1,32 @@
 <template>
-  <main class="flex min-h-dvh items-center justify-center bg-bg px-4 text-fg">
-    <form
-      class="flex w-full max-w-sm flex-col gap-6 rounded-panel border border-line-2 bg-surface p-6 sm:p-8"
-      @submit.prevent="submit"
-    >
-      <div class="flex flex-col items-center gap-3 text-center">
-        <AppLogo :size="48" />
-        <h1 class="text-display text-2xl font-semibold">
-          {{ t('auth.signInTitle') }}
-        </h1>
-        <p class="text-sm text-muted">{{ t('auth.signInBody') }}</p>
-      </div>
-      <div class="flex flex-col gap-4">
+  <main
+    class="flex min-h-dvh flex-col items-center justify-center bg-bg px-4 py-10 text-fg"
+  >
+    <div class="w-full max-w-[520px] border-2 border-line bg-surface">
+      <header
+        class="flex items-start gap-3 border-b-2 border-line bg-invert px-5 py-4 text-on-invert"
+      >
+        <span
+          class="flex size-10 shrink-0 items-center justify-center bg-bg sm:size-11"
+        >
+          <AppLogo :size="30" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <h1 class="text-display text-xl font-bold text-on-invert">
+            {{ t('auth.signInTitle') }}
+          </h1>
+          <p class="mt-1 text-[13px] text-on-invert/70">
+            {{ t('auth.signInBody') }}
+          </p>
+        </div>
+        <span
+          v-if="version"
+          class="mono hidden shrink-0 border border-on-invert/40 px-1.5 py-0.5 text-on-invert sm:flex"
+          >{{ version }}</span
+        >
+      </header>
+
+      <form class="flex flex-col gap-4 p-5 sm:p-6" @submit.prevent="submit">
         <UiInput
           v-model="username"
           :label="t('auth.username')"
@@ -26,20 +41,28 @@
           autocomplete="current-password"
           :error="error"
         />
-      </div>
-      <UiButton
-        type="submit"
-        variant="primary"
-        size="lg"
-        :loading="busy"
-        :disabled="!username.trim() || !password"
+        <UiButton
+          type="submit"
+          variant="primary"
+          size="lg"
+          class="w-full"
+          :loading="busy"
+          :disabled="!username.trim() || !password"
+        >
+          {{ t('auth.signIn') }}
+        </UiButton>
+        <p class="text-center text-[12px] text-faint">
+          {{ t('auth.forgotHint') }}
+        </p>
+      </form>
+
+      <footer
+        class="flex items-center justify-between gap-3 border-t-2 border-line px-5 py-2"
       >
-        {{ t('auth.signIn') }}
-      </UiButton>
-      <p class="text-center text-[12px] text-faint">
-        {{ t('auth.forgotHint') }}
-      </p>
-    </form>
+        <span class="mono truncate text-faint">{{ server }}</span>
+        <span class="mono shrink-0 text-faint">Downtify {{ version }}</span>
+      </footer>
+    </div>
 
     <!-- A server upgraded from a version without accounts says so once. -->
     <UiModal
@@ -51,16 +74,16 @@
         <p>{{ t('auth.noticeBody') }}</p>
         <dl
           v-if="notice"
-          class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-control border border-line-2 bg-surface-2 px-4 py-3"
+          class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 border-2 border-line-2 bg-surface-2 px-4 py-3"
         >
           <dt class="text-muted">{{ t('auth.username') }}</dt>
-          <dd class="font-mono font-semibold select-all">
+          <dd class="mono font-semibold select-all">
             {{ notice.username }}
           </dd>
           <dt class="text-muted">{{ t('auth.password') }}</dt>
           <dd
             class="font-semibold"
-            :class="notice.password ? 'font-mono select-all' : ''"
+            :class="notice.password ? 'mono select-all' : ''"
           >
             {{ notice.password || t('auth.noticeKeptPassword') }}
           </dd>
@@ -93,6 +116,12 @@ const username = ref('')
 const password = ref('')
 const busy = ref(false)
 const error = ref('')
+
+const version = computed(() => {
+  const v = localStorage.getItem('version')
+  return v && v !== '0.0.0' ? v : ''
+})
+const server = typeof window === 'undefined' ? '' : window.location.host
 
 const notice = computed(() => auth.status.value?.notice || null)
 const noticeOpen = ref(false)

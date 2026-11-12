@@ -10,41 +10,35 @@
       <div class="flex flex-col gap-3 sm:w-44 sm:shrink-0">
         <button
           type="button"
-          class="mx-auto flex flex-col items-center gap-1.5 sm:mx-0"
+          class="mx-auto flex w-32 flex-col items-center gap-1.5 sm:mx-0 sm:w-full"
           @click="activeTab = 'photo'"
         >
           <CoverArt
             :src="photoUrl"
             :fallback="photoFallback"
             :name="artistName"
-            round
-            shadow
             :letter-size="52"
             :icon-size="40"
-            class="size-32 ring-1 ring-line-2"
+            class="aspect-square w-full"
           />
         </button>
 
         <nav
-          class="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-col sm:overflow-visible sm:px-0 sm:pb-0"
+          class="flex divide-x-2 divide-line overflow-x-auto border-2 border-line [scrollbar-width:none] sm:flex-col sm:divide-x-0 sm:divide-y-2"
         >
           <button
             v-for="tab in tabOptions"
             :key="tab.value"
             type="button"
-            class="flex h-10 shrink-0 items-center gap-2.5 rounded-control px-3 text-sm whitespace-nowrap transition-colors sm:w-full"
+            class="eyebrow flex h-10 shrink-0 items-center gap-2 px-3 whitespace-nowrap transition-colors duration-100 sm:w-full"
             :class="
               activeTab === tab.value
-                ? 'bg-surface-2 font-semibold text-fg'
-                : 'font-medium text-muted hover:bg-surface-2/60 hover:text-fg'
+                ? 'bg-invert text-on-invert'
+                : 'text-muted hover:bg-surface-2 hover:text-fg'
             "
             @click="activeTab = tab.value"
           >
-            <AppIcon
-              :name="tab.icon"
-              :size="17"
-              :class="activeTab === tab.value ? 'text-accent' : ''"
-            />
+            <AppIcon :name="tab.icon" :size="15" />
             {{ tab.label }}
           </button>
         </nav>
@@ -54,7 +48,7 @@
         <template v-if="activeTab === 'photo' || activeTab === 'banner'">
           <form class="flex gap-2" @submit.prevent="search">
             <label
-              class="flex h-11 min-w-0 flex-1 items-center gap-2.5 rounded-control border border-line-3 bg-bg px-3.5 focus-within:border-accent"
+              class="flex h-10 min-w-0 flex-1 items-center gap-2.5 border-2 border-line bg-bg px-2.5 focus-within:border-accent"
             >
               <AppIcon
                 :name="isUrlQuery ? 'link' : 'search'"
@@ -113,7 +107,7 @@
 
           <div
             v-if="cards.length"
-            class="grid grid-cols-3 gap-3"
+            class="grid grid-cols-3 gap-0 border-t-2 border-l-2 border-line"
             :class="
               activeTab === 'banner' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
             "
@@ -122,42 +116,40 @@
               v-for="(candidate, i) in cards"
               :key="`${candidate.source}-${i}`"
               type="button"
-              class="group flex flex-col gap-1.5 text-left disabled:opacity-50"
+              class="group flex flex-col gap-1.5 border-r-2 border-b-2 border-line p-1.5 text-left disabled:opacity-50"
               :disabled="saving"
               :aria-current="isCurrent(candidate) ? 'true' : undefined"
               @click="choose(candidate)"
             >
-              <CoverArt
-                :src="candidate.image_url"
-                :name="candidate.name"
-                :round="activeTab === 'photo'"
-                shadow
-                class="transition-transform group-hover:scale-[1.02]"
-                :class="[
-                  activeTab === 'banner'
-                    ? 'aspect-video w-full'
-                    : 'aspect-square w-full',
-                  isCurrent(candidate)
-                    ? 'ring-2 ring-accent'
-                    : 'ring-1 ring-line-2',
-                ]"
+              <span
+                class="relative block"
+                :class="isCurrent(candidate) ? 'outline-2 outline-accent' : ''"
               >
-                <span
-                  v-if="isCurrent(candidate)"
-                  class="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_1px_4px_rgba(0,0,0,0.45)]"
+                <CoverArt
+                  :src="candidate.image_url"
+                  :name="candidate.name"
+                  :round="activeTab === 'photo'"
+                  :class="
+                    activeTab === 'banner'
+                      ? 'aspect-video w-full'
+                      : 'aspect-square w-full'
+                  "
                 >
-                  <AppIcon name="check" :size="14" stroke-width="3" />
-                  <span class="sr-only">{{ t('artistArt.inUse') }}</span>
-                </span>
-                <UiBadge
-                  class="absolute bottom-1.5 left-1/2 -translate-x-1/2 shadow-[0_1px_4px_rgba(0,0,0,0.45)]"
-                >
-                  {{ sourceLabel(candidate.source, t('artistArt.sourceLink')) }}
-                </UiBadge>
-              </CoverArt>
-              <span class="truncate text-[13px] text-muted">{{
-                candidate.name
-              }}</span>
+                  <span
+                    v-if="isCurrent(candidate)"
+                    class="absolute top-0 right-0 flex size-5 items-center justify-center bg-invert text-on-invert"
+                  >
+                    <AppIcon name="check" :size="12" stroke-width="3" />
+                    <span class="sr-only">{{ t('artistArt.inUse') }}</span>
+                  </span>
+                  <UiBadge class="absolute bottom-0 left-0">
+                    {{
+                      sourceLabel(candidate.source, t('artistArt.sourceLink'))
+                    }}
+                  </UiBadge>
+                </CoverArt>
+              </span>
+              <span class="mono truncate text-faint">{{ candidate.name }}</span>
             </button>
           </div>
           <p v-else-if="!loading" class="text-[13px] text-muted">
@@ -186,7 +178,7 @@
             v-model="bioDraft"
             rows="10"
             :placeholder="t('artistArt.bioPlaceholder')"
-            class="min-h-40 w-full resize-y rounded-control border border-line-3 bg-bg px-3.5 py-3 text-sm outline-none placeholder:text-faint focus:border-accent"
+            class="min-h-40 w-full resize-y border-2 border-line bg-bg px-3 py-2.5 text-sm outline-none placeholder:text-faint focus:border-accent"
           />
           <p v-if="errorText" class="text-[13px] text-danger">
             {{ errorText }}

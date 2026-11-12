@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="mx-auto flex w-full max-w-[1680px] flex-col">
     <DetailState
       :loaded="library.loaded.value"
       :found="!!playlist"
@@ -16,13 +16,15 @@
         :symbol="playlist.liked"
       >
         <template #subtitle>
-          <span
-            v-if="batch"
-            class="mr-1 inline-flex translate-y-0.5 items-center gap-1.5 font-semibold text-spotify"
-          >
-            <AppIcon name="spotify" :size="14" />Spotify
+          <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span
+              v-if="batch"
+              class="inline-flex items-center gap-1.5 border border-line-2 px-1.5 py-0.5 font-semibold text-fg"
+            >
+              <AppIcon name="spotify" :size="12" />Spotify
+            </span>
+            <span>{{ facts }}</span>
           </span>
-          {{ facts }}
         </template>
         <template #actions>
           <PlaylistStatus
@@ -62,7 +64,7 @@
           </UiButton>
           <UiButton
             v-if="playlist.manual && auth.isAdmin.value"
-            variant="ghost"
+            variant="secondary"
             icon="upload"
             :disabled="coverBusy"
             @click="coverPicker?.click()"
@@ -73,7 +75,7 @@
             v-if="
               playlist.manual && auth.isAdmin.value && playlist.explicitCover
             "
-            variant="ghost"
+            variant="secondary"
             icon="trash"
             :disabled="coverBusy"
             @click="removeCover"
@@ -82,7 +84,7 @@
           </UiButton>
           <UiButton
             v-if="playlist.manual && auth.isAdmin.value"
-            variant="ghost"
+            variant="secondary"
             icon="pencil"
             @click="playlistActions.openRename(playlist)"
           >
@@ -90,7 +92,7 @@
           </UiButton>
           <UiButton
             v-if="playlist.tracks.length"
-            variant="ghost"
+            variant="secondary"
             icon="zip"
             class="max-sm:hidden"
             @click="actions.downloadZip(playlist.tracks)"
@@ -108,21 +110,21 @@
         @change="onCoverSelected"
       />
 
-      <div
-        class="mx-auto flex max-w-[1680px] flex-col gap-10 px-4 sm:px-6 lg:px-10"
-      >
+      <div class="flex flex-col">
         <div
           v-if="playlist.tracks.length || batch?.missing_count"
-          class="flex flex-col gap-3"
+          class="flex flex-col"
         >
           <!-- Search and filters over the whole playlist: the list below
                only renders the rows on screen, so the browser's own find
                can't see the rest. -->
-          <div class="flex flex-wrap items-center gap-2">
+          <div
+            class="flex flex-wrap items-center gap-2 border-b-2 border-line px-3 py-2"
+          >
             <label
-              class="flex h-10 min-w-0 flex-1 basis-56 items-center gap-2.5 rounded-control border border-line-2 bg-surface px-3 focus-within:border-accent sm:max-w-xs"
+              class="flex h-9 min-w-0 flex-1 basis-56 items-center gap-2 border-2 border-line bg-surface px-2 focus-within:border-accent sm:max-w-xs"
             >
-              <AppIcon name="search" :size="16" class="text-faint" />
+              <AppIcon name="search" :size="14" class="text-faint" />
               <span class="sr-only">{{ t('playlistSearch.placeholder') }}</span>
               <input
                 ref="searchInput"
@@ -139,14 +141,14 @@
               :items="views"
               class="max-w-full"
             />
+            <p
+              v-if="filtering"
+              class="mono ml-auto text-faint"
+              aria-live="polite"
+            >
+              {{ t('playlistSearch.showing', { count: shown, total }) }}
+            </p>
           </div>
-          <p
-            v-if="filtering"
-            class="tabular text-[13px] text-muted"
-            aria-live="polite"
-          >
-            {{ t('playlistSearch.showing', { count: shown, total }) }}
-          </p>
 
           <SelectionBar
             v-if="!isSongView(view) && shownTracks.length"
@@ -162,26 +164,28 @@
             @add-to-playlist="addSelectedToPlaylist"
           />
           <template v-if="isSongView(view)">
-            <p class="text-[13px] text-muted">
+            <p
+              class="border-b border-line-2 bg-surface-2 px-3 py-2 text-[13px] text-muted"
+            >
               {{ t('playlists.missingHint') }}
             </p>
-            <ul v-if="loadingMissing" class="flex flex-col gap-2">
-              <li
-                v-for="n in 4"
-                :key="n"
-                class="h-14 animate-pulse rounded-[10px] bg-surface-2"
-              />
+            <ul v-if="loadingMissing" class="flex flex-col">
+              <li v-for="n in 4" :key="n">
+                <UiSkeleton class="h-14 w-full" />
+              </li>
             </ul>
-            <ul v-else-if="shownSongs.length" class="-mx-2 flex flex-col">
+            <ul
+              v-else-if="shownSongs.length"
+              class="flex flex-col border-b-2 border-line"
+            >
               <li
                 v-for="song in shownSongs"
                 :key="song.song_id"
-                class="flex h-14 items-center gap-3 rounded-[10px] px-2 hover:bg-surface-2"
+                class="flex h-14 items-center gap-3 border-b border-line-2 px-3 transition-colors duration-100 last:border-b-0 hover:bg-surface-2"
               >
                 <CoverArt
                   :src="song.cover_url"
                   :name="song.album_name || song.name"
-                  rounded="rounded-[6px]"
                   :letter-size="12"
                   class="size-10"
                 />
@@ -194,12 +198,13 @@
                 <DownloadState :song="song" />
               </li>
             </ul>
-            <UiEmpty
-              v-else
-              icon="search"
-              :title="t('playlistSearch.noMatch')"
-              :body="t('playlistSearch.noMatchHint')"
-            />
+            <div v-else class="p-3 sm:p-4">
+              <UiEmpty
+                icon="search"
+                :title="t('playlistSearch.noMatch')"
+                :body="t('playlistSearch.noMatchHint')"
+              />
+            </div>
           </template>
           <template v-else>
             <TrackList
@@ -210,24 +215,41 @@
               :positions="filtering ? positions : null"
               :context="playlistActions.contextFor(playlist)"
             />
-            <UiEmpty
-              v-else
-              icon="search"
-              :title="t('playlistSearch.noMatch')"
-              :body="t('playlistSearch.noMatchHint')"
-            />
+            <div v-else class="p-3 sm:p-4">
+              <UiEmpty
+                icon="search"
+                :title="t('playlistSearch.noMatch')"
+                :body="t('playlistSearch.noMatchHint')"
+              />
+            </div>
           </template>
+
+          <!-- The status line: how much of the tracked playlist is on disk. -->
+          <div
+            v-if="batch?.expected_count"
+            class="flex h-9 items-stretch gap-3 border-y-2 border-line bg-surface-2 px-3"
+          >
+            <span class="mono flex items-center text-faint">
+              {{
+                t('playlists.progress', {
+                  have: batch.downloaded_count,
+                  total: batch.expected_count,
+                })
+              }}
+            </span>
+          </div>
         </div>
-        <UiEmpty
-          v-else
-          icon="download"
-          :title="t('playlists.nothingYet')"
-          :body="
-            playlist.manual
-              ? t('playlists.nothingYetManualHint')
-              : t('playlists.nothingYetHint')
-          "
-        />
+        <div v-else class="p-3 sm:p-4">
+          <UiEmpty
+            icon="download"
+            :title="t('playlists.nothingYet')"
+            :body="
+              playlist.manual
+                ? t('playlists.nothingYetManualHint')
+                : t('playlists.nothingYetHint')
+            "
+          />
+        </div>
       </div>
     </DetailState>
   </div>
@@ -244,6 +266,7 @@ import UiChips from '/src/components/ui/UiChips.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiIconButton from '/src/components/ui/UiIconButton.vue'
 import UiMenu from '/src/components/ui/UiMenu.vue'
+import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import CollectionHero from '/src/components/library/CollectionHero.vue'
 import DetailState from '/src/components/library/DetailState.vue'
 import PlayButton from '/src/components/library/PlayButton.vue'

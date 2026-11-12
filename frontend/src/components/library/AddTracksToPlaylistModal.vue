@@ -8,35 +8,35 @@
   >
     <div class="flex flex-col gap-3">
       <label
-        class="flex h-10 items-center gap-2.5 rounded-control border border-line-2 bg-surface px-3"
+        class="flex h-10 items-center gap-2.5 border-2 border-line-2 px-3 transition-colors duration-100 focus-within:border-accent"
       >
-        <AppIcon name="filter" :size="16" class="text-faint" />
+        <AppIcon name="filter" :size="15" class="text-faint" />
         <input
           v-model="query"
           type="search"
           :placeholder="t('library.filterPlaceholder')"
-          class="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
+          class="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-faint"
         />
       </label>
-      <ul class="max-h-80 overflow-y-auto">
+      <ul class="max-h-80 overflow-y-auto border-t-2 border-line">
         <li
           v-for="track in visible"
           :key="track.file"
-          class="flex h-12 items-center gap-3 rounded-[10px] px-1 hover:bg-surface-2"
+          class="flex h-12 items-center gap-3 border-b border-line-2 px-1 transition-colors duration-100 last:border-b-0 hover:bg-surface-2"
         >
           <input
             :id="`add-${track.file}`"
             v-model="picked"
             type="checkbox"
             :value="track.file"
-            class="size-4 accent-accent"
+            class="size-4 shrink-0 appearance-none border-2 border-line-3 bg-transparent checked:border-line checked:bg-invert"
           />
           <label
             :for="`add-${track.file}`"
             class="min-w-0 flex-1 cursor-pointer"
           >
-            <p class="truncate text-sm font-semibold">{{ track.title }}</p>
-            <p class="truncate text-[13px] text-muted">{{ track.artist }}</p>
+            <p class="truncate text-[13px] font-semibold">{{ track.title }}</p>
+            <p class="mono truncate text-muted">{{ track.artist }}</p>
           </label>
         </li>
       </ul>

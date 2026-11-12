@@ -6,26 +6,29 @@
            this has to win the stack regardless of DOM/mount order. -->
       <div
         v-if="dialog"
-        class="fixed inset-0 z-[90] flex items-end justify-center bg-black/55 p-4 backdrop-blur-sm sm:items-center"
+        class="fixed inset-0 z-[90] flex items-end justify-center bg-black/60 p-4 sm:items-center"
         @click.self="closeDialog(false)"
       >
         <div
           role="alertdialog"
           aria-modal="true"
           :aria-labelledby="titleId"
-          class="w-full max-w-md animate-rise rounded-panel border border-line-3 bg-surface p-6 shadow-float"
+          class="w-full max-w-md animate-rise border-2 border-line bg-surface"
         >
-          <h2 :id="titleId" class="text-display text-lg font-semibold text-fg">
+          <h2
+            :id="titleId"
+            class="border-b-2 border-line bg-invert px-6 py-4 text-display text-lg font-bold text-on-invert"
+          >
             {{ dialog.title }}
           </h2>
           <p
             v-if="dialog.body"
-            class="mt-2 max-h-[55vh] overflow-y-auto text-sm text-pretty whitespace-pre-line text-muted"
+            class="max-h-[55vh] overflow-y-auto px-6 py-5 text-sm text-pretty whitespace-pre-line text-muted"
           >
             {{ dialog.body }}
           </p>
           <div
-            class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+            class="flex flex-col-reverse gap-2 border-t-2 border-line px-6 py-4 sm:flex-row sm:justify-end"
           >
             <UiButton variant="ghost" @click="closeDialog(false)">
               {{ dialog.cancelLabel || t('common.cancel') }}

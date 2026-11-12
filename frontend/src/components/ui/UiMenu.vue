@@ -10,12 +10,12 @@
         v-if="open"
         ref="menuEl"
         role="menu"
-        class="fixed z-[70] min-w-52 max-w-72 overflow-hidden rounded-[12px] border border-line-3 bg-surface py-1.5 shadow-float"
+        class="fixed z-[70] min-w-52 max-w-72 overflow-hidden border-2 border-line bg-surface"
         :style="position"
         @keydown="onKeydown"
       >
         <template v-for="(item, i) in visibleItems" :key="i">
-          <div v-if="item.divider" class="my-1.5 h-px bg-line" />
+          <div v-if="item.divider" class="h-px bg-line-2" />
           <p v-else-if="item.heading" class="eyebrow px-3.5 pt-2 pb-1">
             {{ item.heading }}
           </p>
@@ -24,11 +24,13 @@
             type="button"
             role="menuitem"
             :disabled="item.disabled"
-            class="flex h-10 w-full items-center gap-3 px-3.5 text-left text-sm transition-colors focus:outline-none disabled:opacity-40"
+            class="flex h-10 w-full items-center gap-3 border-b border-line-2 px-3.5 text-left text-sm transition-colors duration-100 last:border-b-0 focus:outline-none disabled:opacity-40"
             :class="
               item.danger
-                ? 'text-danger hover:bg-danger/10 focus:bg-danger/10'
-                : 'text-fg-2 hover:bg-surface-2 focus:bg-surface-2'
+                ? 'text-danger hover:bg-surface-2 focus:bg-surface-2'
+                : item.checked
+                  ? 'bg-invert text-on-invert hover:bg-invert'
+                  : 'text-fg-2 hover:bg-surface-2 focus:bg-surface-2'
             "
             @click="run(item)"
           >
@@ -38,7 +40,7 @@
               v-if="item.checked"
               name="check"
               :size="16"
-              class="text-accent"
+              class="text-on-invert"
             />
           </button>
         </template>

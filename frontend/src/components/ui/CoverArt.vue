@@ -1,10 +1,12 @@
 <template>
   <div
-    class="relative isolate shrink-0 overflow-hidden"
-    :class="[round ? 'rounded-full' : rounded, shadow ? 'shadow-cover' : '']"
-    :style="{ background: placeholder }"
+    class="relative isolate shrink-0 overflow-hidden border-2 border-line bg-surface-2"
   >
-    <div v-if="mosaic.length >= 2" class="grid size-full" :class="gridClass">
+    <div
+      v-if="mosaic.length >= 2"
+      class="grid size-full gap-0.5 bg-line"
+      :class="gridClass"
+    >
       <img
         v-for="(url, i) in mosaic.slice(0, MAX_MOSAIC)"
         :key="i"
@@ -22,28 +24,27 @@
       :alt="alt"
       loading="lazy"
       decoding="async"
-      class="size-full object-cover transition-opacity duration-300"
+      class="size-full object-cover transition-opacity duration-100"
       :class="ready ? 'opacity-100' : 'opacity-0'"
       @load="ready = true"
       @error="onImageError"
     />
     <div
       v-if="showFallback"
-      class="absolute inset-0 flex items-center justify-center"
-      :class="round || symbol ? '' : 'items-end justify-start p-[8%]'"
+      class="absolute inset-0 flex"
+      :class="
+        symbol
+          ? 'items-center justify-center'
+          : 'items-end justify-start p-[8%]'
+      "
     >
       <AppIcon
         v-if="!letters"
         :name="icon"
         :size="iconSize"
-        :class="symbol ? 'text-white/90' : 'text-white/35'"
+        class="text-faint"
       />
-      <span
-        v-else
-        class="text-display leading-none font-bold text-white/25 select-none"
-        :style="{ fontSize: `${letterSize}px` }"
-        >{{ letters }}</span
-      >
+      <span v-else class="eyebrow leading-none select-none">{{ letters }}</span>
     </div>
     <slot />
   </div>
@@ -53,7 +54,7 @@
 import { computed, ref, watch } from 'vue'
 import AppIcon from './AppIcon.vue'
 import { MAX_MOSAIC, mosaicGrid } from '/src/lib/mosaic'
-import { hueFor, initials } from '/src/lib/format'
+import { initials } from '/src/lib/format'
 
 const props = defineProps({
   src: { type: String, default: '' },
@@ -121,12 +122,5 @@ const imageSrc = computed(() => {
 const letters = computed(() => (props.symbol ? '' : initials(props.name)))
 const showFallback = computed(
   () => mosaic.value.length < 2 && (!imageSrc.value || failed.value)
-)
-// Placeholder tint derived from the name, so an album without art keeps
-// the same colour everywhere.
-const placeholder = computed(() =>
-  props.symbol
-    ? 'linear-gradient(135deg, oklch(0.5 0.17 305), oklch(0.62 0.14 245))'
-    : `oklch(0.42 0.07 ${hueFor(props.name || props.alt)})`
 )
 </script>

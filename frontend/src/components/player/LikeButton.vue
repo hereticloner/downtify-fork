@@ -6,13 +6,12 @@
     :active="liked"
     toggle
     :disabled="!file"
-    :class="popping ? 'like-pop' : ''"
-    @click.stop="onClick"
+    @click.stop="likes.toggle(file)"
   />
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import UiIconButton from '../ui/UiIconButton.vue'
 import { useLikes } from '/src/model/likes'
 import { useI18n } from '/src/i18n'
@@ -25,37 +24,7 @@ const props = defineProps({
 
 const { t } = useI18n()
 const likes = useLikes()
+// The inverted block the primitive gives a selected toggle is the whole
+// feedback; no scale pop, no colour pulse.
 const liked = computed(() => likes.isLiked(props.file))
-const popping = ref(false)
-
-function onClick() {
-  // Only a tap pops the heart: a list full of songs that were already
-  // liked must not all animate when it first appears.
-  if (!liked.value) {
-    popping.value = true
-    setTimeout(() => (popping.value = false), 300)
-  }
-  likes.toggle(props.file)
-}
 </script>
-
-<style scoped>
-/* Not for people who asked for less motion. */
-@media (prefers-reduced-motion: no-preference) {
-  .like-pop {
-    animation: like-pop 260ms ease-out;
-  }
-}
-
-@keyframes like-pop {
-  0% {
-    transform: scale(0.8);
-  }
-  60% {
-    transform: scale(1.18);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-</style>

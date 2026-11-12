@@ -1,21 +1,22 @@
 <template>
-  <div
-    v-if="!loaded"
-    class="mx-auto flex max-w-[1680px] flex-col gap-8 px-4 pt-10 sm:px-6 md:flex-row md:items-end lg:px-10"
-  >
-    <UiSkeleton
-      class="size-48 self-center !rounded-[16px] sm:size-56 md:self-auto"
-    />
-    <div class="flex flex-1 flex-col gap-3">
-      <UiSkeleton class="h-3 w-24" />
-      <UiSkeleton class="h-12 w-2/3" />
-      <UiSkeleton class="h-4 w-1/2" />
+  <div v-if="!loaded" class="border-b-2 border-line">
+    <div
+      class="grid grid-cols-1 md:grid-cols-[minmax(0,248px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,304px)_minmax(0,1fr)]"
+    >
+      <div class="border-b-2 border-line p-3 md:border-r-2 md:border-b-0">
+        <UiSkeleton
+          class="mx-auto aspect-square w-full max-w-56 md:max-w-none"
+        />
+      </div>
+      <div class="flex flex-col justify-center gap-3 p-4 sm:p-6 lg:p-8">
+        <UiSkeleton class="h-2.5 w-20" />
+        <UiSkeleton class="h-9 w-2/3" />
+        <UiSkeleton class="h-3 w-1/2" />
+        <UiSkeleton class="mt-3 h-10 w-40" />
+      </div>
     </div>
   </div>
-  <div
-    v-else-if="!found"
-    class="mx-auto max-w-[1680px] px-4 pt-10 sm:px-6 lg:px-10"
-  >
+  <div v-else-if="!found" class="px-4 py-10 sm:px-6 lg:px-8">
     <UiEmpty :icon="icon" :title="missing" :body="t('library.maybeDeleted')">
       <UiButton :to="{ name: 'Library' }" icon="library">{{
         t('library.backToLibrary')

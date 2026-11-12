@@ -1,8 +1,11 @@
 <template>
+  <!-- List-view row: 72px block, cover on a frame, title over its catalogue
+       line. The row draws only its bottom hairline; the list frame owns the
+       outer 2px rules. -->
   <div
-    class="group flex h-[72px] items-center gap-4 rounded-[12px] px-3 transition-colors hover:bg-surface"
+    class="group flex h-[72px] items-center gap-4 border-b border-line-2 px-3 transition-colors duration-100 last:border-b-0 hover:bg-surface-2"
   >
-    <RouterLink :to="to" class="flex min-w-0 flex-1 items-center gap-4">
+    <RouterLink :to="to" class="flex min-w-0 flex-1 items-center gap-3">
       <CoverArt
         :src="cover"
         :fallback="fallback"
@@ -11,10 +14,9 @@
         :round="round"
         :icon="icon"
         :symbol="symbol"
-        rounded="rounded-[8px]"
-        :letter-size="20"
-        :icon-size="20"
-        class="size-[52px]"
+        :letter-size="18"
+        :icon-size="18"
+        class="size-12"
       />
       <span class="flex min-w-0 flex-1 flex-col gap-0.5">
         <span class="flex items-center gap-2">
@@ -23,16 +25,13 @@
           }}</span>
           <EqBars v-if="playing" :size="10" />
         </span>
-        <span class="truncate text-[13px] text-muted">{{ subtitle }}</span>
+        <span class="mono truncate text-muted">{{ subtitle }}</span>
       </span>
     </RouterLink>
     <div class="hidden min-w-0 items-center gap-2 md:flex">
       <slot name="meta" />
     </div>
-    <span
-      v-if="aside"
-      class="tabular hidden w-24 text-right text-[13px] text-muted sm:block"
-    >
+    <span v-if="aside" class="mono tabular hidden w-24 text-right sm:block">
       {{ aside }}
     </span>
     <div class="flex items-center gap-1">
@@ -42,7 +41,7 @@
         icon="play"
         :label="t('actions.playItem', { name: title })"
         size="sm"
-        class="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
+        class="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
         @click="$emit('play')"
       />
     </div>

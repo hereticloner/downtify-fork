@@ -1,11 +1,9 @@
 <template>
   <div>
     <!--
-      The grid: one button per day, oldest week first. Cells fade in
-      column by column (the stagger comes from `--i`, the column index)
-      and lift under the cursor, so a year of listening arrives instead
-      of appearing all at once. Hover is read off one delegated listener
-      on the grid rather than 365 of them.
+      The grid: one 2px block per day, oldest week first, 2px gaps showing
+      the ink behind it. Hover is read off one delegated listener on the
+      grid rather than 365 of them.
     -->
     <div
       class="overflow-x-auto pb-1"
@@ -15,11 +13,11 @@
       @focusin="onHover"
       @focusout="hovered = null"
     >
-      <div class="flex min-w-max gap-1">
+      <div class="flex min-w-max gap-0.5">
         <div
           v-for="(week, w) in columns"
           :key="week[0]?.date || w"
-          class="flex flex-col gap-[3px]"
+          class="flex flex-col gap-0.5"
         >
           <span
             v-for="n in w === 0 ? lead : 0"
@@ -31,12 +29,11 @@
             v-for="cell in week"
             :key="cell.date"
             type="button"
-            class="size-2 rounded-[2px] transition-transform duration-150 ease-out hover:z-10 hover:scale-150 focus-visible:z-10 focus-visible:scale-150 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:scale-100"
+            class="size-2 transition-colors duration-100 hover:z-10 hover:outline hover:outline-1 hover:outline-line focus-visible:z-10"
             :class="[
               LEVEL_CLASSES[cell.level],
-              cell.date === selected ? RING_CLASS : '',
+              cell.date === selected ? SELECTED_CLASS : '',
             ]"
-            :style="{ '--i': Math.min(w, STAGGER_LIMIT) }"
             :data-date="cell.date"
             :data-cell="cell.date"
             :data-selected="cell.date === selected ? cell.date : undefined"
@@ -56,11 +53,11 @@
     <Transition name="tip">
       <div
         v-if="hovered"
-        class="pointer-events-none mt-3 inline-flex items-baseline gap-2 rounded-panel bg-surface-2 px-2.5 py-1.5 text-xs shadow-panel"
+        class="pointer-events-none mt-2 inline-flex items-baseline gap-2 border-2 border-line bg-surface-2 px-2 py-1"
         data-heatmap-tip
       >
-        <span class="font-medium">{{ formatDay(hovered.date) }}</span>
-        <span class="text-faint">{{ playCount(hovered.count) }}</span>
+        <span class="mono text-fg">{{ formatDay(hovered.date) }}</span>
+        <span class="mono text-faint">{{ playCount(hovered.count) }}</span>
       </div>
     </Transition>
   </div>
@@ -79,17 +76,13 @@ import {
 const props = defineProps({
   days: { type: Array, default: () => [] },
   weeks: { type: Number, default: HEATMAP_WEEKS },
-  // The day the page is showing plays for, if any: drawn with a ring so
-  // the choice stays visible after the cursor moves away.
+  // The day the page is showing plays for, if any: drawn with an accent
+  // frame so the choice stays visible after the cursor moves away.
   selected: { type: String, default: '' },
   locale: { type: String, default: '' },
 })
 
 const emit = defineEmits(['select'])
-
-// Past this many columns the stagger has already finished; clamping
-// keeps the last columns from waiting longer than the first.
-const STAGGER_LIMIT = 24
 
 // Written out rather than interpolated (`bg-accent/${level * 25}`) so
 // Tailwind sees each class as a whole. Level 0 is the empty-cell grey,
@@ -102,7 +95,9 @@ const LEVEL_CLASSES = [
   'bg-accent',
 ]
 
-const RING_CLASS = 'ring-2 ring-accent'
+// The picked day keeps an accent frame: the only accent in the grid, and
+// only while it is a state.
+const SELECTED_CLASS = 'outline-2 outline-accent'
 
 const cells = computed(() => heatmapCells(props.days, props.weeks))
 const columns = computed(() => heatmapColumns(cells.value))
@@ -145,41 +140,15 @@ function playCount(count) {
 </script>
 
 <style scoped>
-/* One keyframe for every cell; each column's delay comes from `--i`. */
-@keyframes heatmap-cell-in {
-  from {
-    opacity: 0;
-    transform: scale(0.4);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-button[data-cell] {
-  animation: heatmap-cell-in 320ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 22ms);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  button[data-cell] {
-    animation: none;
-  }
-}
-
 /* The hover box fades rather than jumping under the cursor. */
 .tip-enter-active,
 .tip-leave-active {
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease;
+  transition: opacity 100ms linear;
 }
 
 .tip-enter-from,
 .tip-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
 }
 
 @media (prefers-reduced-motion: reduce) {

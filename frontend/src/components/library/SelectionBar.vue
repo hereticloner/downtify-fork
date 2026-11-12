@@ -1,19 +1,19 @@
 <template>
-  <Transition name="now-playing">
-    <!-- Sticks just under the top bar: its height (4rem on phones, 4.5rem
-         from md up) plus a small gap and the notch inset, so it never
-         slides under the header on a phone. -->
+  <Transition name="fade">
+    <!-- Sticks under the shell's fixed chrome: the 44px masthead on a phone
+         (the nav strip only appears from md up), then the 48px masthead plus
+         the 40px strip. No gap, so no row slips through above the bar. -->
     <div
       v-if="count"
-      class="sticky top-[calc(4rem+env(safe-area-inset-top)+0.5rem)] z-20 flex flex-wrap items-center gap-2 rounded-[14px] border border-line-3 bg-surface-2/95 p-2 pl-4 shadow-float backdrop-blur-xl md:top-[calc(4.5rem+env(safe-area-inset-top)+0.5rem)]"
+      class="sticky top-[calc(2.75rem+env(safe-area-inset-top))] z-20 flex flex-wrap items-center gap-2 border-2 border-line bg-surface-2 p-2 pl-3 md:top-[calc(5.5rem+env(safe-area-inset-top))]"
     >
-      <span class="tabular text-sm font-semibold">{{
-        t('library.selectedCount', { count })
-      }}</span>
+      <span class="mono tabular text-fg">
+        {{ t('library.selectedCount', { count }) }}
+      </span>
       <button
         v-if="count < total"
         type="button"
-        class="rounded-control px-2 py-1 text-[13px] font-semibold text-accent hover:bg-accent/10"
+        class="eyebrow border-b border-line-2 pb-0.5 text-accent transition-colors duration-100 hover:border-accent"
         @click="$emit('select-all')"
       >
         {{ t('library.selectAllCount', { count: total }) }}

@@ -1,188 +1,67 @@
 <template>
-  <aside
-    class="sticky top-0 h-dvh shrink-0 flex-col gap-7 overflow-y-auto border-r border-line bg-side px-3 py-6 transition-[width] duration-300 ease-out-soft"
-    :class="collapsed ? 'w-[72px]' : 'w-[72px] xl:w-[248px] xl:px-4'"
+  <nav
+    class="sticky top-11 z-20 h-10 shrink-0 items-stretch overflow-x-auto overflow-y-hidden border-b-2 border-line bg-bg [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:top-12"
+    :aria-label="t('nav.main')"
   >
-    <div class="flex items-center gap-2.5 px-2.5">
-      <RouterLink
-        :to="{ name: 'Home' }"
-        class="flex items-center gap-2.5"
-        :title="t('nav.home')"
-      >
-        <AppLogo :size="28" />
-        <span class="text-display text-[19px] font-bold" :class="labelClass"
-          >Downtify</span
-        >
-      </RouterLink>
-    </div>
-
-    <nav class="flex flex-col gap-0.5" :aria-label="t('nav.main')">
-      <RouterLink
-        v-for="item in items"
-        :key="item.name"
-        :to="{ name: item.name }"
-        class="group relative flex h-10 items-center gap-3 rounded-control px-3 text-sm transition-colors"
-        :class="
-          isActive(item)
-            ? 'bg-surface-2 font-semibold text-fg'
-            : 'font-medium text-muted hover:bg-surface-2/60 hover:text-fg'
-        "
-        :title="t(item.label)"
-      >
-        <AppIcon
-          :name="item.icon"
-          :size="18"
-          :class="isActive(item) ? 'text-accent' : ''"
-        />
-        <span :class="labelClass">{{ t(item.label) }}</span>
-        <span
-          v-if="item.name === 'Queue' && pending"
-          class="tabular flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold"
-          :class="[
-            collapsed
-              ? 'absolute top-0.5 right-0.5 h-4 min-w-4 px-1 text-[10px]'
-              : 'absolute top-0.5 right-0.5 h-4 min-w-4 px-1 text-[10px] xl:static xl:ml-auto xl:h-5 xl:min-w-5 xl:px-1.5 xl:text-[11px]',
-            queuePaused
-              ? 'bg-surface-2 text-muted'
-              : 'bg-accent text-on-accent',
-          ]"
-          :title="queuePaused ? t('queue.pausedTitle') : undefined"
-          >{{ pending }}</span
-        >
-        >
-      </RouterLink>
-    </nav>
-
-    <div
-      v-if="recentPlaylists.length"
-      class="flex flex-col gap-1"
-      :class="labelClass"
+    <RouterLink
+      v-for="item in items"
+      :key="item.name"
+      :to="{ name: item.name }"
+      class="flex shrink-0 items-center gap-2 border-r-2 border-line px-3 transition-colors duration-100"
+      :class="
+        isActive(item)
+          ? 'bg-invert text-on-invert'
+          : 'text-muted hover:bg-surface-2 hover:text-fg'
+      "
+      :title="t(item.label)"
+      :aria-current="isActive(item) ? 'page' : undefined"
     >
-      <div class="flex items-center justify-between px-3 pb-1.5">
-        <span class="eyebrow">{{ t('nav.playlists') }}</span>
-        <RouterLink
-          :to="{ name: 'Library', params: { tab: 'playlists' } }"
-          class="text-xs font-semibold text-faint hover:text-fg"
-          >{{ t('common.seeAll') }}</RouterLink
-        >
-      </div>
-      <RouterLink
-        v-for="playlist in recentPlaylists"
-        :key="playlist.key"
-        :to="{ name: 'Playlist', query: { name: playlist.name } }"
-        class="flex h-11 items-center gap-2.5 rounded-control px-3 transition-colors hover:bg-surface-2/60"
+      <AppIcon :name="item.icon" :size="15" />
+      <span
+        class="eyebrow"
+        :class="isActive(item) ? 'text-on-invert' : 'text-current'"
+        >{{ t(item.label) }}</span
       >
-        <CoverArt
-          :src="playlist.cover"
-          :covers="playlist.covers"
-          :name="playlist.title"
-          rounded="rounded-[7px]"
-          :letter-size="13"
-          :icon-size="14"
-          :icon="playlist.liked ? 'heart' : 'playlist'"
-          :symbol="playlist.liked"
-          class="size-[30px]"
-        />
-        <span class="flex min-w-0 flex-col">
-          <span class="truncate text-[13px] font-medium text-fg-2">{{
-            playlist.title
-          }}</span>
-          <span class="tabular text-[11px] text-faint">{{
-            t('common.tracks', { count: itemTrackCount(playlist) })
-          }}</span>
-        </span>
-      </RouterLink>
-    </div>
+      <span
+        v-if="item.name === 'Queue' && pending"
+        class="mono flex h-[18px] min-w-[18px] items-center justify-center px-1"
+        :class="countClass(isActive(item))"
+        :title="queuePaused ? t('queue.pausedTitle') : undefined"
+        >{{ pending }}</span
+      >
+    </RouterLink>
 
-    <div class="mt-auto flex flex-col gap-0.5">
+    <div class="ml-auto hidden shrink-0 items-center gap-3 px-3 xl:flex">
       <a
         v-if="update?.update_available"
         :href="update.release_url"
         target="_blank"
         rel="noopener"
-        class="mb-2 flex items-center gap-2.5 rounded-control bg-accent/12 px-3 py-2 text-[13px] font-semibold text-accent"
+        class="eyebrow flex h-[24px] items-center gap-1.5 bg-invert px-2 text-on-invert"
         :title="t('nav.updateAvailable', { version: update.latest_version })"
       >
-        <AppIcon name="sparkle" :size="17" />
-        <span :class="labelClass">{{
-          t('nav.updateAvailable', { version: update.latest_version })
-        }}</span>
+        <AppIcon name="sparkle" :size="12" />
+        {{ t('nav.updateAvailable', { version: update.latest_version }) }}
       </a>
-      <RouterLink
-        :to="{ name: 'Settings' }"
-        class="flex h-10 items-center gap-3 rounded-control px-3 text-sm transition-colors"
-        :class="
-          route.name === 'Settings'
-            ? 'bg-surface-2 font-semibold text-fg'
-            : 'font-medium text-muted hover:bg-surface-2/60 hover:text-fg'
-        "
-        :title="t('nav.settings')"
-      >
-        <AppIcon
-          name="settings"
-          :size="18"
-          :class="route.name === 'Settings' ? 'text-accent' : ''"
-        />
-        <span :class="labelClass">{{ t('nav.settings') }}</span>
-      </RouterLink>
-      <button
-        v-if="auth.user.value && !auth.authDisabled.value"
-        type="button"
-        class="flex h-10 items-center gap-3 rounded-control px-3 text-left text-sm font-medium text-muted transition-colors hover:bg-surface-2/60 hover:text-fg"
-        :title="t('nav.signOutAs', { name: auth.user.value.username })"
-        @click="auth.signOut"
-      >
-        <AppIcon name="log-out" :size="18" />
-        <span :class="labelClass">{{ t('nav.signOut') }}</span>
-        <span
-          class="truncate text-[12px] text-faint"
-          :class="collapsed ? 'hidden' : 'hidden xl:inline'"
-          >{{ auth.user.value.username }}</span
-        >
-      </button>
-      <button
-        type="button"
-        class="hidden h-10 items-center gap-3 rounded-control px-3 text-left text-sm font-medium text-faint transition-colors hover:bg-surface-2/60 hover:text-fg xl:flex"
-        :title="collapsed ? t('nav.expand') : t('nav.collapse')"
-        @click="collapsed = !collapsed"
-      >
-        <AppIcon name="panel-left" :size="18" />
-        <span :class="labelClass">{{ t('nav.collapse') }}</span>
-      </button>
-      <p
-        v-if="version"
-        class="tabular px-3 pt-2 text-[11px] text-faint"
-        :class="labelClass"
-      >
-        Downtify {{ version }}
-      </p>
+      <span v-if="version" class="mono text-faint">Downtify {{ version }}</span>
     </div>
-  </aside>
+  </nav>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useLocalStorage } from '@vueuse/core'
 import AppIcon from '../ui/AppIcon.vue'
-import AppLogo from '../ui/AppLogo.vue'
-import CoverArt from '../ui/CoverArt.vue'
 import { useI18n } from '/src/i18n'
-import { itemTrackCount } from '/src/lib/library'
-import { useAuth } from '/src/model/auth'
-import { useLibrary } from '/src/model/library'
 import { useQueuePause } from '/src/model/queuePause'
 import { useUpdateCheck } from '/src/model/updateCheck'
 import { usePendingCount } from './navState'
 
 const { t } = useI18n()
 const route = useRoute()
-const library = useLibrary()
-const auth = useAuth()
 const pending = usePendingCount()
 const queuePaused = useQueuePause().paused
 const update = useUpdateCheck().status
-const collapsed = useLocalStorage('downtify-sidebar-collapsed', false)
 const version = computed(() => {
   const v = localStorage.getItem('version')
   return v && v !== '0.0.0' ? v : ''
@@ -213,21 +92,17 @@ const items = [
   },
   { name: 'Monitor', icon: 'radar', label: 'nav.monitor' },
   { name: 'Charts', icon: 'trending', label: 'nav.charts' },
+  { name: 'Settings', icon: 'settings', label: 'nav.settings' },
 ]
 
 function isActive(item) {
   return route.name === item.name || (item.match || []).includes(route.name)
 }
 
-const labelClass = computed(() =>
-  collapsed.value ? 'hidden' : 'hidden xl:inline xl:flex-1 xl:truncate'
-)
-
-const recentPlaylists = computed(() =>
-  [...library.playlists.value]
-    .filter((playlist) => itemTrackCount(playlist))
-    // The liked songs stay at the top; the rest are the newest.
-    .sort((a, b) => Number(b.liked) - Number(a.liked) || b.added - a.added)
-    .slice(0, 6)
-)
+// The queue count reads as a block against the tab it sits in: ink on the
+// plain strip, paper on the inverted active one.
+function countClass(active) {
+  if (queuePaused.value) return 'border border-line-3 text-muted'
+  return active ? 'bg-bg text-fg' : 'bg-invert text-on-invert'
+}
 </script>

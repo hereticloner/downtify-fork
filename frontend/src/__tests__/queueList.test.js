@@ -3,8 +3,8 @@ import { QUEUE_ROW_GAP, queueRowEstimate } from '../lib/queueList.js'
 
 describe('queueRowEstimate', () => {
   it('sizes compact queued/done rows as the cover tile plus gap', () => {
-    expect(queueRowEstimate('queued')).toBe(56 + QUEUE_ROW_GAP)
-    expect(queueRowEstimate('done')).toBe(56 + QUEUE_ROW_GAP)
+    expect(queueRowEstimate('queued')).toBe(80 + QUEUE_ROW_GAP)
+    expect(queueRowEstimate('done')).toBe(80 + QUEUE_ROW_GAP)
   })
 
   it('gives active and failed rows extra room for progress / forms', () => {

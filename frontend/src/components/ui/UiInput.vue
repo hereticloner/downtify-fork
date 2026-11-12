@@ -1,18 +1,13 @@
 <template>
   <div class="flex min-w-0 flex-col gap-1.5">
-    <label
-      v-if="label"
-      :for="inputId"
-      class="text-[13px] font-semibold text-fg-3"
-      >{{ label }}</label
-    >
+    <label v-if="label" :for="inputId" class="eyebrow text-fg-3">{{
+      label
+    }}</label>
     <span
-      class="flex h-11 items-center gap-2.5 rounded-control border px-3 transition-colors"
+      class="flex h-11 items-center gap-2.5 border-2 bg-bg px-3 transition-colors duration-100"
       :class="[
-        error ? 'border-danger' : 'border-line-3',
-        readonly
-          ? 'bg-surface-2 text-muted'
-          : 'bg-bg focus-within:border-accent',
+        error ? 'border-danger' : 'border-line-2 focus-within:border-accent',
+        readonly ? 'bg-surface-2 text-muted' : '',
       ]"
     >
       <AppIcon v-if="icon" :name="icon" :size="17" class="text-faint" />
@@ -33,26 +28,26 @@
         :list="list || undefined"
         class="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
         :class="[
-          mono ? 'font-mono text-[13px]' : '',
+          mono ? 'mono' : 'font-sans',
           readonly ? 'cursor-default text-muted' : 'text-fg',
         ]"
         @input="onInput"
         @change="$emit('change', $event.target.value)"
       />
-      <span v-if="suffix" class="text-xs text-faint">{{ suffix }}</span>
+      <span v-if="suffix" class="mono shrink-0 text-faint">{{ suffix }}</span>
       <button
         v-if="type === 'password' && !readonly"
         type="button"
-        class="text-xs font-semibold text-muted hover:text-fg"
+        class="eyebrow shrink-0 text-muted transition-colors duration-100 hover:text-fg"
         @click="reveal = !reveal"
       >
         {{ reveal ? t('common.hide') : t('common.show') }}
       </button>
     </span>
-    <span v-if="error" :id="noteId" class="text-xs text-danger">{{
+    <span v-if="error" :id="noteId" class="text-[11px] text-danger">{{
       error
     }}</span>
-    <span v-else-if="hint" :id="noteId" class="text-xs text-muted">{{
+    <span v-else-if="hint" :id="noteId" class="text-[11px] text-muted">{{
       hint
     }}</span>
   </div>

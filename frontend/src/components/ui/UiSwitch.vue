@@ -19,20 +19,25 @@
       :disabled="disabled"
       @change="$emit('update:modelValue', $event.target.checked)"
     />
+    <!-- A 24px square, not a pill: ON is an inverted block with an accent
+         tick, OFF is an empty 2px frame. No sliding, no transform. -->
     <span
-      class="relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
-      :class="modelValue ? 'bg-accent' : 'bg-raised'"
+      class="mt-0.5 flex size-6 shrink-0 items-center justify-center border-2 transition-colors duration-100 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
+      :class="
+        modelValue
+          ? 'border-line bg-invert text-accent'
+          : 'border-line-2 bg-transparent hover:border-line'
+      "
       aria-hidden="true"
     >
-      <span
-        class="absolute top-0.5 size-4 rounded-full bg-white shadow transition-[left] duration-200 ease-out-soft"
-        :class="modelValue ? 'left-[18px]' : 'left-0.5'"
-      />
+      <AppIcon v-if="modelValue" name="check" :size="14" stroke-width="3" />
     </span>
   </label>
 </template>
 
 <script setup>
+import AppIcon from './AppIcon.vue'
+
 defineProps({
   modelValue: { type: Boolean, default: false },
   label: { type: String, default: '' },

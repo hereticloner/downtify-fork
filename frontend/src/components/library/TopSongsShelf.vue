@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-3">
-    <div class="-mx-3 flex flex-col">
+    <div class="flex flex-col border-2 border-line">
       <TrackDownPlayHeader />
       <TrackDownPlay
         v-for="(song, i) in data.songs"
@@ -16,9 +16,9 @@
     <RouterLink
       v-if="pageUrl"
       :to="{ name: 'TopSongs', query: { url: pageUrl } }"
-      class="inline-flex items-center gap-1.5 self-start text-[13px] font-semibold text-muted hover:text-fg"
+      class="eyebrow inline-flex items-center gap-1.5 self-start text-muted transition-colors duration-100 hover:text-fg"
     >
-      <AppIcon name="arrow-up-right" :size="14" />{{ t('artist.topSongsLink') }}
+      <AppIcon name="arrow-up-right" :size="12" />{{ t('artist.topSongsLink') }}
     </RouterLink>
   </div>
 </template>
