@@ -15,15 +15,15 @@
         <CoverArt
           :src="cover"
           :name="watch.name"
-          :round="kind === 'artist'"
           :icon="kind === 'artist' ? 'user' : 'playlist'"
-          rounded="rounded-[10px]"
-          :letter-size="18"
-          class="size-12"
+          :letter-size="16"
+          class="size-11"
         />
         <div class="min-w-0 flex-1">
-          <p class="truncate font-semibold text-fg">{{ watch.name }}</p>
-          <p class="text-xs text-muted">
+          <p class="truncate text-[13px] font-semibold text-fg">
+            {{ watch.name }}
+          </p>
+          <p class="mono text-muted">
             {{
               kind === 'artist'
                 ? t('monitor.kindArtist')
@@ -81,9 +81,7 @@
 
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="flex flex-col gap-1.5">
-          <span class="text-[13px] font-semibold text-fg-3">{{
-            t('monitor.interval')
-          }}</span>
+          <span class="eyebrow text-fg-3">{{ t('monitor.interval') }}</span>
           <UiSelect
             v-model="interval"
             :options="intervalOptions(t, watch.interval_minutes)"
@@ -93,12 +91,10 @@
           />
         </label>
         <div class="flex flex-col gap-1.5">
-          <span class="text-[13px] font-semibold text-fg-3">{{
-            t('monitor.colActive')
-          }}</span>
-          <div class="flex h-10 items-center">
+          <span class="eyebrow text-fg-3">{{ t('monitor.colActive') }}</span>
+          <div class="flex h-10 items-center gap-3">
             <UiSwitch v-model="enabled" :aria-label="t('monitor.colActive')" />
-            <span class="ml-3 text-sm text-muted">{{
+            <span class="mono text-muted">{{
               enabled ? t('monitor.activeOn') : t('monitor.activeOff')
             }}</span>
           </div>
@@ -111,24 +107,26 @@
         v-model:new-only="newOnly"
         existing
         :was-new-only="!!watch.new_only"
-        class="rounded-[12px] border border-line-2 px-4 py-3"
+        class="border-2 border-line-2 px-3 py-3"
       />
 
       <dl
-        class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 rounded-[12px] bg-surface-2 px-4 py-3 text-[13px]"
+        class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 border-2 border-line-2 px-3 py-3"
       >
-        <dt class="text-muted">{{ t('monitor.added') }}</dt>
-        <dd class="text-fg-2">{{ formatDate(watch.created_at) }}</dd>
-        <dt class="text-muted">{{ t('monitor.colLastChecked') }}</dt>
-        <dd class="text-fg-2">
+        <dt class="eyebrow">{{ t('monitor.added') }}</dt>
+        <dd class="mono tabular text-fg-2">
+          {{ formatDate(watch.created_at) }}
+        </dd>
+        <dt class="eyebrow">{{ t('monitor.colLastChecked') }}</dt>
+        <dd class="mono tabular text-fg-2">
           {{
             watch.last_checked
               ? formatDate(watch.last_checked)
               : t('monitor.never')
           }}
         </dd>
-        <dt class="text-muted">{{ t('monitor.colSize') }}</dt>
-        <dd class="text-fg-2">
+        <dt class="eyebrow">{{ t('monitor.colSize') }}</dt>
+        <dd class="mono tabular text-fg-2">
           {{
             kind === 'artist'
               ? t('monitor.releases', { count: watch.last_track_count })

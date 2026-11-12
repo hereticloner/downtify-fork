@@ -4,8 +4,8 @@
     type="button"
     :class="
       filled
-        ? 'flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-fg-3 transition-colors hover:bg-accent hover:text-on-accent'
-        : 'flex size-8 shrink-0 items-center justify-center rounded-control text-faint transition-colors hover:bg-surface-2 hover:text-fg lg:opacity-0 lg:group-hover:opacity-100'
+        ? 'flex size-9 shrink-0 items-center justify-center border-2 border-line-2 text-fg-3 transition-colors hover:border-line hover:text-fg'
+        : 'flex size-8 shrink-0 items-center justify-center border-2 border-transparent text-faint transition-colors hover:border-line-2 hover:text-fg lg:opacity-0 lg:group-hover:opacity-100'
     "
     :title="t('similar.findSimilar')"
     :aria-label="t('similar.findSimilar')"

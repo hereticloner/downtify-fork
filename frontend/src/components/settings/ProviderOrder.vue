@@ -1,12 +1,16 @@
 <template>
-  <ol class="flex flex-col gap-2" :class="dense ? '' : 'p-4'">
+  <!-- Provider table: priority block, source chip, name + description, and
+       the ON/OFF square at the end of the row. -->
+  <ol class="flex min-w-0 flex-col" :class="dense ? '' : 'p-3'">
     <li
       v-for="(row, i) in rows"
       :key="row.id"
-      class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[12px] border bg-bg px-3 py-2.5 transition-colors"
+      class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-2 px-2 py-2.5 transition-colors duration-100 last:border-b-0"
       :class="[
-        row.enabled ? 'border-line-3' : 'border-line-2 opacity-60',
-        dragOver === i ? 'border-accent' : '',
+        row.enabled ? '' : 'opacity-50',
+        dragOver === i
+          ? 'outline outline-2 -outline-offset-2 outline-accent'
+          : '',
       ]"
       :draggable="row.enabled"
       @dragstart="dragFrom = i"
@@ -17,22 +21,24 @@
     >
       <AppIcon
         name="grip"
-        :size="18"
+        :size="16"
         class="hidden cursor-grab text-faint sm:block"
       />
       <span
-        class="text-display tabular flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+        class="mono flex size-6 shrink-0 items-center justify-center border tabular"
         :class="
-          row.enabled ? 'bg-accent/12 text-accent' : 'bg-surface-2 text-faint'
+          row.enabled
+            ? 'border-line bg-invert text-on-invert'
+            : 'border-line-2 text-faint'
         "
-        >{{ row.enabled ? row.position : '–' }}</span
+        >{{ row.enabled ? position(row.position) : '–' }}</span
       >
       <slot name="badge" :row="row" />
       <div class="min-w-0 flex-1 basis-40">
-        <p class="truncate text-sm font-semibold">{{ row.title }}</p>
-        <p class="text-xs text-pretty text-muted">{{ row.description }}</p>
+        <p class="truncate text-[13px] font-semibold">{{ row.title }}</p>
+        <p class="text-[12px] text-pretty text-muted">{{ row.description }}</p>
       </div>
-      <div class="ml-auto flex items-center">
+      <div class="ml-auto flex shrink-0 items-center gap-1">
         <UiIconButton
           icon="chevron-up"
           :label="t('settings.moveUp')"
@@ -93,6 +99,11 @@ const enabled = computed(() =>
   props.modelValue.filter((id) => all.value.includes(id))
 )
 const rows = computed(() => providerRows(all.value, enabled.value, info.value))
+
+// Priority is a technical value: two digits, monospaced.
+function position(value) {
+  return String(value).padStart(2, '0')
+}
 
 function apply(next) {
   if (next) emit('update:modelValue', next)

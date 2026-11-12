@@ -1,17 +1,19 @@
 <template>
-  <div class="flex min-w-0 flex-col gap-8">
+  <div class="flex min-w-0 flex-col gap-5">
     <!-- What this section is for -->
     <SettingGroup
       :title="t('apps.androidGroup')"
       :description="t('apps.androidHint')"
     >
-      <div class="flex flex-col gap-4 px-5 py-4">
-        <p class="text-sm text-pretty text-fg-2">{{ t('apps.androidBody') }}</p>
+      <div class="flex flex-col gap-4 px-4 py-4">
+        <p class="text-[13px] text-pretty text-fg-2">
+          {{ t('apps.androidBody') }}
+        </p>
         <div
-          class="flex items-start gap-2.5 rounded-control bg-warn/10 px-3 py-2.5 text-[13px] text-pretty text-warn"
+          class="flex items-start gap-2.5 border-l-4 border-warn bg-surface-2 px-3 py-2.5 text-[12px] text-pretty text-warn"
           role="note"
         >
-          <AppIcon name="alert" :size="16" class="mt-0.5 shrink-0" />
+          <AppIcon name="alert" :size="15" class="mt-0.5 shrink-0" />
           <span>{{ t('apps.androidUnreleased') }}</span>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -56,8 +58,10 @@
             {{ t('apps.save') }}
           </UiButton>
         </form>
-        <p v-else-if="info" class="text-sm font-semibold">{{ info.name }}</p>
-        <p v-if="info" class="text-[12px] text-faint">
+        <p v-else-if="info" class="text-[13px] font-semibold">
+          {{ info.name }}
+        </p>
+        <p v-if="info" class="mono text-faint">
           {{ t('apps.serverId', { id: info.server_id }) }} · Downtify
           {{ info.version }}
         </p>
@@ -73,8 +77,8 @@
           : t('apps.devicesGroupHint')
       "
     >
-      <div class="flex items-center justify-between gap-3 px-5 py-4">
-        <p class="text-sm text-muted">
+      <div class="flex items-center justify-between gap-3 px-4 py-3">
+        <p class="mono text-muted">
           {{ t('apps.deviceCount', { count: devices.length }) }}
         </p>
         <UiButton variant="primary" icon="plus" @click="openPairing">
@@ -85,24 +89,24 @@
         <li
           v-for="device in devices"
           :key="device.id"
-          class="flex items-center gap-3 px-5 py-3"
+          class="flex flex-wrap items-center gap-2 px-4 py-2.5"
         >
           <span
-            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-2 text-muted"
+            class="flex size-9 shrink-0 items-center justify-center border border-line-2 bg-surface-2 text-muted"
           >
-            <AppIcon name="monitor" :size="18" />
+            <AppIcon name="monitor" :size="16" />
           </span>
           <span class="flex min-w-0 flex-1 flex-col">
-            <span class="truncate text-sm font-semibold">{{
+            <span class="truncate text-[13px] font-semibold">{{
               device.name
             }}</span>
-            <span class="truncate text-[12px] text-muted">
+            <span class="mono truncate text-muted">
               {{ deviceDetails(device) }}
             </span>
           </span>
           <UiButton
             size="sm"
-            variant="ghost"
+            variant="secondary"
             icon="pencil"
             @click="openRename(device)"
           >
@@ -110,7 +114,7 @@
           </UiButton>
           <UiButton
             size="sm"
-            variant="ghost"
+            variant="danger"
             icon="trash"
             @click="revoke(device)"
           >
@@ -124,6 +128,7 @@
     <SettingGroup
       v-if="!auth.authDisabled.value"
       :title="t('apps.signOutGroup')"
+      danger
     >
       <SettingRow
         :label="t('apps.signOutEverywhere')"
@@ -142,42 +147,42 @@
       :description="t('apps.pairBody')"
       @close="closePairing"
     >
-      <div class="flex flex-col items-center gap-4 px-5 py-5 sm:px-6">
+      <div class="flex flex-col items-center gap-4 px-4 py-4 sm:px-5">
         <template v-if="pairing && pairingState === 'pending'">
           <svg
             :viewBox="`-2 -2 ${qr.size + 4} ${qr.size + 4}`"
-            class="size-56 rounded-[12px] bg-white"
+            class="size-56 border-2 border-line bg-surface text-fg"
             role="img"
             :aria-label="t('apps.qrLabel')"
             shape-rendering="crispEdges"
           >
-            <path :d="qr.d" fill="#000" />
+            <path :d="qr.d" fill="currentColor" />
           </svg>
-          <p class="text-[13px] text-muted">{{ t('apps.orTypeCode') }}</p>
+          <p class="text-[12px] text-muted">{{ t('apps.orTypeCode') }}</p>
           <p
             class="font-mono text-3xl font-semibold tracking-[0.2em] text-fg select-all"
           >
             {{ pairing.code }}
           </p>
-          <p class="text-[13px] text-muted" aria-live="polite">
+          <p class="mono text-muted" aria-live="polite">
             {{ t('apps.expiresIn', { time: formatCountdown(remaining) }) }}
           </p>
         </template>
         <template v-else-if="pairingState === 'paired'">
           <span
-            class="flex size-14 items-center justify-center rounded-full bg-accent/15 text-accent"
+            class="flex size-12 items-center justify-center border-2 border-line bg-invert text-accent"
           >
-            <AppIcon name="check" :size="28" />
+            <AppIcon name="check" :size="26" stroke-width="3" />
           </span>
-          <p class="text-center text-sm font-semibold">
+          <p class="text-center text-[13px] font-semibold">
             {{ t('apps.paired', { name: pairedName }) }}
           </p>
         </template>
         <template v-else>
-          <p class="text-center text-sm text-muted">
+          <p class="text-center text-[13px] text-muted">
             {{ t('apps.pairExpired') }}
           </p>
-          <UiButton icon="refresh" @click="startPairing">
+          <UiButton variant="secondary" icon="refresh" @click="startPairing">
             {{ t('apps.newCode') }}
           </UiButton>
         </template>
@@ -192,7 +197,7 @@
       @close="closeRename"
     >
       <form
-        class="flex flex-col gap-4 px-5 py-5 sm:px-6"
+        class="flex flex-col gap-4 px-4 py-4 sm:px-5"
         @submit.prevent="submitRename"
       >
         <UiInput

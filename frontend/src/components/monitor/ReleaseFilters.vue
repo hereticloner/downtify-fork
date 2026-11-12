@@ -4,18 +4,16 @@
        its edit dialog. -->
   <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center gap-2">
-      <span class="text-[13px] font-semibold text-fg-3">{{
-        t('monitor.releaseTypes')
-      }}</span>
+      <span class="eyebrow shrink-0">{{ t('monitor.releaseTypes') }}</span>
       <button
         v-for="type in RELEASE_TYPES"
         :key="type"
         type="button"
-        class="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors disabled:cursor-not-allowed"
+        class="eyebrow inline-flex h-8 items-center gap-1.5 border px-3 transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-50"
         :class="
           types.includes(type)
-            ? 'bg-fg text-bg'
-            : 'bg-surface-2 text-fg-3 hover:bg-raised'
+            ? 'border-line bg-invert text-on-invert'
+            : 'border-line-2 text-muted hover:border-line hover:text-fg'
         "
         :aria-pressed="types.includes(type)"
         :disabled="types.length === 1 && types.includes(type)"
@@ -26,7 +24,7 @@
         "
         @click="$emit('update:types', toggleReleaseType(types, type))"
       >
-        <AppIcon v-if="types.includes(type)" name="check" :size="14" />
+        <AppIcon v-if="types.includes(type)" name="check" :size="13" />
         {{ t(`monitor.release.${type}`) }}
       </button>
     </div>

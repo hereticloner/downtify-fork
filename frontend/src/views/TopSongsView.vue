@@ -1,29 +1,23 @@
 <template>
-  <div>
+  <div class="flex flex-col">
     <!-- Loading -->
     <div
       v-if="loading"
-      class="mx-auto flex max-w-[1680px] flex-col gap-8 px-4 pt-10 sm:px-6 md:flex-row md:items-end lg:px-10"
+      class="flex flex-col gap-4 border-b-2 border-line p-4 sm:flex-row sm:p-6"
+      aria-busy="true"
     >
-      <UiSkeleton
-        class="size-48 self-center !rounded-full sm:size-56 md:self-auto"
-      />
+      <UiSkeleton class="size-40 self-center sm:self-auto" />
       <div class="flex flex-1 flex-col gap-3">
-        <UiSkeleton class="h-3 w-32" />
-        <UiSkeleton class="h-12 w-2/3" />
-        <p class="flex items-center gap-2 text-sm text-muted">
-          <span
-            class="size-4 animate-spin rounded-full border-2 border-accent border-r-transparent"
-          />
+        <UiSkeleton class="h-2.5 w-32" />
+        <UiSkeleton class="h-10 w-2/3" />
+        <p class="mono flex items-center gap-2 text-muted">
+          <span class="size-2 animate-pulse bg-accent" aria-hidden="true" />
           {{ t('link.resolving') }}
         </p>
       </div>
     </div>
 
-    <div
-      v-else-if="error"
-      class="mx-auto max-w-[1680px] px-4 pt-10 sm:px-6 lg:px-10"
-    >
+    <div v-else-if="error" class="border-b-2 border-line p-4" role="status">
       <UiEmpty icon="alert" :title="t('link.failed')" :body="error">
         <UiButton icon="refresh" @click="load">{{
           t('common.retry')
@@ -31,7 +25,7 @@
       </UiEmpty>
     </div>
 
-    <div v-else-if="artist" class="animate-rise">
+    <div v-else-if="artist" class="animate-rise flex flex-col">
       <CollectionHero
         :title="t('link.topSongsOf', { artist: artist.name })"
         :kicker="kicker"
@@ -67,18 +61,16 @@
             </UiButton>
             <span
               v-else
-              class="inline-flex h-12 items-center gap-2 rounded-control bg-accent/12 px-5 text-[15px] font-semibold text-accent"
+              class="flex h-12 items-center gap-2 border-2 border-line px-5"
             >
-              <AppIcon name="check-circle" :size="18" />{{
-                t('link.allInLibrary')
-              }}
+              <AppIcon name="check-circle" :size="16" />
+              <span class="eyebrow text-fg">{{ t('link.allInLibrary') }}</span>
             </span>
             <UiButton
               v-if="
                 topSongs.newSongs.length &&
                 topSongs.newSongs.length < artist.songs.length
               "
-              variant="ghost"
               size="lg"
               @click="topSongs.download(artist.songs)"
             >
@@ -91,12 +83,55 @@
         </template>
       </CollectionHero>
 
-      <div
-        class="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 sm:px-6 lg:px-10"
-      >
-        <TopSongsPanel v-if="artist.songs.length" :state="topSongs" />
+      <div class="grid xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div class="flex min-w-0 flex-col">
+          <div v-if="artist.songs.length" class="border-b-2 border-line p-3">
+            <TopSongsPanel :state="topSongs" />
+          </div>
+          <div v-else class="border-b-2 border-line p-4">
+            <UiEmpty icon="music" :title="t('link.topSongsEmpty')" />
+          </div>
+        </div>
 
-        <UiEmpty v-else icon="music" :title="t('link.topSongsEmpty')" />
+        <!-- Selection summary: how much of the list is picked, and what it
+             holds. -->
+        <aside
+          v-if="artist.songs.length"
+          class="flex min-w-0 flex-col xl:border-l-2 xl:border-line"
+        >
+          <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+            <h2
+              class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+            >
+              {{ t('link.downloadSelected') }}
+            </h2>
+            <span
+              class="mono tabular flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+              >{{ topSongs.selected.size }}</span
+            >
+          </div>
+          <dl class="flex flex-col px-3">
+            <div
+              class="flex items-baseline justify-between gap-3 border-b border-line-2 py-2"
+            >
+              <dt class="eyebrow">{{ t('library.tracks') }}</dt>
+              <dd class="mono tabular text-fg">
+                {{ topSongs.selected.size }} / {{ artist.songs.length }}
+              </dd>
+            </div>
+            <div
+              v-for="row in summary"
+              :key="row.label"
+              class="flex items-baseline justify-between gap-3 border-b border-line-2 py-2 last:border-b-0"
+            >
+              <dt class="eyebrow">{{ row.label }}</dt>
+              <dd class="mono tabular text-fg-3">{{ row.value }}</dd>
+            </div>
+          </dl>
+          <p class="mono border-t border-line-2 px-3 py-2 text-faint">
+            {{ lengthLabel }}
+          </p>
+        </aside>
       </div>
     </div>
   </div>
@@ -179,5 +214,16 @@ const lengthLabel = computed(() => {
   return hours
     ? t('common.lengthHours', { hours, minutes })
     : t('common.lengthMinutes', { minutes })
+})
+
+// What the list holds, by download state - the same states the rows show.
+const summary = computed(() => {
+  const rows = topSongs.rows || []
+  const count = (status) => rows.filter((row) => row.status === status).length
+  return [
+    { label: t('link.filterNew'), value: count('new') },
+    { label: t('link.filterLibrary'), value: count('library') },
+    { label: t('link.filterQueue'), value: count('queue') },
+  ]
 })
 </script>

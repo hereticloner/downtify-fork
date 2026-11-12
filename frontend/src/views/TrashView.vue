@@ -1,17 +1,16 @@
 <template>
-  <div
-    class="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 pt-6 pb-10 sm:px-6 md:pt-8 lg:px-10"
-  >
+  <div class="flex flex-col">
     <PageHeader
       :title="t('trash.title')"
       :subtitle="t('trash.subtitle', { days: capability.retentionDays.value })"
+      class="border-b-2 border-line"
     >
-      <UiButton variant="ghost" icon="library" :to="{ name: 'Library' }">
+      <UiButton variant="secondary" icon="library" :to="{ name: 'Library' }">
         {{ t('library.backToLibrary') }}
       </UiButton>
       <UiButton
         v-if="ready"
-        variant="ghost"
+        variant="secondary"
         icon="refresh"
         :loading="loading"
         @click="load"
@@ -20,33 +19,40 @@
       </UiButton>
     </PageHeader>
 
-    <UiEmpty
-      v-if="!auth.isAdmin.value"
-      icon="lock"
-      :title="t('trash.adminOnly')"
-      :body="t('trash.adminOnlyHint')"
-    />
-    <UiEmpty
+    <div v-if="!auth.isAdmin.value" class="border-b-2 border-line p-4">
+      <UiEmpty
+        icon="lock"
+        :title="t('trash.adminOnly')"
+        :body="t('trash.adminOnlyHint')"
+      />
+    </div>
+    <div
       v-else-if="checked && !capability.enabled.value"
-      icon="trash"
-      :title="t('trash.off')"
-      :body="t('trash.offHint')"
-    />
+      class="border-b-2 border-line p-4"
+    >
+      <UiEmpty
+        icon="trash"
+        :title="t('trash.off')"
+        :body="t('trash.offHint')"
+      />
+    </div>
 
     <template v-else-if="ready">
-      <div class="flex flex-wrap items-center gap-2">
+      <div
+        class="flex flex-wrap items-center gap-2 border-b-2 border-line px-4 py-2"
+      >
         <UiSegmented v-model="view" :options="views" show-labels />
         <label
           v-if="view === 'trash'"
-          class="flex h-10 min-w-0 flex-1 basis-56 items-center gap-2.5 rounded-control border border-line-2 bg-surface px-3 focus-within:border-accent sm:max-w-xs"
+          class="flex h-9 min-w-0 flex-1 basis-56 items-center gap-2 border-2 border-line-2 px-2.5 transition-colors duration-100 focus-within:border-accent sm:max-w-xs"
         >
-          <AppIcon name="filter" :size="16" class="text-faint" />
+          <AppIcon name="filter" :size="15" class="text-faint" />
           <span class="sr-only">{{ t('trash.search') }}</span>
           <input
             v-model="search"
             type="search"
             :placeholder="t('trash.search')"
-            class="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-faint"
+            class="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-faint"
           />
         </label>
         <UiButton
@@ -60,87 +66,155 @@
         </UiButton>
       </div>
 
-      <p v-if="error" class="text-[13px] text-danger" role="alert">
+      <p
+        v-if="error"
+        role="alert"
+        class="border-b-2 border-line bg-surface-2 px-4 py-2 text-[13px] text-danger"
+      >
         {{ error }}
       </p>
 
       <template v-if="view === 'trash'">
-        <p class="tabular text-[13px] text-muted" aria-live="polite">
-          {{ t('trash.summary', { count: total, size: formatBytes(size) }) }}
-        </p>
-        <UiEmpty
-          v-if="!items.length && !loading"
-          icon="trash"
-          :title="search ? t('trash.noMatch') : t('trash.empty')"
-          :body="search ? '' : t('trash.emptyHint')"
-        />
-        <ul
-          v-else
-          class="flex flex-col divide-y divide-line-2 overflow-hidden rounded-panel border border-line-2 bg-surface"
+        <div
+          class="flex flex-wrap items-center gap-x-4 gap-y-1 border-b-2 border-line px-4 py-2"
         >
-          <li
-            v-for="item in items"
-            :key="item.id"
-            class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3"
+          <span class="mono tabular text-muted" aria-live="polite">
+            {{ t('trash.summary', { count: total, size: formatBytes(size) }) }}
+          </span>
+          <span class="mono tabular ml-auto text-faint"
+            >{{ items.length }} / {{ total }}</span
           >
-            <input
-              v-model="selected"
-              :value="item.id"
-              type="checkbox"
-              class="size-4 shrink-0 accent-[var(--color-accent)]"
-              :disabled="!restorable(item) || busy"
-              :aria-label="t('trash.select', { title: titleOf(item) })"
-            />
-            <div class="min-w-0 flex-1 basis-60">
-              <p class="truncate font-semibold text-fg">{{ titleOf(item) }}</p>
-              <p class="truncate text-sm text-muted">
-                {{ item.metadata.artist || '—' }}
-              </p>
-              <p class="tabular mt-0.5 truncate text-[12px] text-faint">
-                {{ formatOf(item) }} · {{ formatBytes(item.size) }} ·
-                {{ item.file }}
-              </p>
-              <p v-if="item.error" class="mt-1 text-[12px] text-danger">
-                {{ t(trashErrorKey(item.error)) }}
-              </p>
-            </div>
-            <div class="flex shrink-0 flex-col items-end gap-1">
-              <UiBadge :tone="STATE_TONES[item.state] || 'neutral'">
-                {{ t('trash.states.' + item.state) }}
-              </UiBadge>
-              <span
-                v-if="item.expires_at && item.state === 'trashed'"
-                class="tabular text-[12px] text-faint"
+        </div>
+
+        <div
+          v-if="!items.length && !loading"
+          class="border-b-2 border-line p-4"
+        >
+          <UiEmpty
+            icon="trash"
+            :title="search ? t('trash.noMatch') : t('trash.empty')"
+            :body="search ? '' : t('trash.emptyHint')"
+          />
+        </div>
+
+        <!-- Deleted artefacts: 56px rows, square checkbox, mono dates. -->
+        <div v-else class="border-b-2 border-line">
+          <div
+            class="hidden h-9 items-center gap-3 border-b-2 border-line bg-surface-2 px-3 lg:grid lg:grid-cols-[28px_minmax(0,2.2fr)_200px_88px_104px]"
+          >
+            <span aria-hidden="true" />
+            <span class="eyebrow">{{ t('track.title') }}</span>
+            <span aria-hidden="true" />
+            <span class="eyebrow text-right">{{ t('track.size') }}</span>
+            <span aria-hidden="true" />
+          </div>
+
+          <ul class="flex flex-col">
+            <li
+              v-for="item in items"
+              :key="item.id"
+              class="grid min-h-14 grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-b border-line-2 px-3 py-2 transition-colors duration-100 last:border-b-0 hover:bg-surface-2 lg:grid-cols-[28px_minmax(0,2.2fr)_200px_88px_104px] lg:gap-3 lg:py-0"
+            >
+              <button
+                type="button"
+                role="checkbox"
+                :aria-checked="selected.includes(item.id)"
+                :aria-label="t('trash.select', { title: titleOf(item) })"
+                :disabled="!restorable(item) || busy"
+                class="flex size-11 items-center justify-center disabled:cursor-not-allowed lg:size-7"
+                @click="toggleSelect(item)"
               >
-                {{ t('trash.keptUntil', { date: date(item.expires_at) }) }}
-              </span>
-            </div>
-            <div class="flex shrink-0 gap-2">
-              <UiButton
-                v-if="item.state === 'error'"
-                size="sm"
-                variant="ghost"
-                icon="retry"
-                :disabled="busy"
-                @click="retry(item.id)"
+                <span
+                  class="flex size-4 items-center justify-center border-2 transition-colors duration-100"
+                  :class="
+                    selected.includes(item.id)
+                      ? 'border-line bg-invert text-on-invert'
+                      : 'border-line-3'
+                  "
+                >
+                  <AppIcon
+                    v-if="selected.includes(item.id)"
+                    name="check"
+                    :size="10"
+                    stroke-width="3"
+                  />
+                </span>
+              </button>
+
+              <div class="flex min-w-0 items-center gap-3" :title="item.file">
+                <CoverArt
+                  :name="item.metadata?.album || titleOf(item)"
+                  :letter-size="12"
+                  :icon-size="15"
+                  class="size-10"
+                />
+                <div class="min-w-0">
+                  <p class="truncate text-[13px] font-semibold text-fg">
+                    {{ titleOf(item) }}
+                  </p>
+                  <p class="truncate text-[12px] text-muted">
+                    {{ item.metadata.artist || '—' }}
+                    <span class="mono ml-1.5 border border-line-2 px-1">{{
+                      formatOf(item)
+                    }}</span>
+                  </p>
+                  <p v-if="item.error" class="mono mt-1 text-danger">
+                    {{ t(trashErrorKey(item.error)) }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-end gap-1 lg:order-last">
+                <UiIconButton
+                  v-if="item.state === 'error'"
+                  icon="refresh"
+                  :label="t('trash.retry')"
+                  size="sm"
+                  :disabled="busy"
+                  @click="retry(item.id)"
+                />
+                <UiIconButton
+                  v-if="restorable(item)"
+                  icon="retry"
+                  :label="t('trash.restore')"
+                  size="sm"
+                  :disabled="busy"
+                  @click="restore([item.id])"
+                />
+              </div>
+
+              <div
+                class="col-span-2 flex flex-wrap items-center gap-x-3 gap-y-1 lg:contents"
               >
-                {{ t('trash.retry') }}
-              </UiButton>
-              <UiButton
-                v-if="restorable(item)"
-                size="sm"
-                :disabled="busy"
-                @click="restore([item.id])"
-              >
-                {{ t('trash.restore') }}
-              </UiButton>
-            </div>
-          </li>
-        </ul>
-        <div v-if="total > PAGE" class="flex items-center justify-end gap-2">
+                <div class="flex min-w-0 flex-col gap-1">
+                  <UiBadge :tone="STATE_TONES[item.state] || 'neutral'">
+                    {{ t('trash.states.' + item.state) }}
+                  </UiBadge>
+                  <span
+                    v-if="item.expires_at && item.state === 'trashed'"
+                    class="mono text-faint"
+                  >
+                    {{ t('trash.keptUntil', { date: date(item.expires_at) }) }}
+                  </span>
+                </div>
+                <span class="mono tabular text-muted lg:text-right">{{
+                  formatBytes(item.size)
+                }}</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div
+          v-if="total > PAGE"
+          class="flex items-center justify-end gap-2 border-b-2 border-line px-4 py-2"
+        >
+          <span class="mono tabular mr-auto text-faint">{{
+            Math.floor(offset / PAGE) + 1
+          }}</span>
           <UiButton
             size="sm"
-            variant="ghost"
+            variant="secondary"
             icon="chevron-left"
             :disabled="offset === 0 || busy"
             @click="offset -= PAGE"
@@ -149,7 +223,7 @@
           </UiButton>
           <UiButton
             size="sm"
-            variant="ghost"
+            variant="secondary"
             icon-right="chevron-right"
             :disabled="offset + PAGE >= total || busy"
             @click="offset += PAGE"
@@ -160,26 +234,28 @@
       </template>
 
       <template v-else>
-        <p class="text-sm text-pretty text-muted">
+        <p
+          class="border-b-2 border-line px-4 py-2 text-[13px] text-pretty text-muted"
+        >
           {{ t('trash.exclusionsHint') }}
         </p>
-        <UiEmpty
+        <div
           v-if="!exclusions.length && !loading"
-          icon="download"
-          :title="t('trash.exclusionsEmpty')"
-        />
-        <ul
-          v-else
-          class="flex flex-col divide-y divide-line-2 overflow-hidden rounded-panel border border-line-2 bg-surface"
+          class="border-b-2 border-line p-4"
         >
+          <UiEmpty icon="download" :title="t('trash.exclusionsEmpty')" />
+        </div>
+        <ul v-else class="flex flex-col border-b-2 border-line">
           <li
             v-for="item in exclusions"
             :key="item.id"
-            class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3"
+            class="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 border-b border-line-2 px-4 py-2 last:border-b-0"
           >
-            <div class="min-w-0 flex-1 basis-60">
-              <p class="truncate font-semibold text-fg">{{ titleOf(item) }}</p>
-              <p class="truncate text-sm text-muted">
+            <div class="min-w-0 flex-1 basis-56">
+              <p class="truncate text-[13px] font-semibold text-fg">
+                {{ titleOf(item) }}
+              </p>
+              <p class="mono truncate text-muted">
                 {{ item.metadata.artist || '—' }} · {{ formatOf(item) }}
               </p>
             </div>
@@ -206,9 +282,11 @@
 // as waiting until the worker has really done it.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import AppIcon from '/src/components/ui/AppIcon.vue'
+import CoverArt from '/src/components/ui/CoverArt.vue'
 import UiBadge from '/src/components/ui/UiBadge.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
+import UiIconButton from '/src/components/ui/UiIconButton.vue'
 import UiSegmented from '/src/components/ui/UiSegmented.vue'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import API from '/src/model/api'
@@ -265,6 +343,14 @@ const date = (seconds) =>
 const titleOf = (item) => item.metadata?.title || item.file
 const formatOf = (item) =>
   String(item.metadata?.codec || item.file.split('.').pop() || '').toUpperCase()
+
+/** The square checkbox: same multi-select list the native input held. */
+function toggleSelect(item) {
+  if (!restorable(item) || busy.value) return
+  selected.value = selected.value.includes(item.id)
+    ? selected.value.filter((id) => id !== item.id)
+    : [...selected.value, item.id]
+}
 
 async function load() {
   if (loading.value || !ready.value || disposed) return

@@ -1,6 +1,7 @@
 <template>
   <div
-    class="group flex h-16 items-center gap-3 rounded-[12px] px-3 transition-colors hover:bg-surface"
+    class="group flex h-14 items-center gap-3 border-b border-line-2 px-3 transition-colors"
+    :class="isCurrent ? 'bg-invert text-on-invert' : 'hover:bg-surface-2'"
   >
     <span
       v-if="index !== null"
@@ -18,13 +19,12 @@
       <CoverArt
         :src="song.cover_url"
         :name="song.name"
-        rounded="rounded-[8px]"
         :letter-size="14"
         class="size-11"
       />
       <span
         v-if="playable"
-        class="absolute inset-0 hidden items-center justify-center rounded-[8px] bg-black/45 text-white group-hover:flex"
+        class="absolute inset-0 hidden items-center justify-center bg-invert/70 text-on-invert group-hover:flex"
         :class="isCurrent ? '!flex' : ''"
       >
         <AppIcon
@@ -65,7 +65,7 @@
       <button
         v-else
         type="button"
-        class="flex size-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-fg-3 transition-colors hover:bg-accent hover:text-on-accent disabled:opacity-50"
+        class="flex size-9 shrink-0 items-center justify-center border-2 border-line-2 text-fg-3 transition-colors hover:border-line hover:text-fg disabled:opacity-50"
         :title="t('actions.download')"
         :aria-label="t('actions.downloadItem', { name: song.name })"
         :disabled="resolving"

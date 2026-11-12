@@ -1,33 +1,31 @@
 <template>
-  <div
-    class="mx-auto flex max-w-[1680px] flex-col gap-4 px-4 pt-6 sm:px-6 md:pt-8 lg:px-10"
-  >
-    <!-- Path bar, like Finder's: back to the search, then the artist and
+  <div class="flex flex-col">
+    <!-- Path bar: mono breadcrumb back to the search, then the artist and
          the album open in the columns below. -->
     <nav
-      class="flex min-w-0 items-center gap-1.5 text-[13px] text-muted"
+      class="flex h-9 min-w-0 items-center gap-1.5 overflow-x-auto border-b-2 border-line px-3 [scrollbar-width:none]"
       :aria-label="t('finder.path')"
     >
       <RouterLink
         :to="searchLocation"
-        class="flex shrink-0 items-center gap-1.5 font-semibold hover:text-fg"
+        class="mono flex shrink-0 items-center gap-1.5 text-muted transition-colors duration-100 hover:text-fg"
       >
-        <AppIcon name="sparkle" :size="15" />{{ t('nav.discover') }}
+        <AppIcon name="sparkle" :size="13" />{{ t('nav.discover') }}
       </RouterLink>
       <template v-if="artist.data.value">
-        <AppIcon name="chevron-right" :size="14" class="shrink-0 text-faint" />
+        <AppIcon name="chevron-right" :size="12" class="shrink-0 text-faint" />
         <button
           type="button"
-          class="min-w-0 truncate hover:text-fg"
-          :class="albumId ? '' : 'font-semibold text-fg'"
+          class="mono min-w-0 truncate transition-colors duration-100 hover:text-fg"
+          :class="albumId ? 'text-muted' : 'text-fg'"
           @click="selectAlbum('')"
         >
           {{ artist.data.value.name }}
         </button>
       </template>
       <template v-if="albumId && album.data.value">
-        <AppIcon name="chevron-right" :size="14" class="shrink-0 text-faint" />
-        <span class="min-w-0 truncate font-semibold text-fg">{{
+        <AppIcon name="chevron-right" :size="12" class="shrink-0 text-faint" />
+        <span class="mono min-w-0 truncate text-fg">{{
           album.data.value.name
         }}</span>
       </template>
@@ -37,12 +35,8 @@
          narrow one they sit side by side too, a swipe apart. -->
     <div
       ref="columnsEl"
-      class="relative flex h-[calc(100dvh-17rem)] min-h-[480px] snap-x snap-mandatory overflow-x-auto overflow-y-hidden rounded-panel border border-line-2 bg-surface/50 md:h-[calc(100dvh-12.5rem)] lg:grid lg:grid-cols-[minmax(260px,300px)_minmax(280px,340px)_minmax(0,1fr)] lg:overflow-hidden"
-      :class="
-        resizing >= 0
-          ? 'cursor-col-resize select-none'
-          : 'transition-[grid-template-columns] duration-200 ease-out'
-      "
+      class="relative flex h-[calc(100dvh-11rem)] min-h-[420px] snap-x snap-mandatory overflow-x-auto overflow-y-hidden border-b-2 border-line md:h-[calc(100dvh-11.75rem)] lg:grid lg:grid-cols-[minmax(260px,300px)_minmax(280px,340px)_minmax(0,1fr)] lg:overflow-hidden"
+      :class="resizing >= 0 ? 'cursor-col-resize select-none' : ''"
       :style="columnsStyle"
     >
       <!-- Wide screens: a grip on each open column's right edge, dragged
@@ -64,40 +58,36 @@
         @keydown.right.prevent="nudge(grip.index, 16)"
       >
         <span
-          class="h-full w-0.5 transition-colors group-hover:bg-accent/60 group-focus-visible:bg-accent"
-          :class="resizing === grip.index ? 'bg-accent' : ''"
+          class="h-full w-0.5 transition-colors duration-100 group-hover:bg-fg-3 group-focus-visible:bg-accent"
+          :class="resizing === grip.index ? 'bg-accent' : 'bg-transparent'"
         />
       </div>
 
       <!-- 1 · The artist -->
       <section
         ref="artistEl"
-        class="flex shrink-0 snap-start flex-col overflow-y-auto border-r border-line lg:w-auto"
+        class="flex shrink-0 snap-start flex-col overflow-y-auto border-r-2 border-line lg:w-auto"
         :class="collapsed[0] ? 'w-[76px]' : 'w-[86vw] sm:w-[320px]'"
         :aria-label="t('finder.artistColumn')"
       >
         <header
-          class="sticky top-0 z-10 border-b border-line bg-bg/90 px-3 py-3 backdrop-blur"
+          class="sticky top-0 z-10 flex items-center border-b-2 border-line bg-surface-2 px-2 py-2"
+          :class="collapsed[0] ? 'justify-center' : 'justify-between'"
         >
-          <div
-            class="flex items-center px-1"
-            :class="collapsed[0] ? 'justify-center' : 'justify-between'"
-          >
-            <h3 v-if="!collapsed[0]" class="text-sm font-semibold">
-              {{ t('finder.artistColumn') }}
-            </h3>
-            <UiIconButton
-              :icon="collapsed[0] ? 'chevron-right' : 'chevron-left'"
-              :label="
-                collapsed[0]
-                  ? t('finder.expandColumn')
-                  : t('finder.collapseColumn')
-              "
-              size="sm"
-              :aria-expanded="!collapsed[0]"
-              @click="toggleColumn(0)"
-            />
-          </div>
+          <h3 v-if="!collapsed[0]" class="eyebrow px-1 text-fg">
+            {{ t('finder.artistColumn') }}
+          </h3>
+          <UiIconButton
+            :icon="collapsed[0] ? 'chevron-right' : 'chevron-left'"
+            :label="
+              collapsed[0]
+                ? t('finder.expandColumn')
+                : t('finder.collapseColumn')
+            "
+            size="sm"
+            :aria-expanded="!collapsed[0]"
+            @click="toggleColumn(0)"
+          />
         </header>
 
         <!-- Collapsed: just the pictures - the artist, their popular
@@ -118,16 +108,16 @@
               class="size-11"
             />
             <template v-if="artist.data.value.top_songs?.length">
-              <span class="my-1 h-px w-8 bg-line" aria-hidden="true" />
+              <span class="my-1 h-px w-8 bg-line-2" aria-hidden="true" />
               <button
                 v-for="song in artist.data.value.top_songs"
                 :key="song.song_id"
                 type="button"
-                class="rounded-[8px] p-1 transition-colors disabled:cursor-default"
+                class="border-2 p-0.5 transition-colors duration-100 disabled:cursor-default"
                 :class="
                   song.song_id === trackId
-                    ? 'bg-accent'
-                    : 'hover:bg-surface-2 disabled:hover:bg-transparent'
+                    ? 'border-line bg-invert'
+                    : 'border-transparent hover:border-line-2'
                 "
                 :title="song.name"
                 :aria-label="song.name"
@@ -137,19 +127,18 @@
                 <CoverArt
                   :src="deezerImage(song.cover_url)"
                   :name="song.album_name || song.name"
-                  rounded="rounded-[6px]"
                   :letter-size="11"
                   class="size-10"
                 />
               </button>
             </template>
             <template v-if="artist.data.value.related?.length">
-              <span class="my-1 h-px w-8 bg-line" aria-hidden="true" />
+              <span class="my-1 h-px w-8 bg-line-2" aria-hidden="true" />
               <RouterLink
                 v-for="other in artist.data.value.related"
                 :key="other.artist_id"
                 :to="browseLocation('artist', other)"
-                class="rounded-full p-1 transition-colors hover:bg-surface-2"
+                class="border-2 border-transparent p-0.5 transition-colors duration-100 hover:border-line-2"
                 :title="other.name"
                 :aria-label="other.name"
               >
@@ -166,26 +155,19 @@
           </div>
           <div
             v-else-if="artist.loading.value"
-            class="flex flex-col items-center gap-3 py-3"
+            class="flex flex-col items-center gap-2 py-3"
           >
-            <UiSkeleton class="size-11 !rounded-full" />
-            <UiSkeleton
-              v-for="n in 5"
-              :key="n"
-              class="size-10 !rounded-[6px]"
-            />
+            <UiSkeleton class="size-11" />
+            <UiSkeleton v-for="n in 5" :key="n" class="size-10" />
           </div>
         </template>
 
         <template v-else>
-          <div
-            v-if="artist.loading.value"
-            class="flex flex-col items-center gap-3 p-5"
-          >
-            <UiSkeleton class="size-36 !rounded-full" />
-            <UiSkeleton class="h-5 w-2/3" />
-            <UiSkeleton class="h-3 w-1/2" />
-            <UiSkeleton class="mt-4 h-24 w-full" />
+          <div v-if="artist.loading.value" class="flex flex-col gap-3 p-4">
+            <UiSkeleton class="size-32" />
+            <UiSkeleton class="h-4 w-2/3" />
+            <UiSkeleton class="h-2.5 w-1/2" />
+            <UiSkeleton class="mt-3 h-20 w-full" />
           </div>
           <FinderColumnEmpty
             v-else-if="artist.error.value"
@@ -202,24 +184,25 @@
             icon="user"
             :title="t('finder.noArtist')"
           />
-          <div v-else class="flex flex-col gap-6 p-5">
-            <div class="flex flex-col items-center gap-3 text-center">
+          <div v-else class="flex flex-col gap-5 p-4">
+            <div class="flex flex-col gap-3">
               <CoverArt
                 v-bind="artistPhoto(artist.data.value)"
                 :name="artist.data.value.name"
                 round
                 icon="user"
-                shadow
-                :letter-size="44"
-                class="size-36"
+                :letter-size="40"
+                class="size-32"
               />
               <div class="min-w-0">
-                <h2 class="text-display text-2xl font-bold text-balance">
+                <h2
+                  class="text-display text-xl leading-tight font-bold text-balance"
+                >
                   {{ artist.data.value.name }}
                 </h2>
                 <p
                   v-if="artist.data.value.album_count"
-                  class="mt-1 text-[13px] text-muted"
+                  class="mono mt-1.5 text-muted"
                 >
                   {{
                     t('common.albums', { count: artist.data.value.album_count })
@@ -228,7 +211,7 @@
               </div>
             </div>
 
-            <section v-if="artist.data.value.bio" class="flex flex-col gap-2">
+            <section v-if="artist.data.value.bio" class="flex flex-col gap-1.5">
               <h3 class="eyebrow">{{ t('finder.about') }}</h3>
               <p
                 class="text-[13px] leading-relaxed whitespace-pre-line text-fg-3"
@@ -238,7 +221,7 @@
               </p>
               <button
                 type="button"
-                class="self-start text-[13px] font-semibold text-muted hover:text-fg"
+                class="eyebrow self-start text-muted transition-colors duration-100 hover:text-fg"
                 @click="bioOpen = !bioOpen"
               >
                 {{ bioOpen ? t('finder.showLess') : t('finder.showMore') }}
@@ -247,48 +230,63 @@
 
             <section
               v-if="artist.data.value.top_songs?.length"
-              class="flex flex-col gap-1"
+              class="flex flex-col"
             >
-              <h3 class="eyebrow pb-1">{{ t('finder.popular') }}</h3>
+              <h3 class="eyebrow border-b-2 border-line pb-1.5">
+                {{ t('finder.popular') }}
+              </h3>
               <button
                 v-for="song in artist.data.value.top_songs"
                 :key="song.song_id"
                 type="button"
-                class="-mx-2 flex items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2 disabled:cursor-default disabled:hover:bg-transparent"
-                :class="song.song_id === trackId ? 'bg-surface-2' : ''"
+                class="relative flex items-center gap-2.5 border-b border-line-2 px-1 py-1.5 text-left transition-colors duration-100 last:border-b-0 disabled:cursor-default"
+                :class="
+                  song.song_id === trackId
+                    ? 'bg-invert text-on-invert'
+                    : 'hover:bg-surface-2'
+                "
                 :disabled="!song.deezer_album_id"
                 @click="selectTrack(song)"
               >
                 <CoverArt
                   :src="deezerImage(song.cover_url)"
                   :name="song.album_name || song.name"
-                  rounded="rounded-[6px]"
                   :letter-size="11"
                   class="size-9"
                 />
                 <span class="min-w-0 flex-1">
                   <span
                     class="block truncate text-[13px] font-semibold"
-                    :class="song.song_id === trackId ? 'text-accent' : ''"
+                    :class="
+                      song.song_id === trackId ? 'text-on-invert' : 'text-fg'
+                    "
                     >{{ song.name }}</span
                   >
-                  <span class="block truncate text-xs text-muted">{{
-                    song.album_name
-                  }}</span>
+                  <span
+                    class="mono block truncate"
+                    :class="
+                      song.song_id === trackId
+                        ? 'text-on-invert/70'
+                        : 'text-muted'
+                    "
+                    >{{ song.album_name }}</span
+                  >
                 </span>
               </button>
             </section>
 
             <section
               v-if="artist.data.value.related?.length"
-              class="flex flex-col gap-1"
+              class="flex flex-col"
             >
-              <h3 class="eyebrow pb-1">{{ t('finder.related') }}</h3>
+              <h3 class="eyebrow border-b-2 border-line pb-1.5">
+                {{ t('finder.related') }}
+              </h3>
               <RouterLink
                 v-for="other in artist.data.value.related"
                 :key="other.artist_id"
                 :to="browseLocation('artist', other)"
-                class="-mx-2 flex items-center gap-2.5 rounded-[8px] px-2 py-1.5 transition-colors hover:bg-surface-2"
+                class="flex items-center gap-2.5 border-b border-line-2 px-1 py-1.5 transition-colors duration-100 last:border-b-0 hover:bg-surface-2"
               >
                 <CoverArt
                   v-bind="artistPhoto(other)"
@@ -311,24 +309,22 @@
       <!-- 2 · Their discography -->
       <section
         ref="albumsEl"
-        class="flex shrink-0 snap-start flex-col overflow-y-auto border-r border-line lg:w-auto"
+        class="flex shrink-0 snap-start flex-col overflow-y-auto border-r-2 border-line lg:w-auto"
         :class="collapsed[1] ? 'w-[76px]' : 'w-[86vw] sm:w-[340px]'"
         :aria-label="t('finder.discography')"
       >
         <header
-          class="sticky top-0 z-10 flex flex-col gap-2 border-b border-line bg-bg/90 px-3 py-3 backdrop-blur"
+          class="sticky top-0 z-10 flex flex-col gap-2 border-b-2 border-line bg-surface-2 px-2 py-2"
         >
           <div
             class="flex items-center gap-2 px-1"
             :class="collapsed[1] ? 'justify-center' : ''"
           >
             <template v-if="!collapsed[1]">
-              <h3 class="text-sm font-semibold">
-                {{ t('finder.discography') }}
-              </h3>
+              <h3 class="eyebrow text-fg">{{ t('finder.discography') }}</h3>
               <span
                 v-if="albums.data.value?.length"
-                class="tabular mr-auto text-xs text-faint"
+                class="mono tabular mr-auto text-faint"
                 >{{ visibleAlbums.length }}</span
               >
             </template>
@@ -356,21 +352,19 @@
         <template v-if="collapsed[1]">
           <div
             v-if="albums.loading.value"
-            class="flex flex-col items-center gap-3 py-3"
+            class="flex flex-col items-center gap-2 py-3"
           >
-            <UiSkeleton
-              v-for="n in 8"
-              :key="n"
-              class="size-12 !rounded-[6px]"
-            />
+            <UiSkeleton v-for="n in 8" :key="n" class="size-12" />
           </div>
           <ul v-else class="flex flex-col items-center gap-1 py-2">
             <li v-for="item in visibleAlbums" :key="item.album_id">
               <button
                 type="button"
-                class="rounded-[9px] p-1 transition-colors"
+                class="border-2 p-0.5 transition-colors duration-100"
                 :class="
-                  item.album_id === albumId ? 'bg-accent' : 'hover:bg-surface-2'
+                  item.album_id === albumId
+                    ? 'border-line bg-invert'
+                    : 'border-transparent hover:border-line-2'
                 "
                 :title="item.name"
                 :aria-label="item.name"
@@ -381,7 +375,6 @@
                 <CoverArt
                   :src="deezerImage(item.cover_url)"
                   :name="item.name"
-                  rounded="rounded-[6px]"
                   icon="disc"
                   :letter-size="14"
                   class="size-12"
@@ -392,16 +385,16 @@
         </template>
 
         <template v-else>
-          <div v-if="albums.loading.value" class="flex flex-col gap-1 p-1.5">
+          <div v-if="albums.loading.value" class="flex flex-col">
             <div
               v-for="n in 8"
               :key="n"
-              class="flex items-center gap-3 px-2 py-2"
+              class="flex items-center gap-3 border-b border-line-2 px-2 py-2"
             >
-              <UiSkeleton class="size-12 !rounded-[6px]" />
+              <UiSkeleton class="size-12" />
               <div class="flex flex-1 flex-col gap-2">
-                <UiSkeleton class="h-3.5 w-2/3" />
-                <UiSkeleton class="h-3 w-1/3" />
+                <UiSkeleton class="h-3 w-2/3" />
+                <UiSkeleton class="h-2.5 w-1/3" />
               </div>
             </div>
           </div>
@@ -420,14 +413,14 @@
             icon="disc"
             :title="t('finder.noAlbums')"
           />
-          <ul v-else class="flex flex-col gap-0.5 p-1.5">
+          <ul v-else class="flex flex-col">
             <li v-for="item in visibleAlbums" :key="item.album_id">
               <button
                 type="button"
-                class="flex w-full items-center gap-3 rounded-[10px] px-2 py-2 text-left transition-colors"
+                class="flex w-full items-center gap-2.5 border-b border-line-2 px-2 py-2 text-left transition-colors duration-100 last:border-b-0"
                 :class="
                   item.album_id === albumId
-                    ? 'bg-accent text-on-accent'
+                    ? 'bg-invert text-on-invert'
                     : 'hover:bg-surface-2'
                 "
                 :aria-current="item.album_id === albumId ? 'true' : undefined"
@@ -437,33 +430,36 @@
                 <CoverArt
                   :src="deezerImage(item.cover_url)"
                   :name="item.name"
-                  rounded="rounded-[6px]"
                   icon="disc"
-                  :letter-size="14"
-                  class="size-12"
+                  :letter-size="12"
+                  class="size-11"
                 />
                 <span class="min-w-0 flex-1">
                   <span class="flex items-center gap-1.5">
-                    <span class="truncate text-sm font-semibold">{{
-                      item.name
-                    }}</span>
+                    <span
+                      class="truncate text-[13px] font-semibold"
+                      :class="
+                        item.album_id === albumId ? 'text-on-invert' : 'text-fg'
+                      "
+                      >{{ item.name }}</span
+                    >
                     <span
                       v-if="item.explicit"
-                      class="shrink-0 rounded-[3px] px-1 text-[9px] leading-[14px] font-bold"
+                      class="mono flex size-4 shrink-0 items-center justify-center border text-[9px] leading-none"
                       :class="
                         item.album_id === albumId
-                          ? 'bg-on-accent text-accent'
-                          : 'bg-muted text-bg'
+                          ? 'border-on-invert text-on-invert'
+                          : 'border-line-2 text-muted'
                       "
                       :title="t('search.explicit')"
                       >E</span
                     >
                   </span>
                   <span
-                    class="block truncate text-xs"
+                    class="mono block truncate"
                     :class="
                       item.album_id === albumId
-                        ? 'text-on-accent/80'
+                        ? 'text-on-invert/70'
                         : 'text-muted'
                     "
                     >{{ albumMeta(item) }}</span
@@ -471,8 +467,11 @@
                 </span>
                 <AppIcon
                   name="chevron-right"
-                  :size="15"
-                  class="shrink-0 opacity-60"
+                  :size="14"
+                  class="shrink-0"
+                  :class="
+                    item.album_id === albumId ? 'text-on-invert' : 'text-faint'
+                  "
                 />
               </button>
             </li>
@@ -492,18 +491,18 @@
           :title="t('finder.pickAlbum')"
           :body="t('finder.pickAlbumHint')"
         />
-        <div v-else-if="album.loading.value" class="flex flex-col gap-5 p-5">
+        <div v-else-if="album.loading.value" class="flex flex-col gap-4 p-4">
           <div class="flex items-end gap-4">
-            <UiSkeleton class="size-36 !rounded-cover" />
+            <UiSkeleton class="size-28" />
             <div class="flex flex-1 flex-col gap-2">
-              <UiSkeleton class="h-3 w-16" />
+              <UiSkeleton class="h-2.5 w-16" />
               <UiSkeleton class="h-6 w-2/3" />
-              <UiSkeleton class="h-3 w-1/2" />
+              <UiSkeleton class="h-2.5 w-1/2" />
             </div>
           </div>
           <div v-for="n in 6" :key="n" class="flex h-12 items-center gap-3">
-            <UiSkeleton class="size-10 !rounded-[8px]" />
-            <UiSkeleton class="h-3.5 w-1/2" />
+            <UiSkeleton class="size-10" />
+            <UiSkeleton class="h-3 w-1/2" />
           </div>
         </div>
         <FinderColumnEmpty
@@ -516,57 +515,45 @@
             t('common.retry')
           }}</UiButton>
         </FinderColumnEmpty>
-        <div v-else-if="album.data.value" class="flex flex-col gap-5 p-5">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div v-else-if="album.data.value" class="flex flex-col gap-4 p-4">
+          <div class="flex flex-col gap-4 sm:flex-row">
             <CoverArt
               :src="deezerImage(album.data.value.cover_url)"
               :name="album.data.value.name"
               icon="disc"
-              shadow
-              :letter-size="40"
-              class="size-36 sm:size-40"
+              :letter-size="36"
+              class="size-28 sm:size-32"
             />
             <div class="min-w-0 flex-1">
               <p class="eyebrow">
                 {{ typeLabel(album.data.value.release_type) }}
               </p>
               <h2
-                class="text-display text-2xl font-bold text-balance sm:text-3xl"
+                class="text-display mt-1 text-xl leading-tight font-bold text-balance sm:text-2xl"
               >
                 {{ album.data.value.name }}
               </h2>
-              <p class="mt-1 text-[13px] text-muted">{{ albumSummary }}</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <UiButton
-                  size="sm"
-                  variant="primary"
-                  icon="download"
-                  :loading="downloadingAlbum"
-                  :disabled="!album.data.value.tracks?.length"
-                  @click="downloadAlbum"
-                  >{{ t('finder.downloadAlbum') }}</UiButton
-                >
-                <UiButton
-                  v-if="album.data.value.url"
-                  size="sm"
-                  icon="arrow-up-right"
-                  :href="album.data.value.url"
-                  >{{ t('link.openDeezer') }}</UiButton
-                >
-              </div>
+              <p class="mono mt-1.5 text-muted">{{ albumSummary }}</p>
             </div>
           </div>
 
           <!-- Like Finder's preview pane: everything else Deezer says
-               about the album. -->
-          <dl
-            v-if="albumInfo.length"
-            class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 rounded-[12px] bg-surface-2/60 p-4 text-[13px]"
-          >
-            <template v-for="row in albumInfo" :key="row.label">
-              <dt class="text-faint">{{ row.label }}</dt>
-              <dd class="text-fg-3">{{ row.value }}</dd>
-            </template>
+               about the album, as a ruled spec table. -->
+          <dl v-if="albumInfo.length" class="border-2 border-line">
+            <div
+              v-for="row in albumInfo"
+              :key="row.label"
+              class="flex items-stretch border-b border-line-2 last:border-b-0"
+            >
+              <dt
+                class="eyebrow flex w-28 shrink-0 items-center border-r border-line-2 px-2 py-1.5"
+              >
+                {{ row.label }}
+              </dt>
+              <dd class="mono min-w-0 flex-1 truncate px-2 py-1.5 text-fg-3">
+                {{ row.value }}
+              </dd>
+            </div>
           </dl>
 
           <FinderColumnEmpty
@@ -583,6 +570,31 @@
             :marked-key="trackId"
             hide-album
           />
+        </div>
+
+        <!-- The album's actions stay at the foot of its column, whatever
+             the track list is doing above them. -->
+        <div
+          v-if="album.data.value"
+          class="sticky bottom-0 z-10 mt-auto flex flex-wrap items-center gap-2 border-t-2 border-line bg-bg px-4 py-2.5"
+        >
+          <UiButton
+            variant="primary"
+            icon="download"
+            :loading="downloadingAlbum"
+            :disabled="!album.data.value.tracks?.length"
+            @click="downloadAlbum"
+            >{{ t('finder.downloadAlbum') }}</UiButton
+          >
+          <UiButton
+            v-if="album.data.value.url"
+            icon="arrow-up-right"
+            :href="album.data.value.url"
+            >{{ t('link.openDeezer') }}</UiButton
+          >
+          <span class="mono ml-auto text-faint">{{
+            lengthLabel(album.data.value.duration)
+          }}</span>
         </div>
       </section>
     </div>

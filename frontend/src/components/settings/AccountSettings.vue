@@ -1,15 +1,17 @@
 <template>
   <SettingGroup :title="t('account.title')" :description="t('account.hint')">
-    <div class="flex items-center gap-3 px-5 py-4">
+    <div class="flex items-center gap-3 px-4 py-4">
       <span
-        class="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent/15 text-base font-bold text-accent uppercase"
+        class="eyebrow flex size-11 shrink-0 items-center justify-center border-2 border-line bg-invert text-[15px] text-on-invert"
         aria-hidden="true"
       >
         {{ (user?.username || '?').slice(0, 1) }}
       </span>
       <span class="flex min-w-0 flex-1 flex-col">
-        <span class="truncate text-sm font-semibold">{{ user?.username }}</span>
-        <span class="text-[12px] text-muted">
+        <span class="truncate text-[13px] font-semibold">{{
+          user?.username
+        }}</span>
+        <span class="mono text-faint">
           {{
             user?.role === 'admin'
               ? t('account.roleAdmin')
@@ -17,17 +19,17 @@
           }}
         </span>
       </span>
-      <UiButton variant="ghost" icon="log-out" @click="auth.signOut">
+      <UiButton variant="secondary" icon="log-out" @click="auth.signOut">
         {{ t('account.signOut') }}
       </UiButton>
     </div>
 
     <div
       v-if="user?.default_password"
-      class="flex items-start gap-3 bg-warn/10 px-5 py-3 text-[13px] text-pretty text-warn"
+      class="flex items-start gap-3 border-l-4 border-warn bg-surface-2 px-4 py-3 text-[12px] text-pretty text-warn"
       role="status"
     >
-      <AppIcon name="alert" :size="17" class="mt-0.5 shrink-0" />
+      <AppIcon name="alert" :size="15" class="mt-0.5 shrink-0" />
       <span>{{ t('account.defaultPasswordWarning') }}</span>
     </div>
 
@@ -94,7 +96,7 @@
         </UiButton>
         <p
           v-if="passwordError"
-          class="text-xs text-danger sm:col-span-4"
+          class="text-[12px] text-danger sm:col-span-4"
           role="alert"
         >
           {{ passwordError }}

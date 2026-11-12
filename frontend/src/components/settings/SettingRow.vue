@@ -1,20 +1,25 @@
 <template>
+  <!-- One setting: apparatus label, one line of explanation, and the
+       control at the end of the row. -->
   <div
-    class="flex gap-4 px-5 py-4"
+    class="flex flex-col gap-3 px-4 py-3.5"
     :class="
       stacked
-        ? 'flex-col'
-        : 'flex-col sm:flex-row sm:items-center sm:justify-between'
+        ? 'sm:flex-col sm:items-stretch'
+        : 'sm:flex-row sm:items-center sm:justify-between sm:gap-6'
     "
   >
-    <div class="min-w-0 sm:max-w-[60%]" :class="stacked ? 'sm:max-w-none' : ''">
-      <p class="text-sm font-semibold text-fg">{{ label }}</p>
-      <p v-if="description" class="mt-0.5 text-[13px] text-pretty text-muted">
+    <div class="min-w-0" :class="stacked ? '' : 'sm:max-w-[58%]'">
+      <p class="eyebrow text-fg">{{ label }}</p>
+      <p
+        v-if="description"
+        class="mt-1 text-[12px] leading-relaxed text-pretty text-muted"
+      >
         {{ description }}
       </p>
     </div>
     <div
-      class="flex shrink-0 flex-wrap items-center gap-2"
+      class="flex min-w-0 flex-wrap items-center gap-2"
       :class="stacked ? '' : 'sm:justify-end'"
     >
       <slot />

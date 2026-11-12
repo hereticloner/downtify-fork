@@ -42,7 +42,7 @@
         </UiButton>
       </template>
     </form>
-    <p class="text-[12px] text-faint">
+    <p class="mono text-faint">
       {{ t('port.listening', { port: String(status.port) }) }}
       <template v-if="status.next !== status.port">
         · {{ t('port.nextStart', { port: String(status.next) }) }}
@@ -50,10 +50,10 @@
     </p>
     <div
       v-if="!status.locked_by && (status.in_docker || !direct)"
-      class="flex items-start gap-2.5 rounded-control bg-warn/10 px-3 py-2.5 text-[13px] text-pretty text-warn"
+      class="flex items-start gap-2.5 border-l-4 border-warn bg-surface-2 px-3 py-2.5 text-[12px] text-pretty text-warn"
       role="note"
     >
-      <AppIcon name="alert" :size="16" class="mt-0.5 shrink-0" />
+      <AppIcon name="alert" :size="15" class="mt-0.5 shrink-0" />
       <span>{{
         status.in_docker ? t('port.dockerWarning') : t('port.proxyWarning')
       }}</span>
@@ -66,7 +66,7 @@
     :title="t('port.restartingTitle', { port: String(restarting?.port ?? '') })"
     @close="restarting = null"
   >
-    <div class="flex flex-col gap-3 text-sm text-pretty text-fg-2">
+    <div class="flex flex-col gap-3 text-[13px] text-pretty text-fg-2">
       <p v-if="restarting?.state === 'waiting'" aria-live="polite">
         {{ t('port.restartingBody') }}
       </p>
@@ -77,7 +77,7 @@
       <a
         v-if="restarting && restarting.state !== 'waiting'"
         :href="restarting.url"
-        class="font-mono text-accent underline"
+        class="mono text-accent underline underline-offset-2"
         >{{ restarting.url }}</a
       >
     </div>

@@ -1,8 +1,8 @@
 <template>
-  <div class="flex min-w-0 flex-col gap-8">
+  <div class="flex min-w-0 flex-col gap-5">
     <SettingGroup :title="t('users.title')" :description="t('users.hint')">
-      <div class="flex items-center justify-between gap-3 px-5 py-4">
-        <p class="text-sm text-muted">
+      <div class="flex items-center justify-between gap-3 px-4 py-3">
+        <p class="mono text-muted">
           {{ t('users.count', { count: users.length }) }}
         </p>
         <UiButton variant="primary" icon="plus" @click="openCreate">
@@ -13,17 +13,17 @@
         <li
           v-for="user in users"
           :key="user.id"
-          class="flex items-center gap-3 px-5 py-3"
+          class="flex items-center gap-3 px-4 py-2.5"
         >
           <span
-            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-muted uppercase"
+            class="eyebrow flex size-9 shrink-0 items-center justify-center border border-line-2 bg-surface-2 text-[13px] text-muted"
             aria-hidden="true"
           >
             {{ user.username.slice(0, 1) }}
           </span>
           <span class="flex min-w-0 flex-1 flex-col">
             <span class="flex items-center gap-2">
-              <span class="truncate text-sm font-semibold">{{
+              <span class="truncate text-[13px] font-semibold">{{
                 user.username
               }}</span>
               <UiBadge
@@ -34,26 +34,28 @@
               >
               <UiBadge v-if="user.id === me?.id">{{ t('users.you') }}</UiBadge>
             </span>
-            <span class="truncate text-[12px] text-muted">
+            <span class="mono truncate text-muted">
               {{ details(user) }}
             </span>
           </span>
           <UiIconButton
             icon="pencil"
             :label="t('users.edit', { name: user.username })"
+            size="sm"
             @click="openEdit(user)"
           />
           <UiIconButton
             v-if="user.id !== me?.id"
             icon="trash"
             :label="t('users.delete', { name: user.username })"
+            size="sm"
             @click="remove(user)"
           />
         </li>
       </ul>
     </SettingGroup>
 
-    <SettingGroup :title="t('users.everyoneGroup')">
+    <SettingGroup :title="t('users.everyoneGroup')" danger>
       <SettingRow
         :label="t('users.signOutAll')"
         :description="t('users.signOutAllHint')"
@@ -98,9 +100,7 @@
           autocomplete="new-password"
         />
         <div class="flex flex-col gap-1.5">
-          <span class="text-[13px] font-semibold text-fg-3">{{
-            t('users.role')
-          }}</span>
+          <span class="eyebrow text-fg-3">{{ t('users.role') }}</span>
           <UiSegmented
             v-model="editing.role"
             show-labels
@@ -109,13 +109,13 @@
               { value: 'admin', icon: 'shield', label: t('account.roleAdmin') },
             ]"
           />
-          <span class="text-xs text-muted">{{
+          <span class="text-[12px] text-muted">{{
             editing.role === 'admin'
               ? t('users.roleAdminHint')
               : t('users.roleUserHint')
           }}</span>
         </div>
-        <p v-if="formError" class="text-xs text-danger" role="alert">
+        <p v-if="formError" class="text-[12px] text-danger" role="alert">
           {{ formError }}
         </p>
       </form>

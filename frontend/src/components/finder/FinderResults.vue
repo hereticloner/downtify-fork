@@ -1,54 +1,78 @@
 <template>
-  <div
-    class="mx-auto flex max-w-[1680px] flex-col gap-8 px-4 pt-6 pb-10 sm:px-6 md:pt-8 lg:px-10"
-  >
-    <div class="flex flex-col gap-4">
-      <PageHeader
-        :title="
-          artist
-            ? t('finder.songsBy', { name: artist.name })
-            : t('finder.resultsFor', { query })
-        "
-        :subtitle="finder.loading.value ? t('search.searching') : ''"
-      />
-      <UiChips v-model="filter" :items="filters" />
-    </div>
+  <div class="flex flex-col">
+    <PageHeader
+      :title="
+        artist
+          ? t('finder.songsBy', { name: artist.name })
+          : t('finder.resultsFor', { query })
+      "
+      :subtitle="finder.loading.value ? t('search.searching') : ''"
+      class="border-b-2 border-line"
+    />
 
-    <div v-if="finder.loading.value" class="flex flex-col gap-2">
-      <div v-for="n in 6" :key="n" class="flex h-16 items-center gap-3 px-3">
-        <UiSkeleton class="size-11 !rounded-[8px]" />
+    <UiChips v-model="filter" :items="filters" class="px-3 py-0.5" />
+
+    <div v-if="finder.loading.value" class="border-l-2 border-line">
+      <div
+        v-for="n in 6"
+        :key="n"
+        class="flex h-14 items-center gap-3 border-b border-line-2 px-3"
+      >
+        <UiSkeleton class="size-9" />
         <div class="flex flex-1 flex-col gap-2">
-          <UiSkeleton class="h-3.5 w-1/3" />
-          <UiSkeleton class="h-3 w-1/5" />
+          <UiSkeleton class="h-3 w-1/3" />
+          <UiSkeleton class="h-2.5 w-1/5" />
         </div>
       </div>
     </div>
 
-    <UiEmpty
+    <div
       v-else-if="finder.error.value"
-      icon="alert"
-      :title="t('search.failed')"
-      :body="finder.error.value"
+      class="border-b-2 border-line p-4"
+      role="status"
     >
-      <UiButton icon="refresh" @click="retry">{{ t('common.retry') }}</UiButton>
-    </UiEmpty>
+      <UiEmpty
+        icon="alert"
+        :title="t('search.failed')"
+        :body="finder.error.value"
+      >
+        <UiButton icon="refresh" @click="retry">{{
+          t('common.retry')
+        }}</UiButton>
+      </UiEmpty>
+    </div>
 
-    <UiEmpty
-      v-else-if="!hasResults"
-      icon="search"
-      :title="t('search.noResults')"
-      :body="t('search.noResultsHint')"
-    />
+    <div v-else-if="!hasResults" class="border-b-2 border-line p-4">
+      <UiEmpty
+        icon="search"
+        :title="t('search.noResults')"
+        :body="t('search.noResultsHint')"
+      />
+    </div>
 
     <template v-else>
+      <!-- Songs -->
       <section
         v-if="show('songs') && finder.songs.value.length"
-        class="flex flex-col gap-3"
+        class="flex flex-col border-b-2 border-line"
       >
-        <h2 v-if="filter === 'all'" class="text-display text-xl font-semibold">
-          {{ t('search.songs') }}
-        </h2>
-        <div class="-mx-3 flex flex-col">
+        <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+          <span
+            class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+            >01</span
+          >
+          <h2
+            class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+          >
+            {{ t('search.songs') }}
+          </h2>
+          <span
+            class="mono flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+          >
+            {{ finder.songs.value.length }}
+          </span>
+        </div>
+        <div class="border-l-2 border-line">
           <TrackDownPlay
             v-for="(song, i) in visibleSongs"
             :key="song.song_id || song.url"
@@ -63,21 +87,40 @@
             filter === 'all' && finder.songs.value.length > visibleSongs.length
           "
           type="button"
-          class="self-start text-[13px] font-semibold text-muted hover:text-fg"
+          class="eyebrow flex items-center justify-between gap-3 border-t-2 border-l-2 border-line px-3 py-2 text-muted transition-colors duration-100 hover:bg-surface-2 hover:text-fg"
           @click="filter = 'songs'"
         >
-          {{ t('search.showAllSongs', { count: finder.songs.value.length }) }}
+          <span>{{
+            t('search.showAllSongs', { count: finder.songs.value.length })
+          }}</span>
+          <AppIcon name="chevron-right" :size="14" />
         </button>
       </section>
 
+      <!-- Albums -->
       <section
         v-if="show('albums') && finder.albums.value.length"
-        class="flex flex-col gap-4"
+        class="flex flex-col border-b-2 border-line"
       >
-        <h2 v-if="filter === 'all'" class="text-display text-xl font-semibold">
-          {{ t('search.albums') }}
-        </h2>
-        <div :class="GRID">
+        <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+          <span
+            class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+            >02</span
+          >
+          <h2
+            class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+          >
+            {{ t('search.albums') }}
+          </h2>
+          <span
+            class="mono flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+          >
+            {{ finder.albums.value.length }}
+          </span>
+        </div>
+        <div
+          class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        >
           <ReleaseCard
             v-for="album in visibleAlbums"
             :key="album.album_id"
@@ -87,14 +130,30 @@
         </div>
       </section>
 
+      <!-- Artists -->
       <section
         v-if="show('artists') && finder.artists.value.length"
-        class="flex flex-col gap-4"
+        class="flex flex-col border-b-2 border-line"
       >
-        <h2 v-if="filter === 'all'" class="text-display text-xl font-semibold">
-          {{ t('search.artists') }}
-        </h2>
-        <div :class="GRID">
+        <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+          <span
+            class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+            >03</span
+          >
+          <h2
+            class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+          >
+            {{ t('search.artists') }}
+          </h2>
+          <span
+            class="mono flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+          >
+            {{ finder.artists.value.length }}
+          </span>
+        </div>
+        <div
+          class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        >
           <ReleaseCard
             v-for="artist in visibleArtists"
             :key="artist.artist_id"
@@ -115,6 +174,7 @@
 // songs, all of them listed. A result opens the column view
 // (FinderBrowseView).
 import { computed, ref, watch } from 'vue'
+import AppIcon from '../ui/AppIcon.vue'
 import UiButton from '../ui/UiButton.vue'
 import UiChips from '../ui/UiChips.vue'
 import UiEmpty from '../ui/UiEmpty.vue'
@@ -134,9 +194,6 @@ const props = defineProps({
   query: { type: String, default: '' },
   artist: { type: Object, default: null },
 })
-
-const GRID =
-  'grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6'
 
 const { t } = useI18n()
 const finder = useFinder()
