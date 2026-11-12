@@ -12,34 +12,38 @@
 :root {
   color-scheme: light;
 
-  --c-bg: #ffffff;
-  --c-side: #ffffff;
-  --c-surface: #ffffff;
-  --c-surface-2: #f4f4f4;
-  --c-raised: #e8e8e8;
-  --c-line: #0a0a0a; /* structural rule (2px in components) */
-  --c-line-2: #d6d6d6; /* light divider inside tables */
-  --c-line-3: #b4b4b4;
-  --c-text: #0a0a0a;
-  --c-text-2: #1c1c1c;
-  --c-text-3: #333333;
-  --c-muted: #5c5c5c;
-  --c-faint: #8a8a8a;
+  --c-bg: #f3f3f0;
+  --c-side: #f3f3f0;
+  --c-surface: #f8f8f6;
+  --c-surface-2: #eaeae6;
+  --c-raised: #dfdfda;
+  --c-line: #232323; /* structural rule (2px in components) */
+  --c-line-2: #cfcfca; /* light divider inside tables */
+  --c-line-3: #adada8;
+  --c-text: #171717;
+  --c-text-2: #262626;
+  --c-text-3: #3b3b3b;
+  --c-muted: #62625c;
+  --c-faint: #8c8c85;
   --c-accent: #0047ff;
   --c-accent-hi: #0039cc;
-  --c-on-accent: #ffffff;
-  --c-danger: #c81e1e;
-  --c-warn: #8a5a00;
-  --c-glass: #ffffff;
-  --c-invert: #0a0a0a;
-  --c-on-invert: #ffffff;
+  --c-on-accent: #f8f8f6;
+  --c-danger: #c0372f;
+  --c-warn: #86601a;
+  --c-glass: #f8f8f6;
+  --c-invert: #1d1d1d;
+  --c-on-invert: #f8f8f6;
 
+  /* Paper is a warm light grey, not pure white: the brief is a printed
+     gazette, and #FFFFFF beside near-black read as a light box rather than
+     paper. Ink is off-black so the 2px rules stay structural without
+     vibrating. Dark is charcoal, not #000, so white text does not halo. */
   /* Source badges are monochrome: colour comes from artwork only. */
-  --c-src-ytm: #262626;
-  --c-src-yt: #262626;
-  --c-src-slskd: #262626;
-  --c-spotify: #0a0a0a;
-  --c-deezer: #0a0a0a;
+  --c-src-ytm: #3b3b3b;
+  --c-src-yt: #3b3b3b;
+  --c-src-slskd: #3b3b3b;
+  --c-spotify: #171717;
+  --c-deezer: #171717;
 
   /* No elevation in this language. The tokens stay so call sites keep
      compiling; they resolve to a transparent offset. */
@@ -52,33 +56,33 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --c-bg: #000000;
-  --c-side: #000000;
-  --c-surface: #000000;
-  --c-surface-2: #141414;
-  --c-raised: #1f1f1f;
-  --c-line: #ffffff;
-  --c-line-2: #2e2e2e;
-  --c-line-3: #4a4a4a;
-  --c-text: #ffffff;
-  --c-text-2: #ededed;
-  --c-text-3: #d4d4d4;
-  --c-muted: #a3a3a3;
-  --c-faint: #737373;
-  --c-accent: #3d6dff;
-  --c-accent-hi: #5b84ff;
-  --c-on-accent: #ffffff;
-  --c-danger: #ff6b6b;
-  --c-warn: #e0a33a;
-  --c-glass: #000000;
-  --c-invert: #ffffff;
-  --c-on-invert: #000000;
+  --c-bg: #0c0c0b;
+  --c-side: #0c0c0b;
+  --c-surface: #111110;
+  --c-surface-2: #1a1a19;
+  --c-raised: #232322;
+  --c-line: #e3e3e0;
+  --c-line-2: #33332f;
+  --c-line-3: #4c4c48;
+  --c-text: #ededea;
+  --c-text-2: #dcdcd8;
+  --c-text-3: #c4c4bf;
+  --c-muted: #9a9a93;
+  --c-faint: #6e6e68;
+  --c-accent: #4d7aff;
+  --c-accent-hi: #6e93ff;
+  --c-on-accent: #0c0c0b;
+  --c-danger: #ff7d74;
+  --c-warn: #d9a648;
+  --c-glass: #111110;
+  --c-invert: #ededea;
+  --c-on-invert: #141412;
 
-  --c-src-ytm: #e6e6e6;
-  --c-src-yt: #e6e6e6;
-  --c-src-slskd: #e6e6e6;
-  --c-spotify: #ffffff;
-  --c-deezer: #ffffff;
+  --c-src-ytm: #c4c4bf;
+  --c-src-yt: #c4c4bf;
+  --c-src-slskd: #c4c4bf;
+  --c-spotify: #ededea;
+  --c-deezer: #ededea;
 }
 
 @theme inline {
