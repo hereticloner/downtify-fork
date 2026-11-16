@@ -45,7 +45,12 @@ const props = defineProps({
 // the language has no circles.
 const sizeClass = computed(
   () =>
-    ({ sm: 'size-8', md: 'size-10', lg: 'size-11' })[props.size] || 'size-10'
+    ({
+      sm: 'size-8',
+      md: 'size-10',
+      lg: 'size-11',
+      touch: 'size-11 lg:size-8',
+    })[props.size] || 'size-10'
 )
 const iconSize = computed(() => ({ sm: 16, md: 18, lg: 20 })[props.size] || 18)
 </script>

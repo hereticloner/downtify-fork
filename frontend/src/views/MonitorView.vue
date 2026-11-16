@@ -20,7 +20,7 @@
 
     <!-- Add a watch: link block, interval block, primary block. -->
     <form
-      class="flex flex-col gap-2 border-b-2 border-line px-4 py-3 sm:flex-row sm:items-center"
+      class="flex flex-col gap-2 border-b-2 border-line bg-surface-2 px-4 py-3 sm:flex-row sm:items-center"
       @submit.prevent="add"
     >
       <label
@@ -84,11 +84,17 @@
     </div>
 
     <p
+      v-if="!explainerDismissed"
       class="flex items-start gap-2 border-b-2 border-line px-4 py-2.5 text-[13px] text-pretty text-muted"
     >
-      <AppIcon name="info" :size="15" class="mt-0.5 shrink-0" />{{
-        copy.explainer
-      }}
+      <AppIcon name="info" :size="15" class="mt-0.5 shrink-0" />
+      <span class="min-w-0 flex-1">{{ copy.explainer }}</span>
+      <UiIconButton
+        icon="x"
+        :label="t('common.close')"
+        size="sm"
+        @click="dismissExplainer"
+      />
     </p>
 
     <div
@@ -121,12 +127,16 @@
           <AppIcon name="filter" :size="15" class="text-faint" />
           <span class="sr-only">{{ t('monitor.searchPlaceholder') }}</span>
           <input
+            ref="searchInput"
             v-model="query"
             type="search"
             :placeholder="t('monitor.searchPlaceholder')"
             class="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-faint"
           />
         </label>
+        <span class="mono hidden text-faint xl:inline">{{
+          t('monitor.shortcutHint')
+        }}</span>
         <UiChips v-model="show" :items="showFilters" />
         <div class="ml-auto flex items-center gap-2">
           <UiSelect
@@ -161,11 +171,74 @@
         </UiEmpty>
       </div>
 
-      <!-- Watch table: 64px rows, a 16px status square, square actions. -->
-      <div v-else class="border-b-2 border-line">
-        <div
-          class="hidden h-9 items-center gap-3 border-b-2 border-line bg-surface-2 px-3 lg:grid lg:grid-cols-[minmax(0,2fr)_112px_144px_168px_88px_56px_124px]"
+      <!-- Bulk bar: shares the table's ruled surface, never floats. -->
+      <div
+        v-if="selected.size"
+        class="flex flex-wrap items-center gap-2 border-b-2 border-line bg-invert px-3 py-2 text-on-invert"
+      >
+        <span class="eyebrow text-on-invert">{{
+          t('monitor.selected', { count: selected.size })
+        }}</span>
+        <UiButton size="sm" variant="photo" icon="retry" @click="bulkCheck">
+          {{ t('monitor.bulkCheck') }}
+        </UiButton>
+        <UiButton
+          size="sm"
+          variant="photo"
+          :icon="allSelectedEnabled ? 'pause' : 'play'"
+          @click="bulkToggleEnabled"
         >
+          {{
+            allSelectedEnabled
+              ? t('monitor.bulkPause')
+              : t('monitor.bulkResume')
+          }}
+        </UiButton>
+        <UiSelect
+          :model-value="bulkInterval"
+          :options="intervalOptions(t, bulkInterval)"
+          :label="t('monitor.bulkInterval')"
+          size="sm"
+          @update:model-value="bulkSetInterval"
+        />
+        <UiButton size="sm" variant="photo" icon="trash" @click="bulkStop">
+          {{ t('monitor.bulkStop') }}
+        </UiButton>
+        <UiButton
+          size="sm"
+          variant="photo"
+          class="ml-auto"
+          @click="clearSelected"
+        >
+          {{ t('monitor.clearSelection') }}
+        </UiButton>
+      </div>
+
+      <!-- Watch table: 64px rows, a 16px status square, square actions. -->
+      <div class="border-b-2 border-line">
+        <div
+          class="hidden h-9 items-center gap-3 border-b-2 border-line bg-surface-2 px-3 lg:grid lg:grid-cols-[32px_minmax(0,2fr)_112px_144px_168px_88px_56px_124px]"
+        >
+          <button
+            type="button"
+            role="checkbox"
+            :aria-checked="allVisibleSelected"
+            :aria-label="t('monitor.selectAll')"
+            class="flex size-6 items-center justify-center border-2"
+            :class="
+              allVisibleSelected
+                ? 'border-line bg-invert text-accent'
+                : 'border-line-3 hover:border-line'
+            "
+            @click="toggleAllVisible"
+          >
+            <AppIcon
+              v-if="allVisibleSelected"
+              name="check"
+              :size="10"
+              stroke-width="3"
+            />
+          </button>
           <span class="eyebrow">{{
             tab === 'artist' ? t('monitor.colArtist') : t('monitor.colPlaylist')
           }}</span>
@@ -181,8 +254,31 @@
           <li
             v-for="item in visible"
             :key="item.id"
-            class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-line-2 px-3 py-2 transition-colors duration-100 last:border-b-0 hover:bg-surface-2 lg:min-h-16 lg:grid-cols-[minmax(0,2fr)_112px_144px_168px_88px_56px_124px] lg:gap-3 lg:py-0"
+            class="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-line-2 px-3 py-2 transition-colors duration-100 last:border-b-0 hover:bg-surface-2 lg:min-h-16 lg:grid-cols-[32px_minmax(0,2fr)_112px_144px_168px_88px_56px_124px] lg:gap-3 lg:py-0"
+            :class="selected.has(item.id) ? 'bg-surface-2' : ''"
+            @click.shift="onRowShiftClick($event, item)"
           >
+            <button
+              type="button"
+              role="checkbox"
+              :aria-checked="selected.has(item.id)"
+              :aria-label="item.name"
+              class="flex size-6 items-center justify-center border-2"
+              :class="
+                selected.has(item.id)
+                  ? 'border-line bg-invert text-accent'
+                  : 'border-line-3 hover:border-line'
+              "
+              @click="toggleSelected(item, $event)"
+            >
+              <AppIcon
+                v-if="selected.has(item.id)"
+                name="check"
+                :size="10"
+                stroke-width="3"
+              />
+            </button>
+
             <div
               class="flex min-w-0 items-center gap-3"
               :class="item.enabled ? '' : 'opacity-50'"
@@ -249,29 +345,15 @@
             </div>
 
             <div class="flex items-center justify-end gap-1 lg:order-last">
-              <UiIconButton
-                icon="retry"
-                :label="t('monitor.checkNow')"
-                size="sm"
-                :active="checking.has(item.id)"
-                :disabled="checking.has(item.id)"
-                @click="check(item)"
-              />
-              <UiIconButton
-                icon="pencil"
-                :label="t('monitor.edit')"
-                size="sm"
-                @click="editing = item"
-              />
               <UiMenu
                 :items="menuFor(item)"
                 :label="t('common.more')"
-                size="sm"
+                size="touch"
               />
             </div>
 
             <div
-              class="col-span-2 flex flex-wrap items-center gap-2 lg:contents"
+              class="col-span-3 flex flex-wrap items-center gap-2 lg:contents"
             >
               <span class="lg:block">
                 <WatchSourceBadge :source="item.source" />
@@ -392,6 +474,14 @@ import {
 } from '/src/lib/watches'
 import { useI18n } from '/src/i18n'
 import { friendlyError } from '/src/lib/errors'
+import {
+  clearSelection,
+  pruneSelection,
+  selectMany,
+  selectRange,
+  selectedItems,
+  toggleId,
+} from '/src/lib/monitorSelection'
 
 const { t, locale } = useI18n()
 const ui = useUi()
@@ -433,8 +523,11 @@ function startCheck(item) {
   }
   setTimeout(() => {
     const st = checkState.value[item.id]
-    // The server's own events never arrived; drop the local stub.
-    if (st && st.local) endCheck(item.id)
+    // The server's own events never arrived: say so and drop the stub.
+    if (st && st.local) {
+      ui.toast(t('monitor.checkTimeout'), { kind: 'error' })
+      endCheck(item.id)
+    }
   }, 15000)
 }
 
@@ -470,7 +563,7 @@ function progressFor(item) {
 
 function progressPercent(item) {
   const st = progressFor(item)
-  if (!st || !st.total) return 30
+  if (!st || !st.total) return 0
   return Math.round((st.done * 100) / st.total)
 }
 
@@ -518,6 +611,14 @@ const checkingAll = ref(false)
 const query = ref('')
 const show = ref('all')
 const editing = ref(null)
+const searchInput = ref(null)
+const selected = ref(new Set())
+const bulkInterval = ref(360)
+let selectionAnchor = null
+const explainerDismissed = useLocalStorage(
+  'downtify-monitor-explainer-dismissed',
+  false
+)
 const sortKey = useLocalStorage('downtify-monitor-sort', 'created_at')
 const sortDir = useLocalStorage('downtify-monitor-sort-dir', 'desc')
 if (!WATCH_SORT_KEYS.includes(sortKey.value)) sortKey.value = 'created_at'
@@ -626,6 +727,26 @@ const visible = computed(() =>
   )
 )
 
+const visibleIds = computed(() => visible.value.map((item) => item.id))
+const selectedWatches = computed(() =>
+  selectedItems(items.value, selected.value)
+)
+const allVisibleSelected = computed(
+  () =>
+    visibleIds.value.length > 0 &&
+    visibleIds.value.every((id) => selected.value.has(id))
+)
+const allSelectedEnabled = computed(
+  () =>
+    selectedWatches.value.length > 0 &&
+    selectedWatches.value.every((item) => item.enabled)
+)
+
+watch(visibleIds, (ids) => {
+  const pruned = pruneSelection(selected.value, ids)
+  if (pruned.size !== selected.value.size) selected.value = pruned
+})
+
 const sortOptions = computed(() => [
   { value: 'created_at', label: t('monitor.sortAdded') },
   { value: 'name', label: t('monitor.sortName') },
@@ -644,11 +765,90 @@ watch(tab, () => {
   query.value = ''
   show.value = 'all'
   wrongKind.value = null
+  clearSelected()
 })
 
 function clearFilters() {
   query.value = ''
   show.value = 'all'
+}
+
+function dismissExplainer() {
+  explainerDismissed.value = true
+}
+
+function toggleSelected(item, event) {
+  const anchor = selectionAnchor
+  selectionAnchor = item.id
+  selected.value = event?.shiftKey
+    ? selectRange(selected.value, visibleIds.value, anchor ?? item.id, item.id)
+    : toggleId(selected.value, item.id)
+}
+
+function onRowShiftClick(event, item) {
+  if (event.target.closest('button, a, input, [role="menuitem"]')) return
+  selected.value = selectRange(
+    selected.value,
+    visibleIds.value,
+    selectionAnchor ?? item.id,
+    item.id
+  )
+  selectionAnchor = item.id
+}
+
+function toggleAllVisible() {
+  selected.value = allVisibleSelected.value
+    ? clearSelection()
+    : selectMany(selected.value, visibleIds.value)
+}
+
+function clearSelected() {
+  selected.value = clearSelection()
+  selectionAnchor = null
+}
+
+async function bulkSetInterval(value) {
+  const chosen = selectedWatches.value.slice()
+  for (const item of chosen) await update(item, { interval_minutes: value })
+  clearSelected()
+}
+
+async function bulkToggleEnabled() {
+  const enable = !allSelectedEnabled.value
+  const chosen = selectedWatches.value.slice()
+  for (const item of chosen) await update(item, { enabled: enable })
+  clearSelected()
+}
+
+async function bulkCheck() {
+  const chosen = selectedWatches.value.filter((item) => item.enabled)
+  for (const item of chosen) {
+    startCheck(item)
+    await monitorAPI.checkMonitoredPlaylist(item.id).catch(() => {})
+  }
+  clearSelected()
+}
+
+async function bulkStop() {
+  const chosen = selectedWatches.value.slice()
+  const ok = await ui.confirm({
+    title: t('confirm.stopWatchingTitle', {
+      name: t('monitor.selected', { count: chosen.length }),
+    }),
+    body: t('confirm.stopWatchingBody'),
+    confirmLabel: t('monitor.bulkStop'),
+    danger: true,
+  })
+  if (!ok) return
+  for (const item of chosen) {
+    try {
+      await monitorAPI.deleteMonitoredPlaylist(item.id)
+      items.value = items.value.filter((i) => i.id !== item.id)
+    } catch {
+      ui.toast(t('toast.actionFailed'), { kind: 'error' })
+    }
+  }
+  clearSelected()
 }
 
 /** open.spotify.com/playlist/… without the scheme and tracking query. */
@@ -706,6 +906,7 @@ async function add() {
     items.value = [res.data, ...items.value]
     newUrl[kind] = ''
     ui.toast(t('toast.watching', { name: res.data.name }), { kind: 'success' })
+    explainerDismissed.value = true
     // A link the page couldn't classify turned out to be the other kind.
     if (watchKind(res.data) !== kind) router.push(tabRoute(watchKind(res.data)))
   } catch (err) {
@@ -796,6 +997,12 @@ async function remove(item) {
 function menuFor(item) {
   return [
     {
+      label: t('monitor.checkNow'),
+      icon: 'retry',
+      disabled: checking.has(item.id),
+      action: () => check(item),
+    },
+    {
       label: t('monitor.edit'),
       icon: 'pencil',
       action: () => (editing.value = item),
@@ -825,14 +1032,43 @@ function menuFor(item) {
   ]
 }
 
+function onKeydown(event) {
+  const target = event.target
+  const typing =
+    target instanceof HTMLElement &&
+    (target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable)
+  if (event.key === 'Escape' && selected.value.size) {
+    clearSelected()
+    return
+  }
+  if (typing) return
+  if (event.key === '/') {
+    event.preventDefault()
+    searchInput.value?.focus()
+  } else if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault()
+    if (enabledInTab.value.length) checkAll()
+  } else if (
+    (event.ctrlKey || event.metaKey) &&
+    event.key.toLowerCase() === 'a'
+  ) {
+    event.preventDefault()
+    toggleAllVisible()
+  }
+}
+
 onMounted(() => {
   load()
   API.onMessage(handleCheckEvent)
+  window.addEventListener('keydown', onKeydown)
   ticking = setInterval(() => {
     nowTick.value = Date.now()
   }, 1000)
 })
 onUnmounted(() => {
   if (ticking) clearInterval(ticking)
+  window.removeEventListener('keydown', onKeydown)
 })
 </script>
