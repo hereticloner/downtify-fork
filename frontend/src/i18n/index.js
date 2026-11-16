@@ -1,27 +1,34 @@
 import { ref } from 'vue'
 import en from './locales/en.js'
-import es from './locales/es.js'
-import ptBR from './locales/pt-BR.js'
-import el from './locales/el.js'
-import fr from './locales/fr.js'
-import tr from './locales/tr.js'
-import hu from './locales/hu.js'
-import bg from './locales/bg.js'
+
+// Only the fallback language is in the initial bundle. The other seven
+// locales load as separate chunks when (and if) the user picks them;
+// `t()` falls back to English until a chunk arrives and re-renders once
+// it does, so callers never need to await a translation.
+const LOADERS = {
+  en: () => Promise.resolve(en),
+  es: () => import('./locales/es.js'),
+  'pt-BR': () => import('./locales/pt-BR.js'),
+  el: () => import('./locales/el.js'),
+  fr: () => import('./locales/fr.js'),
+  tr: () => import('./locales/tr.js'),
+  hu: () => import('./locales/hu.js'),
+  bg: () => import('./locales/bg.js'),
+}
 
 // Registry of available locales. To add a new language:
 //   1. Create ./locales/<code>.js exporting the same key shape as en.js
-//   2. Import it above
-//   3. Add an entry below — `code` is the value stored in localStorage,
-//      `name` is the label shown in the language picker.
+//   2. Add a loader above and an entry below — `code` is the value stored in
+//      localStorage, `name` is the label shown in the language picker.
 export const AVAILABLE_LOCALES = [
-  { code: 'en', name: 'English', messages: en },
-  { code: 'es', name: 'Español', messages: es },
-  { code: 'pt-BR', name: 'Português (BR)', messages: ptBR },
-  { code: 'el', name: 'Ελληνικά', messages: el },
-  { code: 'fr', name: 'Français', messages: fr },
-  { code: 'tr', name: 'Türkçe', messages: tr },
-  { code: 'hu', name: 'Magyar', messages: hu },
-  { code: 'bg', name: 'Български', messages: bg },
+  { code: 'en', name: 'English', load: LOADERS.en },
+  { code: 'es', name: 'Español', load: LOADERS.es },
+  { code: 'pt-BR', name: 'Português (BR)', load: LOADERS['pt-BR'] },
+  { code: 'el', name: 'Ελληνικά', load: LOADERS.el },
+  { code: 'fr', name: 'Français', load: LOADERS.fr },
+  { code: 'tr', name: 'Türkçe', load: LOADERS.tr },
+  { code: 'hu', name: 'Magyar', load: LOADERS.hu },
+  { code: 'bg', name: 'Български', load: LOADERS.bg },
 ]
 
 const DEFAULT_LOCALE = 'en'
@@ -41,12 +48,36 @@ const initial = AVAILABLE_LOCALES.find((l) => l.code === stored)
 
 export const currentLocale = ref(initial)
 
-function localeData(code) {
-  return (
-    AVAILABLE_LOCALES.find((l) => l.code === code) ||
-    AVAILABLE_LOCALES.find((l) => l.code === DEFAULT_LOCALE)
-  )
+// Reactive message cache. Reading it inside `t()` makes every translated
+// view re-render when a lazily loaded locale arrives.
+const loaded = ref({ en })
+const loading = new Map()
+
+function localeEntry(code) {
+  return AVAILABLE_LOCALES.find((l) => l.code === code) || AVAILABLE_LOCALES[0]
 }
+
+export function loadLocale(code) {
+  if (loaded.value[code]) return Promise.resolve(loaded.value[code])
+  if (!loading.has(code)) {
+    loading.set(
+      code,
+      localeEntry(code)
+        .load()
+        .then((mod) => {
+          const messages = mod.default || mod
+          loaded.value = { ...loaded.value, [code]: messages }
+          return messages
+        })
+        .finally(() => loading.delete(code))
+    )
+  }
+  return loading.get(code)
+}
+
+// A locale saved from an earlier session needs its chunk on boot; en is
+// already in the bundle, so the common case does no network work.
+if (initial !== DEFAULT_LOCALE) void loadLocale(initial)
 
 const PLURAL_FORMS = ['zero', 'one', 'two', 'few', 'many', 'other']
 
@@ -91,10 +122,13 @@ function format(template, params, code) {
 
 export function t(key, params) {
   const code = currentLocale.value
-  let msg = lookup(localeData(code).messages, key)
+  // Reading the reactive cache tracks every translated view: when a
+  // lazily loaded locale arrives, Vue re-renders with the new messages.
+  const messages = loaded.value[code] || loaded.value[DEFAULT_LOCALE]
+  let msg = lookup(messages, key)
   let msgCode = code
   if (msg === undefined && code !== DEFAULT_LOCALE) {
-    msg = lookup(localeData(DEFAULT_LOCALE).messages, key)
+    msg = lookup(loaded.value[DEFAULT_LOCALE], key)
     msgCode = DEFAULT_LOCALE
   }
   if (msg === undefined) return key
@@ -107,7 +141,7 @@ export function t(key, params) {
 }
 
 export function setLocale(code) {
-  if (!AVAILABLE_LOCALES.find((l) => l.code === code)) return
+  if (!AVAILABLE_LOCALES.find((l) => l.code === code)) return Promise.resolve()
   currentLocale.value = code
   try {
     localStorage.setItem(STORAGE_KEY, code)
@@ -117,6 +151,7 @@ export function setLocale(code) {
   if (typeof document !== 'undefined') {
     document.documentElement.setAttribute('lang', code)
   }
+  return loadLocale(code)
 }
 
 export function useI18n() {

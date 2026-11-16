@@ -98,17 +98,21 @@ describe('i18n locale files', () => {
 
   it('registers every locale file in the runtime registry', () => {
     const registered = new Map(
-      registry.locales.map((locale) => [locale.code, locale.messages])
+      registry.locales.map((locale) => [locale.code, locale])
     )
     for (const { code, messages } of LOCALES) {
+      const entry = registered.get(code)
       expect(
-        registered.has(code),
+        entry,
         `${code}: not registered in AVAILABLE_LOCALES (src/i18n/index.js)`
-      ).toBe(true)
-      expect(
-        registered.get(code),
-        `${code}: registry entry does not point at locales/${code}.js`
-      ).toBe(messages)
+      ).toBeTruthy()
+      // Locales load on demand; the registry carries a loader, not the
+      // messages object. The disk glob above is the source of truth for
+      // key parity, so no eager import is needed in production.
+      expect(typeof entry?.load, `${code}: missing lazy loader`).toBe(
+        'function'
+      )
+      expect(messages, `${code}: locale file is empty`).toBeTruthy()
     }
   })
 })

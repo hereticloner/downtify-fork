@@ -212,15 +212,15 @@ describe('nextDueLabel', () => {
 
   it('speaks the row’s own language', async () => {
     const { setLocale, t: realT } = await import('../i18n')
-    setLocale('en')
+    await setLocale('en')
     expect(nextDueLabel(realT, { next_due_minutes: 0 })).toBe('Due now')
     expect(nextDueLabel(realT, { next_due_minutes: 30 })).toBe('In 30 minutes')
     expect(nextDueLabel(realT, { next_due_minutes: 3000 })).toBe('In 2 days')
-    setLocale('tr')
+    await setLocale('tr')
     expect(nextDueLabel(realT, { next_due_minutes: 0 })).toBe('Şimdi sırada')
     expect(nextDueLabel(realT, { next_due_minutes: 30 })).toBe(
       '30 dakika sonra'
     )
-    setLocale('en')
+    await setLocale('en')
   })
 })

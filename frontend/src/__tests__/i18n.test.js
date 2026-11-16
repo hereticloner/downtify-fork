@@ -7,6 +7,14 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { AVAILABLE_LOCALES, setLocale, t } from '../i18n'
 import en from '../i18n/locales/en.js'
 
+// Locales are lazy in production; the test reads them from disk so the
+// parity assertions stay exhaustive without pulling them into the bundle.
+const localeModules = import.meta.glob('../i18n/locales/*.js', {
+  eager: true,
+  import: 'default',
+})
+const messagesFor = (code) => localeModules[`../i18n/locales/${code}.js`]
+
 /**
  * Recursively collect every dotted key path in an i18n object.
  * e.g. { settings: { title: '…' } }  →  ['settings.title']
@@ -30,7 +38,8 @@ const placeholders = (text) =>
   [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort()
 
 describe('i18n locale key consistency', () => {
-  for (const { code, messages } of AVAILABLE_LOCALES) {
+  for (const { code } of AVAILABLE_LOCALES) {
+    const messages = messagesFor(code)
     describe(code, () => {
       it('has exactly the same keys as en', () => {
         expect(allKeys(messages).sort()).toEqual(enKeys)
@@ -62,7 +71,9 @@ describe('i18n locale key consistency', () => {
 })
 
 describe('t()', () => {
-  afterEach(() => setLocale('en'))
+  afterEach(async () => {
+    await setLocale('en')
+  })
 
   it('interpolates params', () => {
     expect(t('search.resultsFor', { query: 'abc' })).toBe('Results for “abc”')
@@ -78,8 +89,8 @@ describe('t()', () => {
     expect(t('common.tracks', { count: 1200 })).toBe('1,200 tracks')
   })
 
-  it('uses the locale plural rules', () => {
-    setLocale('pt-BR')
+  it('uses the locale plural rules', async () => {
+    await setLocale('pt-BR')
     expect(t('common.tracks', { count: 2 })).toBe('2 faixas')
     expect(t('common.tracks', { count: 1 })).toBe('1 faixa')
   })
