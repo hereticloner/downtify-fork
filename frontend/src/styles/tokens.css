@@ -24,7 +24,7 @@
   --c-text-2: #262626;
   --c-text-3: #3b3b3b;
   --c-muted: #62625c;
-  --c-faint: #8c8c85;
+  --c-faint: #6e6e68;
   --c-accent: #0047ff;
   --c-accent-hi: #0039cc;
   --c-on-accent: #f8f8f6;
@@ -68,7 +68,7 @@
   --c-text-2: #dcdcd8;
   --c-text-3: #c4c4bf;
   --c-muted: #9a9a93;
-  --c-faint: #6e6e68;
+  --c-faint: #8a8a83;
   --c-accent: #4d7aff;
   --c-accent-hi: #6e93ff;
   --c-on-accent: #0c0c0b;
@@ -86,11 +86,9 @@
 }
 
 @theme inline {
-  --font-sans:
-    'Inter Variable', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', 'Segoe UI', system-ui, sans-serif;
   --font-display:
-    'Space Grotesk Variable', 'Space Grotesk', 'Segoe UI', system-ui,
-    sans-serif;
+    'Space Grotesk Variable', 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
   --font-label:
     'Inter Tight Variable', 'Inter Tight', 'Inter Variable', system-ui,
     sans-serif;
