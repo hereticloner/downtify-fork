@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T11:29:17Z",
+  "title": "Design System: Downtify",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#0047FF",
+        "tonalRamp": ["#051748", "#062881", "#0438bd", "#0046fb", "#3a70fb", "#769bf9", "#b0c5fa", "#e8edfd"]
+      },
+      "signal-blue-dark": {
+        "role": "primary",
+        "displayName": "Signal Blue (dark theme)",
+        "canonical": "#4D7AFF",
+        "tonalRamp": ["#071746", "#09277e", "#0935b8", "#0743f4", "#386afd", "#7396fd", "#aec2fc", "#e7edfe"]
+      },
+      "newsprint": {
+        "role": "neutral",
+        "displayName": "Newsprint",
+        "canonical": "#F3F3F0",
+        "tonalRamp": ["#292923", "#49493e", "#696958", "#898972", "#a5a591", "#bfbfb1", "#dadad1", "#f4f4f1"]
+      },
+      "printers-ink": {
+        "role": "neutral",
+        "displayName": "Printer's Ink",
+        "canonical": "#171717",
+        "tonalRamp": ["#262626", "#434343", "#616161", "#7e7e7e", "#9b9b9b", "#b8b8b8", "#d5d5d5", "#f2f2f2"]
+      },
+      "paper-surface": {
+        "role": "neutral",
+        "displayName": "Paper Surface",
+        "canonical": "#F8F8F6",
+        "tonalRamp": ["#292923", "#4a4a43", "#6b6b5e", "#8c8c79", "#a8a895", "#c2c2b4", "#dcdcd4", "#f9f9f7"]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#232323",
+        "tonalRamp": ["#262626", "#434343", "#616161", "#7e7e7e", "#9b9b9b", "#b8b8b8", "#d5d5d5", "#f2f2f2"]
+      },
+      "charcoal": {
+        "role": "neutral",
+        "displayName": "Charcoal",
+        "canonical": "#0C0C0B",
+        "tonalRamp": ["#282825", "#464641", "#64645d", "#828279", "#9e9e97", "#babab6", "#d6d6d4", "#f3f3f2"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Titles and the now-playing track name." },
+      "body": { "displayName": "Body", "purpose": "Tables, forms and descriptions." },
+      "label": { "displayName": "Apparatus Label", "purpose": "Eyebrows, buttons, tabs and chips." },
+      "mono": { "displayName": "Technical Mono", "purpose": "Hashes, bitrate, paths and timestamps only." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "state", "value": "100ms linear", "purpose": "Every colour or state change." },
+      { "name": "enter", "value": "110ms linear", "purpose": "Overlay and toast entry (opacity only)." },
+      { "name": "equalizer", "value": "1s steps(4, end) infinite", "purpose": "Playing indicator." }
+    ],
+    "breakpoints": [
+      { "name": "xs", "value": "400px" },
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one solid action block; used sparingly.",
+      "html": "<button class=\"ds-btn-primary\">SAVE CHANGES</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; padding:12px 16px; border:2px solid #232323; border-radius:0; background:#1d1d1d; color:#f8f8f6; font:600 11px/1.3 'Inter Tight',system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; transition:background 100ms linear; } .ds-btn-primary:hover { background:#171717; } .ds-btn-primary:active { background:#f8f8f6; color:#171717; } .ds-btn-primary:focus-visible { outline:2px solid #0047ff; outline-offset:1px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined, paper-backed action.",
+      "html": "<button class=\"ds-btn-secondary\">CANCEL</button>",
+      "css": ".ds-btn-secondary { display:inline-flex; align-items:center; justify-content:center; padding:12px 16px; border:2px solid #232323; border-radius:0; background:transparent; color:#171717; font:600 11px/1.3 'Inter Tight',system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; transition:background 100ms linear; } .ds-btn-secondary:hover { background:#eaeae6; } .ds-btn-secondary:active { background:#dfdfda; } .ds-btn-secondary:focus-visible { outline:2px solid #0047ff; outline-offset:1px; }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "icon-button",
+      "description": "Square 40px cell with a hard focus frame.",
+      "html": "<button class=\"ds-icon-btn\" aria-label=\"Close\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"square\"><path d=\"M18 6 6 18M6 6l12 12\"/></svg></button>",
+      "css": ".ds-icon-btn { display:inline-flex; width:40px; height:40px; align-items:center; justify-content:center; border:2px solid #cfcfca; border-radius:0; background:transparent; color:#62625c; transition:background 100ms linear,color 100ms linear; } .ds-icon-btn:hover { border-color:#232323; background:#f8f8f6; color:#171717; } .ds-icon-btn:active { background:#dfdfda; } .ds-icon-btn:focus-visible { outline:2px solid #0047ff; outline-offset:1px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-frame",
+      "description": "A ruled paper frame, never rounded.",
+      "html": "<label class=\"ds-field\"><span>SEARCH</span><input type=\"text\" placeholder=\"Track or artist\" /></label>",
+      "css": ".ds-field { display:flex; flex-direction:column; gap:6px; font:600 11px/1.3 'Inter Tight',system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; color:#62625c; } .ds-field input { height:44px; padding:0 12px; border:2px solid #cfcfca; border-radius:0; background:#f3f3f0; color:#171717; font:400 14px/1.5 'Inter',system-ui,sans-serif; } .ds-field input:focus { border-color:#0047ff; outline:none; } .ds-field input[aria-invalid='true'] { border-color:#c0372f; }"
+    },
+    {
+      "name": "Square Switch",
+      "kind": "input",
+      "refersTo": "chip-selected",
+      "description": "24px square: empty frame off, inverted block with accent tick on.",
+      "html": "<button class=\"ds-switch\" role=\"switch\" aria-checked=\"true\" aria-label=\"Enabled\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0047ff\" stroke-width=\"3\" stroke-linecap=\"square\"><path d=\"M20 6 9 17l-5-5\"/></svg></button>",
+      "css": ".ds-switch { display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; border:2px solid #232323; border-radius:0; background:#1d1d1d; transition:background 100ms linear; } .ds-switch[aria-checked='false'] { border-color:#cfcfca; background:transparent; } .ds-switch:focus-visible { outline:2px solid #0047ff; outline-offset:2px; }"
+    },
+    {
+      "name": "Segmented Progress",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "Twenty-four rectangles; the playhead block is the only blue.",
+      "html": "<div class=\"ds-progress\" role=\"progressbar\" aria-valuenow=\"50\" aria-valuemin=\"0\" aria-valuemax=\"100\"><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"done\"></i><i class=\"playhead\"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>",
+      "css": ".ds-progress { display:flex; width:100%; height:4px; gap:2px; } .ds-progress i { flex:1; border:1px solid #cfcfca; background:transparent; } .ds-progress i.done { background:#171717; border-color:#171717; } .ds-progress i.playhead { background:#0047ff; border-color:#0047ff; }"
+    },
+    {
+      "name": "Selected Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Square filter cell; selected state inverts.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"true\">TRACKS 12</button><button class=\"ds-chip\" aria-pressed=\"false\">ALBUMS 4</button></div>",
+      "css": ".ds-chips { display:flex; gap:2px; border-top:2px solid #232323; border-bottom:2px solid #232323; padding:2px 0; } .ds-chip { height:28px; padding:0 12px; border:1px solid #cfcfca; border-radius:0; background:transparent; color:#62625c; font:600 11px/1.3 'Inter Tight',system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; } .ds-chip[aria-pressed='true'] { border-color:#232323; background:#1d1d1d; color:#f8f8f6; } .ds-chip:hover { border-color:#232323; color:#171717; }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A ruled paper block with an eyebrow header.",
+      "html": "<section class=\"ds-panel\"><h2 class=\"ds-panel-title\">AUDIO PROVIDERS</h2><p>Order and enable the sources used for matching.</p></section>",
+      "css": ".ds-panel { border:2px solid #232323; background:#f8f8f6; padding:20px; color:#171717; font:400 14px/1.5 'Inter',system-ui,sans-serif; } .ds-panel-title { margin:0 0 16px; padding-bottom:8px; border-bottom:1px solid #cfcfca; font:600 11px/1.3 'Inter Tight',system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; color:#171717; }"
+    },
+    {
+      "name": "Toast",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "Hard block with a 4px accent leading rule.",
+      "html": "<div class=\"ds-toast\"><span>Saved successfully</span></div>",
+      "css": ".ds-toast { display:flex; align-items:center; padding:10px 12px; border:2px solid #232323; border-left:4px solid #0047ff; border-radius:0; background:#f8f8f6; color:#171717; font:400 14px/1.5 'Inter',system-ui,sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Printing Desk",
+    "overview": "A controlled workspace built like a printed technical gazette: warm paper, hard ink, a 2px rule and one blue signal. Every corner is square. Every surface is flat. The interface is read before it is admired.\n\nDensity is deliberate. The same table, rule and block vocabulary runs from the 48px masthead to the 64px transport bar, across twenty views. State is shown by inversion or by the single accent — never by decoration. Full-colour covers are the only spontaneous colour in the system; they are content, not chrome.\n\nMotion is diagnostic, not decorative: 80–120ms linear fades, a stepped equalizer, a shimmer with six steps. Nothing springs, floats or glows.",
+    "keyCharacteristics": [
+      "Square geometry: 0 radius on every control, cover and panel.",
+      "2px structural rules; 1px dividers only inside dense tables.",
+      "One accent, reserved for state: signal blue.",
+      "Flat surfaces; depth through rule, inversion and whitespace.",
+      "Light is default; dark is a full paper/ink inversion.",
+      "Turkish-first, eight locales; labels are short and apparatus-like."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Signal Blue is used for state only, never for decoration or brand display. Keep it under roughly a tenth of any screen.", "section": "colors" },
+      { "name": "The Full Inversion Rule", "body": "Dark mode swaps paper and ink; it does not tint the same surfaces. Source badges become monochrome in both themes — colour comes from artwork only.", "section": "colors" },
+      { "name": "The Apparatus Label Rule", "body": "Every button, tab and chip speaks in uppercase 11–12px Inter Tight. Size classes change the block's height and padding, never the voice.", "section": "typography" },
+      { "name": "The Flat Rule", "body": "No shadow, no blur, no glow — if a surface needs to separate, give it a rule or invert it.", "section": "elevation" },
+      { "name": "The Square Rule", "body": "Radius is always 0. The round prop on icon buttons exists only for compatibility; it has no visual effect.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do use exactly one accent, signal blue, and only for state, focus and playhead.",
+      "Do keep every corner at 0px radius and every structural border at 2px.",
+      "Do use inversion — not a tint — to express selection and activation.",
+      "Do keep motion at 80–120ms linear, and only where it reports state.",
+      "Do keep type in the four shipped families, with mono reserved for technical data."
+    ],
+    "donts": [
+      "Don't add shadows, blur, glow, gradients or frosted glass; the tokens are transparent by design.",
+      "Don't introduce a second accent or colour-code a source badge; colour belongs to artwork.",
+      "Don't round a control, a cover or a panel — even slightly.",
+      "Don't animate a button with scale, lift or a spring; the interface reports, it does not perform.",
+      "Don't claim an accessibility standard that has not been agreed; preserve the eight locales, both themes and keyboard reach instead."
+    ]
+  }
+}
