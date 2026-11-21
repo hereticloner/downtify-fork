@@ -999,7 +999,7 @@ function menuFor(item) {
     {
       label: t('monitor.checkNow'),
       icon: 'retry',
-      disabled: checking.has(item.id),
+      disabled: checking.value.has(item.id),
       action: () => check(item),
     },
     {
