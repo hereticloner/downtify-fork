@@ -1,5 +1,25 @@
 # Changelog
 
+## Fork — this repository (2026-10-05 → present)
+
+This repository is a personal fork of Downtify 3.4.0. On top of upstream it adds:
+
+- **UI v4 "Technical Gazette"** — full interface rebuild: masthead + strip navigation, numbered stat blocks, paper-and-ink palette with one accent, light and dark themes.
+- **Collections & Smart Collections** — group library playlists, mosaic cards, Download missing, smart rules recomputed from the library.
+- **Stats** — downloads per day, a GitHub-style listening heatmap with streaks, most-played tracks and playlists.
+- **Telegram notifications** for playlist/artist watch downloads, with a test button.
+- **Storage report & duplicate cleanup** — disk usage, duplicate finder, keep-best cleanup.
+- **Spotify Mirror & Sync** — plays mirrored to real Spotify listening history through a Spotify Connect device; downloaded playlists kept in step on a schedule.
+- **last.fm scrobbling** — in-app connect, half-the-track-or-four-minutes threshold.
+- **Auto-DJ** — when the queue runs dry, 15 library tracks are appended and playback continues.
+- **Monitor** — lean watch rows, bulk selection bar, honest check progress, quiet-pass interval relaxation (7×).
+- **YouTube reliability settings** (`yt_player_clients`, PO tokens) exposed in Settings.
+- **Accessibility** — WCAG AA contrast in both themes; **lazy-loaded locales**.
+- **Removed** — the unused Soulseek (slskd) source.
+- **Fixed** — the Monitor page crashed on render (`checking.has` on a computed ref); it now opens normally.
+
+Upstream entries below are unchanged.
+
 ## [3.4.0](https://github.com/henriquesebastiao/downtify/tree/3.4.0) (2026-10-02)
 
 [Full Changelog](https://github.com/henriquesebastiao/downtify/compare/3.3.0...3.4.0)

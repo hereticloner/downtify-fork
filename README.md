@@ -97,8 +97,9 @@ When the queue runs out and Auto-DJ is on, the player doesn't stop: it appends 1
 </p>
 
 <p align="center">
-  <img src="assets/readme/monitor.png" alt="Monitor: lean watch rows for watched playlists and artists." width="100%">
-  <br><sub><b>Monitor</b>: lean watch rows, a bulk bar and honest check progress — watch lists stop shouting.</sub>
+  <img src="assets/readme/collections.png" alt="Collections: a card for each group of playlists, its member playlists and a Download-missing button." width="49%">
+  <img src="assets/readme/monitor.png" alt="Monitor: lean watch rows for watched playlists and artists." width="49%">
+  <br><sub><b>Collections</b> group playlists behind one card. <b>Monitor</b> keeps its rows lean and its checks honest.</sub>
 </p>
 
 <p align="center">
