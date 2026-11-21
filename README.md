@@ -26,11 +26,8 @@
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/home-dark.png">
-    <img src="assets/readme/home.png" alt="The fork's home page: masthead with search, a paste box, most played tracks and library numbers." width="100%">
-  </picture>
-  <br><sub><b>Home.</b> A masthead instead of a sidebar, and one accent color instead of fifty shades of gray.</sub>
+  <img src="assets/readme/home.png" alt="The fork's home page (light theme): masthead with search, a paste box, most played tracks and library numbers." width="100%">
+  <br><sub><b>Home</b> (light). A masthead instead of a sidebar, and one accent color instead of fifty shades of gray.</sub>
 </p>
 
 ## What's different
@@ -43,89 +40,29 @@ The fork carries everything the original Downtify does — link pasting, YouTube
 
 ### The v4 interface
 
-Every screen was redesigned as a **technical gazette**: a masthead and a navigation strip instead of a sidebar, numbered stat blocks, hairline rules, full-color covers and **zero rounded corners** — a paper-and-ink palette with a single electric-blue accent, in a light and a dark theme, tuned to WCAG AA contrast. [More below →](#the-v4-interface)
-
-### Collections & Smart Collections
-
-Group playlists into named **collections** — a level above the playlist for a big library. Each card shows a mosaic of its members' covers and a **Download missing** button that queues only what a member playlist lacks. **Smart rules** (added date, play count, genre, artist, album, format) recompute a collection from the library on every read. [docs](docs/features/collections.md) · [smart](docs/features/smart-collections.md)
-
-### Stats
-
-Library size and how much you use it: downloads per day, most-played tracks and playlists, and a **GitHub-style listening heatmap** with your current day streak and busiest day. [docs](docs/features/stats.md)
-
-### A more honest Monitor
-
-Lean watch rows, a bulk-selection bar with keyboard shortcuts, and **honest progress** for manual checks. Watches that keep coming up empty **relax their check interval by 7×** after consecutive quiet passes, instead of hammering a source for nothing. [docs](docs/features/playlist-monitor.md)
-
-</td>
-<td width="50%" valign="top">
-
-### Telegram notifications
-
-A Telegram message whenever a playlist or artist watch downloads new tracks, with a test button in Settings. [docs](docs/features/notifications.md)
-
-### Storage report & duplicate cleanup
-
-See how full the download disk is, find songs that sit on it twice, and clean up keeping the best copy. [docs](docs/features/storage.md)
-
-### Spotify Mirror & Sync
-
-What you play here shows up in your real Spotify listening history, through an always-online Spotify Connect device — with a **Mirror now** test button and a live status panel. **Spotify Sync** keeps downloaded Spotify playlists in step on a schedule. [mirror](docs/features/spotify-mirror.md) · [sync](docs/features/spotify-sync.md)
-
-### last.fm scrobbling
-
-Plays are scrobbled to your last.fm profile — half the track or four minutes, whichever comes first — with an in-app connect flow. [docs](docs/features/scrobbling.md)
-
-### Auto-DJ
-
-When the queue runs out and Auto-DJ is on, the player doesn't stop: it appends 15 library tracks — the current artist first, then a random spread — and keeps going.
-
-**Also:** YouTube reliability settings (`yt_player_clients`, PO tokens) exposed in the Settings UI, lazy-loaded locales, and the unused Soulseek (slskd) source **removed**.
-
-</td>
-</tr>
-</table>
-
-## The v4 interface
-
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/now-playing-dark.png">
-    <img src="assets/readme/now-playing.png" alt="The full-screen player: cover, progress, queue." width="100%">
-  </picture>
-  <br><sub><b>Now Playing</b>, with the 64-px transport strip pinned to the bottom of every page.</sub>
+  <img src="assets/readme/now-playing-dark.png" alt="The full-screen player (dark theme): cover, progress, queue." width="100%">
+  <br><sub><b>Now Playing</b> (dark), with the 64-px transport strip pinned to the bottom of every page.</sub>
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/library-dark.png">
-    <img src="assets/readme/library.png" alt="Library: a grid of full-color album covers." width="49%">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/stats-dark.png">
-    <img src="assets/readme/stats.png" alt="Stats: numbered metric blocks and a downloads-per-day chart." width="49%">
-  </picture>
-  <br><sub><b>Library</b> covers get their color back. <b>Stats</b> reads like a front page.</sub>
+  <img src="assets/readme/library.png" alt="Library (light theme): a grid of full-color album covers." width="49%">
+  <img src="assets/readme/stats-dark.png" alt="Stats (dark theme): numbered metric blocks and a downloads-per-day chart." width="49%">
+  <br><sub><b>Library</b> (light) covers get their color back. <b>Stats</b> (dark) reads like a front page.</sub>
 </p>
 
 <p align="center">
-  <img src="assets/readme/collections.png" alt="Collections: a card for each group of playlists, its member playlists and a Download-missing button." width="49%">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/monitor-dark.png">
-    <img src="assets/readme/monitor.png" alt="Monitor: lean watch rows for watched playlists and artists." width="49%">
-  </picture>
-  <br><sub><b>Collections</b> group playlists behind one card. <b>Monitor</b> keeps its rows lean and its checks honest.</sub>
+  <img src="assets/readme/collections.png" alt="Collections (light theme): a card for each group of playlists and a Download-missing button." width="49%">
+  <img src="assets/readme/monitor-dark.png" alt="Monitor (dark theme): lean watch rows for watched playlists and artists." width="49%">
+  <br><sub><b>Collections</b> (light) group playlists behind one card. <b>Monitor</b> (dark) keeps its rows lean and its checks honest.</sub>
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/mobile-dark.png">
-    <img src="assets/readme/mobile.png" alt="Downtify fork on a phone." width="40%">
-  </picture>
-  <br><sub><b>On a phone</b>, the strip collapses into a block menu and the masthead stacks.</sub>
+  <img src="assets/readme/mobile.png" alt="Downtify fork on a phone (light theme)." width="40%">
+  <br><sub><b>On a phone</b> (light), the strip collapses into a block menu and the masthead stacks.</sub>
 </p>
 
-Every screenshot follows your system's light or dark theme. The design language is written down in [DESIGN.md](DESIGN.md): paper `#F3F3F0`, ink `#171717`, one accent `#0047FF`, 2-px hairlines, no radius, no shadows — Space Grotesk for display, Inter for text, JetBrains Mono for technical data.
+The screenshots alternate between the light and the dark theme; every view has both. The design language is written down in [DESIGN.md](DESIGN.md): paper `#F3F3F0`, ink `#171717`, one accent `#0047FF`, 2-px hairlines, no radius, no shadows — Space Grotesk for display, Inter for text, JetBrains Mono for technical data.
 
 ## Quick start
 
