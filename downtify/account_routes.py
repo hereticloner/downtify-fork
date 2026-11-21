@@ -132,9 +132,8 @@ async def update_me(request: Request) -> dict[str, Any]:
 
 @router.put('/api/me/password')
 async def change_my_password(request: Request) -> dict[str, Any]:
-    """Change your password: ``{current_password, new_password}``. Every
-    other browser and app of yours stays signed in; use
-    ``POST /api/me/sign-out-everywhere`` for that."""
+    """Change your password: ``{current_password, new_password}``. Your
+    other browsers and apps are signed out; this one stays signed in."""
 
     _accounts_on()
     me = _me(request)
@@ -164,6 +163,9 @@ async def change_my_password(request: Request) -> dict[str, Any]:
         )
     except UserError as exc:
         raise _bad(exc) from exc
+    await asyncio.to_thread(
+        _store().end_user_sessions, me.user_id, session_cookie(request.scope)
+    )
     await api.log_activity(request, 'password_changed', me.username)
     return {'user': _users().get(me.user_id)}
 

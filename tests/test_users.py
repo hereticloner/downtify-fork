@@ -369,6 +369,19 @@ def test_changing_your_own_password(client):
     assert 'password_changed' in _kinds(client)
 
 
+def test_changing_your_own_password_signs_out_the_other_browsers(client):
+    other = TestClient(client.app, base_url='http://testserver')
+    _sign_in(client)
+    _sign_in(other)
+    ok = client.put(
+        '/api/me/password',
+        json={'current_password': DEFAULT_PASSWORD, 'new_password': PASSWORD},
+    )
+    assert ok.status_code == 200
+    assert client.get('/api/me').status_code == 200
+    assert other.get('/api/me').status_code == 401
+
+
 def test_a_user_changes_only_their_own_things(client):
     api.state.auth.users.create('maria', PASSWORD)
     _sign_in(client, 'maria', PASSWORD)
