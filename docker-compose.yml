@@ -6,6 +6,12 @@ services:
     build: .
     ports:
       - '8000:8000'
+    environment:
+      # Cloudflare Tunnel and tailscale serve both reach the app from the
+      # host (its LAN address, or the bridge gateway for container traffic):
+      # trust those hops so X-Forwarded-For/-Proto are believed - the real
+      # client IP for the login limiter, and a Secure session cookie.
+      - DOWNTIFY_TRUSTED_PROXIES=192.168.1.60/32,172.29.0.1/32
     volumes:
       - ./docker/downloads:/downloads
       - ./docker/data:/data
