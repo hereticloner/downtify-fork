@@ -26,7 +26,10 @@
 </p>
 
 <p align="center">
-  <img src="assets/readme/home.png" alt="The fork's home page: masthead with search, a paste box, most played tracks and library numbers." width="100%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/home-dark.png">
+    <img src="assets/readme/home.png" alt="The fork's home page: masthead with search, a paste box, most played tracks and library numbers." width="100%">
+  </picture>
   <br><sub><b>Home.</b> A masthead instead of a sidebar, and one accent color instead of fifty shades of gray.</sub>
 </p>
 
@@ -86,28 +89,43 @@ When the queue runs out and Auto-DJ is on, the player doesn't stop: it appends 1
 ## The v4 interface
 
 <p align="center">
-  <img src="assets/readme/now-playing.png" alt="The full-screen player: cover, progress, queue." width="100%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/now-playing-dark.png">
+    <img src="assets/readme/now-playing.png" alt="The full-screen player: cover, progress, queue." width="100%">
+  </picture>
   <br><sub><b>Now Playing</b>, with the 64-px transport strip pinned to the bottom of every page.</sub>
 </p>
 
 <p align="center">
-  <img src="assets/readme/library.png" alt="Library: a grid of full-color album covers." width="49%">
-  <img src="assets/readme/stats.png" alt="Stats: numbered metric blocks and a downloads-per-day chart." width="49%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/library-dark.png">
+    <img src="assets/readme/library.png" alt="Library: a grid of full-color album covers." width="49%">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/stats-dark.png">
+    <img src="assets/readme/stats.png" alt="Stats: numbered metric blocks and a downloads-per-day chart." width="49%">
+  </picture>
   <br><sub><b>Library</b> covers get their color back. <b>Stats</b> reads like a front page.</sub>
 </p>
 
 <p align="center">
   <img src="assets/readme/collections.png" alt="Collections: a card for each group of playlists, its member playlists and a Download-missing button." width="49%">
-  <img src="assets/readme/monitor.png" alt="Monitor: lean watch rows for watched playlists and artists." width="49%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/monitor-dark.png">
+    <img src="assets/readme/monitor.png" alt="Monitor: lean watch rows for watched playlists and artists." width="49%">
+  </picture>
   <br><sub><b>Collections</b> group playlists behind one card. <b>Monitor</b> keeps its rows lean and its checks honest.</sub>
 </p>
 
 <p align="center">
-  <img src="assets/readme/mobile.png" alt="Downtify fork on a phone." width="40%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/mobile-dark.png">
+    <img src="assets/readme/mobile.png" alt="Downtify fork on a phone." width="40%">
+  </picture>
   <br><sub><b>On a phone</b>, the strip collapses into a block menu and the masthead stacks.</sub>
 </p>
 
-The design language is written down in [DESIGN.md](DESIGN.md): paper `#F3F3F0`, ink `#171717`, one accent `#0047FF`, 2-px hairlines, no radius, no shadows — Space Grotesk for display, Inter for text, JetBrains Mono for technical data.
+Every screenshot follows your system's light or dark theme. The design language is written down in [DESIGN.md](DESIGN.md): paper `#F3F3F0`, ink `#171717`, one accent `#0047FF`, 2-px hairlines, no radius, no shadows — Space Grotesk for display, Inter for text, JetBrains Mono for technical data.
 
 ## Quick start
 
