@@ -494,6 +494,15 @@ def test_every_route_is_classified_on_purpose(app):
     )
 
 
+def test_integration_routes_need_an_admin():
+    """A path outside PROTECTED_PREFIXES is PUBLIC, and the test above skips
+    PUBLIC routes — that hole left /integrations/spotify/* open to anyone,
+    callback included (it writes the Spotify mirror tokens to settings)."""
+    assert classify('GET', '/integrations/spotify/authorize') == ADMIN
+    assert classify('GET', '/integrations/spotify/callback') == ADMIN
+    assert classify('DELETE', '/integrations/other/thing') == ADMIN
+
+
 # ── the middleware, end to end ──────────────────────────────────────────
 
 
