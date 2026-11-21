@@ -47,6 +47,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHON_COLORS=0 \
     DOWNTIFY_LOG_LEVEL=info \
     DOWNTIFY_HEALTHCHECK=1 \
+    HOME=/home/downtify \
     UID=1000 \
     GID=1000 \
     UMASK=022
@@ -58,7 +59,9 @@ RUN apk update && apk upgrade --no-cache && \
     shadow \
     su-exec \
     tini \
-    tzdata 
+    tzdata && \
+    addgroup -g 1000 downtify && \
+    adduser -D -u 1000 -G downtify -h /home/downtify downtify
 
 COPY --from=deno /bin/deno /usr/local/bin/deno
 COPY --from=deno /usr/local/lib/glibc /usr/local/lib/glibc

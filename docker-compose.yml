@@ -31,6 +31,10 @@ services:
     # ~300 MB steady state (75 MB fresh); headroom for ffmpeg transcode
     # children, which share this cgroup. Raise if downloads get OOM-killed.
     mem_limit: 512m
+    # The entrypoint drops to UID 1000 before it starts the app; no new
+    # privilege may be gained after that.
+    security_opt:
+      - no-new-privileges:true
     # json-file would otherwise grow without bound.
     logging:
       driver: json-file
