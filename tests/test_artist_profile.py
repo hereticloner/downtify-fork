@@ -7,6 +7,7 @@ import asyncio
 import base64
 import json
 import os
+from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -2934,11 +2935,16 @@ def test_art_endpoint_version_moves_when_the_photo_is_replaced(app_state):
 # ── current_cover: the tail of the URL the saved image came from ───────
 
 
+@contextmanager
 def _fetch_returning_png():
+    """A working image fetch for hosts that do not resolve (``c.test``)."""
     resp = MagicMock()
     resp.raise_for_status = lambda: None
     resp.content = _TINY_PNG
-    return patch('downtify.artist_profile.httpx.get', return_value=resp)
+    with patch('downtify.artist_profile.httpx.get', return_value=resp), patch(
+        'downtify.artist_profile.is_public_http_url', return_value=True
+    ):
+        yield
 
 
 @pytest.mark.parametrize(

@@ -58,6 +58,7 @@ from ._html_utils import strip_html
 from .downloader import _sanitize
 from .file_naming import file_name_key
 from .image_size import image_dimensions
+from .url_guard import is_public_http_url
 
 KIND_PHOTO = 'photo'
 KIND_BANNER = 'banner'
@@ -195,10 +196,10 @@ def fetch_and_save_image(
     url = (image_url or '').strip()
     if not url:
         raise ValueError('No image URL given')
+    if not is_public_http_url(url):
+        raise ValueError('That image URL is not on the public internet')
     try:
-        resp = httpx.get(
-            url, timeout=_IMAGE_FETCH_TIMEOUT, follow_redirects=True
-        )
+        resp = httpx.get(url, timeout=_IMAGE_FETCH_TIMEOUT)
         resp.raise_for_status()
     except Exception as exc:
         logger.opt(exception=True).debug(

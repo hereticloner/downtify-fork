@@ -46,11 +46,16 @@ from .providers import (
     find_match_for_video,
     find_match_youtube_only,
 )
+from .url_guard import is_public_http_url
 
 # Extensions that count as "this song is already downloaded". Deliberately
 # excludes sidecars written next to the audio (.lrc, cover.jpg, .m3u) so a
 # leftover lyrics file can never stand in for a missing track.
 _AUDIO_EXTENSIONS = frozenset({'mp3', 'flac', 'ogg', 'opus', 'm4a'})
+
+#: Cover art is fetched from a URL in the request payload; cap what a single
+#: response may pull into memory.
+_MAX_COVER_BYTES = 8 * 1024 * 1024
 
 # ``(percent, message, provider)`` — ``provider`` is the audio source
 # handling the download (``'youtube-music'``, ``'youtube'``), shown next to
@@ -1218,13 +1223,22 @@ def _lookup_result(
 def _download_cover(url: str) -> Optional[bytes]:
     if not url:
         return None
+    if not is_public_http_url(url):
+        logger.warning('Refusing cover art from a non-public address: {}', url)
+        return None
     try:
-        response = httpx.get(url, timeout=15)
-        response.raise_for_status()
+        with httpx.stream('GET', url, timeout=15) as response:
+            response.raise_for_status()
+            data = bytearray()
+            for chunk in response.iter_bytes():
+                data.extend(chunk)
+                if len(data) > _MAX_COVER_BYTES:
+                    logger.warning('Cover art over {} bytes: {}', _MAX_COVER_BYTES, url)
+                    return None
     except Exception:
         logger.opt(exception=True).warning('Failed to fetch cover art {}', url)
         return None
-    return response.content
+    return bytes(data)
 
 
 def save_playlist_cover(cover_url: str, m3u_path: Path) -> Optional[Path]:
