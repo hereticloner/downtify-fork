@@ -1,225 +1,157 @@
-<h1 align="center">
-  <a href="https://github.com/henriquesebastiao/downtify" target="_blank" rel="noopener noreferrer">
-    <picture>
-      <img width="80" src="https://github.com/user-attachments/assets/628d4334-7326-446e-9f2a-4d3ab4fc95c3">
-    </picture>
-  </a>
-  <br>
-  Downtify
-</h1>
-
 <p align="center">
-  <strong>Self-hosted music downloader. Paste a Spotify link, get a perfectly tagged audio file — no API keys, no account, no hassle.</strong>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/readme/wordmark-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/readme/wordmark-light.svg">
+    <img src="assets/readme/wordmark-light.svg" alt="Downtify fork wordmark" width="560">
+  </picture>
 </p>
 
-<div align="center">
-
-[![Test](https://github.com/henriquesebastiao/downtify/actions/workflows/test.yml/badge.svg)](https://github.com/henriquesebastiao/downtify/actions/workflows/test.yml)
-[![GitHub Release](https://img.shields.io/github/v/release/henriquesebastiao/downtify?color=blue)](https://github.com/henriquesebastiao/downtify/releases)
-[![GitHub License](https://img.shields.io/github/license/henriquesebastiao/downtify?color=blue)](/LICENSE)
-[![Docker Pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Fhenriquesebastiao%2Fdowntify%2Fdowntify&query=downloadCount&style=flat&label=docker%20pulls)](https://github.com/henriquesebastiao/downtify/pkgs/container/downtify)
-[![Visitors](https://api.visitorbadge.io/api/visitors?path=henriquesebastiao%2Fdowntify&label=repository%20visits&countColor=%231182c3&style=flat)](https://github.com/henriquesebastiao/downtify)
-
-[Documentation](https://henriquesebastiao.github.io/downtify/) ·
-[Installation](https://henriquesebastiao.github.io/downtify/getting-started/installation/) ·
-[Features](https://henriquesebastiao.github.io/downtify/features/) ·
-[Changelog](https://henriquesebastiao.github.io/downtify/changelog/)
-
-</div>
+<h3 align="center">A community fork of <a href="https://github.com/henriquesebastiao/downtify">Downtify</a> with a rebuilt newspaper-style interface and a set of features the original doesn't have.</h3>
 
 <p align="center">
-  <img src="assets/readme-hero.png" alt="Downtify 3.0: paste a Spotify link, get the music. The home screen, the full-screen player and the mobile app." width="100%">
+  Paste a Spotify, YouTube Music or Deezer link and get a perfectly tagged library, ready to play in your browser —
+  <b>no Spotify account, no API keys, no Premium.</b>
 </p>
 
-## Overview
+<p align="center">
+  <a href="https://github.com/henriquesebastiao/downtify"><img alt="Upstream: henriquesebastiao/downtify" src="https://img.shields.io/badge/upstream-henriquesebastiao%2Fdowntify-0047FF"></a>
+  <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-171717"></a>
+</p>
 
-Downtify is a self-hosted web app that turns Spotify and YouTube Music links into a tagged audio library. It never touches the Spotify API, and it needs no account and no Premium subscription. It also plays that library back, so what you download is one tab away from listening.
+<p align="center">
+  <a href="#whats-different"><b>What's different</b></a> ·
+  <a href="#the-v4-interface">Screenshots</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#credits">Credits</a>
+</p>
 
-```
-Spotify embed page  →  YouTube Music search  →  yt-dlp + ffmpeg + mutagen
-   (metadata)             (audio match)            (download & tag)
-```
+<p align="center">
+  <img src="assets/readme/home.png" alt="The fork's home page: masthead with search, a paste box, most played tracks and library numbers." width="100%">
+  <br><sub><b>Home.</b> A masthead instead of a sidebar, and one accent color instead of fifty shades of gray.</sub>
+</p>
 
-1. **Metadata.** Track, album and playlist links are resolved from the public `open.spotify.com/embed` pages, so no Spotify credentials of any kind are needed.
-2. **Audio match.** [`ytmusicapi`](https://ytmusicapi.readthedocs.io/) finds the best YouTube Music result by comparing durations. When there is no good match, standard YouTube is searched automatically ([details](https://henriquesebastiao.github.io/downtify/how-it-works/#fallback-to-standard-youtube)).
-3. **Download and tag.** [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) fetches the audio, `ffmpeg` converts it to the format you chose, and [`mutagen`](https://mutagen.readthedocs.io/) embeds title, artist, album, year and cover art.
+## What's different
 
-All of it runs inside a single Docker container. See **[How it works](https://henriquesebastiao.github.io/downtify/how-it-works/)** for the full pipeline.
+The fork carries everything the original Downtify does — link pasting, YouTube Music matching, tagging, lyrics, the player, playlist monitoring — and adds on top:
 
-## Features
+<table>
+<tr>
+<td width="50%" valign="top">
 
-| | |
-|---|---|
-| **Download** | Spotify tracks, albums, playlists and artists (their releases and top songs); YouTube Music songs, albums, playlists and artists; free-text search; CSV imports from Soundiiz, TuneMyMusic and Exportify. MP3, FLAC, M4A, OGG or OPUS at the bitrate you pick. See [Download settings](https://henriquesebastiao.github.io/downtify/features/download-settings/) and [Library import](https://henriquesebastiao.github.io/downtify/features/library-import/). |
-| **Pause the queue** | Pause downloads before changing settings, troubleshooting or updating: downloads already running finish, nothing new starts, and the waiting songs (and the pause itself) survive a restart. Resume when ready. See [Download Queue](https://downtify.henriquesebastiao.com/features/download-queue/). |
-| **Charts** | Browse Deezer's global "what's trending" chart — tracks (with a 30-second preview, downloadable straight from the list), plus albums, artists and playlists to explore. See [Charts](https://henriquesebastiao.github.io/downtify/features/charts/). |
-| **Finder** | Discover's search box: search Deezer, then explore an artist in Finder-style columns: their profile and bio, their whole discography, and any album's tracks with previews, ready to download. See [Finder](https://henriquesebastiao.github.io/downtify/features/finder/). |
-| **Tags and lyrics** | Title, artist, album, year and cover art embedded in every file. Plain and time-synced lyrics from LRCLIB and NetEase, tried in the order you choose. See [Lyrics](https://henriquesebastiao.github.io/downtify/features/lyrics/). |
-| **Playlist Monitor** | Watch Spotify or YouTube Music playlists and artists; new tracks and new releases download on a schedule you set. Artist watches can be limited to albums, singles or EPs, and to releases from now on. See [Playlist Monitor](https://henriquesebastiao.github.io/downtify/features/playlist-monitor/). |
-| **Built-in player** | Full-screen Now playing with synced lyrics, an editable queue you can reorder from the keyboard, a sleep timer, keyboard shortcuts, media keys and a ten-band equalizer (experimental). Track lists are fully keyboard-navigable too, and the mini player bar can be turned off server-wide. See [Built-in player](https://henriquesebastiao.github.io/downtify/features/player/). |
-| **Liked songs** | Tap the heart on a song and a *Liked songs* playlist of everything you have liked appears, in Downtify and in your media server. See [Liked songs](https://henriquesebastiao.github.io/downtify/features/liked-songs/). |
-| **Streaming & similar tracks** *(API only)* | Play a track in full without downloading it into your library — the server fetches the audio once into a cache and serves it with seeking support — and find tracks that sound like one you name, from YouTube Music's own radio mix. The endpoints are ready; the web UI for them is not in this build yet. See [Streaming & similar tracks](https://henriquesebastiao.github.io/downtify/features/streaming/). |
-| **Discover** | Artists, albums and playlists you don't have yet, suggested from your library, liked songs and what you play — from Deezer first, with Spotify's picks added as they arrive, no account or API key. Artists and Deezer albums open in the Finder; preview any album's or playlist's songs before downloading, and hide any artist you never want suggested. See [Discover](https://henriquesebastiao.github.io/downtify/features/discover/). |
-| **Users & activity** | Sign in with a username and password; admins add accounts for the rest of the house, users get General, Apps and About settings of their own, and an activity log shows who signed in and who is playing what. See [Users & sign-in](https://henriquesebastiao.github.io/downtify/features/users/). |
-| **Mobile apps** *(experimental)* | Pair a phone app by QR code and stream your library to it — original quality or transcoded for mobile data — with offline copies and casting; rename or unpair each paired app. The server side is ready; the Android app itself is [still in development](#downtify-for-android). See [Mobile apps](https://henriquesebastiao.github.io/downtify/features/mobile-apps/). |
-| **Library** | Albums, artists, playlists and tracks in a grid or a list, with filtering, multi-select (on a phone, tap a row's select icon or long-press to start) and download as a ZIP. Create your own playlists (and rename them), and add songs from downloads or extra folders (imported Spotify/YouTube playlists stay read-only). **Existing music folders** import a collection you already have (tags stay on disk; artists are matched to the library). **Upgrade library** repairs small covers, missing lyrics and incomplete tags on music you already have, without re-downloading, and **Replace audio** swaps a wrongly matched song for the version you pick, keeping it in its playlists. Pick a real photo and banner for an artist from YouTube Music, Deezer, Spotify or your own upload, write or clear their bio. See [Library catalog](https://henriquesebastiao.github.io/downtify/features/library-catalog/), [Existing music folders](https://henriquesebastiao.github.io/downtify/features/external-library/), [Upgrade library](https://henriquesebastiao.github.io/downtify/features/library-upgrade/), [Replace audio](https://henriquesebastiao.github.io/downtify/features/replace-audio/) and [Artist photo & banner](https://henriquesebastiao.github.io/downtify/features/artist-images/). |
-| **Collections** | Group the playlists already in your library into named collections — a level above the playlist, for sorting a big library into a few groups — and rename them. Each card shows a mosaic of its member playlists' covers, and a **Download missing** button queues only the tracks a member playlist is still missing. Add **smart rules** (added date, play count, genre, artist, album, format) and the collection's members are recomputed from the library on every read, unioned with the playlists you added by hand. A collection never copies, moves or deletes a song. See [Collections](https://henriquesebastiao.github.io/downtify/features/collections/) and [Smart Collections](https://henriquesebastiao.github.io/downtify/features/smart-collections/). |
-| **Stats** | A read-only page that puts your library size and how much you use it in one place: tracks, playlists, downloads over the last 30 days and all time, plays and likes, plus downloads per day, a year of listening as a GitHub-style heatmap with your current day streak and busiest day, your most-played songs and — when the Spotify history import is on — your last plays there. See [Stats](https://henriquesebastiao.github.io/downtify/features/stats/). |
-| **Notifications** | Get a Telegram message when a playlist or artist watch downloads new tracks, so you don't have to watch the Queue. See [Notifications](https://henriquesebastiao.github.io/downtify/features/notifications/). |
-| **Scrobbling** | Send the tracks you play to your last.fm profile, so your listening history follows you even when you play from your own library. See [Scrobbling](https://henriquesebastiao.github.io/downtify/features/scrobbling/). |
-| **Spotify Mirror** | Music you play in Downtify shows up in your Spotify listening history, through real playback on your own Spotify Connect device — with a **Mirror now** button to test it on the spot, a live status panel that says why a play didn't reach Spotify, and an opt-in switch that reads your Spotify listening history back into Downtify. See [Spotify Mirror](https://henriquesebastiao.github.io/downtify/features/spotify-mirror/). |
-| **Spotify Sync** | Keep downloaded Spotify playlists in step with Spotify: on a schedule it picks up added tracks (through the missing-tracks flow) and drops removed ones from the playlist. Off by default, reuses the Spotify Mirror connection, and never deletes audio. See [Spotify Sync](https://henriquesebastiao.github.io/downtify/features/spotify-sync/). |
-| **Playlist search** | Search a whole playlist, however long (`Ctrl`/`⌘`+`F` on its page), and filter its songs: missing, failed, by source (YouTube Music, slskd) or not matched in Navidrome. See [Search a playlist](https://henriquesebastiao.github.io/downtify/features/library-catalog/#search-a-playlist). |
-| **Storage** | See how full the download disk is and clean up songs that sit on it twice, keeping the best copy. See [Storage](https://henriquesebastiao.github.io/downtify/features/storage/). |
-| **Music trash** *(opt-in)* | Removing songs moves them to a trash kept for 30 days instead of deleting them for good; stop the wrong thing and it comes back. See [Music trash](https://henriquesebastiao.github.io/downtify/features/music-trash/). |
-| **Download exclusions** *(opt-in)* | Administrators can stop retrying a track (from its queue row) and set a cumulative attempt-time budget, so a track that never matches stops being retried without deleting anything. See [Download exclusions](https://henriquesebastiao.github.io/downtify/features/download-exclusions/). |
-| **Playlist files** | Standard M3U files that Jellyfin, Navidrome and Plex pick up, plus each playlist's own cover art, saved before its tracks. Upload a custom cover for a playlist you created (JPEG, PNG or WebP, up to 10 MiB). A flat folder layout or one folder per artist — and a playlist's M3U can be written again by hand from its menu. See [M3U export](https://henriquesebastiao.github.io/downtify/features/m3u-export/), [Playlist cover art](https://henriquesebastiao.github.io/downtify/features/playlist-cover-art/) and [File organization](https://henriquesebastiao.github.io/downtify/features/file-organization/). |
-| **Integrations** | Optionally mirror playlists into Navidrome, with a **Test connection** button in Settings and controls for the post-download scan and client name. See [Navidrome](https://henriquesebastiao.github.io/downtify/features/slskd-navidrome/). |
-| **Interface** | Light and dark themes, one layout from phone to widescreen, an installable app ([PWA](https://henriquesebastiao.github.io/downtify/features/pwa/)), live download progress, update notices and eight languages. |
+### The v4 interface
 
-In **Library → Tracks**, sort by release date from the column heading. See [Library catalog](https://downtify.henriquesebastiao.com/features/library-catalog/#library-page).
+Every screen was redesigned as a **technical gazette**: a masthead and a navigation strip instead of a sidebar, numbered stat blocks, hairline rules, full-color covers and **zero rounded corners** — a paper-and-ink palette with a single electric-blue accent, in a light and a dark theme, tuned to WCAG AA contrast. [More below →](#the-v4-interface)
+
+### Collections & Smart Collections
+
+Group playlists into named **collections** — a level above the playlist for a big library. Each card shows a mosaic of its members' covers and a **Download missing** button that queues only what a member playlist lacks. **Smart rules** (added date, play count, genre, artist, album, format) recompute a collection from the library on every read. [docs](docs/features/collections.md) · [smart](docs/features/smart-collections.md)
+
+### Stats
+
+Library size and how much you use it: downloads per day, most-played tracks and playlists, and a **GitHub-style listening heatmap** with your current day streak and busiest day. [docs](docs/features/stats.md)
+
+### A more honest Monitor
+
+Lean watch rows, a bulk-selection bar with keyboard shortcuts, and **honest progress** for manual checks. Watches that keep coming up empty **relax their check interval by 7×** after consecutive quiet passes, instead of hammering a source for nothing. [docs](docs/features/playlist-monitor.md)
+
+</td>
+<td width="50%" valign="top">
+
+### Telegram notifications
+
+A Telegram message whenever a playlist or artist watch downloads new tracks, with a test button in Settings. [docs](docs/features/notifications.md)
+
+### Storage report & duplicate cleanup
+
+See how full the download disk is, find songs that sit on it twice, and clean up keeping the best copy. [docs](docs/features/storage.md)
+
+### Spotify Mirror & Sync
+
+What you play here shows up in your real Spotify listening history, through an always-online Spotify Connect device — with a **Mirror now** test button and a live status panel. **Spotify Sync** keeps downloaded Spotify playlists in step on a schedule. [mirror](docs/features/spotify-mirror.md) · [sync](docs/features/spotify-sync.md)
+
+### last.fm scrobbling
+
+Plays are scrobbled to your last.fm profile — half the track or four minutes, whichever comes first — with an in-app connect flow. [docs](docs/features/scrobbling.md)
+
+### Auto-DJ
+
+When the queue runs out and Auto-DJ is on, the player doesn't stop: it appends 15 library tracks — the current artist first, then a random spread — and keeps going.
+
+**Also:** YouTube reliability settings (`yt_player_clients`, PO tokens) exposed in the Settings UI, lazy-loaded locales, and the unused Soulseek (slskd) source **removed**.
+
+</td>
+</tr>
+</table>
+
+## The v4 interface
+
+<p align="center">
+  <img src="assets/readme/now-playing.png" alt="The full-screen player: cover, progress, queue." width="100%">
+  <br><sub><b>Now Playing</b>, with the 64-px transport strip pinned to the bottom of every page.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/readme/library.png" alt="Library: a grid of full-color album covers." width="49%">
+  <img src="assets/readme/stats.png" alt="Stats: numbered metric blocks and a downloads-per-day chart." width="49%">
+  <br><sub><b>Library</b> covers get their color back. <b>Stats</b> reads like a front page.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/readme/monitor.png" alt="Monitor: lean watch rows for watched playlists and artists." width="100%">
+  <br><sub><b>Monitor</b>: lean watch rows, a bulk bar and honest check progress — watch lists stop shouting.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/readme/mobile.png" alt="Downtify fork on a phone." width="40%">
+  <br><sub><b>On a phone</b>, the strip collapses into a block menu and the masthead stacks.</sub>
+</p>
+
+The design language is written down in [DESIGN.md](DESIGN.md): paper `#F3F3F0`, ink `#171717`, one accent `#0047FF`, 2-px hairlines, no radius, no shadows — Space Grotesk for display, Inter for text, JetBrains Mono for technical data.
 
 ## Quick start
 
-You only need [Docker](https://docs.docker.com/get-docker/).
+You only need [Docker](https://docs.docker.com/get-docker/). The fork has no published image — build it from source:
 
 ```bash
-docker run -d -p 8000:8000 --name downtify \
-  -v /path/to/downloads:/downloads \
-  -v downtify_data:/data \
-  ghcr.io/henriquesebastiao/downtify
+git clone https://github.com/hereticloner/downtify-fork.git
+cd downtify-fork
+docker compose up -d --build downtify
 ```
 
-Open [http://localhost:8000](http://localhost:8000), sign in as **`admin`** / **`downtify`**, change that password in **Settings → General** (or turn accounts off with `DOWNTIFY_DISABLE_AUTH=true` on a server only you can reach), then paste a link and start the download. Replace `/path/to/downloads` with the folder where you want your music.
+Open **[localhost:8000](http://localhost:8000)**, sign in as **`admin`** / **`downtify`** and change that password in **Settings → General** (or turn accounts off with `DOWNTIFY_DISABLE_AUTH=true` on a server only you can reach). Your music lands in `docker/downloads`; the database and settings live in `docker/data`. Keep both on persistent storage.
 
-`/downloads` holds your audio files and `/data` holds Downtify's database and settings. Keep both persistent, or settings, likes and playlist tracking are lost when the container is recreated.
-
-### Docker Compose
-
-```yaml
-services:
-  downtify:
-    container_name: downtify
-    image: ghcr.io/henriquesebastiao/downtify:latest
-    ports:
-      - '8000:8000'
-    volumes:
-      - ./downloads:/downloads
-      - downtify_data:/data
-    restart: unless-stopped
-
-volumes:
-  downtify_data:
-```
-
-To serve it on another port, set `DOWNTIFY_PORT` and map the same port (or choose it in **Settings → Server → Port** and change the mapping to match):
-
-```yaml
-ports:
-  - '30321:30321'
-environment:
-  - DOWNTIFY_PORT=30321
-```
-
-The remaining deployment options (timezone, monitor sync time, cookies file, IPv4) are listed under **[Environment variables](https://henriquesebastiao.github.io/downtify/getting-started/environment-variables/)**. Everything else is configured from **Settings** in the web interface.
-
-### Home server platforms
-
-| Platform | |
-|----------|---|
-| Umbrel | [Install on Umbrel](https://apps.umbrel.com/app/downtify) |
-| CasaOS | [Install on CasaOS](https://casaos.zimaspace.com/) |
-| HomeDock OS | [Install on HomeDock](https://www.homedock.cloud/apps/downtify/) |
+Prefer official releases, one-click app store installs or ready-made multi-arch images? Use the **[original Downtify](https://github.com/henriquesebastiao/downtify#quick-start)** — this fork tracks upstream selectively, not release by release.
 
 ## What you can paste in
 
 | Input | Example |
 |-------|---------|
 | Spotify track, album, playlist or artist | `open.spotify.com/track/…` |
-| YouTube Music playlist | `music.youtube.com/playlist?list=…` |
-| YouTube Music artist | `music.youtube.com/channel/UC…` or `music.youtube.com/@artist` |
-| YouTube or YouTube Music video | `youtube.com/watch?v=…` |
-| Deezer track, album, playlist or artist | `deezer.com/track/…` |
+| YouTube Music song, album, playlist or artist | `music.youtube.com/playlist?list=…` |
+| YouTube video | `youtube.com/watch?v=…` |
+| Deezer track, album, playlist or artist | `deezer.com/album/…` |
 | Free-text search | `The Night Owls Do I Still Recall` |
 | Library export (CSV) | Soundiiz, TuneMyMusic, Exportify |
 
-An artist link opens the artist's page, with their releases and a **Top Songs** button to pick from their most popular songs and download them, optionally as a playlist ([details](https://henriquesebastiao.github.io/downtify/features/top-songs/)). Artists in your Library also get a **Top songs** tab with their first five Spotify top songs, kept in a per-artist file for a week, and a 30-second preview of each song you haven't downloaded yet; an artist's bio, genre and links are also filled in, in your language, in the background as their first track finishes downloading ([details](https://henriquesebastiao.github.io/downtify/features/top-songs/#on-an-artists-library-page)). Artists can also be watched for new releases with the **Playlist Monitor** — just albums, singles or EPs if you like, and optionally only what comes out from now on, skipping the back catalogue. Deezer links can be downloaded but not watched.
-
-## Downtify for Android
-
-An Android app is being built: it pairs with your server by scanning a QR code from **Settings → Apps**, then browses your library, plays it in the original quality or a smaller one for mobile data, keeps songs on the phone for offline listening and casts to a Chromecast.
-
-> [!WARNING]
-> **The app is still in development and no version has been published yet** — there is nothing to install for now, and how it works may still change. The server side of it already ships with Downtify, which is why **Settings → Apps** is marked experimental.
-
-Repository: **[henriquesebastiao/downtify-android](https://github.com/henriquesebastiao/downtify-android)**
-
-Anything that talks to the server can be built against the same API — see the [mobile client contract](https://henriquesebastiao.github.io/downtify/mobile-client-contract/).
-
-## Troubleshooting
-
-Most download problems share one cause: YouTube wants a signed-in session. Upload a `cookies.txt` in **Settings → YouTube cookies** and they usually go away. If YouTube still rate-limits you, raise *Delay between downloads*, lower *Parallel downloads*, then try `DOWNTIFY_FORCE_IPV4=1`.
-
-See **[Troubleshooting](https://henriquesebastiao.github.io/downtify/troubleshooting/)** for the full list of symptoms and fixes, and **[YouTube cookies](https://henriquesebastiao.github.io/downtify/features/youtube-cookies/)** for how to export the file.
-
-## Translations
-
-The interface is available in English, Spanish, Brazilian Portuguese, French, Turkish, Hungarian, Greek and Bulgarian. Switch language in **Settings → Language**; the choice is saved in the browser and applies without a reload.
-
-Error messages are translated too: the backend sends a machine-readable `code` alongside its English `detail`, and the UI shows a localized, user-safe message instead of raw network errors or backend text ([details](https://henriquesebastiao.github.io/downtify/features/internationalization/#error-messages)).
-
-### Contributing translations
-
-Adding a language is a small change and needs no tooling beyond the existing Vite setup:
-
-1. Copy `frontend/src/i18n/locales/en.js` to a new file named after an [IETF language tag](https://en.wikipedia.org/wiki/IETF_language_tag) (`de.js`, `it.js`, `pt-PT.js`).
-2. Translate the values. Keep the keys and placeholder tokens (`{count}`, `{name}`, `{file}`) unchanged, and set `language.name` to the language's native name.
-3. Register the locale in `frontend/src/i18n/index.js`.
-
-Missing keys fall back to English, so a partial translation is welcome. The full walkthrough, with the registration snippet and tips, is in **[Internationalization](https://henriquesebastiao.github.io/downtify/features/internationalization/)**.
+The metadata comes from public pages, the audio from YouTube Music (YouTube as fallback) — never from Spotify, with no credentials of any kind. The full pipeline is in the upstream docs: [How it works](https://downtify.henriquesebastiao.com/how-it-works/).
 
 ## Documentation
 
-| | |
-|---|---|
-| [Getting started](https://henriquesebastiao.github.io/downtify/getting-started/) | Installation, Docker Compose, one-click installs and environment variables |
-| [Features](https://henriquesebastiao.github.io/downtify/features/) | One page per feature, with every option explained |
-| [How it works](https://henriquesebastiao.github.io/downtify/how-it-works/) | The metadata, matching and tagging pipeline |
-| [Troubleshooting](https://henriquesebastiao.github.io/downtify/troubleshooting/) | Symptoms, causes and fixes |
-| [API reference](https://henriquesebastiao.github.io/downtify/api-reference/) | Every endpoint the web interface uses |
-| [Changelog](https://henriquesebastiao.github.io/downtify/changelog/) | What changed in each release |
+Fork-specific features are documented in this repo, next to the code: [Collections](docs/features/collections.md), [Smart Collections](docs/features/smart-collections.md), [Stats](docs/features/stats.md), [Notifications](docs/features/notifications.md), [Storage](docs/features/storage.md), [Spotify Mirror](docs/features/spotify-mirror.md), [Spotify Sync](docs/features/spotify-sync.md), [Scrobbling](docs/features/scrobbling.md), [Monitor](docs/features/playlist-monitor.md).
 
----
+Everything the fork shares with the original is documented upstream: [getting started](https://downtify.henriquesebastiao.com/getting-started/), [every feature](https://downtify.henriquesebastiao.com/features/), [troubleshooting](https://downtify.henriquesebastiao.com/troubleshooting/), [API reference](https://downtify.henriquesebastiao.com/api-reference/).
 
-> [!WARNING]
-> Users are responsible for their actions and any legal consequences. Downtify does not support unauthorized downloading of copyrighted material and takes no responsibility for user actions.
+The upstream mobile apps speak the same API and work against this fork: [Downtify for Android](https://github.com/henriquesebastiao/downtify-android) and [Downtify for iOS](https://github.com/michaelmoskie/Downtify-IOS-Client).
 
-## Contributing
+## Credits
 
-Contributions, issues and feature requests are welcome. Check the [issues page](https://github.com/henriquesebastiao/downtify/issues) or open a pull request.
+This fork exists because [Henrique Sebastião](https://github.com/henriquesebastiao) built and maintains [Downtify](https://github.com/henriquesebastiao/downtify) in the open, along with its [35+ contributors](https://github.com/henriquesebastiao/downtify/graphs/contributors). The upstream project is where general features, bug reports and translations belong — and where to [star the repository](https://github.com/henriquesebastiao/downtify) or [sponsor its development](https://github.com/sponsors/henriquesebastiao) if Downtify has earned a place on your server.
 
-Before sending a pull request, read [**CONTRIBUTING.md**](./CONTRIBUTING.md). It covers local setup, the coding and formatting standards (Ruff for Python, Prettier for the frontend), testing requirements, commit conventions and the pull request checklist.
-
-If Downtify has been useful to you, a star on GitHub helps other people find it.
-
-## Contributors
-
-Thanks for your contribution to the project!
-
-[![Contributors Avatars](https://contributors-img.web.app/image?repo=henriquesebastiao/downtify)](https://github.com/henriquesebastiao/downtify/graphs/contributors)
-
-## Support
-
-There are many ways to support Downtify:
-
-- Use it! Write about it! Star it! If you love Downtify, drop me a line and tell me what you love.
-- Blog about Downtify to spread the word. If you're good at writing, send PRs to improve the documentation at [downtify.henriquesebastiao.com](https://downtify.henriquesebastiao.com/).
-- Sponsor my work at https://www.buymeacoffee.com/henriquesebastiao
-
-<a href="https://www.buymeacoffee.com/henriquesebastiao" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+Issues and pull requests that concern this fork's own features — the v4 interface, Collections, Stats, the rest of the list above — are welcome here.
 
 ## License
 
-Licensed under the [AGPL-3.0](https://github.com/henriquesebastiao/downtify?tab=AGPL-3.0-1-ov-file#readme) License.
+Licensed under [AGPL-3.0](LICENSE), like the project it comes from.
 
-Icons by [Font Awesome](https://fontawesome.com) (Free, [CC BY 4.0](https://fontawesome.com/license/free)), loaded via [Iconify](https://iconify.design).
+> [!WARNING]
+> Users are responsible for their actions and any legal consequences. Downtify does not support unauthorized downloading of copyrighted material and takes no responsibility for user actions.
