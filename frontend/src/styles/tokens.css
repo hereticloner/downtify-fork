@@ -481,3 +481,56 @@ button:not(:disabled):active {
   transform: translateX(8px);
 }
 
+
+/* Batch2 — B6 route progress: a 2px accent rule directly under the
+   44/48px masthead. Movement lives only in no-preference; reduced motion
+   gets a display:none static state in index.css. */
+.route-progress {
+  position: fixed;
+  top: 2.75rem;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .route-progress {
+    top: 3rem;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .route-progress-fill {
+    display: block;
+    width: 70%;
+    height: 100%;
+    opacity: 1;
+    background-color: var(--c-accent);
+    transition:
+      width 220ms linear,
+      opacity 160ms linear;
+  }
+  .route-progress.is-complete .route-progress-fill {
+    width: 100%;
+  }
+  .progress-enter-active,
+  .progress-leave-active {
+    transition: opacity 140ms linear;
+  }
+  .progress-enter-from,
+  .progress-leave-to {
+    opacity: 0;
+  }
+
+  /* B7 — one shared name on the persistent page root gives the browser a
+     real old/new snapshot pair; the default crossfade is kept short. */
+  .route-view-root {
+    view-transition-name: route-content;
+  }
+  ::view-transition-old(route-content),
+  ::view-transition-new(route-content) {
+    animation-duration: 220ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}

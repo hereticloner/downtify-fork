@@ -2,10 +2,21 @@
   <SignIn v-if="auth.mustSignIn.value" />
   <div v-else class="flex min-h-dvh flex-col bg-bg text-fg">
     <TopBar @menu="menuOpen = true" />
+    <!-- B6 — 2px accent rule directly under the masthead. -->
+    <Transition name="progress">
+      <div
+        v-if="progressActive"
+        class="route-progress"
+        :class="{ 'is-complete': progressComplete }"
+        aria-hidden="true"
+      >
+        <span class="route-progress-fill" />
+      </div>
+    </Transition>
     <SideNav class="hidden md:flex" />
-    <main class="min-w-0 flex-1" :class="contentPad">
+    <main class="route-view-root min-w-0 flex-1" :class="contentPad">
       <RouterView v-slot="{ Component, route: viewRoute }">
-        <Transition name="page" mode="out-in">
+        <Transition :name="pageTransitionName" mode="out-in">
           <component :is="Component" :key="viewKey(viewRoute)" />
         </Transition>
       </RouterView>
@@ -19,6 +30,7 @@
     <NowPlaying />
     <ShortcutsDialog v-model:open="shortcutsOpen" />
     <UiToasts />
+    <CursorTrail />
     <UiDialog />
     <CreatePlaylistModal />
     <RenamePlaylistModal />
@@ -45,6 +57,12 @@ import AddTracksToPlaylistModal from '../library/AddTracksToPlaylistModal.vue'
 import SignIn from './SignIn.vue'
 import DefaultPasswordPrompt from './DefaultPasswordPrompt.vue'
 import ReplaceAudioDialog from '../library/ReplaceAudioDialog.vue'
+import CursorTrail from './CursorTrail.vue'
+import { useRouteProgress } from '/src/composables/useRouteProgress'
+import {
+  prefersReducedMotion,
+  supportsViewTransitions,
+} from '/src/lib/viewTransitions'
 import API from '/src/model/api'
 import { useAccount } from '/src/model/account'
 import { useAuth } from '/src/model/auth'
@@ -70,6 +88,13 @@ const ui = useUi()
 const nowPlaying = useNowPlaying()
 const shortcutsOpen = ref(false)
 const menuOpen = ref(false)
+
+// The browser snapshots the swap when View Transitions are available, so the
+// out-in page transition would fight it; keep it as the fallback only.
+const pageTransitionName =
+  supportsViewTransitions() && !prefersReducedMotion() ? '' : 'page'
+const { active: progressActive, complete: progressComplete } =
+  useRouteProgress()
 
 // The transport only takes room when there is a bar to show; the content
 // column reserves exactly that height so nothing ends underneath it.
