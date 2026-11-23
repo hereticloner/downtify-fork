@@ -30,7 +30,6 @@
     <NowPlaying />
     <ShortcutsDialog v-model:open="shortcutsOpen" />
     <UiToasts />
-    <CursorTrail />
     <UiDialog />
     <CreatePlaylistModal />
     <RenamePlaylistModal />
@@ -57,7 +56,6 @@ import AddTracksToPlaylistModal from '../library/AddTracksToPlaylistModal.vue'
 import SignIn from './SignIn.vue'
 import DefaultPasswordPrompt from './DefaultPasswordPrompt.vue'
 import ReplaceAudioDialog from '../library/ReplaceAudioDialog.vue'
-import CursorTrail from './CursorTrail.vue'
 import { useRouteProgress } from '/src/composables/useRouteProgress'
 import {
   prefersReducedMotion,

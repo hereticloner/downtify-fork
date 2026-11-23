@@ -183,9 +183,6 @@
 
   /* Batch2 static end states: the new movement rules live only inside
      no-preference, so reduced motion keeps a fully static page. */
-  .cursor-trail {
-    display: none;
-  }
   .route-progress {
     display: none;
   }

@@ -10,7 +10,6 @@ const read = (p) => readFileSync(join(root, p), 'utf8')
 const tokens = read('styles/tokens.css')
 const index = read('index.css')
 const shell = read('components/shell/AppShell.vue')
-const trail = read('components/shell/CursorTrail.vue')
 const progress = read('composables/useRouteProgress.js')
 const vt = read('lib/viewTransitions.js')
 const main = read('main.js')
@@ -18,17 +17,6 @@ const reduced =
   index.match(/@media \(prefers-reduced-motion: reduce\)[\s\S]*$/)?.[0] || ''
 
 describe('batch2 motion', () => {
-  it('A5 renders a fine-pointer, motion-safe trail that touch/reduced never see', () => {
-    expect(shell).toMatch(/<CursorTrail \/>/)
-    expect(trail).toMatch(
-      /\(hover: hover\) and \(pointer: fine\) and \(prefers-reduced-motion: no-preference\)/
-    )
-    expect(trail).toMatch(/v-if="enabled"/)
-    expect(trail).toMatch(/pointermove/)
-    expect(trail).toMatch(/transitionDuration/)
-    expect(reduced).toMatch(/\.cursor-trail/)
-  })
-
   it('B6 drives a 2px accent bar below the masthead from router guards', () => {
     expect(progress).toMatch(/router\.beforeEach/)
     expect(progress).toMatch(/router\.afterEach/)
