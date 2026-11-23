@@ -3,7 +3,7 @@
        line. The row draws only its bottom hairline; the list frame owns the
        outer 2px rules. -->
   <div
-    class="group flex h-[72px] items-center gap-4 border-b border-line-2 px-3 transition-colors duration-100 last:border-b-0 hover:bg-surface-2"
+    class="group flex h-[72px] items-center gap-4 border-b border-line-2 px-3 transition-[background-color,transform] duration-200 hover:bg-surface-2 motion-safe:hover:translate-x-0.5 motion-reduce:transition-none last:border-b-0"
   >
     <RouterLink :to="to" class="flex min-w-0 flex-1 items-center gap-3">
       <CoverArt

@@ -68,7 +68,7 @@
       <article
         v-for="col in collections"
         :key="col.name"
-        class="flex min-w-0 flex-col border-r-2 border-b-2 border-line"
+        class="flex min-w-0 flex-col border-r-2 border-b-2 border-line transition-colors duration-200 hover:bg-surface-2 motion-reduce:transition-none"
       >
         <div class="relative border-b-2 border-line">
           <CoverArt

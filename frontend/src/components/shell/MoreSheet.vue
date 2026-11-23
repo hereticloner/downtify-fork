@@ -53,7 +53,7 @@
               :href="update.release_url"
               target="_blank"
               rel="noopener"
-              class="flex h-[60px] items-center gap-3 border-b-2 border-line px-3 transition-colors duration-100 hover:bg-surface-2"
+              class="flex h-[60px] items-center gap-3 border-b-2 border-line px-3 transition-[background-color,transform] duration-200 hover:bg-surface-2 motion-safe:hover:translate-x-0.5 motion-reduce:transition-none"
               @click="$emit('close')"
             >
               <span
@@ -106,7 +106,7 @@
 
             <button
               type="button"
-              class="flex h-[60px] w-full items-center gap-3 border-b-2 border-line px-3 text-left transition-colors duration-100 hover:bg-surface-2"
+              class="flex h-[60px] w-full items-center gap-3 border-b-2 border-line px-3 text-left transition-[background-color,transform] duration-200 hover:bg-surface-2 motion-safe:hover:translate-x-0.5 motion-reduce:transition-none"
               @click="theme.toggle()"
             >
               <span
@@ -129,7 +129,7 @@
             <button
               v-if="auth.user.value && !auth.authDisabled.value"
               type="button"
-              class="flex h-[60px] w-full items-center gap-3 border-b-2 border-line px-3 text-left transition-colors duration-100 hover:bg-surface-2"
+              class="flex h-[60px] w-full items-center gap-3 border-b-2 border-line px-3 text-left transition-[background-color,transform] duration-200 hover:bg-surface-2 motion-safe:hover:translate-x-0.5 motion-reduce:transition-none"
               @click="auth.signOut"
             >
               <span

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="animate-rise flex flex-col items-center justify-center gap-3 border-2 border-dashed border-line px-6 py-14 text-center"
+    class="animate-rise flex flex-col items-center justify-center gap-3 border-2 border-dashed border-line px-6 py-14 text-center transition-colors duration-200 hover:bg-surface-2 motion-reduce:transition-none"
   >
     <span
       class="flex size-12 items-center justify-center border border-line-2 bg-surface-2 text-muted"

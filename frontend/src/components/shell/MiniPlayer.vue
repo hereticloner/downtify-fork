@@ -45,7 +45,7 @@
         </button>
         <button
           type="button"
-          class="flex size-9 shrink-0 items-center justify-center border-2 border-on-invert bg-on-invert text-invert transition-colors duration-100 hover:bg-on-invert/80"
+          class="play-glow flex size-9 shrink-0 items-center justify-center border-2 border-on-invert bg-on-invert text-invert transition-colors duration-100 hover:bg-on-invert/80"
           :aria-label="
             player.isPlaying.value ? t('player.pause') : t('player.play')
           "
@@ -160,7 +160,7 @@
             </button>
             <button
               type="button"
-              class="flex size-10 items-center justify-center border-2 border-on-invert bg-on-invert text-invert transition-colors duration-100 hover:bg-on-invert/80"
+              class="play-glow flex size-10 items-center justify-center border-2 border-on-invert bg-on-invert text-invert transition-colors duration-100 hover:bg-on-invert/80"
               :aria-label="
                 player.isPlaying.value ? t('player.pause') : t('player.play')
               "

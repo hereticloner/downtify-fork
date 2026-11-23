@@ -15,7 +15,7 @@
             type="button"
             :title="t('artistArt.editArtist')"
             :aria-label="t('artistArt.editArtist')"
-            class="absolute right-0 bottom-0 flex size-9 items-center justify-center border-t-2 border-l-2 border-line bg-bg text-fg transition-colors duration-100 hover:bg-surface-2 active:bg-raised"
+            class="play-glow absolute right-0 bottom-0 flex size-9 items-center justify-center border-t-2 border-l-2 border-line bg-bg text-fg transition-colors duration-100 hover:bg-surface-2 active:bg-raised"
             @click="$emit('edit-banner')"
           >
             <AppIcon name="pencil" :size="15" />
@@ -37,7 +37,7 @@
           <button
             v-if="photoEditable"
             type="button"
-            class="absolute right-0 bottom-0 flex size-9 items-center justify-center border-t-2 border-l-2 border-line bg-bg text-fg transition-colors duration-100 hover:bg-surface-2 active:bg-raised"
+            class="play-glow absolute right-0 bottom-0 flex size-9 items-center justify-center border-t-2 border-l-2 border-line bg-bg text-fg transition-colors duration-100 hover:bg-surface-2 active:bg-raised"
             @click="$emit('edit-photo')"
           >
             <span class="sr-only">{{ t('artistArt.editPhoto') }}</span>

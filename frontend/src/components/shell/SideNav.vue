@@ -11,7 +11,7 @@
       :class="
         isActive(item)
           ? 'bg-invert text-on-invert'
-          : 'text-muted hover:bg-surface-2 hover:text-fg'
+          : 'text-muted hover:bg-surface-2 hover:text-accent'
       "
       :title="t(item.label)"
       :aria-current="isActive(item) ? 'page' : undefined"

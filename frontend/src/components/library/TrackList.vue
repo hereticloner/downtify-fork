@@ -157,7 +157,7 @@
             >
             <button
               type="button"
-              class="hidden text-fg group-hover:block group-focus-within:block"
+              class="play-glow hidden text-fg group-hover:block group-focus-within:block"
               :aria-label="t('actions.playItem', { name: row.track.title })"
               @click.stop="playRow(row)"
             >

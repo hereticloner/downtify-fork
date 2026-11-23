@@ -18,7 +18,7 @@
         :class="
           item.id === modelValue
             ? 'bg-invert'
-            : 'hover:bg-surface-2 hover:text-fg'
+            : 'hover:bg-surface-2 hover:text-accent'
         "
         @click="$emit('update:modelValue', item.id)"
       >
@@ -27,7 +27,7 @@
           :class="
             item.id === modelValue
               ? 'text-on-invert'
-              : 'text-muted group-hover:text-fg'
+              : 'text-muted group-hover:text-accent'
           "
           >{{ item.label }}</span
         >

@@ -11,7 +11,7 @@
       class="eyebrow inline-flex h-7 shrink-0 items-center gap-2 border px-3 whitespace-nowrap transition-colors duration-100"
       :class="
         item.id === modelValue
-          ? 'border-line bg-invert text-on-invert'
+          ? 'play-glow border-line bg-invert text-on-invert'
           : 'border-line-2 bg-transparent text-muted hover:border-line hover:text-fg'
       "
       :aria-pressed="item.id === modelValue"

@@ -70,7 +70,7 @@ const variantClass = computed(
   () =>
     ({
       primary:
-        'border-line bg-invert text-on-invert hover:bg-fg-3 active:bg-surface active:text-fg',
+        'play-glow border-line bg-invert text-on-invert hover:bg-fg-3 active:bg-surface active:text-fg',
       secondary:
         'border-line bg-transparent text-fg hover:bg-surface-2 active:bg-raised',
       ghost:

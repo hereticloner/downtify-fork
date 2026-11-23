@@ -24,7 +24,7 @@
       :alt="alt"
       loading="lazy"
       decoding="async"
-      class="size-full object-cover transition-opacity duration-100"
+      class="size-full object-cover transition-[opacity,transform] duration-200 ease-out motion-safe:group-hover:scale-105"
       :class="ready ? 'opacity-100' : 'opacity-0'"
       @load="ready = true"
       @error="onImageError"

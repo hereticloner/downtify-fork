@@ -25,7 +25,7 @@
       <button
         v-if="downloadable"
         type="button"
-        class="absolute right-3.5 bottom-3.5 flex size-9 items-center justify-center border-2 border-line transition-colors duration-100"
+        class="play-glow absolute right-3.5 bottom-3.5 flex size-9 items-center justify-center border-2 border-line transition-colors duration-100"
         :class="
           queued
             ? 'border-accent bg-surface text-accent'

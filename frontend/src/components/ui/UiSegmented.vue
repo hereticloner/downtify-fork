@@ -15,7 +15,7 @@
       :class="
         option.value === modelValue
           ? 'bg-invert text-on-invert'
-          : 'bg-transparent text-muted hover:bg-surface-2 hover:text-fg'
+          : 'bg-transparent text-muted hover:bg-surface-2 hover:text-accent'
       "
       @click="$emit('update:modelValue', option.value)"
     >

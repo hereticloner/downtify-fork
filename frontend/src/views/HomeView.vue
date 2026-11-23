@@ -94,7 +94,7 @@
       <div
         v-for="(step, i) in onboarding"
         :key="step.title"
-        class="flex flex-col gap-2 border-b-2 border-line p-4 md:border-r-2 md:border-b-0 md:last:border-r-0"
+        class="flex flex-col gap-2 border-b-2 border-line p-4 md:border-r-2 md:border-b-0 md:last:border-r-0 transition-colors duration-200 hover:bg-surface-2 motion-reduce:transition-none"
       >
         <span class="mono tabular text-faint">0{{ i + 1 }}</span>
         <p class="text-display text-[15px] font-bold">{{ step.title }}</p>

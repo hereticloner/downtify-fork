@@ -3,7 +3,7 @@
        the tile itself, the grid supplies the top/left ones. Cover sits in a
        frame of its own, the catalogue line below it. -->
   <article
-    class="group relative flex min-w-0 flex-col border-r-2 border-b-2 border-line bg-surface"
+    class="group relative flex min-w-0 flex-col border-r-2 border-b-2 border-line bg-surface transition-colors duration-200 hover:bg-surface-2 motion-reduce:transition-none"
   >
     <div class="relative p-2">
       <RouterLink :to="to" class="block" :aria-label="title">

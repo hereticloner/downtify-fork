@@ -7,7 +7,7 @@
     :aria-label="label"
     :aria-pressed="toggle ? active : undefined"
     :disabled="to ? undefined : disabled"
-    class="inline-flex shrink-0 items-center justify-center border-2 transition-colors duration-100 disabled:cursor-not-allowed disabled:border-line-2 disabled:text-faint"
+    class="play-glow inline-flex shrink-0 items-center justify-center border-2 transition-colors duration-100 disabled:cursor-not-allowed disabled:border-line-2 disabled:text-faint"
     :class="[
       sizeClass,
       photo

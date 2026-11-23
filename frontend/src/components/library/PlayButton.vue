@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    class="flex size-12 shrink-0 items-center justify-center border-2 border-line bg-invert text-on-invert transition-colors duration-100 hover:bg-fg-3 active:bg-surface active:text-fg disabled:cursor-not-allowed disabled:border-line-2 disabled:bg-transparent disabled:text-faint"
+    class="play-glow flex size-12 shrink-0 items-center justify-center border-2 border-line bg-invert text-on-invert transition-colors duration-100 hover:bg-fg-3 active:bg-surface active:text-fg disabled:cursor-not-allowed disabled:border-line-2 disabled:bg-transparent disabled:text-faint"
     :aria-label="playing ? t('player.pause') : label"
     :disabled="disabled"
     @click="$emit('click')"
