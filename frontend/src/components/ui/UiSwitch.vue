@@ -1,6 +1,6 @@
 <template>
   <label
-    class="flex cursor-pointer items-start gap-3.5"
+    class="group flex cursor-pointer items-start gap-3.5"
     :class="disabled ? 'cursor-not-allowed opacity-50' : ''"
   >
     <span class="min-w-0 flex-1" v-if="label || description || $slots.default">
@@ -32,7 +32,13 @@
       aria-hidden="true"
     >
       <Transition name="switch-knob">
-        <AppIcon v-if="modelValue" name="check" :size="14" stroke-width="3" />
+        <AppIcon
+          v-if="modelValue"
+          name="check"
+          :size="14"
+          stroke-width="3"
+          class="transition-transform duration-200 ease-out motion-safe:group-hover:scale-125"
+        />
       </Transition>
     </span>
   </label>
