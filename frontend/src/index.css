@@ -148,6 +148,21 @@
     transform: none;
   }
 
+  /* Batch1 static end states: the new hover/pointer rules live only inside
+     no-preference, so reduced motion has no transform at all. */
+  .tab-indicator {
+    transition: none;
+  }
+  .switch-knob-enter-active,
+  .switch-knob-leave-active {
+    transition: none;
+  }
+  .switch-knob-enter-from,
+  .switch-knob-leave-to {
+    opacity: 1;
+    transform: none;
+  }
+
   :focus-visible {
     box-shadow: none;
   }

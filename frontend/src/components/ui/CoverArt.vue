@@ -1,6 +1,8 @@
 <template>
   <div
-    class="relative isolate shrink-0 overflow-hidden border-2 border-line bg-surface-2"
+    class="cover-parallax relative isolate shrink-0 overflow-hidden border-2 border-line bg-surface-2"
+    @pointermove="onPointerMove"
+    @pointerleave="onPointerLeave"
   >
     <div
       v-if="mosaic.length >= 2"
@@ -75,6 +77,24 @@ const props = defineProps({
   // from a proxy), with a picture known to. Unset = today's behaviour.
   fallback: { type: String, default: '' },
 })
+
+// A1: pointer parallax. The handler only writes CSS custom props; the
+// transform is CSS-only and gated to fine pointers without reduced motion.
+function onPointerMove(e) {
+  const el = e.currentTarget
+  const r = el.getBoundingClientRect()
+  if (!r.width || !r.height) return
+  const x = (e.clientX - r.left) / r.width - 0.5
+  const y = (e.clientY - r.top) / r.height - 0.5
+  el.style.setProperty('--px', `${(x * 6).toFixed(2)}px`)
+  el.style.setProperty('--py', `${(y * 6).toFixed(2)}px`)
+  el.style.setProperty('--tilt', `${(x * 2).toFixed(2)}deg`)
+}
+
+function onPointerLeave(e) {
+  const el = e.currentTarget
+  for (const prop of ['--px', '--py', '--tilt']) el.style.removeProperty(prop)
+}
 
 const failed = ref(false)
 const ready = ref(false)

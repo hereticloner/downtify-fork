@@ -20,7 +20,8 @@
       @change="$emit('update:modelValue', $event.target.checked)"
     />
     <!-- A 24px square, not a pill: ON is an inverted block with an accent
-         tick, OFF is an empty 2px frame. No sliding; hover scale is motion-safe only. -->
+         tick, OFF is an empty 2px frame. The tick slides on toggle; hover
+         scale is motion-safe only. -->
     <span
       class="mt-0.5 flex size-6 shrink-0 items-center justify-center border-2 transition-[border-color,transform] duration-200 ease-out motion-safe:hover:scale-110 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent"
       :class="
@@ -30,7 +31,7 @@
       "
       aria-hidden="true"
     >
-      <Transition name="fade">
+      <Transition name="switch-knob">
         <AppIcon v-if="modelValue" name="check" :size="14" stroke-width="3" />
       </Transition>
     </span>

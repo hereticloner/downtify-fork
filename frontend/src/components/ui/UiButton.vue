@@ -7,6 +7,8 @@
     :aria-disabled="disabled || loading || undefined"
     class="eyebrow inline-flex shrink-0 items-center justify-center gap-2 border-2 whitespace-nowrap transition-colors duration-100 disabled:cursor-not-allowed disabled:border-line-2 disabled:bg-transparent disabled:text-faint"
     :class="[sizeClass, variantClass]"
+    @pointermove="onPointerMove"
+    @pointerleave="onPointerLeave"
   >
     <span
       v-if="loading"
@@ -66,11 +68,30 @@ const sizeClass = computed(
 
 const iconSize = computed(() => (props.size === 'sm' ? 14 : 16))
 
+// A2: magnetic drift for primary buttons. Only CSS custom props are written;
+// tokens.css consumes them via `translate` (which composes with the shared
+// hover scale) and gates the effect to fine pointers without reduced motion.
+function onPointerMove(e) {
+  if (props.variant !== 'primary') return
+  const el = e.currentTarget
+  const r = el.getBoundingClientRect()
+  if (!r.width || !r.height) return
+  const x = (e.clientX - r.left) / r.width - 0.5
+  const y = (e.clientY - r.top) / r.height - 0.5
+  el.style.setProperty('--mx', `${(x * 16).toFixed(2)}px`)
+  el.style.setProperty('--my', `${(y * 16).toFixed(2)}px`)
+}
+
+function onPointerLeave(e) {
+  e.currentTarget.style.removeProperty('--mx')
+  e.currentTarget.style.removeProperty('--my')
+}
+
 const variantClass = computed(
   () =>
     ({
       primary:
-        'play-glow border-line bg-invert text-on-invert hover:bg-fg-3 active:bg-surface active:text-fg',
+        'play-glow btn-magnetic btn-sweep border-line bg-invert text-on-invert hover:bg-fg-3 active:bg-surface active:text-fg',
       secondary:
         'border-line bg-transparent text-fg hover:bg-surface-2 active:bg-raised',
       ghost:
