@@ -14,7 +14,7 @@
 /* Now playing overlay */
 .now-playing-enter-active,
 .now-playing-leave-active {
-  transition: opacity 100ms linear;
+  transition: opacity 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .now-playing-enter-from,
 .now-playing-leave-to {
@@ -55,7 +55,7 @@
 /* List insert/remove */
 .list-enter-active,
 .list-leave-active {
-  transition: opacity 100ms steps(3, end);
+  transition: opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .list-enter-from,
 .list-leave-to {
@@ -63,7 +63,9 @@
 }
 
 .list-move {
-  transition: transform 120ms linear, opacity 120ms linear;
+  transition:
+    transform 280ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    opacity 200ms ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -89,6 +91,7 @@
   .toast-enter-active,
   .toast-leave-active,
   .hover-dim,
+  .play-glow,
   .page-leave-active,
   .fade-leave-active,
   .list-leave-active,
@@ -96,8 +99,16 @@
     transition-duration: 0ms;
   }
 
+  .page-enter-from,
+  .page-leave-to,
+  .fade-enter-from,
+  .fade-leave-to,
   .toast-enter-from,
-  .toast-leave-to {
+  .toast-leave-to,
+  .list-enter-from,
+  .list-leave-to,
+  .now-playing-enter-from,
+  .now-playing-leave-to {
     opacity: 1;
     transform: none;
   }
@@ -105,6 +116,7 @@
   .stat-reveal {
     animation: none;
     opacity: 1;
+    transform: none;
   }
 
   .stagger > *,
@@ -119,7 +131,24 @@
     opacity: 1;
   }
 
+  .play-glow,
+  .play-glow:hover,
+  .play-glow:focus-visible {
+    transition-duration: 0ms;
+    box-shadow: none;
+    transform: none;
+  }
+
   button:not(:disabled) {
     transition-duration: 0ms;
+  }
+
+  button:not(:disabled):hover,
+  button:not(:disabled):active {
+    transform: none;
+  }
+
+  :focus-visible {
+    box-shadow: none;
   }
 }

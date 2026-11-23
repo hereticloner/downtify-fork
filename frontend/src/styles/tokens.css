@@ -135,10 +135,10 @@
   /* Motion is diagnostic: 80-120ms, never decorative easing. */
   --ease-out-soft: linear;
 
-  --animate-rise: rise 110ms linear both;
-  --animate-eq: eq 1s steps(4, end) infinite;
-  --animate-shimmer: shimmer 1.2s steps(6, end) infinite;
-  --animate-stat: stat-reveal 200ms steps(4, end) both;
+  --animate-rise: rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-eq: eq 900ms ease-in-out infinite;
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  --animate-stat: stat-reveal 320ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 
   --breakpoint-xs: 400px;
 }
@@ -153,11 +153,17 @@
 }
 
 @keyframes stat-reveal {
-  from {
+  0% {
     opacity: 0;
+    transform: translateY(6px) scale(0.96);
   }
-  to {
+  70% {
     opacity: 1;
+    transform: translateY(-1px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -214,10 +220,6 @@
     cursor: pointer;
   }
 
-  button:not(:disabled):active {
-    opacity: 0.6;
-  }
-
   button:disabled {
     cursor: not-allowed;
   }
@@ -226,6 +228,7 @@
   :focus-visible {
     outline: 2px solid var(--c-accent);
     outline-offset: 1px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-accent) 16%, transparent);
   }
 
   * {
@@ -276,42 +279,67 @@
 /* Route change: a short cross-fade, no movement. */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 100ms steps(3, end);
+  transition:
+    opacity 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 280ms cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 .page-enter-from,
 .page-leave-to {
   opacity: 0;
+  transform: translateY(8px);
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 100ms steps(3, end);
+  transition:
+    opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 260ms cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+  transform: translateY(6px) scale(0.96);
 }
 
 /* Toast entry: stepped, 4px only — no spring, no shadow. */
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity 160ms steps(3, end), transform 160ms steps(3, end);
+  transition:
+    opacity 220ms ease,
+    transform 300ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 240ms ease;
 }
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(10px) scale(0.96);
 }
 
 .stat-reveal {
-  animation: stat-reveal 200ms steps(4, end) both;
+  animation: stat-reveal 320ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 
 .hover-dim {
-  transition: opacity 80ms linear, background-color 100ms linear;
+  transition:
+    opacity 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 200ms ease,
+    box-shadow 220ms ease;
 }
 .hover-dim:hover {
-  opacity: 0.6;
+  opacity: 0.72;
+}
+
+/* Play/focus feedback: a soft accent halo, no identity change. */
+.play-glow {
+  transition:
+    box-shadow 240ms ease,
+    transform 260ms cubic-bezier(0.34, 1.4, 0.64, 1),
+    opacity 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.play-glow:hover,
+.play-glow:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-accent) 24%, transparent);
+  transform: scale(1.05);
 }
 
 /* Staggered entry for static grids and lists. One capped mechanism: the last
@@ -319,19 +347,19 @@
    pre-delay state without pinning the end value, so hover opacity and
    virtual-list inline transforms keep working after the animation ends. */
 @keyframes stagger-in {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(10px) scale(0.97);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: none;
+    transform: translateY(0) scale(1);
   }
 }
 
 .stagger > *,
 .stagger-fade > * {
-  animation: stagger-in 140ms linear backwards;
+  animation: stagger-in 300ms cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
 }
 /* Opacity-only variant for rows that own a transform or a hover opacity;
    reuses `rise` and never touches transform. */
@@ -344,32 +372,42 @@
 }
 .stagger > :nth-child(2),
 .stagger-fade > :nth-child(2) {
-  animation-delay: 20ms;
+  animation-delay: 25ms;
 }
 .stagger > :nth-child(3),
 .stagger-fade > :nth-child(3) {
-  animation-delay: 40ms;
+  animation-delay: 50ms;
 }
 .stagger > :nth-child(4),
 .stagger-fade > :nth-child(4) {
-  animation-delay: 60ms;
+  animation-delay: 75ms;
 }
 .stagger > :nth-child(5),
 .stagger-fade > :nth-child(5) {
-  animation-delay: 80ms;
+  animation-delay: 100ms;
 }
 .stagger > :nth-child(n + 6),
 .stagger-fade > :nth-child(n + 6) {
-  animation-delay: 100ms;
+  animation-delay: 125ms;
 }
 
-/* Unlayered so the 80ms press fade outranks Tailwind's utilities layer.
-   Colour props stay in the list so `transition-colors` keeps working. */
+/* Unlayered so press/hover feedback outranks Tailwind's utilities layer.
+   Colour props stay so `transition-colors` keeps working; glow and scale
+   make the feedback visible without touching the pinned identity tokens. */
 button:not(:disabled) {
   transition:
-    opacity 80ms linear,
-    color 100ms linear,
-    background-color 100ms linear,
-    border-color 100ms linear;
+    opacity 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    color 200ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 240ms ease,
+    transform 240ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+button:not(:disabled):hover {
+  transform: scale(1.02);
+}
+button:not(:disabled):active {
+  opacity: 0.72;
+  transform: scale(1.04);
 }
 

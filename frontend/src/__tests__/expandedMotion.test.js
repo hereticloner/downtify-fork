@@ -1,5 +1,5 @@
-// Expanded motion families guard: the added families must stay inside the
-// pinned v4 doctrine (stepped, short, opacity/transform only, no glow/spring).
+// Expanded motion families guard: bans lifted, so this pins the NEW reality —
+// springy 150-500ms families, glow/scale feedback, and static reduced motion.
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -8,38 +8,43 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const indexCss = readFileSync(join(root, 'index.css'), 'utf8')
 const tokensCss = readFileSync(join(root, 'styles/tokens.css'), 'utf8')
-const css = indexCss + tokensCss
 
 const maxMs = (block) => {
   const found = [...block.matchAll(/(\d+)ms/g)].map((m) => Number(m[1]))
   return found.length ? Math.max(...found) : Infinity
 }
 
-describe('expanded diagnostic motion families', () => {
-  it('uses short stepped toast transitions', () => {
+describe('expanded expressive motion families', () => {
+  it('uses springy toast transitions in the smooth band', () => {
     const block = tokensCss.match(
-      /\.toast-enter-active[\s\S]*?transition:([^;]+);/
+      /\.toast-enter-active,[\s\S]*?transition:([\s\S]*?);/
     )
     expect(block).not.toBeNull()
-    expect(block[1]).toMatch(/steps\(3, end\)/)
-    expect(maxMs(block[1])).toBeLessThanOrEqual(200)
+    expect(block[1]).toMatch(/cubic-bezier\(0\.34, 1\.4, 0\.64, 1\)/)
+    expect(maxMs(block[1])).toBeLessThanOrEqual(500)
+    expect(maxMs(block[1])).toBeGreaterThanOrEqual(150)
   })
 
-  it('uses short stepped stat reveal', () => {
-    expect(tokensCss).toMatch(/--animate-stat:[^;]*steps\(4, end\)[^;]*;/)
-    const block = tokensCss.match(/\.stat-reveal[\s\S]*?\}/)
+  it('uses springy stat reveal', () => {
+    expect(tokensCss).toMatch(
+      /--animate-stat: stat-reveal 320ms cubic-bezier\(0\.34, 1\.4, 0\.64, 1\) both;/
+    )
+    const block = tokensCss.match(/\.stat-reveal \{\s*animation: ([^;]+);/)
     expect(block).not.toBeNull()
-    expect(maxMs(block[0])).toBeLessThanOrEqual(240)
+    expect(block[1]).toMatch(/cubic-bezier\(0\.34, 1\.4, 0\.64, 1\)/)
+    expect(maxMs(block[1])).toBeLessThanOrEqual(500)
   })
 
-  it('moves reordered list rows with transform', () => {
-    expect(indexCss).toMatch(/\.list-move[\s\S]*?transform \d+ms linear/)
+  it('moves reordered list rows with springy transform', () => {
+    expect(indexCss).toMatch(
+      /\.list-move[\s\S]*?transform 280ms cubic-bezier\(0\.34, 1\.4, 0\.64, 1\)/
+    )
   })
 
-  it('keeps the forbidden spring/glow vocabulary out of declarations', () => {
-    // Strip comments first: docs legitimately say "no spring, no shadow".
-    const declarations = css.replace(/\/\*[\s\S]*?\*\//g, '')
-    expect(declarations).not.toMatch(/spring|cubic-bezier|box-shadow|filter:\s*blur|scale\(1\.1\)/)
+  it('keeps glow and scale inside the structural language', () => {
+    expect(tokensCss).toMatch(/box-shadow: 0 0 0 3px color-mix/)
+    expect(tokensCss).toMatch(/scale\(1\.05\)/)
+    expect(tokensCss).toMatch(/--radius-control: 0px;/)
   })
 
   it('gives reduced-motion a static end state for new families', () => {
@@ -50,5 +55,6 @@ describe('expanded diagnostic motion families', () => {
     expect(reduced[0]).toMatch(/\.toast-[a-z-]+/)
     expect(reduced[0]).toMatch(/\.stat-reveal/)
     expect(reduced[0]).toMatch(/\.list-move/)
+    expect(reduced[0]).toMatch(/\.play-glow[\s\S]*?box-shadow: none;/)
   })
 })

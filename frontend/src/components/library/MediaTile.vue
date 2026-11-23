@@ -33,7 +33,7 @@
       <button
         v-if="playable"
         type="button"
-        class="absolute right-3.5 bottom-3.5 flex size-9 items-center justify-center border-2 border-line bg-invert text-on-invert transition-colors duration-100 hover:bg-fg-3 focus-visible:opacity-100 max-md:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
+        class="play-glow absolute right-3.5 bottom-3.5 flex size-9 items-center justify-center border-2 border-line bg-invert text-on-invert transition-colors duration-100 hover:bg-fg-3 focus-visible:opacity-100 max-md:opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100"
         :aria-label="t('actions.playItem', { name: title })"
         @click="$emit('play')"
       >
