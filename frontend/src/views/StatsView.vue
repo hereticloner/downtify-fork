@@ -40,7 +40,10 @@
             aria-hidden="true"
             >{{ String(i + 1).padStart(2, '0') }}</span
           >
-          <div class="text-display tabular text-[34px] leading-none font-bold">
+          <div
+            v-count-up
+            class="text-display stat-reveal tabular text-[34px] leading-none font-bold"
+          >
             {{ metric.value }}
           </div>
           <span class="eyebrow mt-2 block truncate">{{ metric.label }}</span>
@@ -375,6 +378,8 @@ import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import { heatmapCells, heatmapTotals, heatmapTrend } from '/src/lib/heatmap'
 import { useStats } from '/src/model/stats'
+// Local registration: SSR renders this view without the app's directives.
+import { countUpDirective as vCountUp } from '/src/composables/useCountUp'
 
 const { t, locale } = useI18n()
 const { stats, loading, error, load } = useStats()

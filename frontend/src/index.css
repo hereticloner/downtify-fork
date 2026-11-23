@@ -83,6 +83,20 @@
     transform: scaleY(0.7);
   }
 
+  /* Batch3 static end states: the mini eq and like burst movement live only
+     inside no-preference, so reduced motion stays fully static. */
+  .animate-eq-mini {
+    animation: none;
+    transform: scaleY(0.7);
+  }
+  .like-pop {
+    animation: none;
+    transform: none;
+  }
+  .like-burst {
+    display: none;
+  }
+
   .page-enter-active,
   .fade-enter-active,
   .list-enter-active,

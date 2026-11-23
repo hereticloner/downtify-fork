@@ -145,6 +145,7 @@
             v-if="isCurrent(row.track)"
             :size="12"
             :playing="player.isPlaying.value"
+            stepped
           />
           <template v-else>
             <span

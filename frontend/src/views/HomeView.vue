@@ -387,7 +387,10 @@
           <dl class="mb-3 grid grid-cols-3 gap-2 border-b border-line-2 pb-3">
             <div v-for="stat in counts" :key="stat.label" class="min-w-0">
               <dt class="eyebrow truncate">{{ stat.label }}</dt>
-              <dd class="mono tabular stat-reveal mt-0.5 text-[14px] text-fg">
+              <dd
+                v-count-up
+                class="mono tabular stat-reveal mt-0.5 text-[14px] text-fg"
+              >
                 {{ stat.value }}
               </dd>
             </div>
@@ -458,6 +461,8 @@ import { albumKey, itemTrackCount } from '/src/lib/library'
 import { formatBytes, formatDuration } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
 import { friendlyError } from '/src/lib/errors'
+// Local registration: SSR renders this view without the app's directives.
+import { countUpDirective as vCountUp } from '/src/composables/useCountUp'
 
 const { t } = useI18n()
 const router = useRouter()

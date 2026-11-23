@@ -137,6 +137,8 @@
 
   --animate-rise: rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-eq: eq 900ms ease-in-out infinite;
+  /* C10 — stepped four-position variant for the compact playing-row eq. */
+  --animate-eq-mini: eq 720ms steps(4, end) infinite;
   --animate-shimmer: shimmer 1.4s ease-in-out infinite;
   --animate-stat: stat-reveal 320ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
 
@@ -174,6 +176,41 @@
   }
   50% {
     transform: scaleY(1);
+  }
+}
+
+/* C11 — like burst. Transform keyframes live here, never in index.css. */
+@keyframes like-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  55% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes like-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes like-spark {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--sx, 0), var(--sy, 0)) scale(0.4);
+    opacity: 0;
   }
 }
 
@@ -532,5 +569,43 @@ button:not(:disabled):active {
   ::view-transition-new(route-content) {
     animation-duration: 220ms;
     animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* C10 — the mini eq reuses the eq token but steps through four positions.
+     Pausing keeps the last frame instead of collapsing the bars. */
+  .animate-eq-mini {
+    animation: var(--animate-eq-mini);
+  }
+  .animate-eq-mini.eq-paused {
+    animation-play-state: paused;
+  }
+
+  /* C11 — burst lives only here; reduced motion keeps the instant icon
+     state change and never renders movement. */
+  .like-pop {
+    animation: like-pop 360ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  }
+  .like-burst {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+  .like-burst-ring {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--c-accent);
+    animation: like-ring 380ms linear both;
+  }
+  .like-burst-spark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 3px;
+    margin: -1.5px;
+    background-color: var(--c-accent);
+    animation: like-spark 420ms linear both;
   }
 }
