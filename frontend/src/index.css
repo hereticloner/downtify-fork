@@ -55,10 +55,36 @@
 /* List insert/remove */
 .list-enter-active,
 .list-leave-active {
-  transition: all 180ms ease-out;
+  transition: opacity 100ms steps(3, end);
 }
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  .shimmer {
+    animation: none;
+    background-image: none;
+  }
+
+  .animate-eq {
+    animation: none;
+    transform: scaleY(0.7);
+  }
+
+  .page-enter-active,
+  .fade-enter-active,
+  .list-enter-active,
+  .now-playing-enter-active,
+  .page-leave-active,
+  .fade-leave-active,
+  .list-leave-active,
+  .now-playing-leave-active {
+    transition-duration: 0ms;
+  }
 }
