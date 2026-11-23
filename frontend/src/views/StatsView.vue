@@ -2,6 +2,7 @@
   <div class="flex flex-col">
     <PageHeader :title="t('stats.title')" class="border-b-2 border-line" />
 
+    <Transition name="fade" mode="out-in">
     <div
       v-if="loading"
       class="grid grid-cols-2 border-l-2 border-line md:grid-cols-3 xl:grid-cols-6"
@@ -362,6 +363,7 @@
         </div>
       </section>
     </template>
+    </Transition>
   </div>
 </template>
 

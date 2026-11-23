@@ -17,7 +17,7 @@
     <div
       v-else-if="lines.length"
       ref="scroller"
-      class="relative flex-1 overflow-y-auto overscroll-contain px-2 py-8 [scrollbar-width:none]"
+      class="stagger-fade relative flex-1 overflow-y-auto overscroll-contain px-2 py-8 [scrollbar-width:none]"
       @wheel.passive="userScrolled"
       @touchmove.passive="userScrolled"
     >

@@ -106,4 +106,20 @@
     animation: none;
     opacity: 1;
   }
+
+  .stagger > *,
+  .stagger-fade > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .animate-rise {
+    animation: none;
+    opacity: 1;
+  }
+
+  button:not(:disabled) {
+    transition-duration: 0ms;
+  }
 }

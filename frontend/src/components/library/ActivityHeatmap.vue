@@ -13,7 +13,7 @@
       @focusin="onHover"
       @focusout="hovered = null"
     >
-      <div class="flex min-w-max gap-0.5">
+      <div class="stagger flex min-w-max gap-0.5">
         <div
           v-for="(week, w) in columns"
           :key="week[0]?.date || w"

@@ -122,7 +122,7 @@
             >
           </div>
           <div
-            class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 lg:grid-cols-5"
+            class="stagger grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 lg:grid-cols-5"
           >
             <MediaTile
               v-for="entry in jumpBackIn"
@@ -171,7 +171,7 @@
               >{{ t('common.seeAll') }}</RouterLink
             >
           </div>
-          <div class="border-l-2 border-line">
+          <div class="stagger border-l-2 border-line">
             <div
               class="eyebrow grid h-8 items-center gap-3 border-b border-line-2 bg-surface-2 px-3 max-md:hidden md:grid-cols-[32px_minmax(0,2fr)_minmax(0,1.4fr)_72px_80px_88px]"
             >
@@ -245,7 +245,7 @@
             >
           </div>
           <div
-            class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 lg:grid-cols-5"
+            class="stagger grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 lg:grid-cols-5"
           >
             <MediaTile
               v-for="playlist in recentPlaylists"
@@ -331,7 +331,7 @@
           :title="t('player.upNext')"
           class="-mt-0.5 first:mt-0"
         >
-          <ul class="flex flex-col">
+          <ul class="stagger flex flex-col">
             <li
               v-for="(entry, i) in upNext"
               :key="entry.track.file || i"
@@ -364,7 +364,7 @@
           :title="t('stats.topTracks')"
           class="-mt-0.5 first:mt-0"
         >
-          <ol class="flex flex-col">
+          <ol class="stagger flex flex-col">
             <li
               v-for="(row, i) in mostPlayed"
               :key="row.summary"

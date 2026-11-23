@@ -4,7 +4,7 @@
   <div class="border-b-2 border-line">
     <div
       role="tablist"
-      class="flex overflow-x-auto overflow-y-hidden [scrollbar-width:none]"
+      class="stagger-fade flex overflow-x-auto overflow-y-hidden [scrollbar-width:none]"
     >
       <component
         :is="item.to ? RouterLink : 'button'"

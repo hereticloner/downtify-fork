@@ -74,7 +74,7 @@
     </div>
 
     <div
-      class="relative"
+      class="stagger-fade relative"
       :style="virtual ? { height: `${totalSize}px` } : undefined"
       role="rowgroup"
     >

@@ -88,6 +88,7 @@
     />
 
     <!-- Loading -->
+    <Transition name="fade" mode="out-in">
     <div
       v-if="!catalogReady && library.loading.value"
       class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
@@ -153,7 +154,7 @@
     </div>
 
     <!-- Tracks -->
-    <template v-else-if="tab === 'tracks'">
+    <div v-else-if="tab === 'tracks'" class="flex min-w-0 flex-col">
       <SelectionBar
         :count="selectedCount"
         :total="items.length"
@@ -191,12 +192,12 @@
         :tracks="items"
         :context="libraryContext"
       />
-    </template>
+    </div>
 
     <!-- Albums / artists / playlists: flush grid -->
     <div
       v-else-if="view === 'grid'"
-      class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 min-[1900px]:grid-cols-7"
+      class="stagger grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 min-[1900px]:grid-cols-7"
     >
       <MediaTile
         v-for="item in items"
@@ -221,7 +222,7 @@
     </div>
 
     <!-- Albums / artists / playlists: ruled list -->
-    <div v-else class="border-x-2 border-b-2 border-line">
+    <div v-else class="stagger border-x-2 border-b-2 border-line">
       <MediaRow
         v-for="item in items"
         :key="item.key"
@@ -242,6 +243,7 @@
         </template>
       </MediaRow>
     </div>
+    </Transition>
   </div>
 </template>
 

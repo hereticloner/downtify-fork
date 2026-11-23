@@ -214,10 +214,6 @@
     cursor: pointer;
   }
 
-  button:not(:disabled) {
-    transition: opacity 80ms linear;
-  }
-
   button:not(:disabled):active {
     opacity: 0.6;
   }
@@ -316,5 +312,64 @@
 }
 .hover-dim:hover {
   opacity: 0.6;
+}
+
+/* Staggered entry for static grids and lists. One capped mechanism: the last
+   child starts at 100ms and settles by 240ms. `backwards` holds the hidden
+   pre-delay state without pinning the end value, so hover opacity and
+   virtual-list inline transforms keep working after the animation ends. */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stagger > *,
+.stagger-fade > * {
+  animation: stagger-in 140ms linear backwards;
+}
+/* Opacity-only variant for rows that own a transform or a hover opacity;
+   reuses `rise` and never touches transform. */
+.stagger-fade > * {
+  animation-name: rise;
+}
+.stagger > :nth-child(1),
+.stagger-fade > :nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger > :nth-child(2),
+.stagger-fade > :nth-child(2) {
+  animation-delay: 20ms;
+}
+.stagger > :nth-child(3),
+.stagger-fade > :nth-child(3) {
+  animation-delay: 40ms;
+}
+.stagger > :nth-child(4),
+.stagger-fade > :nth-child(4) {
+  animation-delay: 60ms;
+}
+.stagger > :nth-child(5),
+.stagger-fade > :nth-child(5) {
+  animation-delay: 80ms;
+}
+.stagger > :nth-child(n + 6),
+.stagger-fade > :nth-child(n + 6) {
+  animation-delay: 100ms;
+}
+
+/* Unlayered so the 80ms press fade outranks Tailwind's utilities layer.
+   Colour props stay in the list so `transition-colors` keeps working. */
+button:not(:disabled) {
+  transition:
+    opacity 80ms linear,
+    color 100ms linear,
+    background-color 100ms linear,
+    border-color 100ms linear;
 }
 

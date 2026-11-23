@@ -51,16 +51,20 @@
           "
           @click="player.toggle()"
         >
-          <span
-            v-if="player.isBuffering.value && player.isPlaying.value"
-            class="size-2.5 animate-pulse bg-current"
-            aria-hidden="true"
-          />
-          <AppIcon
-            v-else
-            :name="player.isPlaying.value ? 'pause' : 'play'"
-            :size="16"
-          />
+          <Transition name="fade" mode="out-in">
+            <span
+              v-if="player.isBuffering.value && player.isPlaying.value"
+              key="buffer"
+              class="size-2.5 animate-pulse bg-current"
+              aria-hidden="true"
+            />
+            <AppIcon
+              v-else
+              :key="player.isPlaying.value ? 'pause' : 'play'"
+              :name="player.isPlaying.value ? 'pause' : 'play'"
+              :size="16"
+            />
+          </Transition>
         </button>
         <button
           type="button"
@@ -162,16 +166,20 @@
               "
               @click="player.toggle()"
             >
-              <span
-                v-if="player.isBuffering.value && player.isPlaying.value"
-                class="size-3 animate-pulse bg-current"
-                aria-hidden="true"
-              />
-              <AppIcon
-                v-else
-                :name="player.isPlaying.value ? 'pause' : 'play'"
-                :size="18"
-              />
+              <Transition name="fade" mode="out-in">
+                <span
+                  v-if="player.isBuffering.value && player.isPlaying.value"
+                  key="buffer"
+                  class="size-3 animate-pulse bg-current"
+                  aria-hidden="true"
+                />
+                <AppIcon
+                  v-else
+                  :key="player.isPlaying.value ? 'pause' : 'play'"
+                  :name="player.isPlaying.value ? 'pause' : 'play'"
+                  :size="18"
+                />
+              </Transition>
             </button>
             <button
               type="button"

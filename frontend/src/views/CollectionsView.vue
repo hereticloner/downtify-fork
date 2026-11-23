@@ -27,6 +27,7 @@
       </UiButton>
     </div>
 
+    <Transition name="fade" mode="out-in">
     <div
       v-if="loading"
       class="grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
@@ -62,7 +63,7 @@
     <!-- Cluster grid: flush cards, a four-up mosaic cover each. -->
     <div
       v-else
-      class="grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
+      class="stagger grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
     >
       <article
         v-for="col in collections"
@@ -164,6 +165,7 @@
         </div>
       </article>
     </div>
+    </Transition>
 
     <datalist id="collection-playlist-names">
       <option v-for="name in playlistNames" :key="name" :value="name" />

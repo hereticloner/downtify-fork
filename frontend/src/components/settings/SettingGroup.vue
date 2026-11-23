@@ -25,7 +25,7 @@
         </div>
       </div>
     </header>
-    <div class="flex min-w-0 flex-col divide-y divide-line-2">
+    <div class="stagger flex min-w-0 flex-col divide-y divide-line-2">
       <slot />
     </div>
   </section>

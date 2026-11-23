@@ -40,7 +40,7 @@
       <nav
         id="settings-sections"
         :aria-label="t('settings.sections')"
-        class="min-w-0 flex-col self-start lg:sticky lg:top-[88px] lg:flex lg:max-h-[calc(100dvh-96px)] lg:overflow-y-auto"
+        class="stagger min-w-0 flex-col self-start lg:sticky lg:top-[88px] lg:flex lg:max-h-[calc(100dvh-96px)] lg:overflow-y-auto"
         :class="mobileNavOpen ? 'flex border-b-2 border-line' : 'hidden'"
       >
         <p

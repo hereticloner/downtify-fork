@@ -107,7 +107,7 @@
 
           <div
             v-if="cards.length"
-            class="grid grid-cols-3 gap-0 border-t-2 border-l-2 border-line"
+            class="stagger grid grid-cols-3 gap-0 border-t-2 border-l-2 border-line"
             :class="
               activeTab === 'banner' ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
             "

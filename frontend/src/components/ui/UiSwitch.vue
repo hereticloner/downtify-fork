@@ -30,7 +30,9 @@
       "
       aria-hidden="true"
     >
-      <AppIcon v-if="modelValue" name="check" :size="14" stroke-width="3" />
+      <Transition name="fade">
+        <AppIcon v-if="modelValue" name="check" :size="14" stroke-width="3" />
+      </Transition>
     </span>
   </label>
 </template>

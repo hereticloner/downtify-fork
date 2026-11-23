@@ -17,7 +17,9 @@
           : 'border-line-2 text-muted hover:border-line hover:bg-surface-2 hover:text-fg active:bg-raised active:text-fg',
     ]"
   >
-    <AppIcon :name="icon" :size="iconSize" />
+    <Transition name="fade" mode="out-in">
+      <AppIcon :key="icon" :name="icon" :size="iconSize" />
+    </Transition>
     <slot />
   </component>
 </template>
