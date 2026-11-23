@@ -85,7 +85,7 @@
         role="row"
         :tabindex="roving.tabindexFor(row.index)"
         :aria-selected="selectable ? String(isSelected(row.track)) : undefined"
-        class="group relative grid h-14 items-center gap-3 border-b border-line-2 px-3 transition-colors duration-100 select-none last:border-b-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        class="group relative grid h-14 items-center gap-3 border-b border-line-2 px-3 transition-colors duration-100 hover-dim select-none last:border-b-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         :class="[
           gridClass,
           virtual ? 'absolute inset-x-0 top-0' : '',

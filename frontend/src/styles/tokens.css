@@ -138,11 +138,21 @@
   --animate-rise: rise 110ms linear both;
   --animate-eq: eq 1s steps(4, end) infinite;
   --animate-shimmer: shimmer 1.2s steps(6, end) infinite;
+  --animate-stat: stat-reveal 200ms steps(4, end) both;
 
   --breakpoint-xs: 400px;
 }
 
 @keyframes rise {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes stat-reveal {
   from {
     opacity: 0;
   }
@@ -284,5 +294,27 @@
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Toast entry: stepped, 4px only — no spring, no shadow. */
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 160ms steps(3, end), transform 160ms steps(3, end);
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.stat-reveal {
+  animation: stat-reveal 200ms steps(4, end) both;
+}
+
+.hover-dim {
+  transition: opacity 80ms linear, background-color 100ms linear;
+}
+.hover-dim:hover {
+  opacity: 0.6;
 }
 

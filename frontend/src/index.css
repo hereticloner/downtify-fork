@@ -62,6 +62,10 @@
   opacity: 0;
 }
 
+.list-move {
+  transition: transform 120ms linear, opacity 120ms linear;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto !important;
@@ -80,11 +84,26 @@
   .page-enter-active,
   .fade-enter-active,
   .list-enter-active,
+  .list-move,
   .now-playing-enter-active,
+  .toast-enter-active,
+  .toast-leave-active,
+  .hover-dim,
   .page-leave-active,
   .fade-leave-active,
   .list-leave-active,
   .now-playing-leave-active {
     transition-duration: 0ms;
+  }
+
+  .toast-enter-from,
+  .toast-leave-to {
+    opacity: 1;
+    transform: none;
+  }
+
+  .stat-reveal {
+    animation: none;
+    opacity: 1;
   }
 }

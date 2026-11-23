@@ -387,7 +387,7 @@
           <dl class="mb-3 grid grid-cols-3 gap-2 border-b border-line-2 pb-3">
             <div v-for="stat in counts" :key="stat.label" class="min-w-0">
               <dt class="eyebrow truncate">{{ stat.label }}</dt>
-              <dd class="mono tabular mt-0.5 text-[14px] text-fg">
+              <dd class="mono tabular stat-reveal mt-0.5 text-[14px] text-fg">
                 {{ stat.value }}
               </dd>
             </div>
