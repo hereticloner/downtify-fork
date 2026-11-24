@@ -787,8 +787,8 @@ function getResume() {
   return API.get('/api/playback/resume')
 }
 
-function getStats() {
-  return API.get('/api/stats')
+function getStats(params = {}) {
+  return API.get('/api/stats', { params })
 }
 
 function getQueueStatus() {

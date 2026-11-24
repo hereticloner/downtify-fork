@@ -10,6 +10,13 @@ export function formatDuration(seconds) {
   return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`
 }
 
+/** `0.875` -> `88%`; rates arrive as a 0..1 fraction. */
+export function formatPercent(rate) {
+  const value = Number(rate)
+  if (!Number.isFinite(value)) return '0%'
+  return `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`
+}
+
 /**
  * A play count the way people read one, in the interface's language:
  * `1484408385` -> `1,5 bi` (pt-BR) / `1.5B` (en). Spotify's exact total and

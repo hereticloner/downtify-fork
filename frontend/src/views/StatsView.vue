@@ -1,13 +1,15 @@
 <template>
   <div class="flex flex-col">
-    <PageHeader :title="t('stats.title')" class="border-b-2 border-line" />
+    <PageHeader :title="t('stats.title')" class="border-b-2 border-line">
+      <UiSegmented v-model="days" :options="periodOptions" show-labels />
+    </PageHeader>
 
     <div
       v-if="loading"
-      class="grid grid-cols-2 border-l-2 border-line md:grid-cols-3 xl:grid-cols-6"
+      class="grid grid-cols-2 border-l-2 border-line md:grid-cols-3 xl:grid-cols-8"
     >
       <UiSkeleton
-        v-for="n in 6"
+        v-for="n in 8"
         :key="n"
         class="h-24 border-r-2 border-b-2 border-line"
       />
@@ -28,7 +30,7 @@
     <template v-else>
       <!-- Metric strip: six flush blocks, number first, label under it. -->
       <section
-        class="grid grid-cols-2 border-l-2 border-line md:grid-cols-3 xl:grid-cols-6"
+        class="grid grid-cols-2 border-l-2 border-line md:grid-cols-4 xl:grid-cols-8"
       >
         <div
           v-for="(metric, i) in metrics"
@@ -369,27 +371,36 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from '/src/i18n'
 import ActivityHeatmap from '/src/components/library/ActivityHeatmap.vue'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
+import UiSegmented from '/src/components/ui/UiSegmented.vue'
+import { formatDuration, formatPercent } from '/src/lib/format'
 import { heatmapCells, heatmapTotals, heatmapTrend } from '/src/lib/heatmap'
 import { useStats } from '/src/model/stats'
 // Local registration: SSR renders this view without the app's directives.
 import { countUpDirective as vCountUp } from '/src/composables/useCountUp'
 
 const { t, locale } = useI18n()
-const { stats, loading, error, load } = useStats()
+const { stats, loading, error, days, load } = useStats()
 
 onMounted(load)
+watch(days, load)
 
 // Block charts: a column of squares per day, 2px apart, never a curve.
 const CHART_BLOCKS = 10
 const BAR_BLOCKS = 24
 const TREND_BLOCKS = 6
+
+const periodOptions = computed(() => [
+  { value: 7, label: t('stats.period7') },
+  { value: 30, label: t('stats.period30') },
+  { value: 90, label: t('stats.period90') },
+])
 
 const perDay = computed(() => stats.value.downloads?.per_day || [])
 const topContexts = computed(() => stats.value.playback?.top_contexts || [])
@@ -419,7 +430,8 @@ function segmentBlocks(count) {
 const streak = computed(() => stats.value.playback?.streak_days ?? 0)
 const busiest = computed(() => stats.value.playback?.best_day ?? {})
 
-// The six numbers the page opens with.
+// The eight numbers the page opens with.
+const measured = computed(() => stats.value.playback?.measured || {})
 const metrics = computed(() => [
   {
     key: 'tracks',
@@ -442,9 +454,21 @@ const metrics = computed(() => [
     value: stats.value.downloads?.total ?? 0,
   },
   {
-    key: 'plays',
-    label: t('stats.plays'),
-    value: stats.value.playback?.total ?? 0,
+    key: 'listeningTime',
+    label: t('stats.listeningTime'),
+    value: formatDuration(measured.value.seconds),
+  },
+  {
+    key: 'completed',
+    label: `${t('stats.completed')} · ${formatPercent(
+      measured.value.completion_rate
+    )}`,
+    value: measured.value.completions ?? 0,
+  },
+  {
+    key: 'skipped',
+    label: `${t('stats.skipped')} · ${formatPercent(measured.value.skip_rate)}`,
+    value: measured.value.skips ?? 0,
   },
   {
     key: 'likes',

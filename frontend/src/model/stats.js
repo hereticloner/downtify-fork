@@ -8,12 +8,13 @@ import API from '/src/model/api'
 const stats = ref({})
 const loading = ref(true)
 const error = ref(false)
+const days = ref(30)
 
 async function load() {
   loading.value = true
   error.value = false
   try {
-    const res = await API.getStats()
+    const res = await API.getStats({ days: days.value, scope: 'user' })
     // The Axios interceptor hands back the whole response. The panels
     // read `stats.library.tracks` and friends, so this has to be the
     // body - keeping the envelope leaves every panel on its `?? 0`
@@ -28,5 +29,5 @@ async function load() {
 
 /** The Stats tab's data, plus the `load` the page calls on mount. */
 export function useStats() {
-  return { stats, loading, error, load }
+  return { stats, loading, error, days, load }
 }
