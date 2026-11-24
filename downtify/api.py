@@ -2890,7 +2890,7 @@ async def _remember_pending(rows: list[PendingDownload]) -> None:
     if store is None or not rows:
         return
     try:
-        await asyncio.to_thread(store.add, rows)
+        store.add(rows)
     except Exception:
         logger.exception('Could not save the download queue')
 
@@ -2958,6 +2958,19 @@ async def _broadcast_queue_state() -> None:
 queue_pause.on_drained = _broadcast_queue_state
 
 
+async def _wait_for_job_resume(song_id: str, job: dict[str, Any]) -> bool:
+    """Wait for an individually paused job without taking a download slot."""
+
+    if state.download_jobs.get(song_id) is not job:
+        return False
+    while queue_pause.job_paused(song_id):
+        job['status'] = 'paused'
+        await queue_pause.wait_job(song_id)
+        if state.download_jobs.get(song_id) is not job:
+            return False
+    return True
+
+
 async def _queue_turn(
     song_id: str, job: dict[str, Any], song: dict[str, Any]
 ) -> bool:
@@ -2969,6 +2982,10 @@ async def _queue_turn(
     instead of started.
     """
 
+    if state.download_jobs.get(song_id) is not job:
+        return False
+    if queue_pause.job_paused(song_id):
+        return False
     if queue_pause.paused:
         if job.get('status') != 'queued':
             job['status'] = 'queued'
@@ -2979,7 +2996,9 @@ async def _queue_turn(
                 'status': 'queued',
             })
         await queue_pause.wait()
-    if state.download_jobs.get(song_id) is job:
+    if state.download_jobs.get(song_id) is job and not queue_pause.job_paused(
+        song_id
+    ):
         return True
     logger.info('Skipping download (removed from the queue): {}', song_id)
     return False
@@ -3079,6 +3098,8 @@ async def _run_download(
     sem = state.download_semaphore
     keep_pending = False
     try:
+        if not await _wait_for_job_resume(song_id, job):
+            return None
         async with sem if sem is not None else contextlib.nullcontext():
             if not await _queue_turn(song_id, job, song):
                 return None
@@ -5844,6 +5865,7 @@ def clear_queue() -> dict:
     """
 
     state.download_jobs.clear()
+    queue_pause.clear_paused_jobs()
     _drop_pending()
     return {'cleared': True}
 
@@ -5904,6 +5926,98 @@ async def resume_queue() -> dict[str, Any]:
     return await _set_queue_paused(False)
 
 
+def _queue_song_ids(body: dict[str, Any]) -> list[str]:
+    raw = body.get('song_ids')
+    if not isinstance(raw, list) or any(
+        not isinstance(song_id, str) or not song_id for song_id in raw
+    ):
+        raise HTTPException(status_code=400, detail='song_ids must be a list')
+    return list(dict.fromkeys(raw))
+
+
+@router.post('/api/queue/priority')
+async def set_queue_priority(
+    body: dict[str, Any] = Body(...),
+) -> dict[str, Any]:
+    priority = str(body.get('priority') or '')
+    if priority not in download_queue.PRIORITIES:
+        raise HTTPException(status_code=400, detail='Invalid priority')
+    song_ids = _queue_song_ids(body)
+    eligible = [
+        song_id
+        for song_id in song_ids
+        if state.download_jobs.get(song_id, {}).get('status') == 'queued'
+    ]
+    store = state.pending_downloads
+    if store is None:
+        raise HTTPException(status_code=503, detail='Queue not ready')
+    updated = store.set_priorities(eligible, priority) if eligible else 0
+    for song_id in eligible:
+        state.download_jobs[song_id]['priority'] = priority
+    return {'updated': updated}
+
+
+@router.post('/api/queue/bulk')
+async def bulk_queue_action(
+    body: dict[str, Any] = Body(...),
+) -> dict[str, Any]:
+    action = str(body.get('action') or '')
+    waiting = {
+        'remove': {'queued', 'paused'},
+        'pause': {'queued'},
+        'resume': {'paused'},
+    }
+    if action not in waiting:
+        raise HTTPException(status_code=400, detail='Invalid queue action')
+    song_ids = _queue_song_ids(body)
+    eligible = [
+        song_id
+        for song_id in song_ids
+        if state.download_jobs.get(song_id, {}).get('status')
+        in waiting[action]
+    ]
+    store = state.pending_downloads
+    if store is None:
+        raise HTTPException(status_code=503, detail='Queue not ready')
+    if action == 'remove':
+        if eligible:
+            store.forget(eligible)
+        for song_id in eligible:
+            queue_pause.resume_job(song_id)
+            del state.download_jobs[song_id]
+    else:
+        paused = action == 'pause'
+        if paused:
+            if eligible:
+                store.set_jobs_paused(eligible, True)
+            for song_id in eligible:
+                queue_pause.pause_job(song_id)
+                state.download_jobs[song_id]['status'] = 'paused'
+        else:
+            if state.downloader is None:
+                raise HTTPException(status_code=503, detail='Queue not ready')
+            if eligible:
+                store.set_jobs_paused(eligible, False)
+            for song_id in eligible:
+                queue_pause.resume_job(song_id)
+                del state.download_jobs[song_id]
+            if eligible:
+                await restore_download_queue(eligible)
+        if eligible:
+            await asyncio.gather(
+                *(
+                    state.connections.broadcast({
+                        'song': state.download_jobs[song_id]['song'],
+                        'progress': 0,
+                        'message': '',
+                        'status': 'paused' if paused else 'queued',
+                    })
+                    for song_id in eligible
+                )
+            )
+    return {'action': action, 'changed': len(eligible)}
+
+
 async def restore_download_queue(
     song_ids: Optional[Collection[str]] = None,
 ) -> int:
@@ -5934,6 +6048,9 @@ async def restore_download_queue(
         if not (song.get('song_id') or song.get('url')):
             song['song_id'] = row.song_id
         _register_job(song, status='queued', priority=row.priority)
+        if row.paused:
+            queue_pause.pause_job(row.song_id)
+            state.download_jobs[row.song_id]['status'] = 'paused'
         restored.append(row)
     logger.info(
         'Download queue: {} unfinished job(s) restored{}',
@@ -5988,6 +6105,7 @@ async def _run_restored_group(
 @router.delete('/api/queue/item')
 def remove_queue_item(song_id: str = Query(...)) -> dict:
     if song_id in state.download_jobs:
+        queue_pause.resume_job(song_id)
         del state.download_jobs[song_id]
         _drop_pending([song_id])
         return {'removed': True}

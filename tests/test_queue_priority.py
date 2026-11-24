@@ -32,12 +32,14 @@ def test_existing_queue_rows_migrate_to_normal_priority(tmp_path):
     store = PendingDownloads(path)
 
     assert store.rows()[0].priority == 'normal'
+    assert store.rows()[0].paused is False
     with sqlite3.connect(path) as conn:
         columns = {
             row[1]
             for row in conn.execute('PRAGMA table_info(pending_downloads)')
         }
     assert 'priority' in columns
+    assert 'paused' in columns
 
 
 def test_restore_queue_filters_ids_and_does_not_duplicate_running_jobs(

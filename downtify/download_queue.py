@@ -50,6 +50,7 @@ class QueuePause:
         self._paused = False
         self._active = 0
         self._waiters: list[asyncio.Future[None]] = []
+        self._paused_jobs: dict[str, asyncio.Event] = {}
         #: Awaited when the last running download of a paused queue ends
         #: (the API broadcasts the new state from it).
         self.on_drained: Optional[Callable[[], Awaitable[Any]]] = None
@@ -85,6 +86,28 @@ class QueuePause:
             # A waiter may belong to a loop that already closed (tests).
             with contextlib.suppress(RuntimeError):
                 waiter.get_loop().call_soon_threadsafe(_release, waiter)
+
+    def pause_job(self, song_id: str) -> None:
+        event = self._paused_jobs.setdefault(str(song_id), asyncio.Event())
+        event.clear()
+
+    def resume_job(self, song_id: str) -> None:
+        event = self._paused_jobs.pop(str(song_id), None)
+        if event is not None:
+            event.set()
+
+    def job_paused(self, song_id: str) -> bool:
+        return str(song_id) in self._paused_jobs
+
+    async def wait_job(self, song_id: str) -> None:
+        event = self._paused_jobs.get(str(song_id))
+        if event is not None:
+            await event.wait()
+
+    def clear_paused_jobs(self) -> None:
+        events, self._paused_jobs = self._paused_jobs, {}
+        for event in events.values():
+            event.set()
 
     async def wait(self) -> None:
         """Return once the queue runs - at once when it isn't paused."""
@@ -130,6 +153,7 @@ class PendingDownload:
     options: dict[str, Any] = field(default_factory=dict)
     user_ids: list[int] = field(default_factory=list)
     priority: str = PRIORITY_NORMAL
+    paused: bool = False
 
 
 class PendingDownloads:
@@ -151,7 +175,8 @@ class PendingDownloads:
                     song TEXT NOT NULL,
                     options TEXT NOT NULL DEFAULT '{}',
                     user_ids TEXT NOT NULL DEFAULT '[]',
-                    priority TEXT NOT NULL DEFAULT 'normal'
+                    priority TEXT NOT NULL DEFAULT 'normal',
+                    paused INTEGER NOT NULL DEFAULT 0
                 )
             """)
             columns = {
@@ -162,6 +187,11 @@ class PendingDownloads:
                 conn.execute(
                     'ALTER TABLE pending_downloads ADD COLUMN priority '
                     "TEXT NOT NULL DEFAULT 'normal'"
+                )
+            if 'paused' not in columns:
+                conn.execute(
+                    'ALTER TABLE pending_downloads ADD COLUMN paused '
+                    'INTEGER NOT NULL DEFAULT 0'
                 )
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS download_queue_state (
@@ -195,14 +225,15 @@ class PendingDownloads:
                 if saved is None:
                     conn.execute(
                         'INSERT INTO pending_downloads '
-                        '(song_id, song, options, user_ids, priority) '
-                        'VALUES (?, ?, ?, ?, ?)',
+                        '(song_id, song, options, user_ids, priority, paused) '
+                        'VALUES (?, ?, ?, ?, ?, ?)',
                         (
                             row.song_id,
                             json.dumps(row.song, default=str),
                             json.dumps(row.options, default=str),
                             json.dumps(users),
                             priority,
+                            int(row.paused),
                         ),
                     )
                     continue
@@ -255,6 +286,23 @@ class PendingDownloads:
                 changed += cur.rowcount
         return changed
 
+    def set_jobs_paused(self, song_ids: Collection[str], paused: bool) -> int:
+        ids = list(dict.fromkeys(str(sid) for sid in song_ids if sid))
+        if not ids:
+            return 0
+        changed = 0
+        with self._connect() as conn:
+            for start in range(0, len(ids), _CHUNK):
+                chunk = ids[start : start + _CHUNK]
+                marks = ','.join('?' * len(chunk))
+                cur = conn.execute(
+                    f'UPDATE pending_downloads SET paused = ? '
+                    f'WHERE song_id IN ({marks}) AND paused != ?',
+                    (int(paused), *chunk, int(paused)),
+                )
+                changed += cur.rowcount
+        return changed
+
     def forget(self, song_ids: Collection[str]) -> None:
         ids = list(dict.fromkeys(str(sid) for sid in song_ids if sid))
         if not ids:
@@ -277,12 +325,12 @@ class PendingDownloads:
 
         with self._connect() as conn:
             found = conn.execute(
-                'SELECT song_id, song, options, user_ids, priority '
+                'SELECT song_id, song, options, user_ids, priority, paused '
                 'FROM pending_downloads '
                 "ORDER BY CASE priority WHEN 'high' THEN 0 ELSE 1 END, seq"
             ).fetchall()
         rows: list[PendingDownload] = []
-        for song_id, song, options, user_ids, priority in found:
+        for song_id, song, options, user_ids, priority, paused in found:
             try:
                 song_dict = json.loads(song)
                 options_dict = json.loads(options or '{}')
@@ -304,6 +352,7 @@ class PendingDownloads:
                     priority=priority
                     if priority in PRIORITIES
                     else PRIORITY_NORMAL,
+                    paused=bool(paused),
                 )
             )
         return rows

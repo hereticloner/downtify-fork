@@ -191,6 +191,9 @@ def _queue_restore_plan(
         filename = known_files.get(song_id) or ''
         if _file_exists(data_dir, filename):
             continue
+        if row.get('paused') in {1, True, '1'}:
+            kept.append(row)
+            continue
         kept.append(row)
         requeued.append(song_id)
     return kept, requeued, unresolved

@@ -424,6 +424,24 @@ def test_restore_does_not_requeue_a_track_already_on_disk(tmp_path):
         )
 
 
+def test_restore_keeps_missing_paused_jobs_paused(tmp_path):
+    source = tmp_path / 'source'
+    _seed(source)
+    queue = PendingDownloads(source / 'downtify_library.db')
+    queue.set_jobs_paused(['0TnOYISbd1XYRBk9myaseg'], True)
+    backup = BackupStore(source).write()
+    target = tmp_path / 'target'
+
+    result = BackupStore(target).restore(
+        backup, dry_run=False, requeue_missing=True
+    )
+
+    assert result['requeued'] == []
+    rows = PendingDownloads(target / 'downtify_library.db').rows()
+    assert len(rows) == 1
+    assert rows[0].paused is True
+
+
 def test_restore_rolls_back_json_files_when_a_later_write_fails(
     tmp_path, monkeypatch
 ):
