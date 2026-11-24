@@ -9,8 +9,8 @@
 ## Sıra
 
 - [x] **Oynatma hafızası + gerçek Stats** → `2026-11-24-playback-memory-stats.md` — canlıda (`befabe1`), health `ok`.
-- [ ] **Spotify Sync otomatik eksik indirme + başarısızlık merkezi** → alt plan Faz 2'de yazılacak
-- [ ] **Birleşik arama + hızlı kazanımlar** → alt plan Faz 3'te yazılacak
+- [x] **Spotify Sync otomatik eksik indirme + başarısızlık merkezi** → `2026-11-24-spotify-sync-failures.md` — canlıda (`fef46c3`), health `ok`.
+- [ ] **Birleşik arama + hızlı kazanımlar** → `2026-11-24-search-quickwins.md`
 - [ ] **Bildirim/Telegram + yedek/geri yükleme** → alt plan Faz 4'te yazılacak
 - [ ] **Kuyruk önceliği + sessiz saatler** → alt plan Faz 5'te yazılacak
 - [ ] **Collections güç araçları** → alt plan Faz 6'da yazılacak
