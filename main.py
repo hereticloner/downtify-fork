@@ -122,6 +122,7 @@ from downtify.server_port import (
     write_runtime_port,
 )
 from downtify.stream import stream_cache_from_env
+from downtify.telegram_commands import TelegramCommandBot
 from downtify.telemetry import redact_url_secrets
 from downtify.track_index import TrackIndex
 from downtify.traffic import TrafficCounters, traffic_flush_loop
@@ -781,6 +782,18 @@ def build_app() -> FastAPI:
             await api.restore_download_queue()
         except Exception:
             logger.exception('Download queue: could not restore')
+
+        telegram_bot = TelegramCommandBot.from_settings(
+            api.state.settings,
+            api.state.notification_store.load(),
+            status_provider=lambda: {
+                'version': api.state.version,
+                'queue': api.get_queue_state(),
+            },
+            queue_provider=api.get_queue,
+        )
+        if telegram_bot is not None:
+            api.spawn_task(telegram_bot.run(), name='telegram-command-bot')
 
         yield
 
