@@ -8,17 +8,17 @@
 
 ## Sıra
 
-1. **Oynatma hafızası + gerçek Stats** → `2026-11-24-playback-memory-stats.md`
-2. **Spotify Sync otomatik eksik indirme + başarısızlık merkezi** → alt plan Faz 2'de yazılacak
-3. **Birleşik arama + hızlı kazanımlar** → alt plan Faz 3'te yazılacak
-4. **Bildirim/Telegram + yedek/geri yükleme** → alt plan Faz 4'te yazılacak
-5. **Kuyruk önceliği + sessiz saatler** → alt plan Faz 5'te yazılacak
-6. **Collections güç araçları** → alt plan Faz 6'da yazılacak
-7. **Library Health** → alt plan Faz 7'de yazılacak
-8. **Söz sağlığı + senkron ofset** → alt plan Faz 8'de yazılacak
-9. **Playlist-albüm + Monitor dry-run/Wanted** → alt plan Faz 9'da yazılacak
-10. **Offline PWA + depolama analizi + loudness** → alt plan Faz 10'da yazılacak
-11. **Güvenlik + final doğrulama** → alt plan Faz 11'de yazılacak
+- [x] **Oynatma hafızası + gerçek Stats** → `2026-11-24-playback-memory-stats.md` — canlıda (`befabe1`), health `ok`.
+- [ ] **Spotify Sync otomatik eksik indirme + başarısızlık merkezi** → alt plan Faz 2'de yazılacak
+- [ ] **Birleşik arama + hızlı kazanımlar** → alt plan Faz 3'te yazılacak
+- [ ] **Bildirim/Telegram + yedek/geri yükleme** → alt plan Faz 4'te yazılacak
+- [ ] **Kuyruk önceliği + sessiz saatler** → alt plan Faz 5'te yazılacak
+- [ ] **Collections güç araçları** → alt plan Faz 6'da yazılacak
+- [ ] **Library Health** → alt plan Faz 7'de yazılacak
+- [ ] **Söz sağlığı + senkron ofset** → alt plan Faz 8'de yazılacak
+- [ ] **Playlist-albüm + Monitor dry-run/Wanted** → alt plan Faz 9'da yazılacak
+- [ ] **Offline PWA + depolama analizi + loudness** → alt plan Faz 10'da yazılacak
+- [ ] **Güvenlik + final doğrulama** → alt plan Faz 11'de yazılacak
 
 ## Her dilimin tanımı
 
