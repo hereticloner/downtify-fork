@@ -441,6 +441,13 @@ export default {
     playCountYoutubeMusic: 'Reproducciones en YouTube Music (aproximado)',
   },
   queue: {
+    failureCenterTitle: 'Fallos persistentes',
+    failureCenterHint: 'Las descargas fallidas siguen aquí tras reiniciar.',
+    failureAttempts: '{count} intentos',
+    failureEmpty: 'No hay fallos persistentes.',
+    failureClear: 'Borrar resueltos',
+    failureRetryQueued: 'Reintento en cola.',
+    failureRetryFailed: 'No se pudo reintentar esta descarga.',
     pause: 'Pausar todo',
     resume: 'Reanudar todo',
     title: 'Cola',

@@ -148,6 +148,7 @@
       </div>
 
       <aside class="flex flex-col gap-4 xl:sticky xl:top-[104px]">
+        <FailureCenter />
         <DownloadExclusions />
         <UiPanel
           v-if="activeBatches.length"
@@ -254,6 +255,7 @@ import SourceBadge from '/src/components/ui/SourceBadge.vue'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import QueueItem from '/src/components/queue/QueueItem.vue'
 import DownloadExclusions from '/src/components/queue/DownloadExclusions.vue'
+import FailureCenter from '/src/components/queue/FailureCenter.vue'
 import CsvImport from '/src/components/queue/CsvImport.vue'
 import {
   useDownloadManager,

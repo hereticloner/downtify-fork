@@ -451,6 +451,14 @@ export default {
     playCountYoutubeMusic: 'Écoutes sur YouTube Music (approximatif)',
   },
   queue: {
+    failureCenterTitle: 'Échecs persistants',
+    failureCenterHint:
+      'Les téléchargements échoués restent ici après un redémarrage.',
+    failureAttempts: '{count} tentatives',
+    failureEmpty: 'Aucun échec persistant.',
+    failureClear: 'Effacer les résolus',
+    failureRetryQueued: 'Nouvelle tentative en file.',
+    failureRetryFailed: 'Impossible de réessayer ce téléchargement.',
     pause: 'Tout mettre en pause',
     resume: 'Tout reprendre',
     title: 'File',

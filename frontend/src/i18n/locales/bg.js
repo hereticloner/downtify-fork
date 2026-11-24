@@ -429,6 +429,13 @@ export default {
     playCountYoutubeMusic: 'Възпроизвеждания в YouTube Music (приблизително)',
   },
   queue: {
+    failureCenterTitle: 'Постоянни грешки',
+    failureCenterHint: 'Неуспешните изтегляния остават тук след рестарт.',
+    failureAttempts: '{count} опита',
+    failureEmpty: 'Няма постоянни грешки.',
+    failureClear: 'Изчисти решените',
+    failureRetryQueued: 'Повторният опит е в опашката.',
+    failureRetryFailed: 'Повторният опит е неуспешен.',
     pause: 'Пауза на всички',
     resume: 'Възобнови всички',
     title: 'Опашка',

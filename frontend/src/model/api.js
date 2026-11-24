@@ -791,6 +791,18 @@ function getStats(params = {}) {
   return API.get('/api/stats', { params })
 }
 
+function getDownloadFailures() {
+  return API.get('/api/download-failures')
+}
+
+function retryDownloadFailure(songId) {
+  return API.post('/api/download-failures/retry', { song_id: songId })
+}
+
+function clearDownloadFailures() {
+  return API.delete('/api/download-failures')
+}
+
 function getQueueStatus() {
   return API.get('/api/queue/state')
 }
@@ -1043,6 +1055,9 @@ export default {
   clearCompletedQueue,
   getResume,
   getStats,
+  getDownloadFailures,
+  retryDownloadFailure,
+  clearDownloadFailures,
   getQueueStatus,
   getQueueState,
   pauseQueue,

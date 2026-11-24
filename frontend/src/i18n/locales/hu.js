@@ -434,6 +434,14 @@ export default {
     playCountYoutubeMusic: 'Lejátszások a YouTube Musicon (hozzávetőleges)',
   },
   queue: {
+    failureCenterTitle: 'Tartós hibák',
+    failureCenterHint:
+      'A sikertelen letöltések újraindítás után is itt maradnak.',
+    failureAttempts: '{count} próbálkozás',
+    failureEmpty: 'Nincs tartós hiba.',
+    failureClear: 'Megoldottak törlése',
+    failureRetryQueued: 'Újrapróbálás sorba állítva.',
+    failureRetryFailed: 'A letöltés újrapróbálása nem sikerült.',
     pause: 'Összes szüneteltetése',
     resume: 'Összes folytatása',
     title: 'Sor',

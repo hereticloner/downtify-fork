@@ -435,6 +435,14 @@ export default {
     playCountYoutubeMusic: 'YouTube Music’teki dinlenme sayısı (yaklaşık)',
   },
   queue: {
+    failureCenterTitle: 'Kalıcı hatalar',
+    failureCenterHint:
+      'Başarısız indirmeler yeniden başlatmalardan sonra da burada kalır.',
+    failureAttempts: '{count} deneme',
+    failureEmpty: 'Kalıcı hata yok.',
+    failureClear: 'Çözülenleri temizle',
+    failureRetryQueued: 'Yeniden deneme kuyruğa alındı.',
+    failureRetryFailed: 'Bu indirme yeniden denenemedi.',
     pause: 'Tümünü duraklat',
     resume: 'Tümünü sürdür',
     title: 'Kuyruk',

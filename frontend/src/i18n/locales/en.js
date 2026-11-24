@@ -426,6 +426,13 @@ export default {
     playCountYoutubeMusic: 'Plays on YouTube Music (approximate)',
   },
   queue: {
+    failureCenterTitle: 'Persistent failures',
+    failureCenterHint: 'Failed downloads stay here across restarts.',
+    failureAttempts: '{count} attempts',
+    failureEmpty: 'No persistent failures.',
+    failureClear: 'Clear resolved',
+    failureRetryQueued: 'Retry queued.',
+    failureRetryFailed: 'Could not retry this download.',
     pause: 'Pause all',
     resume: 'Resume all',
     title: 'Queue',

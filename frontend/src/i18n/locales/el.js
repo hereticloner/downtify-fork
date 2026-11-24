@@ -445,6 +445,14 @@ export default {
     playCountYoutubeMusic: 'Αναπαραγωγές στο YouTube Music (κατά προσέγγιση)',
   },
   queue: {
+    failureCenterTitle: 'Επίμονα σφάλματα',
+    failureCenterHint:
+      'Οι αποτυχημένες λήψεις παραμένουν εδώ μετά την επανεκκίνηση.',
+    failureAttempts: '{count} προσπάθειες',
+    failureEmpty: 'Δεν υπάρχουν επίμονα σφάλματα.',
+    failureClear: 'Εκκαθάριση επιλυμένων',
+    failureRetryQueued: 'Η νέα προσπάθεια μπήκε στην ουρά.',
+    failureRetryFailed: 'Η νέα προσπάθεια απέτυχε.',
     pause: 'Παύση όλων',
     resume: 'Συνέχεια όλων',
     title: 'Ουρά',
