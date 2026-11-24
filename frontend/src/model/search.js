@@ -3,10 +3,13 @@ import { ref } from 'vue'
 
 import API from '/src/model/api'
 import { useAccount } from '/src/model/account'
+import { useLibrary } from '/src/model/library'
+import { mergeSearchResults } from '/src/lib/searchMerge'
 import { t } from '/src/i18n'
 import { friendlyError } from '/src/lib/errors'
 
 const query = ref('')
+const localTracks = ref([])
 const songs = ref([])
 const albums = ref([])
 const artists = ref([])
@@ -18,6 +21,7 @@ async function searchFor(text) {
   const term = String(text || '').trim()
   query.value = term
   if (!term) {
+    localTracks.value = []
     songs.value = []
     albums.value = []
     artists.value = []
@@ -29,14 +33,20 @@ async function searchFor(text) {
   // The signed-in user's own choice (Settings > General).
   const withAlbums = useAccount().searchAlbums.value !== false
   // Albums and artists are extras: their failure never hides songs.
-  const [songRes, albumRes, artistRes] = await Promise.allSettled([
+  const [localRes, songRes, albumRes, artistRes] = await Promise.allSettled([
+    useLibrary().searchTracks(term, { limit: 50 }),
     API.search(term),
     withAlbums ? API.searchAlbums(term) : Promise.resolve({ data: [] }),
     API.searchArtists(term),
   ])
   if (mine !== serial) return
+  localTracks.value =
+    localRes.status === 'fulfilled' ? localRes.value || [] : []
   if (songRes.status === 'fulfilled') {
-    songs.value = songRes.value.data || []
+    songs.value = mergeSearchResults(
+      localTracks.value,
+      songRes.value.data || []
+    ).tracks
   } else {
     songs.value = []
     error.value = friendlyError(t, songRes.reason, 'search.failed')
@@ -49,5 +59,14 @@ async function searchFor(text) {
 }
 
 export function useSearch() {
-  return { query, songs, albums, artists, loading, error, searchFor }
+  return {
+    query,
+    localTracks,
+    songs,
+    albums,
+    artists,
+    loading,
+    error,
+    searchFor,
+  }
 }

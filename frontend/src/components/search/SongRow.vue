@@ -21,6 +21,11 @@
       <p class="flex items-center gap-1.5">
         <span class="truncate text-[13px] font-semibold">{{ song.name }}</span>
         <span
+          v-if="song.inLibrary"
+          class="mono shrink-0 border border-line-2 px-1 text-[9px] leading-[13px] text-accent"
+          >{{ t('search.inLibrary') }}</span
+        >
+        <span
           v-if="song.explicit"
           class="mono shrink-0 border border-line-3 px-1 text-[9px] leading-[13px] text-muted"
           :title="t('search.explicit')"

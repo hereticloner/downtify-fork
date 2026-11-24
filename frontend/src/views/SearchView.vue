@@ -129,6 +129,35 @@
 
       <div v-else class="grid xl:grid-cols-[minmax(0,1fr)_300px]">
         <div class="flex min-w-0 flex-col">
+          <!-- Local library -->
+          <section
+            v-if="show('library') && search.localTracks.value.length"
+            class="flex flex-col border-b-2 border-line"
+          >
+            <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+              <span
+                class="mono flex w-10 shrink-0 items-center justify-center border-r-2 border-line text-faint"
+                >00</span
+              >
+              <h2
+                class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2 text-fg"
+              >
+                {{ t('search.library') }}
+              </h2>
+              <span
+                class="mono flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+              >
+                {{ search.localTracks.value.length }}
+              </span>
+            </div>
+            <TrackList
+              :tracks="search.localTracks.value"
+              :header="false"
+              :show-added="false"
+              :context="{ type: 'search', title: search.query.value }"
+            />
+          </section>
+
           <!-- Tracks -->
           <section
             v-if="show('songs') && search.songs.value.length"
@@ -290,6 +319,7 @@ import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiPanel from '/src/components/ui/UiPanel.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import PageHeader from '/src/components/library/PageHeader.vue'
+import TrackList from '/src/components/library/TrackList.vue'
 import ReleaseCard from '/src/components/search/ReleaseCard.vue'
 import SongRow from '/src/components/search/SongRow.vue'
 import { useSearch } from '/src/model/search'
@@ -328,6 +358,11 @@ watch(
 
 const filters = computed(() => [
   { id: 'all', label: t('search.all') },
+  {
+    id: 'library',
+    label: t('search.library'),
+    count: search.localTracks.value.length,
+  },
   { id: 'songs', label: t('search.songs'), count: search.songs.value.length },
   {
     id: 'albums',
@@ -347,6 +382,7 @@ function show(section) {
 
 const hasResults = computed(
   () =>
+    search.localTracks.value.length ||
     search.songs.value.length ||
     search.albums.value.length ||
     search.artists.value.length
@@ -354,6 +390,7 @@ const hasResults = computed(
 
 const resultCount = computed(
   () =>
+    search.localTracks.value.length +
     search.songs.value.length +
     search.albums.value.length +
     search.artists.value.length
