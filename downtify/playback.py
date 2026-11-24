@@ -294,13 +294,19 @@ class PlaybackStore:
             .isoformat()
         )
         with self._connect() as conn:
+            if user_id:
+                where = 'WHERE user_id=? AND day>=?'
+                args = (user_id, cutoff)
+            else:
+                where = 'WHERE day>=?'
+                args = (cutoff,)
             row = conn.execute(
                 'SELECT COALESCE(SUM(seconds), 0) AS seconds, '
                 'COALESCE(SUM(plays), 0) AS plays, '
                 'COALESCE(SUM(completions), 0) AS completions, '
                 'COALESCE(SUM(skips), 0) AS skips '
-                'FROM playback_daily WHERE user_id=? AND day>=?',
-                (user_id, cutoff),
+                f'FROM playback_daily {where}',
+                args,
             ).fetchone()
         plays = int(row['plays'])
         return {

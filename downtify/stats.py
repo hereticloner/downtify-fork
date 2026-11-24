@@ -34,13 +34,17 @@ TOP_CONTEXTS_LIMIT = 10
 HEATMAP_WEEKS = max(1, RETENTION_DAYS // 7)
 
 
-def _activity_kinds(log: Any, kind: str) -> list[dict[str, Any]]:
+def _activity_kinds(
+    log: Any, kind: str, user_id: int = 0
+) -> list[dict[str, Any]]:
     """Every entry of one kind, via the log's own pagination."""
 
     out: list[dict[str, Any]] = []
     before = 0
     while True:
-        page = log.entries(kinds=[kind], limit=100, before=before)
+        page = log.entries(
+            kinds=[kind], limit=100, before=before, user_id=user_id
+        )
         out.extend(page['entries'])
         nxt = int(page.get('next') or 0)
         if not nxt or not page['entries']:
@@ -231,6 +235,9 @@ def build_stats(
     playlist_count: int = 0,
     spotify_recent: Optional[list[dict[str, Any]]] = None,
     spotify_play_count: Optional[int] = None,
+    user_id: int = 0,
+    days: int = 30,
+    playback: Any = None,
 ) -> dict[str, Any]:
     """The numbers the Stats page renders.
 
@@ -248,8 +255,21 @@ def build_stats(
     queue, so the page can answer "what did I play, and from where".
     """
 
-    downloads = _activity_kinds(activity, 'download')
-    playbacks = _activity_kinds(activity, 'playback')
+    window = days if days in {7, 30, 90} else 30
+    downloads = _activity_kinds(activity, 'download', user_id=user_id)
+    playbacks = _activity_kinds(activity, 'playback', user_id=user_id)
+    measured = (
+        playback.summary(user_id, days=window)
+        if playback is not None
+        else {
+            'seconds': 0,
+            'plays': 0,
+            'completions': 0,
+            'skips': 0,
+            'completion_rate': 0.0,
+            'skip_rate': 0.0,
+        }
+    )
 
     now = datetime.now(timezone.utc)
 
@@ -292,6 +312,7 @@ def build_stats(
         },
         'playback': {
             'total': len(playbacks),
+            'measured': measured,
             'top_tracks': [
                 {'summary': summary, 'count': count}
                 for summary, count in top_tracks.most_common(10)

@@ -51,6 +51,53 @@ def client(tmp_path, monkeypatch):
     return app
 
 
+def test_stats_measured_metrics_are_user_scoped(client):
+    first = api.state.auth.users.create('first', 'first-password')
+    second = api.state.auth.users.create('second', 'second-password')
+    _first_device, first_token = api.state.auth.create_device(
+        'first phone', user_id=first['id']
+    )
+    _second_device, second_token = api.state.auth.create_device(
+        'second phone', user_id=second['id']
+    )
+    for headers, username, count in (
+        ({'Authorization': f'Bearer {first_token}'}, 'first', 1),
+        ({'Authorization': f'Bearer {second_token}'}, 'second', 2),
+    ):
+        for index in range(count):
+            response = client.post(
+                '/api/activity/playback',
+                json={
+                    'player': 'app',
+                    'state': 'playing',
+                    'track': {
+                        'file': f'A - {username}-{index}.mp3',
+                        'duration': 100,
+                    },
+                    'position': 0,
+                },
+                headers=headers,
+            )
+            assert response.status_code == 200, response.text
+
+    personal = client.get(
+        '/api/stats', headers={'Authorization': f'Bearer {first_token}'}
+    )
+    assert personal.status_code == 200, personal.text
+    assert personal.json()['playback']['measured']['plays'] == 1
+
+    server = client.get('/api/stats', params={'scope': 'server'})
+    assert server.status_code == 200, server.text
+    assert server.json()['playback']['measured']['plays'] == 3
+
+    forbidden = client.get(
+        '/api/stats',
+        params={'scope': 'server'},
+        headers={'Authorization': f'Bearer {first_token}'},
+    )
+    assert forbidden.status_code == 403
+
+
 def test_stats_endpoint_shape_with_empty_stores(client):
     resp = client.get('/api/stats')
     assert resp.status_code == 200, resp.text
@@ -76,9 +123,9 @@ def test_stats_counts_activity_kinds(client):
 
     log = api.state.activity
     assert log is not None
-    log.record('download', summary='Song A')
-    log.record('download', summary='Song B')
-    log.record('playback', summary='Song A')
+    log.record('download', user_id=1, summary='Song A')
+    log.record('download', user_id=1, summary='Song B')
+    log.record('playback', user_id=1, summary='Song A')
     resp = client.get('/api/stats')
     data = resp.json()
     assert data['downloads']['total'] >= 2
@@ -174,7 +221,7 @@ def _record_on(kind: str, day: date, summary: str = 'Song') -> None:
         conn.execute(
             'INSERT INTO activity (at, user_id, username, kind, summary, '
             'detail_json, client, ip) '
-            "VALUES (?, 0, 'admin', ?, ?, '{}', 'test', '')",
+            "VALUES (?, 1, 'admin', ?, ?, '{}', 'test', '')",
             (f'{day.isoformat()}T20:00:00+00:00', kind, summary),
         )
 
@@ -244,7 +291,7 @@ def _play_from(day: date, summary: str, context: str, kind: str = 'playlist'):
     with sqlite3.connect(main.DATABASE_DIR / 'downtify_activity.db') as conn:
         conn.execute(
             'INSERT INTO activity (at, user_id, username, kind, summary, '
-            "detail_json, client, ip) VALUES (?, 0, 'admin', "
+            "detail_json, client, ip) VALUES (?, 1, 'admin', "
             "'playback', ?, ?, 'test', '')",
             (
                 f'{day.isoformat()}T20:00:00+00:00',
@@ -287,7 +334,7 @@ def test_stats_counts_the_queues_played_most(client):
     with sqlite3.connect(main.DATABASE_DIR / 'downtify_activity.db') as conn:
         conn.execute(
             'INSERT INTO activity (at, user_id, username, kind, summary, '
-            "detail_json, client, ip) VALUES (?, 0, 'admin', 'playback', "
+            "detail_json, client, ip) VALUES (?, 1, 'admin', 'playback', "
             "'D', ?, 'test', '')",
             (f'{today.isoformat()}T20:00:00+00:00', '{}'),
         )
@@ -315,7 +362,7 @@ def test_stats_survives_a_playback_entry_without_detail(client):
         conn.execute(
             'INSERT INTO activity (at, user_id, username, kind, summary, '
             "detail_json, client, ip) VALUES ('2026-10-12T20:00:00+00:00', "
-            "0, 'admin', 'playback', 'Song A', 'not json', 'test', '')"
+            "1, 'admin', 'playback', 'Song A', 'not json', 'test', '')"
         )
 
     resp = client.get('/api/stats')

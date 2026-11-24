@@ -8,7 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from . import collections as coll
 from . import stats as stats_mod
@@ -225,9 +225,22 @@ def _spotify_stats() -> dict[str, Any]:
 
 
 @router.get('/api/stats')
-async def stats_endpoint() -> dict[str, Any]:
+async def stats_endpoint(
+    request: Request,
+    days: int = Query(30, ge=7, le=90),
+    scope: str = Query('user'),
+) -> dict[str, Any]:
     from downtify import api as api_mod  # noqa: PLC0415
 
+    principal = api_mod.principal_of(request)
+    if principal is None:
+        raise HTTPException(status_code=401, detail='Sign in required')
+    if scope not in {'user', 'server'}:
+        raise HTTPException(status_code=400, detail='Unknown stats scope')
+    if scope == 'server' and not principal.is_admin:
+        raise HTTPException(status_code=403, detail='This needs an admin')
+    window = days if days in {7, 30, 90} else 30
+    user_id = 0 if scope == 'server' else principal.user_id
     st = api_mod.state
     track_count = 0
     if st.track_index is not None:
@@ -251,12 +264,25 @@ async def stats_endpoint() -> dict[str, Any]:
         likes = 0
     activity = st.activity
     spotify = _spotify_stats()
+    measured = (
+        st.playback.summary(user_id, days=window)
+        if st.playback is not None
+        else {
+            'seconds': 0,
+            'plays': 0,
+            'completions': 0,
+            'skips': 0,
+            'completion_rate': 0.0,
+            'skip_rate': 0.0,
+        }
+    )
     if activity is None:
         return {
             'library': {'tracks': 0, 'playlists': 0, 'likes': 0},
             'downloads': {'total': 0, 'last_30_days': 0, 'per_day': []},
             'playback': {
                 'total': 0,
+                'measured': measured,
                 'top_tracks': [],
                 'heatmap': [],
                 'streak_days': 0,
@@ -271,6 +297,9 @@ async def stats_endpoint() -> dict[str, Any]:
         playlist_count=playlist_count,
         spotify_recent=spotify['recent'],
         spotify_play_count=spotify['play_count'],
+        user_id=user_id,
+        days=window,
+        playback=st.playback,
     )
 
 
