@@ -94,6 +94,14 @@ The same actions apply to a multi-track selection in the Library.
 
 The queue, the current track, its position, shuffle and repeat are remembered, so reopening Downtify resumes where you left off (queues of more than 2000 tracks aren't remembered). Deleted files drop out of the queue automatically.
 
+## Continue on another device
+
+Downtify also keeps the last playback position with your account. When you open **Home** on another browser or paired app, a **Continue listening** card offers the most recently updated track and the device it came from. Press **Resume** to start it at that position.
+
+Nothing moves between devices automatically: if two devices have different positions, Home offers the newest one and keeps both in the account's playback history. The browser's own saved queue still works as before; the server-side position is an additional option, not a replacement.
+
+Only downloaded library tracks are offered. Streams whose temporary URL has expired are not restored. The card is per account; signing out does not erase the position, while deleting the account does.
+
 ## Reordering the queue
 
 **Up next** can be reordered without a mouse. Every queued track has **move up** and **move down** buttons, and with a row focused `Alt` + `↑` / `↓` moves it one step. The first queued track can't move above the one playing, and the last can't move past the end, so a track can never leave the queue this way. Dragging a row (by its handle, on a desktop) works too. With **Shuffle** on the order is random, so reordering is hidden.

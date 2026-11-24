@@ -6,9 +6,15 @@ icon: lucide/bar-chart-3
 
 Stats is a read-only page that puts the size of your library and how much you use it in one place. It lives at `/library/stats`, in the Library area of the app (the **Library** item in the sidebar stays highlighted while you are there). There is nothing to configure — the page simply reads what Downtify already records.
 
+## Period and account scope
+
+The **7 / 30 / 90 days** control changes the measured listening cards. The page shows the signed-in account's playback by default. An admin can request the server-wide view through the API with `scope=server`; the web page keeps the personal view.
+
+Library size and likes remain server-wide in this version. Playback/download activity, the heatmap and the measured listening metrics are account-scoped.
+
 ## The numbers
 
-Six cards sit across the top:
+Eight cards sit across the top:
 
 | Card | What it counts |
 |------|----------------|
@@ -16,7 +22,9 @@ Six cards sit across the top:
 | **Playlists in library** | Playlists in the library |
 | **Downloads (30 days)** | Download requests recorded in the last 30 days |
 | **Downloads (all time)** | Download requests in the whole retained activity log |
-| **Plays** | Songs started in the [built-in player](player.md) or a paired app |
+| **Listening time** | Unique seconds heard in the selected 7, 30 or 90 days |
+| **Completed** | Tracks heard to at least 90%, with the completion rate |
+| **Skipped** | Tracks left before 25% or within 15 seconds, with the skip rate |
 | **Liked** | Songs with a heart, from [Liked songs](liked-songs.md) |
 
 The two download cards come from the same log: one counts the retained window, the other everything still in it (see [Where the numbers come from](#where-the-numbers-come-from)).
@@ -47,7 +55,7 @@ Underneath the grid are two numbers:
 - **Day streak** — how many days in a row you played something. A day that hasn't finished doesn't break it: until midnight is over, yesterday's run still counts. Nothing played today *and* yesterday means zero.
 - **Busiest day** — the day of that window with the most plays, with the date and the count.
 
-Both come from the same [activity log](../features/users.md) as the other panels, and are server-wide: everyone using the same server contributes to the same grid.
+Both come from the same [activity log](../features/users.md) as the other panels, filtered to the signed-in account: everyone using the same server keeps a separate grid.
 
 ## Recent plays
 
@@ -69,12 +77,13 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 - **Downloads and plays** come from the [activity log](../features/users.md) in `/data/downtify_activity.db`. The log keeps a year of entries, so every count here (including the all-time-looking ones) only covers the retained window.
 - A **download** is one logged *request*: a playlist or album batch counts once, not once per track, because that is what the activity log records.
 - A **play** is logged each time a song *starts* (a player reporting a new song), so replaying one song counts again. Top tracks group those plays by the label the log stored. The heatmap counts those same plays per day, one entry per day of the window — including the days with none, which come back as `0`.
+- **Measured listening** uses the position reports players already send about every 30 seconds. Repeated heartbeats count once; a seek jump is not listening time; a gap longer than 45 seconds is ignored. A track heard to at least 90% is one completion. Leaving before 25% or within 15 seconds is one skip. Replaying the same section does not add the same seconds twice.
 - The **Spotify** panel is the one exception to the retained window: those rows are only ever added, never pruned, so the total keeps counting up for as long as the import is on.
-- The counts are **server-wide**, not per account — everyone using the same server contributes to the same numbers.
+- The activity and measured counts are **per account**. An admin can ask for the server total with `scope=server`; library size and likes remain server-wide.
 
 ## API
 
-`GET /api/stats` returns one object:
+`GET /api/stats?days=30&scope=user` returns one object. `days` accepts `7`, `30` or `90`; anything else falls back to `30`. `scope=user` is the default and returns the signed-in account's activity. `scope=server` is admin-only and aggregates every account.
 
 ```json
 {
@@ -89,6 +98,14 @@ Only plays from after this shipped carry the tag. A player that reports no queue
   },
   "playback": {
     "total": 1543,
+    "measured": {
+      "seconds": 18305,
+      "plays": 1543,
+      "completions": 1204,
+      "skips": 98,
+      "completion_rate": 0.7804,
+      "skip_rate": 0.0635
+    },
     "top_tracks": [
       { "summary": "The Night Owls - Do I Still Recall", "count": 42 }
     ],
@@ -132,6 +149,7 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 | `downloads.last_30_days` | Those within the last 30 days |
 | `downloads.per_day` | `{date, count}` for each day with a download, oldest first |
 | `playback.total` | Plays in the activity log |
+| `playback.measured` | `{seconds, plays, completions, skips, completion_rate, skip_rate}` for the selected period and account/server scope |
 | `playback.top_tracks` | Up to ten `{summary, count}`, most played first |
 | `playback.heatmap` | `{date, count}` for every day of the retained window (364 days), oldest first — days without a play are `0` |
 | `playback.streak_days` | Days in a row with a play; a day still to come doesn't break it |

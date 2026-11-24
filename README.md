@@ -34,6 +34,8 @@
 
 The fork carries everything the original Downtify does — link pasting, YouTube Music matching, tagging, lyrics, the player, playlist monitoring — and adds on top:
 
+Cross-device **Continue listening**, account-scoped listening time/completion/skip stats with 7/30/90-day periods, plus the fork's Collections, Smart Collections, notifications, storage tools, Spotify Mirror/Sync and Monitor.
+
 <table>
 <tr>
 <td width="50%" valign="top">
