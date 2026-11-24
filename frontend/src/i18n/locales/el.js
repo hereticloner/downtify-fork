@@ -885,6 +885,10 @@ export default {
     file: 'Αρχείο',
   },
   player: {
+    saveQueue: 'Αποθήκευση ως λίστα',
+    saveQueueTitle: 'Αποθήκευση ουράς',
+    saveQueueEmpty: 'Δεν υπάρχουν ληφμένα κομμάτια.',
+    saveQueueDone: 'Η ουρά αποθηκεύτηκε.',
     nowPlaying: 'Παίζει τώρα',
     openNowPlaying: 'Άνοιγμα αναπαραγωγής',
     closeNowPlaying: 'Κλείσιμο αναπαραγωγής',

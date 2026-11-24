@@ -868,6 +868,10 @@ export default {
     file: 'Файл',
   },
   player: {
+    saveQueue: 'Запази като плейлист',
+    saveQueueTitle: 'Запазване на опашката',
+    saveQueueEmpty: 'Няма изтеглени песни за запазване.',
+    saveQueueDone: 'Опашката е запазена.',
     nowPlaying: 'Сега звучи',
     openNowPlaying: 'Отвори „Сега звучи“',
     closeNowPlaying: 'Затвори „Сега звучи“',

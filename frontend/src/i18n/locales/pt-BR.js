@@ -876,6 +876,10 @@ export default {
     file: 'Arquivo',
   },
   player: {
+    saveQueue: 'Salvar como playlist',
+    saveQueueTitle: 'Salvar fila como playlist',
+    saveQueueEmpty: 'Nenhuma faixa baixada para salvar.',
+    saveQueueDone: 'Fila salva como playlist.',
     nowPlaying: 'Tocando agora',
     openNowPlaying: 'Abrir tocando agora',
     closeNowPlaying: 'Fechar tocando agora',

@@ -860,6 +860,10 @@ export default {
     file: 'File',
   },
   player: {
+    saveQueue: 'Save as playlist',
+    saveQueueTitle: 'Save queue as playlist',
+    saveQueueEmpty: 'No downloaded tracks to save.',
+    saveQueueDone: 'Queue saved as a playlist.',
     nowPlaying: 'Now playing',
     openNowPlaying: 'Open now playing',
     closeNowPlaying: 'Close now playing',

@@ -17,6 +17,7 @@ import { useHistory } from '/src/model/history'
 import { useI18n } from '/src/i18n'
 import { friendlyError } from '/src/lib/errors'
 import { itemTrackCount } from '/src/lib/library'
+import { queuePlaylistFiles } from '/src/lib/queuePlaylist'
 import { useTrashCapability } from '/src/lib/trash'
 
 const createOpen = ref(false)
@@ -93,6 +94,12 @@ export function usePlaylistActions() {
       })
       throw err
     }
+  }
+
+  async function saveQueueAsPlaylist(name) {
+    const files = queuePlaylistFiles(player.playlist.value)
+    if (!files.length) throw new Error('queue is empty')
+    return createNamed(name, files)
   }
 
   async function renameNamed(playlist, newName) {
@@ -393,6 +400,7 @@ export function usePlaylistActions() {
     openAddSongs,
     openRename,
     createNamed,
+    saveQueueAsPlaylist,
     renameNamed,
     addFiles,
     removeFiles,

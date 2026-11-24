@@ -7,14 +7,24 @@
         <p class="eyebrow text-fg">{{ t('player.upNext') }}</p>
         <p class="mono truncate text-faint">{{ summary }}</p>
       </div>
-      <button
-        v-if="upcoming.length"
-        type="button"
-        class="mono h-7 shrink-0 border border-line-2 px-2 tracking-[0.06em] text-faint uppercase transition-colors duration-100 hover:border-line hover:text-fg"
-        @click="player.clearUpcoming()"
-      >
-        {{ t('player.clearUpcoming') }}
-      </button>
+      <div class="flex shrink-0 items-center gap-2">
+        <button
+          v-if="savedCount"
+          type="button"
+          class="mono h-7 shrink-0 border border-line-2 px-2 tracking-[0.06em] text-faint uppercase transition-colors duration-100 hover:border-line hover:text-fg"
+          @click="saveQueue"
+        >
+          {{ t('player.saveQueue') }}
+        </button>
+        <button
+          v-if="upcoming.length"
+          type="button"
+          class="mono h-7 shrink-0 border border-line-2 px-2 tracking-[0.06em] text-faint uppercase transition-colors duration-100 hover:border-line hover:text-fg"
+          @click="player.clearUpcoming()"
+        >
+          {{ t('player.clearUpcoming') }}
+        </button>
+      </div>
     </div>
 
     <div
@@ -152,10 +162,13 @@ import CoverArt from '../ui/CoverArt.vue'
 import EqBars from '../ui/EqBars.vue'
 import { createQueueReorder } from '/src/lib/queueReorder'
 import { usePlayer } from '/src/model/player'
+import { usePlaylistActions } from '/src/model/playlistActions'
+import { queuePlaylistFiles } from '/src/lib/queuePlaylist'
 import { formatDuration, splitLength } from '/src/lib/format'
 import { useI18n } from '/src/i18n'
 
 const player = usePlayer()
+const playlistActions = usePlaylistActions()
 const { t } = useI18n()
 const dragOver = ref(-1)
 let dragFrom = -1
@@ -163,6 +176,14 @@ let dragFrom = -1
 const current = computed(() => player.currentTrack.value)
 // Long queues render the first stretch only; the rest is still queued.
 const upcoming = computed(() => player.upcoming.value.slice(0, 200))
+const savedCount = computed(
+  () => queuePlaylistFiles(player.playlist.value).length
+)
+
+function saveQueue() {
+  if (!savedCount.value) return
+  playlistActions.openCreate(queuePlaylistFiles(player.playlist.value))
+}
 
 // The first queued track sits right after the current one: it can't move
 // above it, so `min` is the playing index + 1.

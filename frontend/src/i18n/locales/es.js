@@ -883,6 +883,10 @@ export default {
     file: 'Archivo',
   },
   player: {
+    saveQueue: 'Guardar como playlist',
+    saveQueueTitle: 'Guardar cola como playlist',
+    saveQueueEmpty: 'No hay pistas descargadas para guardar.',
+    saveQueueDone: 'Cola guardada como playlist.',
     nowPlaying: 'Reproduciendo',
     openNowPlaying: 'Abrir reproducción actual',
     closeNowPlaying: 'Cerrar reproducción actual',

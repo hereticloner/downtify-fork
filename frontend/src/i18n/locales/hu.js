@@ -878,6 +878,10 @@ export default {
     file: 'Fájl',
   },
   player: {
+    saveQueue: 'Mentés lejátszási listaként',
+    saveQueueTitle: 'Sor mentése listaként',
+    saveQueueEmpty: 'Nincs menthető letöltött szám.',
+    saveQueueDone: 'A sor elmentve.',
     nowPlaying: 'Most szól',
     openNowPlaying: 'Most szóló megnyitása',
     closeNowPlaying: 'Most szóló bezárása',

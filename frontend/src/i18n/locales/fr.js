@@ -901,6 +901,10 @@ export default {
     file: 'Fichier',
   },
   player: {
+    saveQueue: 'Enregistrer comme playlist',
+    saveQueueTitle: 'Enregistrer la file comme playlist',
+    saveQueueEmpty: 'Aucun titre téléchargé à enregistrer.',
+    saveQueueDone: 'File enregistrée comme playlist.',
     nowPlaying: 'Lecture en cours',
     openNowPlaying: 'Ouvrir la lecture en cours',
     closeNowPlaying: 'Fermer la lecture en cours',

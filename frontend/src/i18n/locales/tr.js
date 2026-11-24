@@ -876,6 +876,10 @@ export default {
     file: 'Dosya',
   },
   player: {
+    saveQueue: 'Playlist olarak kaydet',
+    saveQueueTitle: 'Kuyruğu playlist olarak kaydet',
+    saveQueueEmpty: 'Kaydedilecek indirilmiş parça yok.',
+    saveQueueDone: 'Kuyruk playlist olarak kaydedildi.',
     nowPlaying: 'Şimdi çalıyor',
     openNowPlaying: 'Şimdi çalanı aç',
     closeNowPlaying: 'Şimdi çalanı kapat',
