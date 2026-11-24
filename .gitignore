@@ -319,3 +319,4 @@ data/settings.json
 .claude/
 data/
 design/
+.worktrees/
