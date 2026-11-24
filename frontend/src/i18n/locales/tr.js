@@ -296,6 +296,8 @@ export default {
       'Burada çal, çalma listelerini İzleyici ile senkronize tut ya da Jellyfin, Plex veya Navidrome’u kitaplığına yönlendir.',
   },
   search: {
+    library: 'Kütüphanem',
+    libraryEmpty: 'Kütüphanende eşleşen parça yok.',
     title: 'Ara',
     subtitle: 'YouTube Music’te şarkı, albüm ve sanatçı bul.',
     placeholder: 'Ara ya da Spotify veya YouTube Music bağlantısı yapıştır',
@@ -340,6 +342,8 @@ export default {
     playlist: 'Çalma listesi',
   },
   similar: {
+    downloadNew: 'Yenileri indir',
+    downloadNewCount: '{count} yeni parça kuyruğa alındı.',
     title: 'Benzer',
     subtitle:
       'Adını verdiğiniz bir parçaya benzeyen parçalar, YouTube Music’ten.',

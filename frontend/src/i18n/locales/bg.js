@@ -293,6 +293,8 @@ export default {
       'Пусни я тук, синхронизирай плейлисти с Наблюдение или насочи Jellyfin, Plex или Navidrome към библиотеката си.',
   },
   search: {
+    library: 'Моята библиотека',
+    libraryEmpty: 'Няма съвпадащи песни в библиотеката.',
     title: 'Търсене',
     subtitle: 'Намери песни, албуми и изпълнители в YouTube Music.',
     placeholder: 'Търси или постави линк от Spotify или YouTube Music',
@@ -337,6 +339,8 @@ export default {
     playlist: 'Плейлист',
   },
   similar: {
+    downloadNew: 'Изтегли новите',
+    downloadNewCount: '{count} нови песни в опашката.',
     title: 'Similar',
     subtitle: 'Tracks that sound like one you name, from YouTube Music.',
     artist: 'Artist',

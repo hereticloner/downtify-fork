@@ -211,7 +211,10 @@ import { useSimilar } from '/src/model/similar'
 import { useLibrary } from '/src/model/library'
 import { useDownloadManager } from '/src/model/download'
 import { useUi } from '/src/model/ui'
-import { filterNewSimilarSongs } from '/src/lib/similarBulk'
+import {
+  filterNewSimilarSongs,
+  isSimilarSongInLibrary,
+} from '/src/lib/similarBulk'
 import { usePlayer } from '/src/model/player'
 import { songToPlayerTrack } from '/src/model/stream'
 import { useI18n } from '/src/i18n'
@@ -264,17 +267,15 @@ const resultsTitle = computed(() => {
 
 const newSimilarCount = computed(
   () =>
-    filterNewSimilarSongs(
-      similar.songs.value,
-      (song) => !!library.findTrack(song)
+    filterNewSimilarSongs(similar.songs.value, (song) =>
+      isSimilarSongInLibrary(song, library)
     ).length
 )
 
 async function downloadVisibleNew() {
   if (!newSimilarCount.value || downloadingNew.value) return
-  const songs = filterNewSimilarSongs(
-    similar.songs.value,
-    (song) => !!library.findTrack(song)
+  const songs = filterNewSimilarSongs(similar.songs.value, (song) =>
+    isSimilarSongInLibrary(song, library)
   )
   downloadingNew.value = true
   try {

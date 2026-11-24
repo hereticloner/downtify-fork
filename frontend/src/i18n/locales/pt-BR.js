@@ -300,6 +300,8 @@ export default {
       'Toque aqui, mantenha playlists sincronizadas com o Monitor de Playlists ou aponte Jellyfin, Plex ou Navidrome para sua biblioteca.',
   },
   search: {
+    library: 'Minha biblioteca',
+    libraryEmpty: 'Nenhuma faixa correspondente na sua biblioteca.',
     title: 'Buscar',
     subtitle: 'Encontre músicas, álbuns e artistas no YouTube Music.',
     placeholder: 'Busque ou cole um link do Spotify ou YouTube Music',
@@ -344,6 +346,8 @@ export default {
     playlist: 'Playlist',
   },
   similar: {
+    downloadNew: 'Baixar novidades',
+    downloadNewCount: '{count} novas faixas na fila.',
     title: 'Similar',
     subtitle: 'Tracks that sound like one you name, from YouTube Music.',
     artist: 'Artist',

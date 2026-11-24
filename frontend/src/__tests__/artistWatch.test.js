@@ -9,8 +9,12 @@ describe('artist watch shortcut', () => {
 
   it('recognizes an existing artist watch', () => {
     const items = [
-      { kind: 'playlist', spotify_id: '123' },
-      { kind: 'artist', spotify_id: '456' },
+      { kind: 'playlist', url: 'https://open.spotify.com/artist/123' },
+      {
+        kind: 'artist',
+        spotify_id: 'UC-channel-id',
+        url: 'https://open.spotify.com/artist/456',
+      },
     ]
     expect(isArtistWatched(items, '456')).toBe(true)
     expect(isArtistWatched(items, '123')).toBe(false)

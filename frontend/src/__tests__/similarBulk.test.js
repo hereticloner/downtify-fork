@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest'
-import { filterNewSimilarSongs } from '../lib/similarBulk'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  filterNewSimilarSongs,
+  isSimilarSongInLibrary,
+} from '../lib/similarBulk'
 
 describe('similar bulk download', () => {
   it('keeps only loaded songs missing from the library', () => {
@@ -11,6 +14,14 @@ describe('similar bulk download', () => {
     expect(
       filterNewSimilarSongs(songs, (song) => song.song_id === 'b')
     ).toEqual([songs[0], songs[2]])
+  })
+
+  it('asks the library with separate artist and title arguments', () => {
+    const hasSong = vi.fn((artist, title) => artist === 'A' && title === 'One')
+    expect(
+      isSimilarSongInLibrary({ name: 'One', artists: ['A'] }, { hasSong })
+    ).toBe(true)
+    expect(hasSong).toHaveBeenCalledWith('A', 'One')
   })
 
   it('returns nothing for an empty list or when all are downloaded', () => {

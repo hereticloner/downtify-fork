@@ -7216,7 +7216,15 @@ def _youtube_artist_for_name(name: str) -> tuple[str, str]:
         for r in results
         if str(r.get('name') or '').casefold().strip() == wanted
     ]
-    best = (exact or results)[0]
+    if not exact:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f'No exact YouTube Music artist match for {name!r}; '
+                'paste the YouTube Music artist URL to choose it manually'
+            ),
+        )
+    best = exact[0]
     channel_id = str(best.get('artist_id') or '')
     if not channel_id:
         raise HTTPException(

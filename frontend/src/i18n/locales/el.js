@@ -307,6 +307,8 @@ export default {
       'Άκου εδώ, κράτα λίστες συγχρονισμένες με την Παρακολούθηση ή σύνδεσε Jellyfin, Plex ή Navidrome στη βιβλιοθήκη σου.',
   },
   search: {
+    library: 'Η βιβλιοθήκη μου',
+    libraryEmpty: 'Δεν υπάρχουν αντίστοιχα κομμάτια.',
     title: 'Αναζήτηση',
     subtitle: 'Βρες τραγούδια, άλμπουμ και καλλιτέχνες στο YouTube Music.',
     placeholder: 'Αναζήτησε ή επικόλλησε σύνδεσμο Spotify ή YouTube Music',
@@ -352,6 +354,8 @@ export default {
     playlist: 'Λίστα αναπαραγωγής',
   },
   similar: {
+    downloadNew: 'Λήψη νέων',
+    downloadNewCount: '{count} νέα κομμάτια στην ουρά.',
     title: 'Similar',
     subtitle: 'Tracks that sound like one you name, from YouTube Music.',
     artist: 'Artist',

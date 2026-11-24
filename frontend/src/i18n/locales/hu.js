@@ -297,6 +297,8 @@ export default {
       'Játszd le itt, tartsd szinkronban a listákat a Figyelővel, vagy irányítsd a Jellyfint, Plexet vagy Navidrome-ot a könyvtáradra.',
   },
   search: {
+    library: 'Saját könyvtár',
+    libraryEmpty: 'Nincs találat a könyvtárban.',
     title: 'Keresés',
     subtitle: 'Dalok, albumok és előadók keresése a YouTube Musicban.',
     placeholder: 'Keress, vagy illessz be Spotify vagy YouTube Music linket',
@@ -341,6 +343,8 @@ export default {
     playlist: 'Lejátszási lista',
   },
   similar: {
+    downloadNew: 'Újak letöltése',
+    downloadNewCount: '{count} új szám került sorba.',
     title: 'Similar',
     subtitle: 'Tracks that sound like one you name, from YouTube Music.',
     artist: 'Artist',

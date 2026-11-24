@@ -6,7 +6,12 @@ export function artistWatchUrl(spotifyId) {
 export function isArtistWatched(items, spotifyId) {
   const id = String(spotifyId || '').trim()
   if (!id) return false
-  return (items || []).some(
-    (item) => item?.kind === 'artist' && String(item.spotify_id || '') === id
-  )
+  return (items || []).some((item) => {
+    if (item?.kind !== 'artist') return false
+    try {
+      return new URL(item.url).pathname.includes(`/artist/${id}`)
+    } catch {
+      return false
+    }
+  })
 }
