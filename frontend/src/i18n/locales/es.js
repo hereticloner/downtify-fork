@@ -1317,6 +1317,9 @@ export default {
     spotifySyncEnabled: 'Activar la sincronización de Spotify',
     spotifySyncEnabledHint:
       'Revisa las listas cada cierto intervalo y aplica los cambios de pistas.',
+    spotifySyncAutoDownload: 'Descargar automáticamente las novedades',
+    spotifySyncAutoDownloadHint:
+      'Solo se ponen en cola las pistas añadidas después de activar la sincronización.',
     spotifySyncInterval: 'Intervalo de sincronización',
     spotifySyncIntervalHint:
       'Con qué frecuencia se revisa cada lista. Más largo es más amable con la API.',

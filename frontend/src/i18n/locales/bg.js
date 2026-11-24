@@ -1298,6 +1298,9 @@ export default {
     spotifySyncEnabled: 'Включи синхронизацията на Spotify',
     spotifySyncEnabledHint:
       'Проверява плейлистите през интервал и прилага промените по песните.',
+    spotifySyncAutoDownload: 'Автоматично изтегляне на новите',
+    spotifySyncAutoDownloadHint:
+      'Само добавените след активиране на синхронизацията влизат в опашката.',
     spotifySyncInterval: 'Интервал на синхронизация',
     spotifySyncIntervalHint:
       'Колко често се проверява всеки плейлист. По-дълъг е по-щадящ за API-то.',

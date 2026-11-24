@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
+from loguru import logger
 
 from . import spotify_mirror, spotify_sync
 from .errors import ApiError
@@ -79,16 +80,8 @@ def sync_playlists() -> list[dict[str, Any]]:
 
 def apply_sync_diff(
     playlist_name: str, added: list[str], removed: list[str]
-) -> None:
-    """Apply a diff to the local playlist: removals leave, adds stay.
-
-    Additions need no local write - the refreshed Spotify source makes
-    the missing-tracks flow pull them, and the catalog gains their rows
-    when they land. Removals drop the tracks from the catalog and the
-    M3U (see :func:`spotify_sync.apply_removals`); audio is untouched.
-    """
-
-    del added
+) -> int:
+    """Apply removals and optionally queue newly added missing tracks."""
     from downtify import api as api_mod  # noqa: PLC0415
     from downtify import m3u as m3u_mod  # noqa: PLC0415
 
@@ -111,6 +104,26 @@ def apply_sync_diff(
         playlist_subdir=subdir,
         slskd_dir=slskd_dir_from_downloader(downloader),
     )
+    block = spotify_sync.clean_settings(
+        api_mod.state.settings.get(spotify_sync.SETTINGS_KEY)
+    )
+    if not added or not block['auto_download_added']:
+        return 0
+    loop = api_mod.state.loop
+    if loop is None or not loop.is_running():
+        return 0
+    future = asyncio.run_coroutine_threadsafe(
+        api_mod._queue_missing_for_spotify_playlist(playlist_name, added),
+        loop,
+    )
+    try:
+        return max(0, int(future.result(timeout=60)))
+    except Exception:
+        logger.exception(
+            'Spotify sync: auto-download failed for playlist {!r}',
+            playlist_name,
+        )
+        return 0
 
 
 def _persist_tokens(summary: dict[str, Any]) -> None:
@@ -151,6 +164,7 @@ def _status() -> dict[str, Any]:
     return {
         'enabled': block['enabled'],
         'interval_minutes': block['interval_minutes'],
+        'auto_download_added': block['auto_download_added'],
         'connected': connected,
         'playlist_count': len(playlists),
         'playlists': playlists,

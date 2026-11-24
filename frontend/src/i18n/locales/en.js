@@ -1279,6 +1279,9 @@ export default {
     spotifySyncEnabled: 'Enable Spotify Sync',
     spotifySyncEnabledHint:
       'Check the playlists on an interval and apply track changes.',
+    spotifySyncAutoDownload: 'Auto-download new additions',
+    spotifySyncAutoDownloadHint:
+      'Queue only tracks added after sync is enabled. Existing missing tracks stay manual.',
     spotifySyncInterval: 'Sync interval',
     spotifySyncIntervalHint:
       'How often each playlist is checked. Longer is gentler on the API.',

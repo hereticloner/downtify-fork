@@ -17,7 +17,7 @@ import httpx
 import pytest
 from fastapi import HTTPException
 
-from downtify import api, spotify_sync
+from downtify import api, spotify_sync, spotify_sync_api
 from downtify.spotify_sync import (
     DEFAULT_INTERVAL_MINUTES,
     MAX_INTERVAL_MINUTES,
@@ -204,6 +204,7 @@ def test_default_settings_off():
     assert clean_settings(None) == {
         'enabled': False,
         'interval_minutes': DEFAULT_INTERVAL_MINUTES,
+        'auto_download_added': False,
     }
 
 
@@ -509,6 +510,133 @@ def test_sync_playlist_applies_an_addition(tmp_path: Path):
     assert result['removed'] == []
     assert applied == [('Mix', ['b'], [])]
     assert store.track_ids('pl') == ['a', 'b']
+
+
+def test_sync_playlist_reports_how_many_added_tracks_were_queued(tmp_path):
+    store = SyncSnapshotStore(tmp_path / 'sync.json')
+    store.save('pl', ['a'])
+    calls = []
+
+    result = spotify_sync.sync_playlist(
+        _playlist(),
+        config=_config(),
+        store=store,
+        apply=lambda n, a, r: 2,
+        request=_track_pages([_page(['a', 'b', 'c'])], calls),
+    )
+
+    assert result['added'] == ['b', 'c']
+    assert result['queued_added'] == 2
+
+
+def test_auto_download_helper_only_queues_added_missing_tracks(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        spotify_sync_api,
+        'sync_playlists',
+        lambda: [{'spotify_id': 'pl', 'name': 'Mix'}],
+    )
+    monkeypatch.setattr(
+        api,
+        '_missing_tracks_for_playlist',
+        lambda sid: (
+            'Mix',
+            'https://open.spotify.com/playlist/pl',
+            [
+                {'song_id': 'a', 'name': 'A'},
+                {'song_id': 'b', 'name': 'B'},
+                {'song_id': 'c', 'name': 'C'},
+            ],
+        ),
+    )
+    captured = []
+
+    async def fake_submit(songs, playlist_url, **kwargs):
+        captured.extend(songs)
+        return {'count': len(songs)}
+
+    monkeypatch.setattr(api, '_submit_playlist_batch', fake_submit)
+    monkeypatch.setattr(api.state, 'download_jobs', {})
+    monkeypatch.setattr(api.state, 'playlist_batch_store', None)
+    monkeypatch.setattr(api.state, 'downloader', object())
+
+    queued = asyncio.run(api._queue_missing_for_spotify_playlist('Mix', ['b']))
+
+    assert queued == 1
+    assert [song['song_id'] for song in captured] == ['b']
+    assert captured[0]['downtify_playlist_url'].endswith('/pl')
+
+
+def test_auto_download_helper_skips_tracks_already_queued(monkeypatch):
+    monkeypatch.setattr(
+        spotify_sync_api,
+        'sync_playlists',
+        lambda: [{'spotify_id': 'pl', 'name': 'Mix'}],
+    )
+    monkeypatch.setattr(
+        api,
+        '_missing_tracks_for_playlist',
+        lambda sid: (
+            'Mix',
+            'https://open.spotify.com/playlist/pl',
+            [{'song_id': 'b', 'name': 'B'}],
+        ),
+    )
+    monkeypatch.setattr(
+        api.state, 'download_jobs', {'b': {'status': 'queued'}}
+    )
+
+    assert (
+        asyncio.run(api._queue_missing_for_spotify_playlist('Mix', ['b'])) == 0
+    )
+
+
+def test_apply_sync_diff_only_schedules_when_auto_download_is_on(monkeypatch):
+    scheduled = []
+
+    class Loop:
+        @staticmethod
+        def is_running():
+            return True
+
+    class Future:
+        @staticmethod
+        def result(timeout):
+            return 2
+
+    async def queue_missing(name, added):
+        return 2
+
+    def schedule(coro, loop):
+        scheduled.append((coro.cr_code.co_name, loop))
+        coro.close()
+        return Future()
+
+    monkeypatch.setitem(
+        api.state.settings,
+        'spotify_sync',
+        {'auto_download_added': False},
+    )
+    monkeypatch.setattr(api.state, 'loop', Loop())
+    monkeypatch.setattr(api.state, 'downloader', object())
+    monkeypatch.setattr(spotify_sync, 'apply_removals', lambda *a, **k: 0)
+    monkeypatch.setattr(
+        spotify_sync_api, 'slskd_dir_from_downloader', lambda downloader: None
+    )
+    monkeypatch.setattr(
+        api, '_queue_missing_for_spotify_playlist', queue_missing
+    )
+    monkeypatch.setattr(
+        spotify_sync_api.asyncio, 'run_coroutine_threadsafe', schedule
+    )
+
+    assert spotify_sync_api.apply_sync_diff('Mix', ['b'], []) == 0
+    assert scheduled == []
+
+    api.state.settings['spotify_sync']['auto_download_added'] = True
+    assert spotify_sync_api.apply_sync_diff('Mix', ['b'], []) == 2
+    assert len(scheduled) == 1
 
 
 def test_sync_playlist_applies_a_removal(tmp_path: Path):
@@ -935,7 +1063,11 @@ def test_clean_coerces_and_clamps():
     assert api._clean_spotify_sync({
         'enabled': 1,
         'interval_minutes': 3,
-    }) == {'enabled': True, 'interval_minutes': MIN_INTERVAL_MINUTES}
+    }) == {
+        'enabled': True,
+        'interval_minutes': MIN_INTERVAL_MINUTES,
+        'auto_download_added': False,
+    }
 
 
 def test_validate_rejects_enabled_without_a_connection():

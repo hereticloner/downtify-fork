@@ -69,6 +69,7 @@ const settings = ref({
   spotify_sync: {
     enabled: false,
     interval_minutes: 60,
+    auto_download_added: false,
   },
   organize_by_artist: true,
   cache_cover_art: false,

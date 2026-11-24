@@ -44,6 +44,7 @@ describe('Spotify Sync settings', () => {
     const { settings } = useSettingsManager()
     expect(settings.value.spotify_sync.enabled).toBe(false)
     expect(settings.value.spotify_sync.interval_minutes).toBe(60)
+    expect(settings.value.spotify_sync.auto_download_added).toBe(false)
   })
 
   it('clamps the interval to the server bounds', () => {

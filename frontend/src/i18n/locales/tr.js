@@ -1308,6 +1308,9 @@ export default {
     spotifySyncEnabled: 'Spotify Senkronunu aç',
     spotifySyncEnabledHint:
       'Çalma listelerini aralıklarla denetle ve parça değişikliklerini uygula.',
+    spotifySyncAutoDownload: 'Yeni eklenenleri otomatik indir',
+    spotifySyncAutoDownloadHint:
+      'Yalnız sync açıldıktan sonra eklenen parçalar kuyruğa alınır; mevcut eksikler elle kalır.',
     spotifySyncInterval: 'Senkron aralığı',
     spotifySyncIntervalHint:
       'Her çalma listesinin ne sıklıkla denetleneceği. Uzun aralık API için daha nazik.',

@@ -1229,6 +1229,15 @@
                     />
                   </SettingRow>
                   <SettingRow
+                    :label="t('settings.spotifySyncAutoDownload')"
+                    :description="t('settings.spotifySyncAutoDownloadHint')"
+                  >
+                    <UiSwitch
+                      v-model="s.spotify_sync.auto_download_added"
+                      :aria-label="t('settings.spotifySyncAutoDownload')"
+                    />
+                  </SettingRow>
+                  <SettingRow
                     :label="t('settings.spotifySyncNow')"
                     :description="t('settings.spotifySyncNowHint')"
                   >

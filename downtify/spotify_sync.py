@@ -53,7 +53,7 @@ _STORE_VERSION = 1
 Request = Callable[..., Any]
 #: ``(playlist_name, added_ids, removed_ids)`` - how the caller applies a
 #: diff to its own stores.
-ApplyDiff = Callable[[str, list[str], list[str]], None]
+ApplyDiff = Callable[[str, list[str], list[str]], int]
 
 _HTTP_TIMEOUT = spotify_mirror.TIMEOUT_SECONDS
 
@@ -68,6 +68,7 @@ def default_settings() -> dict[str, Any]:
     return {
         'enabled': False,
         'interval_minutes': DEFAULT_INTERVAL_MINUTES,
+        'auto_download_added': False,
     }
 
 
@@ -92,6 +93,7 @@ def clean_settings(value: Any) -> dict[str, Any]:
         'interval_minutes': clamp_interval_minutes(
             base.get('interval_minutes')
         ),
+        'auto_download_added': bool(base.get('auto_download_added')),
     }
 
 
@@ -769,6 +771,7 @@ def sync_playlist(
         'name': name,
         'added': [],
         'removed': [],
+        'queued_added': 0,
         'changed': False,
         'first_run': False,
         'error': '',
@@ -821,7 +824,8 @@ def sync_playlist(
     result['removed'] = list(diff['removed'])
     result['changed'] = True
     try:
-        apply(name, diff['added'], diff['removed'])
+        queued = apply(name, diff['added'], diff['removed'])
+        result['queued_added'] = max(0, int(queued or 0))
     except Exception:  # noqa: BLE001 - reported, never raised
         logger.exception(
             'Spotify sync: applying changes for playlist {!r} failed', name
@@ -869,6 +873,7 @@ def run_sync(
         'playlists': [],
         'added': 0,
         'removed': 0,
+        'queued_added': 0,
         'changed': 0,
         'errors': 0,
         'skipped': 0,
@@ -918,6 +923,7 @@ def run_sync(
         summary['playlists'].append(result)
         summary['added'] += len(result['added'])
         summary['removed'] += len(result['removed'])
+        summary['queued_added'] += int(result.get('queued_added') or 0)
         summary['changed'] += 1 if result['changed'] else 0
         summary['errors'] += 1 if result['error'] else 0
         summary['skipped'] += 1 if result.get('skipped') else 0

@@ -1323,6 +1323,9 @@ export default {
     spotifySyncEnabled: 'Ενεργοποίηση συγχρονισμού Spotify',
     spotifySyncEnabledHint:
       'Ελέγχει τις λίστες ανά τακτά διαστήματα και εφαρμόζει τις αλλαγές κομματιών.',
+    spotifySyncAutoDownload: 'Αυτόματη λήψη νέων',
+    spotifySyncAutoDownloadHint:
+      'Μόνο τα κομμάτια που προστίθενται μετά την ενεργοποίηση μπαίνουν στην ουρά.',
     spotifySyncInterval: 'Διάστημα συγχρονισμού',
     spotifySyncIntervalHint:
       'Πόσο συχνά ελέγχεται κάθε λίστα. Μεγαλύτερο είναι πιο ευγενικό για το API.',

@@ -1308,6 +1308,9 @@ export default {
     spotifySyncEnabled: 'Spotify szinkron bekapcsolása',
     spotifySyncEnabledHint:
       'Rendszeres időközönként ellenőrzi a listákat és alkalmazza a számváltozásokat.',
+    spotifySyncAutoDownload: 'Új számok automatikus letöltése',
+    spotifySyncAutoDownloadHint:
+      'Csak a szinkronizálás bekapcsolása után hozzáadott számok kerülnek sorba.',
     spotifySyncInterval: 'Szinkron időköz',
     spotifySyncIntervalHint:
       'Milyen gyakran legyen ellenőrizve minden lista. A hosszabb kíméletesebb az API-hoz.',

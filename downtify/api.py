@@ -596,6 +596,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     'spotify_sync': {
         'enabled': False,
         'interval_minutes': spotify_sync.DEFAULT_INTERVAL_MINUTES,
+        'auto_download_added': False,
     },
 }
 
@@ -4237,6 +4238,65 @@ def _missing_tracks_for_playlist(
     )
     playlist_url = f'https://open.spotify.com/playlist/{sid}'
     return playlist_name, playlist_url, missing
+
+
+async def _queue_missing_for_spotify_playlist(
+    playlist_name: str, added_ids: list[str]
+) -> int:
+    """Queue only newly added Spotify tracks that are still missing."""
+
+    wanted = {str(track_id) for track_id in added_ids if track_id}
+    if not wanted or state.downloader is None:
+        return 0
+    from downtify import spotify_sync_api  # noqa: PLC0415
+
+    source = next(
+        (
+            row
+            for row in spotify_sync_api.sync_playlists()
+            if str(row.get('name') or '') == playlist_name
+        ),
+        None,
+    )
+    if source is None:
+        return 0
+    sid = str(source.get('spotify_id') or '')
+    name, playlist_url, missing = await asyncio.to_thread(
+        _missing_tracks_for_playlist, sid
+    )
+    selected: list[dict[str, Any]] = []
+    queued = set(state.download_jobs)
+    for track in missing:
+        track_id = normalize_spotify_track_id(track) or str(
+            track.get('song_id') or ''
+        )
+        song_id = str(track.get('song_id') or track_id)
+        if track_id in wanted and song_id not in queued:
+            selected.append(track)
+            queued.add(song_id)
+    if not selected:
+        return 0
+    batch_id: Optional[int] = None
+    if state.playlist_batch_store is not None:
+        batch_id = state.playlist_batch_store.start_batch(
+            sid, name, playlist_url, len(selected)
+        )
+    songs: list[dict[str, Any]] = []
+    for index, track in enumerate(selected):
+        song = dict(track)
+        song['downtify_playlist_url'] = playlist_url
+        song['downtify_playlist_name'] = name
+        song['downtify_spotify_playlist_id'] = sid
+        song['downtify_track_order'] = index
+        songs.append(song)
+    await _submit_playlist_batch(
+        songs,
+        playlist_url,
+        generate_m3u=True,
+        batch_id=batch_id,
+        playlist_name=name,
+    )
+    return len(songs)
 
 
 async def _submit_playlist_batch(
