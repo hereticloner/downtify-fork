@@ -548,6 +548,8 @@ export default {
     clearDay: 'Összes nap',
   },
   collections: {
+    removeItem: '{name} eltávolítása',
+    smartMayReturn: 'Az okos szabályok újra hozzáadhatják.',
     title: 'Gyűjtemények',
     placeholder: 'Új gyűjtemény neve',
     create: 'Létrehozás',

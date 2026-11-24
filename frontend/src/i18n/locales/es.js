@@ -551,6 +551,9 @@ export default {
     clearDay: 'Todos los días',
   },
   collections: {
+    removeItem: 'Quitar {name}',
+    smartMayReturn:
+      'Las reglas inteligentes pueden volver a añadir esta playlist.',
     title: 'Colecciones',
     placeholder: 'Nombre de la nueva colección',
     create: 'Crear',

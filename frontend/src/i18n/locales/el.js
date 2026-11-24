@@ -557,6 +557,8 @@ export default {
     clearDay: 'Όλες οι μέρες',
   },
   collections: {
+    removeItem: 'Αφαίρεση {name}',
+    smartMayReturn: 'Οι έξυπνοι κανόνες μπορεί να την προσθέσουν ξανά.',
     title: 'Συλλογές',
     placeholder: 'Όνομα νέας συλλογής',
     create: 'Δημιουργία',

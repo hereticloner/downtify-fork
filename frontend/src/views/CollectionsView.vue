@@ -28,143 +28,157 @@
     </div>
 
     <Transition name="fade" mode="out-in">
-    <div
-      v-if="loading"
-      class="grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
-      aria-busy="true"
-    >
       <div
-        v-for="n in 3"
-        :key="n"
-        class="flex flex-col border-r-2 border-b-2 border-line"
+        v-if="loading"
+        class="grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
+        aria-busy="true"
       >
-        <UiSkeleton class="aspect-[4/3]" />
-        <UiSkeleton class="m-3 h-4 w-1/2" />
-        <UiSkeleton class="mx-3 mb-3 h-3 w-1/3" />
-      </div>
-    </div>
-
-    <div v-else-if="error" class="border-b-2 border-line p-4">
-      <UiEmpty
-        icon="alert"
-        :title="t('library.loadFailed')"
-        :body="t('library.loadFailedHint')"
-      >
-        <UiButton icon="refresh" @click="load">{{
-          t('common.retry')
-        }}</UiButton>
-      </UiEmpty>
-    </div>
-
-    <div v-else-if="!collections.length" class="border-b-2 border-line p-4">
-      <UiEmpty icon="playlist" :title="t('collections.none')" />
-    </div>
-
-    <!-- Cluster grid: flush cards, a four-up mosaic cover each. -->
-    <div
-      v-else
-      class="stagger grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
-    >
-      <article
-        v-for="col in collections"
-        :key="col.name"
-        class="flex min-w-0 flex-col border-r-2 border-b-2 border-line transition-colors duration-200 hover:bg-surface-2 motion-reduce:transition-none"
-      >
-        <div class="relative border-b-2 border-line">
-          <CoverArt
-            :covers="collectionCoversFor(col)"
-            :name="col.name"
-            icon="playlist"
-            :letter-size="24"
-            :icon-size="28"
-            class="aspect-[4/3] w-full"
-          />
-          <UiBadge
-            v-if="col.rules?.length"
-            tone="accent"
-            class="absolute top-0 right-0 border-b border-l-2 border-line bg-surface"
-          >
-            {{ t('collections.smart') }}
-          </UiBadge>
-        </div>
-
-        <div class="flex items-stretch border-b border-line-2">
-          <h2
-            class="text-display min-w-0 flex-1 truncate px-3 py-2 text-[17px] font-bold"
-          >
-            {{ col.name }}
-          </h2>
-          <span
-            class="mono tabular flex shrink-0 items-center border-l border-line-2 px-3 text-faint"
-            >{{ col.playlists.length }}</span
-          >
-        </div>
-
-        <label
-          class="flex h-9 items-center border-b border-line-2 transition-colors duration-100 focus-within:border-accent"
+        <div
+          v-for="n in 3"
+          :key="n"
+          class="flex flex-col border-r-2 border-b-2 border-line"
         >
-          <span class="sr-only">{{ t('collections.addPlaylist') }}</span>
-          <input
-            v-model="col._add"
-            type="search"
-            list="collection-playlist-names"
-            :placeholder="t('collections.addPlaylist')"
-            class="h-full min-w-0 flex-1 bg-transparent px-3 text-[13px] outline-none placeholder:text-faint"
-            @keyup.enter="add(col)"
-          />
-        </label>
+          <UiSkeleton class="aspect-[4/3]" />
+          <UiSkeleton class="m-3 h-4 w-1/2" />
+          <UiSkeleton class="mx-3 mb-3 h-3 w-1/3" />
+        </div>
+      </div>
 
-        <div class="flex flex-1 flex-wrap content-start gap-1 px-3 py-2">
-          <template v-if="col.playlists.length">
-            <router-link
-              v-for="pl in col.playlists"
-              :key="pl"
-              :to="{ name: 'Playlist', query: { name: pl } }"
-              class="mono max-w-full truncate border border-line-2 px-1.5 py-1 text-muted transition-colors duration-100 hover:border-line hover:text-fg"
+      <div v-else-if="error" class="border-b-2 border-line p-4">
+        <UiEmpty
+          icon="alert"
+          :title="t('library.loadFailed')"
+          :body="t('library.loadFailedHint')"
+        >
+          <UiButton icon="refresh" @click="load">{{
+            t('common.retry')
+          }}</UiButton>
+        </UiEmpty>
+      </div>
+
+      <div v-else-if="!collections.length" class="border-b-2 border-line p-4">
+        <UiEmpty icon="playlist" :title="t('collections.none')" />
+      </div>
+
+      <!-- Cluster grid: flush cards, a four-up mosaic cover each. -->
+      <div
+        v-else
+        class="stagger grid border-l-2 border-line sm:grid-cols-2 xl:grid-cols-3"
+      >
+        <article
+          v-for="col in collections"
+          :key="col.name"
+          class="flex min-w-0 flex-col border-r-2 border-b-2 border-line transition-colors duration-200 hover:bg-surface-2 motion-reduce:transition-none"
+        >
+          <div class="relative border-b-2 border-line">
+            <CoverArt
+              :covers="collectionCoversFor(col)"
+              :name="col.name"
+              icon="playlist"
+              :letter-size="24"
+              :icon-size="28"
+              class="aspect-[4/3] w-full"
+            />
+            <UiBadge
+              v-if="col.rules?.length"
+              tone="accent"
+              class="absolute top-0 right-0 border-b border-l-2 border-line bg-surface"
             >
-              {{ pl }}
-            </router-link>
-          </template>
-          <span v-else class="text-[13px] text-faint">
-            {{ t('collections.empty') }}
-          </span>
-        </div>
-
-        <div class="flex items-stretch gap-1 border-t-2 border-line p-1">
-          <UiButton
-            v-if="missingMembers(col).length"
-            size="sm"
-            variant="ghost"
-            icon="download"
-            :loading="downloadingCollection === col.name"
-            @click="downloadMissing(col)"
-          >
-            {{ t('collections.downloadMissing', { count: missingCount(col) }) }}
-          </UiButton>
-          <div class="ml-auto flex items-center gap-1">
-            <UiIconButton
-              icon="sliders"
-              size="sm"
-              :label="t('collections.rules')"
-              :active="!!col.rules?.length"
-              @click="openRules(col)"
-            />
-            <UiIconButton
-              icon="pencil"
-              size="sm"
-              :label="t('collections.rename')"
-              @click="openRename(col)"
-            />
-            <UiIconButton
-              icon="trash"
-              size="sm"
-              :label="t('common.delete')"
-              @click="remove(col)"
-            />
+              {{ t('collections.smart') }}
+            </UiBadge>
           </div>
-        </div>
-      </article>
-    </div>
+
+          <div class="flex items-stretch border-b border-line-2">
+            <h2
+              class="text-display min-w-0 flex-1 truncate px-3 py-2 text-[17px] font-bold"
+            >
+              {{ col.name }}
+            </h2>
+            <span
+              class="mono tabular flex shrink-0 items-center border-l border-line-2 px-3 text-faint"
+              >{{ col.playlists.length }}</span
+            >
+          </div>
+
+          <label
+            class="flex h-9 items-center border-b border-line-2 transition-colors duration-100 focus-within:border-accent"
+          >
+            <span class="sr-only">{{ t('collections.addPlaylist') }}</span>
+            <input
+              v-model="col._add"
+              type="search"
+              list="collection-playlist-names"
+              :placeholder="t('collections.addPlaylist')"
+              class="h-full min-w-0 flex-1 bg-transparent px-3 text-[13px] outline-none placeholder:text-faint"
+              @keyup.enter="add(col)"
+            />
+          </label>
+
+          <div class="flex flex-1 flex-wrap content-start gap-1 px-3 py-2">
+            <template v-if="col.playlists.length">
+              <span
+                v-for="pl in col.playlists"
+                :key="pl"
+                class="inline-flex max-w-full items-stretch border border-line-2"
+              >
+                <router-link
+                  :to="{ name: 'Playlist', query: { name: pl } }"
+                  class="mono min-w-0 truncate px-1.5 py-1 text-muted transition-colors duration-100 hover:text-fg"
+                >
+                  {{ pl }}
+                </router-link>
+                <button
+                  type="button"
+                  class="mono shrink-0 border-l border-line-2 px-1.5 text-faint transition-colors duration-100 hover:bg-surface-2 hover:text-danger"
+                  :aria-label="t('collections.removeItem', { name: pl })"
+                  @click="removeMember(col, pl)"
+                >
+                  ×
+                </button>
+              </span>
+            </template>
+            <span v-else class="text-[13px] text-faint">
+              {{ t('collections.empty') }}
+            </span>
+          </div>
+
+          <div class="flex items-stretch gap-1 border-t-2 border-line p-1">
+            <UiButton
+              v-if="missingMembers(col).length"
+              size="sm"
+              variant="ghost"
+              icon="download"
+              :loading="downloadingCollection === col.name"
+              @click="downloadMissing(col)"
+            >
+              {{
+                t('collections.downloadMissing', { count: missingCount(col) })
+              }}
+            </UiButton>
+            <div class="ml-auto flex items-center gap-1">
+              <UiIconButton
+                icon="sliders"
+                size="sm"
+                :label="t('collections.rules')"
+                :active="!!col.rules?.length"
+                @click="openRules(col)"
+              />
+              <UiIconButton
+                icon="pencil"
+                size="sm"
+                :label="t('collections.rename')"
+                @click="openRename(col)"
+              />
+              <UiIconButton
+                icon="trash"
+                size="sm"
+                :label="t('common.delete')"
+                @click="remove(col)"
+              />
+            </div>
+          </div>
+        </article>
+      </div>
     </Transition>
 
     <datalist id="collection-playlist-names">
@@ -310,6 +324,7 @@ import {
   downloadCollectionMissing,
   editCollectionItems,
   listCollections,
+  removeCollectionItem,
   renameCollection,
   saveCollectionRules,
 } from '/src/model/collections'
@@ -431,6 +446,18 @@ async function add(col) {
     await editCollectionItems(col.name, { add: [col._add] })
     col._add = ''
     await load()
+  } catch (err) {
+    failed(err)
+  }
+}
+
+async function removeMember(col, playlist) {
+  try {
+    await removeCollectionItem(col.name, playlist)
+    await load()
+    if (col.rules?.length) {
+      ui.toast(t('collections.smartMayReturn'), { kind: 'info' })
+    }
   } catch (err) {
     failed(err)
   }

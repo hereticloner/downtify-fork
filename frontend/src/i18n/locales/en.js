@@ -536,6 +536,8 @@ export default {
     clearDay: 'All days',
   },
   collections: {
+    removeItem: 'Remove {name}',
+    smartMayReturn: 'Smart rules may add this playlist again.',
     title: 'Collections',
     placeholder: 'New collection name',
     create: 'Create',

@@ -548,6 +548,8 @@ export default {
     clearDay: 'Tüm günler',
   },
   collections: {
+    removeItem: '{name} üyesini çıkar',
+    smartMayReturn: 'Akıllı kurallar bu playlisti yeniden ekleyebilir.',
     title: 'Koleksiyonlar',
     placeholder: 'Yeni koleksiyon adı',
     create: 'Oluştur',

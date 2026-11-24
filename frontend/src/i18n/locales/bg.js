@@ -539,6 +539,8 @@ export default {
     clearDay: 'Всички дни',
   },
   collections: {
+    removeItem: 'Премахни {name}',
+    smartMayReturn: 'Умните правила може да я добавят отново.',
     title: 'Колекции',
     placeholder: 'Име на нова колекция',
     create: 'Създай',

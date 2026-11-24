@@ -566,6 +566,8 @@ export default {
     clearDay: 'Tous les jours',
   },
   collections: {
+    removeItem: 'Retirer {name}',
+    smartMayReturn: 'Les règles intelligentes peuvent la rajouter.',
     title: 'Collections',
     placeholder: 'Nom de la nouvelle collection',
     create: 'Créer',

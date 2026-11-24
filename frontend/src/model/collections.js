@@ -29,6 +29,10 @@ export async function editCollectionItems(
   return res.data
 }
 
+export async function removeCollectionItem(name, playlist) {
+  return editCollectionItems(name, { remove: [playlist] })
+}
+
 export async function deleteCollection(name) {
   const res = await API.deleteCollection(name)
   return res.data
