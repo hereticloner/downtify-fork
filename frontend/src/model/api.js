@@ -919,6 +919,36 @@ function setSettings(settings) {
   })
 }
 
+function listBackups() {
+  return API.get('/api/backups')
+}
+
+function createBackup() {
+  return API.post('/api/backups')
+}
+
+function deleteBackup(name) {
+  return API.delete(`/api/backups/${encodeURIComponent(name)}`)
+}
+
+function previewBackup(body) {
+  return API.post('/api/backups/restore', body)
+}
+
+function restoreBackup(body) {
+  return API.post('/api/backups/restore', body)
+}
+
+function uploadBackup(file) {
+  const form = new FormData()
+  form.append('file', file)
+  return API.post('/api/backups/upload', form)
+}
+
+function setBackupSchedule(schedule) {
+  return API.post('/api/backups/schedule', { schedule })
+}
+
 export default {
   downloadExclusions,
   excludeDownload,
@@ -1071,6 +1101,13 @@ export default {
   getSettings,
   suggestDirs,
   setSettings,
+  listBackups,
+  createBackup,
+  deleteBackup,
+  previewBackup,
+  restoreBackup,
+  uploadBackup,
+  setBackupSchedule,
   testNavidrome,
   testNotifications,
   spotifyMirrorDevices,

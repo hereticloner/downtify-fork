@@ -1252,6 +1252,7 @@
                 >
                   <ServerPortSetting />
                 </SettingGroup>
+                <BackupPanel />
               </template>
 
               <template v-else-if="section === 'apps'">
@@ -1384,6 +1385,7 @@ import UsersSettings from '/src/components/settings/UsersSettings.vue'
 import SettingGroup from '/src/components/settings/SettingGroup.vue'
 import SettingRow from '/src/components/settings/SettingRow.vue'
 import NotificationsPanel from '/src/components/settings/NotificationsPanel.vue'
+import BackupPanel from '/src/components/settings/BackupPanel.vue'
 import SourceOrder from '/src/components/settings/SourceOrder.vue'
 import LyricsOrder from '/src/components/settings/LyricsOrder.vue'
 import API from '/src/model/api'

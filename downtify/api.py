@@ -1073,6 +1073,7 @@ class AppState:
     settings: dict[str, Any] = dict(DEFAULT_SETTINGS)
     settings_path: Optional[Path] = None
     notification_store: Optional[notifications.NotificationStore] = None
+    backup_store: Optional[Any] = None
     cookies_store: Optional[CookiesStore] = None
     update_checker: Optional[UpdateChecker] = None
     loop: Optional[asyncio.AbstractEventLoop] = None

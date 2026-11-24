@@ -47,6 +47,8 @@ from downtify import (
     account_routes,
     api,
     auth_routes,
+    backup,
+    backup_schedule,
     download_failure_routes,
     download_policy_routes,
     mobile_routes,
@@ -58,6 +60,7 @@ from downtify import (
 )
 from downtify.activity import ActivityLog
 from downtify.auth import AuthMiddleware, AuthStore, auth_disabled_from_env
+from downtify.backup_routes import router as backup_router
 from downtify.cookies import CookiesStore
 from downtify.cover_art import extract_cover_art
 from downtify.cover_cache import CoverArtCache
@@ -794,6 +797,9 @@ def build_app() -> FastAPI:
         )
         if telegram_bot is not None:
             api.spawn_task(telegram_bot.run(), name='telegram-command-bot')
+        api.spawn_task(
+            backup_schedule.backup_schedule_loop(), name='backup-schedule-loop'
+        )
 
         yield
 
@@ -896,6 +902,7 @@ def build_app() -> FastAPI:
     api.state.notification_store = api.notifications.NotificationStore(
         DATABASE_DIR / 'notifications.json'
     )
+    api.state.backup_store = backup.BackupStore(DATABASE_DIR)
     api.state.settings = api._load_settings(settings_path)
 
     # Lives alongside settings.json in the /data volume so an uploaded
@@ -950,6 +957,7 @@ def build_app() -> FastAPI:
     )
     app.include_router(api.router)
     app.include_router(auth_routes.router)
+    app.include_router(backup_router)
     app.include_router(account_routes.router)
     app.include_router(download_failure_routes.router)
     app.include_router(playback_routes.router)

@@ -1074,6 +1074,7 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_m('DELETE'), r'^/api/discover/listens$', ADMIN),
         (_m('POST', 'PATCH', 'DELETE'), r'^/api/monitor/', ADMIN),
         (_ALL, r'^/api/(users|activity)(/|$)', ADMIN),
+        (_ALL, r'^/api/backups(/|$)', ADMIN),
     ]
 ]
 
