@@ -496,6 +496,20 @@ export default {
     showMore: 'Mostrar {count} más',
     statusQueued: 'En espera',
     statusPaused: 'En pausa',
+    selectItem: 'Seleccionar {name}',
+    selectAll: 'Seleccionar todas las descargas pendientes',
+    selectedCount: {
+      one: '{count} seleccionada',
+      other: '{count} seleccionadas',
+    },
+    selectedActions: 'Acciones de descargas seleccionadas',
+    priorityFor: 'Prioridad de {name}',
+    priorityNormal: 'Normal',
+    priorityHigh: 'Alta',
+    bulkPause: 'Pausar seleccionadas',
+    bulkResume: 'Reanudar seleccionadas',
+    bulkRemove: 'Quitar seleccionadas',
+    clearSelection: 'Limpiar selección',
     statusDone: 'Descargada',
     retry: 'Reintentar',
     remove: 'Quitar de la cola',
@@ -1102,6 +1116,20 @@ export default {
   },
   settings: {
     backupsTitle: 'Copias de seguridad',
+    queueControlTitle: 'Control de la cola de descarga',
+    queueControlHint:
+      'Define prioridades, pausa descargas pendientes y configura horas de silencio.',
+    queueQuietEnabled: 'Horas de silencio',
+    queueQuietEnabledHint:
+      'No iniciar descargas nuevas durante una ventana horaria local.',
+    queueQuietStart: 'Inicio',
+    queueQuietEnd: 'Fin',
+    queueQuietTimezone: 'Zona horaria',
+    queueQuietTimezoneHint: 'Zona IANA, por ejemplo Europe/Istanbul.',
+    queueQuietBehavior:
+      'Las descargas en curso terminan; las pendientes se reanudan al salir de la ventana.',
+    queueQuietSameTime:
+      'Inicio y fin deben diferir; horas iguales desactivan la ventana.',
     backupsHint:
       'Guarda dos copias locales de ajustes y metadatos. No incluye archivos de audio.',
     backupSecretWarning:
@@ -1944,6 +1972,8 @@ export default {
       other: '{count} canciones del CSV en cola',
     },
     watching: 'Vigilando {name}',
+    queueUpdated: 'Cola actualizada.',
+    queueActionFailed: 'No se pudo actualizar la cola.',
     actionFailed: 'Algo salió mal',
   },
   source: {

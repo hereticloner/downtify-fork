@@ -481,6 +481,17 @@ export default {
     showMore: 'Show {count} more',
     statusQueued: 'Waiting',
     statusPaused: 'Paused',
+    selectItem: 'Select {name}',
+    selectAll: 'Select all waiting downloads',
+    selectedCount: { one: '{count} selected', other: '{count} selected' },
+    selectedActions: 'Selected download actions',
+    priorityFor: 'Priority for {name}',
+    priorityNormal: 'Normal',
+    priorityHigh: 'High',
+    bulkPause: 'Pause selected',
+    bulkResume: 'Resume selected',
+    bulkRemove: 'Remove selected',
+    clearSelection: 'Clear selection',
     statusDone: 'Downloaded',
     retry: 'Retry',
     remove: 'Remove from queue',
@@ -1071,6 +1082,20 @@ export default {
   },
   settings: {
     backupsTitle: 'Backups',
+    queueControlTitle: 'Download queue control',
+    queueControlHint:
+      'Set priorities, pause waiting jobs and define quiet hours.',
+    queueQuietEnabled: 'Quiet hours',
+    queueQuietEnabledHint:
+      'Stop starting new downloads during a local-time window.',
+    queueQuietStart: 'Start',
+    queueQuietEnd: 'End',
+    queueQuietTimezone: 'Timezone',
+    queueQuietTimezoneHint: 'IANA timezone, for example Europe/Istanbul.',
+    queueQuietBehavior:
+      'Running downloads finish; waiting jobs resume after the window.',
+    queueQuietSameTime:
+      'Start and end must differ; equal times disable the window.',
     backupsHint:
       'Keep two local copies of settings and library metadata. Audio files are not included.',
     backupSecretWarning:
@@ -1884,6 +1909,8 @@ export default {
       other: 'Queued {count} tracks from the CSV',
     },
     watching: 'Watching {name}',
+    queueUpdated: 'Queue updated.',
+    queueActionFailed: "Couldn't update the queue.",
     actionFailed: 'Something went wrong',
   },
   source: {

@@ -511,6 +511,20 @@ export default {
     showMore: 'Afficher {count} de plus',
     statusQueued: 'En attente',
     statusPaused: 'En pause',
+    selectItem: 'Sélectionner {name}',
+    selectAll: 'Sélectionner tous les téléchargements en attente',
+    selectedCount: {
+      one: '{count} sélectionné',
+      other: '{count} sélectionnés',
+    },
+    selectedActions: 'Actions des téléchargements sélectionnés',
+    priorityFor: 'Priorité de {name}',
+    priorityNormal: 'Normale',
+    priorityHigh: 'Haute',
+    bulkPause: 'Mettre en pause',
+    bulkResume: 'Reprendre',
+    bulkRemove: 'Retirer',
+    clearSelection: 'Effacer la sélection',
     statusDone: 'Téléchargé',
     retry: 'Réessayer',
     remove: 'Retirer de la file',
@@ -1123,6 +1137,20 @@ export default {
   },
   settings: {
     backupsTitle: 'Sauvegardes',
+    queueControlTitle: 'Contrôle de la file de téléchargement',
+    queueControlHint:
+      'Définissez les priorités, mettez en pause les téléchargements en attente et configurez les heures calmes.',
+    queueQuietEnabled: 'Heures calmes',
+    queueQuietEnabledHint:
+      'Ne pas démarrer de téléchargement pendant une plage horaire locale.',
+    queueQuietStart: 'Début',
+    queueQuietEnd: 'Fin',
+    queueQuietTimezone: 'Fuseau horaire',
+    queueQuietTimezoneHint: 'Fuseau IANA, par exemple Europe/Istanbul.',
+    queueQuietBehavior:
+      'Les téléchargements en cours se terminent ; les autres reprennent après la plage.',
+    queueQuietSameTime:
+      'Le début et la fin doivent différer ; des heures identiques désactivent la plage.',
     backupsHint:
       'Conservez deux copies locales des réglages et métadonnées. Les fichiers audio ne sont pas inclus.',
     backupSecretWarning:
@@ -1964,6 +1992,8 @@ export default {
       other: '{count} titres du CSV ajoutés à la file',
     },
     watching: 'Surveillance de {name}',
+    queueUpdated: 'File mise à jour.',
+    queueActionFailed: 'Impossible de mettre à jour la file.',
     actionFailed: 'Une erreur est survenue',
   },
   source: {

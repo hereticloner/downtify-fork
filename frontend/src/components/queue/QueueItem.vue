@@ -3,6 +3,20 @@
     class="flex flex-wrap items-center gap-3 border-b-2 border-line-2 px-3 transition-colors duration-100 sm:px-4"
     :class="[rowClass, compact ? 'min-h-20 py-2' : 'min-h-22 py-3']"
   >
+    <label
+      v-if="selectionActive && item.state === 'queued'"
+      class="flex size-11 shrink-0 items-center justify-center"
+    >
+      <input
+        type="checkbox"
+        :checked="selected"
+        class="size-4 accent-accent"
+        @change="$emit('select', !selected)"
+      />
+      <span class="sr-only">{{
+        t('queue.selectItem', { name: song.name })
+      }}</span>
+    </label>
     <CoverArt
       :src="deezerImage(song.cover_url)"
       :name="song.album_name || song.name"
@@ -52,6 +66,29 @@
     </div>
 
     <div class="flex shrink-0 items-center gap-1">
+      <div
+        v-if="auth.isAdmin.value && item.state === 'queued'"
+        role="group"
+        :aria-label="t('queue.priorityFor', { name: song.name })"
+        class="flex items-center"
+      >
+        <UiButton
+          v-for="priority in priorities"
+          :key="priority"
+          size="sm"
+          :variant="item.priority === priority ? 'primary' : 'ghost'"
+          :aria-pressed="item.priority === priority ? 'true' : 'false'"
+          @click="$emit('priority', priority)"
+        >
+          {{
+            t(
+              priority === 'high'
+                ? 'queue.priorityHigh'
+                : 'queue.priorityNormal'
+            )
+          }}
+        </UiButton>
+      </div>
       <template v-if="item.state === 'done' && item.filename">
         <UiIconButton
           icon="play"
@@ -149,7 +186,11 @@ import { useI18n } from '/src/i18n'
 const props = defineProps({
   item: { type: Object, required: true },
   compact: { type: Boolean, default: false },
+  selected: { type: Boolean, default: false },
+  selectionActive: { type: Boolean, default: false },
 })
+const emit = defineEmits(['select', 'priority'])
+const priorities = ['normal', 'high']
 
 const { t } = useI18n()
 // Codes the server sends for songs it won't download (download policy,
@@ -190,6 +231,7 @@ const tech = computed(() => {
   const item = props.item
   if (item.state === 'done') return item.filename ? saveName(item.filename) : ''
   if (item.state === 'active' || item.state === 'failed') return item.message
+  if (item.web_status === 'Paused') return t('queue.statusPaused')
   return queuePause.paused.value
     ? t('queue.statusPaused')
     : t('queue.statusQueued')

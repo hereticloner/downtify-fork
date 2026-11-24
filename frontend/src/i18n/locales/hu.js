@@ -493,6 +493,17 @@ export default {
     showMore: 'Még {count} megjelenítése',
     statusQueued: 'Várakozik',
     statusPaused: 'Szüneteltetve',
+    selectItem: '{name} kiválasztása',
+    selectAll: 'Minden várakozó letöltés kiválasztása',
+    selectedCount: { one: '{count} kiválasztva', other: '{count} kiválasztva' },
+    selectedActions: 'Kiválasztott letöltések műveletei',
+    priorityFor: 'Prioritás: {name}',
+    priorityNormal: 'Normál',
+    priorityHigh: 'Magas',
+    bulkPause: 'Kiválasztottak szüneteltetése',
+    bulkResume: 'Kiválasztottak folytatása',
+    bulkRemove: 'Kiválasztottak eltávolítása',
+    clearSelection: 'Kiválasztás törlése',
     statusDone: 'Letöltve',
     retry: 'Újra',
     remove: 'Eltávolítás a sorból',
@@ -1096,6 +1107,20 @@ export default {
   },
   settings: {
     backupsTitle: 'Biztonsági mentések',
+    queueControlTitle: 'Letöltési sor vezérlése',
+    queueControlHint:
+      'Állítson be prioritásokat, szüneteltessen várakozó letöltéseket és adjon meg csendes órákat.',
+    queueQuietEnabled: 'Csendes órák',
+    queueQuietEnabledHint:
+      'Ne indítson új letöltést a helyi időpont szerinti ablakban.',
+    queueQuietStart: 'Kezdet',
+    queueQuietEnd: 'Vége',
+    queueQuietTimezone: 'Időzóna',
+    queueQuietTimezoneHint: 'IANA időzóna, például Europe/Istanbul.',
+    queueQuietBehavior:
+      'A futó letöltések befejeződnek; a várakozók az ablak után folytatódnak.',
+    queueQuietSameTime:
+      'A kezdet és a vég különböző kell legyen; azonos időpontok kikapcsolják az ablakot.',
     backupsHint:
       'Két helyi másolat a beállításokról és könyvtár-metaadatokról. A hangfájlok nincsenek benne.',
     backupSecretWarning:
@@ -1931,6 +1956,8 @@ export default {
       other: '{count} szám sorba állítva a CSV-ből',
     },
     watching: '{name} figyelése',
+    queueUpdated: 'A sor frissítve.',
+    queueActionFailed: 'A sor nem frissíthető.',
     actionFailed: 'Hiba történt',
   },
   source: {

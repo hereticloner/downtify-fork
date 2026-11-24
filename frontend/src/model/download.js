@@ -10,6 +10,7 @@ import { friendlyError } from '/src/lib/errors'
 
 const STATUS = {
   QUEUED: 'In Queue',
+  PAUSED: 'Paused',
   DOWNLOADING: 'Downloading...',
   DOWNLOADED: 'Done',
   ERROR: 'Error',
@@ -40,6 +41,7 @@ class DownloadItem {
     this.progress = 0
     this.message = ''
     this.provider = ''
+    this.priority = 'normal'
     this.web_download_url = null
     this.filename = null
     this.updatedAt = Date.now()
@@ -56,6 +58,9 @@ class DownloadItem {
   setDownloading() {
     this.setStatus(STATUS.DOWNLOADING)
   }
+  setPaused() {
+    this.setStatus(STATUS.PAUSED)
+  }
   setDownloaded() {
     this.progress = 100
     this.setStatus(STATUS.DOWNLOADED)
@@ -68,6 +73,7 @@ class DownloadItem {
     this.progress = 0
     this.message = ''
     this.provider = ''
+    this.priority = 'normal'
     this.web_download_url = null
     this.filename = null
     this.updatedAt = Date.now()
@@ -85,7 +91,9 @@ class DownloadItem {
     this.filename = name
   }
   isQueued() {
-    return this.web_status === STATUS.QUEUED
+    return (
+      this.web_status === STATUS.QUEUED || this.web_status === STATUS.PAUSED
+    )
   }
   isDownloading() {
     return this.web_status === STATUS.DOWNLOADING
@@ -123,6 +131,7 @@ class DownloadItem {
 
 function applyServerJob(item, job) {
   if (job.provider) item.provider = job.provider
+  item.priority = job.priority === 'high' ? 'high' : 'normal'
   item.message = job.message || ''
   item.progress = job.progress || 0
   if (job.status === 'done') {
@@ -132,6 +141,8 @@ function applyServerJob(item, job) {
     item.setError()
   } else if (job.status === 'downloading') {
     item.setDownloading()
+  } else if (job.status === 'paused') {
+    item.setPaused()
   } else {
     item.setStatus(STATUS.QUEUED)
   }
@@ -238,6 +249,9 @@ API.onMessage((data) => {
   } else if (data.status === 'queued') {
     item.wsUpdate(data)
     item.setStatus(STATUS.QUEUED)
+  } else if (data.status === 'paused') {
+    item.wsUpdate(data)
+    item.setPaused()
   } else {
     item.wsUpdate(data)
     item.setDownloading()

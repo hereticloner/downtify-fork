@@ -502,6 +502,17 @@ export default {
     showMore: 'Εμφάνιση {count} ακόμα',
     statusQueued: 'Σε αναμονή',
     statusPaused: 'Σε παύση',
+    selectItem: 'Επιλογή {name}',
+    selectAll: 'Επιλογή όλων των εκκρεμών λήψεων',
+    selectedCount: { one: '{count} επιλεγμένο', other: '{count} επιλεγμένα' },
+    selectedActions: 'Ενέργειες επιλεγμένων λήψεων',
+    priorityFor: 'Προτεραιότητα για {name}',
+    priorityNormal: 'Κανονική',
+    priorityHigh: 'Υψηλή',
+    bulkPause: 'Παύση επιλεγμένων',
+    bulkResume: 'Συνέχιση επιλεγμένων',
+    bulkRemove: 'Αφαίρεση επιλεγμένων',
+    clearSelection: 'Καθαρισμός επιλογής',
     statusDone: 'Ολοκληρώθηκε',
     retry: 'Επανάληψη',
     remove: 'Αφαίρεση από την ουρά',
@@ -1106,6 +1117,20 @@ export default {
   },
   settings: {
     backupsTitle: 'Αντίγραφα ασφαλείας',
+    queueControlTitle: 'Έλεγχος ουράς λήψεων',
+    queueControlHint:
+      'Ορίστε προτεραιότητες, διακόψτε εκκρεμείς λήψεις και ρυθμίστε ώρες ησυχίας.',
+    queueQuietEnabled: 'Ώρες ησυχίας',
+    queueQuietEnabledHint:
+      'Να μην ξεκινούν νέες λήψεις κατά τη διάρκεια ενός τοπικού χρονικού παραθύρου.',
+    queueQuietStart: 'Έναρξη',
+    queueQuietEnd: 'Λήξη',
+    queueQuietTimezone: 'Ζώνη ώρας',
+    queueQuietTimezoneHint: 'Ζώνη IANA, π.χ. Europe/Istanbul.',
+    queueQuietBehavior:
+      'Οι τρέχουσες λήψεις ολοκληρώνονται· οι εκκρεμείς συνεχίζουν μετά το παράθυρο.',
+    queueQuietSameTime:
+      'Η έναρξη και η λήξη πρέπει να διαφέρουν· ίδιες ώρες απενεργοποιούν το παράθυρο.',
     backupsHint:
       'Διατήρηση δύο τοπικών αντιγράφων ρυθμίσεων και metadata. Τα αρχεία ήχου δεν περιλαμβάνονται.',
     backupSecretWarning:
@@ -1949,6 +1974,8 @@ export default {
       other: '{count} κομμάτια από το CSV μπήκαν στην ουρά',
     },
     watching: 'Παρακολούθηση {name}',
+    queueUpdated: 'Η ουρά ενημερώθηκε.',
+    queueActionFailed: 'Δεν ήταν δυνατή η ενημέρωση της ουράς.',
     actionFailed: 'Κάτι πήγε στραβά',
   },
   source: {

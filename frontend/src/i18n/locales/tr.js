@@ -492,6 +492,17 @@ export default {
     showMore: '{count} tane daha göster',
     statusQueued: 'Bekliyor',
     statusPaused: 'Duraklatıldı',
+    selectItem: '{name} öğesini seç',
+    selectAll: 'Bekleyen tüm indirmeleri seç',
+    selectedCount: { one: '{count} seçili', other: '{count} seçili' },
+    selectedActions: 'Seçili indirme işlemleri',
+    priorityFor: '{name} önceliği',
+    priorityNormal: 'Normal',
+    priorityHigh: 'Yüksek',
+    bulkPause: 'Seçilenleri duraklat',
+    bulkResume: 'Seçilenleri sürdür',
+    bulkRemove: 'Seçilenleri kaldır',
+    clearSelection: 'Seçimi temizle',
     statusDone: 'İndirildi',
     retry: 'Tekrar dene',
     remove: 'Kuyruktan kaldır',
@@ -1098,6 +1109,19 @@ export default {
   },
   settings: {
     backupsTitle: 'Yedekler',
+    queueControlTitle: 'İndirme kuyruğu kontrolü',
+    queueControlHint:
+      'Öncelik belirle, bekleyen işleri duraklat ve sessiz saatleri tanımla.',
+    queueQuietEnabled: 'Sessiz saatler',
+    queueQuietEnabledHint: 'Yerel saat penceresinde yeni indirmeleri başlatma.',
+    queueQuietStart: 'Başlangıç',
+    queueQuietEnd: 'Bitiş',
+    queueQuietTimezone: 'Saat dilimi',
+    queueQuietTimezoneHint: 'IANA saat dilimi, örneğin Europe/Istanbul.',
+    queueQuietBehavior:
+      'Çalışan indirmeler biter; bekleyen işler pencere sonunda sürer.',
+    queueQuietSameTime:
+      'Başlangıç ve bitiş farklı olmalı; eşit saatler pencereyi kapatır.',
     backupsHint:
       'Ayarların ve kütüphane metadata’sının iki yerel kopyasını tut. Ses dosyaları dahil değil.',
     backupSecretWarning:
@@ -1922,6 +1946,8 @@ export default {
       other: 'CSV’den {count} parça kuyruğa alındı',
     },
     watching: '{name} izleniyor',
+    queueUpdated: 'Kuyruk güncellendi.',
+    queueActionFailed: 'Kuyruk güncellenemedi.',
     actionFailed: 'Bir şeyler ters gitti',
   },
   source: {

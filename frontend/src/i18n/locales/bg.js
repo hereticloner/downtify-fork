@@ -485,6 +485,17 @@ export default {
     showMore: 'Покажи още {count}',
     statusQueued: 'Чака',
     statusPaused: 'На пауза',
+    selectItem: 'Избор на {name}',
+    selectAll: 'Избор на всички чакащи изтегляния',
+    selectedCount: { one: '{count} избрано', other: '{count} избрани' },
+    selectedActions: 'Действия за избраните изтегляния',
+    priorityFor: 'Приоритет за {name}',
+    priorityNormal: 'Нормален',
+    priorityHigh: 'Висок',
+    bulkPause: 'Пауза на избраните',
+    bulkResume: 'Продължаване на избраните',
+    bulkRemove: 'Премахване на избраните',
+    clearSelection: 'Изчистване на избора',
     statusDone: 'Изтеглено',
     retry: 'Опитай отново',
     remove: 'Премахни от опашката',
@@ -1086,6 +1097,20 @@ export default {
   },
   settings: {
     backupsTitle: 'Резервни копия',
+    queueControlTitle: 'Управление на опашката за изтегляне',
+    queueControlHint:
+      'Задайте приоритети, спрете чакащите изтегляния и настройте тихи часове.',
+    queueQuietEnabled: 'Тихи часове',
+    queueQuietEnabledHint:
+      'Да не се стартират нови изтегляния в местния часови прозорец.',
+    queueQuietStart: 'Начало',
+    queueQuietEnd: 'Край',
+    queueQuietTimezone: 'Часова зона',
+    queueQuietTimezoneHint: 'IANA часова зона, например Europe/Istanbul.',
+    queueQuietBehavior:
+      'Текущите изтегляния завършват; чакащите продължават след прозореца.',
+    queueQuietSameTime:
+      'Началото и краят трябва да са различни; равните часове изключват прозореца.',
     backupsHint:
       'Запазва две местни копии на настройките и metadataта. Аудио файловете не са включени.',
     backupSecretWarning:
@@ -1915,6 +1940,8 @@ export default {
       other: '{count} песни от CSV са в опашката',
     },
     watching: 'Следене на {name}',
+    queueUpdated: 'Опашката е обновена.',
+    queueActionFailed: 'Опашката не може да бъде обновена.',
     actionFailed: 'Нещо се обърка',
   },
   source: {

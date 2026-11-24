@@ -82,6 +82,68 @@
 
     <UiTabs :items="tabs" :model-value="tab" />
 
+    <div
+      v-if="auth.isAdmin.value && someSelected"
+      role="group"
+      :aria-label="t('queue.selectedActions')"
+      class="flex flex-wrap items-center gap-2 border-2 border-line bg-surface-2 p-3"
+    >
+      <span role="status" class="me-auto text-[13px] font-medium">
+        {{ t('queue.selectedCount', { count: selectedIds.length }) }}
+      </span>
+      <UiButton
+        size="sm"
+        variant="secondary"
+        :disabled="queueBusy"
+        @click="setSelectedPriority('high')"
+      >
+        {{ t('queue.priorityHigh') }}
+      </UiButton>
+      <UiButton
+        size="sm"
+        variant="secondary"
+        :disabled="queueBusy"
+        @click="setSelectedPriority('normal')"
+      >
+        {{ t('queue.priorityNormal') }}
+      </UiButton>
+      <UiButton
+        size="sm"
+        variant="secondary"
+        icon="pause"
+        :disabled="queueBusy || !canPauseSelected"
+        @click="bulkAction('pause')"
+      >
+        {{ t('queue.bulkPause') }}
+      </UiButton>
+      <UiButton
+        size="sm"
+        variant="secondary"
+        icon="play"
+        :disabled="queueBusy || !canResumeSelected"
+        @click="bulkAction('resume')"
+      >
+        {{ t('queue.bulkResume') }}
+      </UiButton>
+      <UiButton
+        size="sm"
+        variant="danger"
+        icon="trash"
+        :disabled="queueBusy"
+        @click="bulkAction('remove')"
+      >
+        {{ t('queue.bulkRemove') }}
+      </UiButton>
+      <UiButton
+        size="sm"
+        variant="ghost"
+        :disabled="queueBusy"
+        @click="selected.clear()"
+      >
+        {{ t('queue.clearSelection') }}
+      </UiButton>
+    </div>
+
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div class="flex min-w-0 flex-col">
         <UiEmpty
@@ -113,6 +175,19 @@
           <div
             class="flex h-10 items-stretch border-2 border-b-0 border-line bg-surface-2"
           >
+            <label
+              v-if="auth.isAdmin.value && selectableIds.length"
+              class="flex size-11 shrink-0 items-center justify-center border-r-2 border-line-2"
+            >
+              <input
+                type="checkbox"
+                :checked="allSelected"
+                :indeterminate="someSelected && !allSelected"
+                class="size-4 accent-accent"
+                @change="toggleSelectAll"
+              />
+              <span class="sr-only">{{ t('queue.selectAll') }}</span>
+            </label>
             <span class="eyebrow flex min-w-0 flex-1 items-center px-3 text-fg">
               {{ tabs.find((entry) => entry.id === tab)?.label }}
             </span>
@@ -141,6 +216,10 @@
                 :compact="
                   row.item.state === 'queued' || row.item.state === 'done'
                 "
+                :selected="selected.has(row.item.key)"
+                :selection-active="auth.isAdmin.value"
+                @select="toggleSelected"
+                @priority="setPriority"
               />
             </div>
           </div>
@@ -270,7 +349,14 @@ import {
   loadIncompletePlaylists,
 } from '/src/model/incompletePlaylists'
 import { useUi } from '/src/model/ui'
+import API from '/src/model/api'
 import { queueRowEstimate } from '/src/lib/queueList'
+import {
+  queueBulkRequest,
+  queuePriorityRequest,
+  selectableQueueIds,
+  sortQueueItems,
+} from '/src/lib/queueControl'
 import { shouldJumpToActive } from '/src/lib/queueTab'
 import { friendlyError } from '/src/lib/errors'
 import { useI18n } from '/src/i18n'
@@ -286,6 +372,8 @@ const library = useLibrary()
 const ui = useUi()
 const listRoot = ref(null)
 const scrollMargin = ref(0)
+const selected = ref(new Set())
+const queueBusy = ref(false)
 
 syncQueueFromServer().catch(() => {})
 queuePause.refresh().catch(() => {})
@@ -336,14 +424,39 @@ const tabs = computed(() =>
 const ORDER = { active: 0, failed: 1, queued: 2, done: 3 }
 
 const items = computed(() => {
+  const ordered = sortQueueItems(queue.value)
   if (tab.value === 'all') {
-    return [...queue.value].sort((a, b) => ORDER[a.state] - ORDER[b.state])
+    return ordered.sort((a, b) => ORDER[a.state] - ORDER[b.state])
   }
-  const list = queue.value.filter((item) => item.state === tab.value)
+  const list = ordered.filter((item) => item.state === tab.value)
   // Newest finished first.
   return tab.value === 'done'
     ? list.sort((a, b) => b.updatedAt - a.updatedAt)
     : list
+})
+
+const selectableIds = computed(() => selectableQueueIds(items.value))
+const selectedIds = computed(() => [...selected.value])
+const selectedItems = computed(() =>
+  queue.value.filter((item) => selected.value.has(item.key))
+)
+const allSelected = computed(
+  () =>
+    selectableIds.value.length > 0 &&
+    selectableIds.value.every((id) => selected.value.has(id))
+)
+const someSelected = computed(() => selectedIds.value.length > 0)
+const canPauseSelected = computed(() =>
+  selectedItems.value.some((item) => item.web_status !== 'Paused')
+)
+const canResumeSelected = computed(() =>
+  selectedItems.value.some((item) => item.web_status === 'Paused')
+)
+
+watch(selectableIds, (ids) => {
+  const allowed = new Set(ids)
+  const kept = [...selected.value].filter((id) => allowed.has(id))
+  if (kept.length !== selected.value.size) selected.value = new Set(kept)
 })
 
 const virtualizer = useWindowVirtualizer(
@@ -459,6 +572,75 @@ watch(
 )
 
 onMounted(loadIncomplete)
+
+function toggleSelected(songId) {
+  const next = new Set(selected.value)
+  if (next.has(songId)) next.delete(songId)
+  else next.add(songId)
+  selected.value = next
+}
+
+function toggleSelectAll() {
+  selected.value = allSelected.value ? new Set() : new Set(selectableIds.value)
+}
+
+async function refreshQueue() {
+  await syncQueueFromServer()
+}
+
+async function setSelectedPriority(priority) {
+  if (!selectedIds.value.length) return
+  queueBusy.value = true
+  try {
+    await API.setQueuePriority(
+      queuePriorityRequest(selectedIds.value, priority)
+    )
+    await refreshQueue()
+    ui.toast(t('toast.queueUpdated'), { kind: 'success' })
+  } catch (err) {
+    ui.toast(friendlyError(t, err, 'toast.queueActionFailed'), {
+      kind: 'error',
+    })
+  } finally {
+    queueBusy.value = false
+  }
+}
+
+async function setPriority(item, priority) {
+  if (item.priority === priority) return
+  queueBusy.value = true
+  try {
+    await API.setQueuePriority(queuePriorityRequest([item.key], priority))
+    await refreshQueue()
+    ui.toast(t('toast.queueUpdated'), { kind: 'success' })
+  } catch (err) {
+    ui.toast(friendlyError(t, err, 'toast.queueActionFailed'), {
+      kind: 'error',
+    })
+  } finally {
+    queueBusy.value = false
+  }
+}
+
+async function bulkAction(action) {
+  if (!selectedIds.value.length) return
+  queueBusy.value = true
+  try {
+    await API.bulkQueueAction(queueBulkRequest(action, selectedIds.value))
+    if (action === 'remove') {
+      for (const item of selectedItems.value) tracker.removeSong(item.song)
+      selected.value = new Set()
+    }
+    await refreshQueue()
+    ui.toast(t('toast.queueUpdated'), { kind: 'success' })
+  } catch (err) {
+    ui.toast(friendlyError(t, err, 'toast.queueActionFailed'), {
+      kind: 'error',
+    })
+  } finally {
+    queueBusy.value = false
+  }
+}
 
 async function toggleQueue(change) {
   try {

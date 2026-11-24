@@ -819,6 +819,14 @@ function resumeQueue() {
   return API.post('/api/queue/resume')
 }
 
+function setQueuePriority(payload) {
+  return API.post('/api/queue/priority', payload)
+}
+
+function bulkQueueAction(payload) {
+  return API.post('/api/queue/bulk', payload)
+}
+
 // ── Settings ─────────────────────────────────────────────────────────
 function getCookiesStatus() {
   return API.get('/api/cookies')
@@ -1098,6 +1106,8 @@ export default {
   getQueueState,
   pauseQueue,
   resumeQueue,
+  setQueuePriority,
+  bulkQueueAction,
   getSettings,
   suggestDirs,
   setSettings,

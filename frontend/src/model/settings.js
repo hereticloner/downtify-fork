@@ -9,6 +9,7 @@ import {
   blankNotificationSettings,
   mergeNotificationSettings,
 } from '/src/lib/notificationSettings'
+import { blankQueueControl, mergeQueueControl } from '/src/lib/queueControl'
 
 const settings = ref({
   audio_providers: ['youtube-music'],
@@ -42,6 +43,7 @@ const settings = ref({
     api_version: '1.16.1',
   },
   notifications: blankNotificationSettings(),
+  queue_control: blankQueueControl(),
   scrobbling: {
     enabled: false,
     lastfm_enabled: false,
@@ -238,6 +240,7 @@ function loadServerSettings() {
         ...rest,
         navidrome: { ...settings.value.navidrome, ...(rest.navidrome || {}) },
         notifications: mergeNotificationSettings(rest.notifications),
+        queue_control: mergeQueueControl(rest.queue_control),
         scrobbling: {
           ...settings.value.scrobbling,
           ...(rest.scrobbling || {}),
@@ -335,6 +338,7 @@ async function saveSettings() {
         ...settings.value.notifications,
         ...(rest.notifications || {}),
       },
+      queue_control: mergeQueueControl(rest.queue_control),
       scrobbling: {
         ...settings.value.scrobbling,
         ...(rest.scrobbling || {}),

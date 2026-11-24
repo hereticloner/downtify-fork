@@ -492,6 +492,20 @@ export default {
     showMore: 'Mostrar mais {count}',
     statusQueued: 'Aguardando',
     statusPaused: 'Pausado',
+    selectItem: 'Selecionar {name}',
+    selectAll: 'Selecionar todas as descargas pendentes',
+    selectedCount: {
+      one: '{count} selecionada',
+      other: '{count} selecionadas',
+    },
+    selectedActions: 'Ações das descargas selecionadas',
+    priorityFor: 'Prioridade de {name}',
+    priorityNormal: 'Normal',
+    priorityHigh: 'Alta',
+    bulkPause: 'Pausar selecionadas',
+    bulkResume: 'Retomar selecionadas',
+    bulkRemove: 'Remover selecionadas',
+    clearSelection: 'Limpar seleção',
     statusDone: 'Baixado',
     retry: 'Tentar de novo',
     remove: 'Remover da fila',
@@ -1095,6 +1109,20 @@ export default {
   },
   settings: {
     backupsTitle: 'Backups',
+    queueControlTitle: 'Controle da fila de download',
+    queueControlHint:
+      'Defina prioridades, pause downloads pendentes e configure horários silenciosos.',
+    queueQuietEnabled: 'Horários silenciosos',
+    queueQuietEnabledHint:
+      'Não iniciar novos downloads durante uma janela horária local.',
+    queueQuietStart: 'Início',
+    queueQuietEnd: 'Fim',
+    queueQuietTimezone: 'Fuso horário',
+    queueQuietTimezoneHint: 'Fuso IANA, por exemplo Europe/Istanbul.',
+    queueQuietBehavior:
+      'Downloads em andamento terminam; os pendentes retomam após a janela.',
+    queueQuietSameTime:
+      'Início e fim devem diferir; horários iguais desativam a janela.',
     backupsHint:
       'Mantenha duas cópias locais das configurações e metadados. Os áudios não são incluídos.',
     backupSecretWarning:
@@ -1924,6 +1952,8 @@ export default {
       other: '{count} faixas do CSV na fila',
     },
     watching: 'Monitorando {name}',
+    queueUpdated: 'Fila atualizada.',
+    queueActionFailed: 'Não foi possível atualizar a fila.',
     actionFailed: 'Algo deu errado',
   },
   source: {

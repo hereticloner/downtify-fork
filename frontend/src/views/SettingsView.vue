@@ -1253,6 +1253,7 @@
                   <ServerPortSetting />
                 </SettingGroup>
                 <BackupPanel />
+                <QueueControlPanel :config="sm.settings.queue_control" />
               </template>
 
               <template v-else-if="section === 'apps'">
@@ -1386,6 +1387,7 @@ import SettingGroup from '/src/components/settings/SettingGroup.vue'
 import SettingRow from '/src/components/settings/SettingRow.vue'
 import NotificationsPanel from '/src/components/settings/NotificationsPanel.vue'
 import BackupPanel from '/src/components/settings/BackupPanel.vue'
+import QueueControlPanel from '/src/components/settings/QueueControlPanel.vue'
 import SourceOrder from '/src/components/settings/SourceOrder.vue'
 import LyricsOrder from '/src/components/settings/LyricsOrder.vue'
 import API from '/src/model/api'
