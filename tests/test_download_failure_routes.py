@@ -83,6 +83,36 @@ def test_retry_queues_without_resolving_the_failure(client, monkeypatch):
     assert api.state.download_failures.list()[0]['resolved_at'] is None
 
 
+def test_reader_cannot_retry_or_clear(client):
+    user = api.state.auth.users.create('reader', PASSWORD)
+    _device, token = api.state.auth.create_device('phone', user_id=user['id'])
+    headers = {'Authorization': f'Bearer {token}'}
+
+    assert (
+        client.post(
+            '/api/download-failures/retry',
+            json={'song_id': 'track-1'},
+            headers=headers,
+        ).status_code
+        == 403
+    )
+    assert (
+        client.delete('/api/download-failures', headers=headers).status_code
+        == 403
+    )
+
+
+def test_retry_rejects_a_song_already_queued(client):
+    _failure(client)
+    api.state.download_jobs['track-1'] = {'status': 'queued'}
+
+    response = client.post(
+        '/api/download-failures/retry', json={'song_id': 'track-1'}
+    )
+
+    assert response.status_code == 409
+
+
 def test_clear_removes_only_resolved_failures(client):
     store = api.state.download_failures
     _failure(client)

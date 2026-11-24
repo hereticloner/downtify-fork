@@ -22,12 +22,12 @@ async function load() {
 
 async function retry(songId) {
   await API.retryDownloadFailure(songId)
-  dismiss(songId)
+  await load()
 }
 
 async function clear() {
   await API.clearDownloadFailures()
-  items.value = []
+  await load()
 }
 
 function dismiss(songId) {

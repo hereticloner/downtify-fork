@@ -18,6 +18,7 @@ import pytest
 from fastapi import HTTPException
 
 from downtify import api, spotify_sync, spotify_sync_api
+from downtify.download_queue import PendingDownload, PendingDownloads
 from downtify.spotify_sync import (
     DEFAULT_INTERVAL_MINUTES,
     MAX_INTERVAL_MINUTES,
@@ -590,6 +591,45 @@ def test_auto_download_helper_skips_tracks_already_queued(monkeypatch):
     assert (
         asyncio.run(api._queue_missing_for_spotify_playlist('Mix', ['b'])) == 0
     )
+
+
+def test_auto_download_merges_a_second_playlist_context(tmp_path, monkeypatch):
+    pending = PendingDownloads(tmp_path / 'library.db')
+    pending.add([
+        PendingDownload(
+            song_id='b',
+            song={'song_id': 'b', 'name': 'B'},
+            options={'playlist_name': 'First'},
+        )
+    ])
+    monkeypatch.setattr(api.state, 'pending_downloads', pending)
+    monkeypatch.setattr(api.state, 'downloader', object())
+    monkeypatch.setattr(api.state, 'playlist_batch_store', None)
+    monkeypatch.setattr(
+        api.state,
+        'download_jobs',
+        {'b': {'song': {'song_id': 'b', 'name': 'B'}, 'status': 'queued'}},
+    )
+    monkeypatch.setattr(
+        spotify_sync_api,
+        'sync_playlists',
+        lambda: [{'spotify_id': 'pl', 'name': 'Mix'}],
+    )
+    monkeypatch.setattr(
+        api,
+        '_missing_tracks_for_playlist',
+        lambda sid: (
+            'Mix',
+            'https://open.spotify.com/playlist/pl',
+            [{'song_id': 'b', 'name': 'B'}],
+        ),
+    )
+
+    assert (
+        asyncio.run(api._queue_missing_for_spotify_playlist('Mix', ['b'])) == 0
+    )
+    assert api.state.download_jobs['b']['song']['playlists_json'] == ['Mix']
+    assert pending.rows()[0].song['playlists_json'] == ['Mix']
 
 
 def test_apply_sync_diff_only_schedules_when_auto_download_is_on(monkeypatch):

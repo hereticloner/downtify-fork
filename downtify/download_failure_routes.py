@@ -41,6 +41,13 @@ async def retry_failure(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail='Failure not found')
     song = dict(found['song'])
     song['song_id'] = song_id
+    existing = api.state.download_jobs.get(song_id)
+    if existing and existing.get('status') in {
+        'queued',
+        'downloading',
+        'active',
+    }:
+        raise HTTPException(status_code=409, detail='Already queued')
     api._register_job(song, status='queued')
     pending = api._pending_download(song, song_id)
     await api._remember_pending([pending])

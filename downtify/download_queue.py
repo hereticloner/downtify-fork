@@ -159,8 +159,8 @@ class PendingDownloads:
     def add(self, rows: Collection[PendingDownload]) -> None:
         """Save *rows* at the end of the queue.
 
-        A job already saved keeps its place (and its options); only the
-        accounts waiting on it are merged in.
+        A job already saved keeps its place; accounts and playlist
+        context are merged in without duplicating the job.
         """
 
         if not rows:
@@ -169,7 +169,8 @@ class PendingDownloads:
             for row in rows:
                 users = sorted({int(uid) for uid in row.user_ids if uid})
                 saved = conn.execute(
-                    'SELECT user_ids FROM pending_downloads WHERE song_id = ?',
+                    'SELECT song, options, user_ids FROM pending_downloads '
+                    'WHERE song_id = ?',
                     (row.song_id,),
                 ).fetchone()
                 if saved is None:
@@ -185,11 +186,34 @@ class PendingDownloads:
                         ),
                     )
                     continue
-                merged = sorted(set(_user_ids(saved[0])) | set(users))
+                merged = sorted(set(_user_ids(saved[2])) | set(users))
+                try:
+                    saved_song = json.loads(saved[0])
+                    saved_options = json.loads(saved[1] or '{}')
+                except (TypeError, ValueError):
+                    saved_song = {}
+                    saved_options = {}
+                if not isinstance(saved_song, dict):
+                    saved_song = {}
+                if not isinstance(saved_options, dict):
+                    saved_options = {}
+                merged_song = {**saved_song, **row.song}
+                playlists = sorted(
+                    set(_string_list(saved_song.get('playlists_json')))
+                    | set(_string_list(row.song.get('playlists_json')))
+                )
+                if playlists:
+                    merged_song['playlists_json'] = playlists
+                merged_options = dict(saved_options)
                 conn.execute(
-                    'UPDATE pending_downloads SET user_ids = ? '
-                    'WHERE song_id = ?',
-                    (json.dumps(merged), row.song_id),
+                    'UPDATE pending_downloads SET song = ?, options = ?, '
+                    'user_ids = ? WHERE song_id = ?',
+                    (
+                        json.dumps(merged_song, default=str),
+                        json.dumps(merged_options, default=str),
+                        json.dumps(merged),
+                        row.song_id,
+                    ),
                 )
 
     def forget(self, song_ids: Collection[str]) -> None:
@@ -256,6 +280,16 @@ class PendingDownloads:
                 'ON CONFLICT(key) DO UPDATE SET value = excluded.value',
                 ('1' if value else '0',),
             )
+
+
+def _string_list(raw: Any) -> list[str]:
+    try:
+        values = json.loads(raw or '[]')
+    except (TypeError, ValueError):
+        return []
+    if not isinstance(values, list):
+        return []
+    return sorted({str(value) for value in values if str(value)})
 
 
 def _user_ids(raw: Any) -> list[int]:

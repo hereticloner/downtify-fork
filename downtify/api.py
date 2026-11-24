@@ -2870,6 +2870,17 @@ async def _resolve_download_failure(song_id: str) -> None:
         logger.exception('Could not resolve the download failure {}', song_id)
 
 
+def _redact_download_message(message: str) -> str:
+    text = re.sub(r'https?://\S+', '[url]', str(message or ''))
+    text = re.sub(
+        r'(?i)\b(token|access_token|refresh_token|api_key|key|signature|sig)='
+        r'([^&\s]+)',
+        r'\1=[redacted]',
+        text,
+    )
+    return text[:1000]
+
+
 async def _record_download_failure(
     song_id: str,
     song: dict[str, Any],
@@ -2887,7 +2898,7 @@ async def _record_download_failure(
             store.record,
             song_id=song_id,
             song=song,
-            message=message,
+            message=_redact_download_message(message),
             code=code,
             provider=provider,
             playlist_name=playlist_name,
@@ -4271,9 +4282,32 @@ async def _queue_missing_for_spotify_playlist(
             track.get('song_id') or ''
         )
         song_id = str(track.get('song_id') or track_id)
-        if track_id in wanted and song_id not in queued:
-            selected.append(track)
-            queued.add(song_id)
+        if track_id not in wanted:
+            continue
+        if song_id in queued:
+            job = state.download_jobs.get(song_id)
+            if job is not None:
+                existing_song = job.setdefault('song', {})
+                playlists = existing_song.get('playlists_json') or []
+                if not isinstance(playlists, list):
+                    playlists = []
+                if name not in playlists:
+                    playlists = [*playlists, name]
+                existing_song['playlists_json'] = playlists
+                existing_song['downtify_playlist_name'] = name
+                existing_song['downtify_spotify_playlist_id'] = sid
+                existing_song['downtify_playlist_url'] = playlist_url
+                await _remember_pending([
+                    _pending_download(
+                        existing_song,
+                        song_id,
+                        playlist_name=name,
+                        spotify_playlist_id=sid,
+                    )
+                ])
+            continue
+        selected.append(track)
+        queued.add(song_id)
     if not selected:
         return 0
     batch_id: Optional[int] = None

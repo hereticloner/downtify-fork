@@ -50,12 +50,17 @@ describe('persistent download failures', () => {
     fixture.api.clearDownloadFailures.mockResolvedValue({
       data: { cleared: 1 },
     })
+    fixture.api.getDownloadFailures.mockResolvedValue({
+      data: { items: [{ song_id: 'open', message: 'failed' }], count: 1 },
+    })
 
     await failures.retry('track-1')
     await failures.clear()
 
     expect(fixture.api.retryDownloadFailure).toHaveBeenCalledWith('track-1')
     expect(fixture.api.clearDownloadFailures).toHaveBeenCalledOnce()
+    expect(fixture.api.getDownloadFailures).toHaveBeenCalledTimes(2)
+    expect(failures.items.value.map((row) => row.song_id)).toEqual(['open'])
   })
 
   it('does not break Queue when loading fails', async () => {

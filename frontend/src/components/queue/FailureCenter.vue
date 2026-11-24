@@ -97,7 +97,7 @@ async function retry(row) {
   busy.value = row.song_id
   try {
     await failures.retry(row.song_id)
-    ui.toast(t('queue.retryQueued'))
+    ui.toast(t('queue.failureRetryQueued'))
   } catch {
     ui.toast(t('queue.failureRetryFailed'), { kind: 'error' })
   } finally {
