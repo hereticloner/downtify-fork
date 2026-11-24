@@ -809,7 +809,9 @@ def build_app() -> FastAPI:
         )
         api.spawn_task(
             queue_schedule.schedule_loop(
-                lambda: api.state.settings, api.queue_pause.set_quiet
+                lambda: api.state.settings,
+                api.queue_pause.set_quiet,
+                on_change=lambda _active: api._broadcast_queue_state(),
             ),
             name='queue-schedule-loop',
         )

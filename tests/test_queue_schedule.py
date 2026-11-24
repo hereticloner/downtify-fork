@@ -202,6 +202,34 @@ async def test_schedule_loop_applies_then_waits(monkeypatch):
     assert waits == [30]
 
 
+@pytest.mark.asyncio
+async def test_schedule_loop_announces_transitions(monkeypatch):
+    settings = _settings()
+    changes = []
+    announcements = []
+    waits = 0
+
+    async def announce(active):
+        announcements.append(active)
+
+    async def advance(seconds):
+        nonlocal waits
+        waits += 1
+        if waits == 1:
+            settings['queue_control']['quiet_hours']['enabled'] = False
+            return
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(asyncio, 'sleep', advance)
+    with pytest.raises(asyncio.CancelledError):
+        await schedule_loop(
+            lambda: settings, changes.append, on_change=announce
+        )
+
+    assert changes == [True, False]
+    assert announcements == [True, False]
+
+
 def test_manual_pause_wins_over_quiet_hours_and_survives_them_ending():
     pause = QueuePause()
     pause.set_quiet(True)

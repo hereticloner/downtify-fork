@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import re
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
-from typing import Any, Callable
+from typing import Any, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from loguru import logger
@@ -108,11 +109,15 @@ async def schedule_loop(
     settings_provider: Callable[[], dict[str, Any]],
     set_quiet: Callable[[bool], None],
     interval: float = 30,
+    on_change: Optional[Callable[[bool], Awaitable[None]]] = None,
 ) -> None:
     schedule = QueueSchedule(settings_provider, set_quiet)
     while True:
         try:
-            schedule.apply()
+            previous = schedule.active
+            active = schedule.apply()
+            if on_change is not None and active != previous:
+                await on_change(active)
         except Exception:
             logger.exception('Queue quiet-hours update failed')
         await asyncio.sleep(interval)
