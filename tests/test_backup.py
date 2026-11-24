@@ -1,0 +1,290 @@
+from __future__ import annotations
+
+import gzip
+import json
+from pathlib import Path
+
+import pytest
+
+from downtify import collections, monitor
+from downtify.backup import BackupStore
+from downtify.download_queue import PendingDownload, PendingDownloads
+from downtify.likes import LikedTracks
+from downtify.playback import PlaybackStore
+from downtify.playlist_catalog import PlaylistCatalog
+from downtify.sqlite_utils import connect_sqlite
+from downtify.track_index import TrackIndex
+from downtify.users import UserStore
+
+
+def _seed(data_dir: Path) -> None:
+    data_dir.mkdir(parents=True, exist_ok=True)
+    (data_dir / 'settings.json').write_text(
+        json.dumps({'format': 'flac', 'notifications': {'enabled': True}})
+    )
+    (data_dir / 'notifications.json').write_text(
+        json.dumps({
+            'version': 1,
+            'channels': {'telegram': {'bot_token': 'secret'}},
+        })
+    )
+    users = UserStore(data_dir / 'downtify.db')
+    user = users.create('alice', 'password123', role='user')
+    users.set_preferences(user['id'], {'theme': 'dark', 'locale': 'tr'})
+
+    library = data_dir / 'downtify_library.db'
+    tracks = TrackIndex(library)
+    tracks.register('0TnOYISbd1XYRBk9myaseg', 'Artist/Song.mp3')
+    liked = LikedTracks(library)
+    liked.like('Artist/Song.mp3', title='Song', artist='Artist')
+    catalog = PlaylistCatalog(library)
+    catalog.ensure_playlist('Mix', spotify_id='playlist-1')
+    catalog.upsert_track(
+        'Mix',
+        {'song_id': '0TnOYISbd1XYRBk9myaseg'},
+        'Artist/Song.mp3',
+        data_dir / 'Artist' / 'Song.mp3',
+        track_order=1,
+    )
+    queue = PendingDownloads(library)
+    queue.add([
+        PendingDownload(
+            song_id='0TnOYISbd1XYRBk9myaseg',
+            song={'song_id': '0TnOYISbd1XYRBk9myaseg', 'name': 'Song'},
+            options={'playlist_name': 'Mix'},
+            user_ids=[user['id']],
+        )
+    ])
+    queue.set_paused(True)
+
+    watches = monitor.PlaylistMonitorDB(data_dir / 'downtify_monitor.db')
+    watches.add_playlist(
+        'playlist-1', 'Mix', 'https://open.spotify.com/playlist/playlist-1'
+    )
+    with watches._connect() as conn:
+        conn.execute(
+            'INSERT INTO download_policy (id, track_id, title, artist, album, '
+            'duration, title_key, artist_key, album_key, fallback_key, blocked, '
+            "reason, updated) VALUES ('policy-1','0TnOYISbd1XYRBk9myaseg',"
+            "'Song','Artist','Album',180,'song','artist','album','',1,'manual',1)"
+        )
+
+    playback = PlaybackStore(data_dir / 'downtify_activity.db')
+    playback.report(
+        user_id=user['id'],
+        device_id='phone',
+        player='web',
+        state='playing',
+        track={'track_id': '0TnOYISbd1XYRBk9myaseg', 'title': 'Song'},
+        position=42,
+    )
+
+    downloads = data_dir / 'downloads'
+    downloads.mkdir()
+    collections.create_collection(downloads, 'Favourites')
+    (downloads / 'Playlists' / '.collections' / 'Favourites.json').write_text(
+        json.dumps({
+            'version': 1,
+            'name': 'Favourites',
+            'playlists': ['Mix'],
+            'rules': [{'type': 'playlist_contains', 'value': 'Song'}],
+        })
+    )
+
+
+def _read_backup(path: Path) -> dict:
+    with gzip.open(path, 'rt', encoding='utf-8') as handle:
+        return json.load(handle)
+
+
+def test_backup_contains_metadata_and_no_audio_or_sessions(tmp_path):
+    data_dir = tmp_path / 'data'
+    _seed(data_dir)
+    (data_dir / 'downloads' / 'Artist').mkdir()
+    (data_dir / 'downloads' / 'Artist' / 'Song.mp3').write_bytes(b'audio')
+    store = BackupStore(data_dir)
+
+    path = store.write()
+    doc = _read_backup(path)
+
+    assert doc['version'] == 1
+    assert doc['settings']['format'] == 'flac'
+    assert (
+        doc['notification_secrets']['channels']['telegram']['bot_token']
+        == 'secret'
+    )
+    assert doc['sqlite']['downtify.db']['users'][0]['username'] == 'alice'
+    assert doc['sqlite']['downtify.db']['users'][0]['password_hash']
+    assert 'auth_sessions' not in doc['sqlite']['downtify.db']
+    assert (
+        doc['sqlite']['downtify_library.db']['library_tracks'][0]['filename']
+        == 'Artist/Song.mp3'
+    )
+    assert (
+        doc['sqlite']['downtify_library.db']['liked_tracks'][0]['stored_path']
+        == 'Artist/Song.mp3'
+    )
+    assert (
+        doc['sqlite']['downtify_library.db']['pending_downloads'][0]['song_id']
+        == '0TnOYISbd1XYRBk9myaseg'
+    )
+    assert (
+        doc['sqlite']['downtify_monitor.db']['monitored_playlists'][0]['name']
+        == 'Mix'
+    )
+    assert (
+        doc['sqlite']['downtify_monitor.db']['download_policy'][0]['blocked']
+        == 1
+    )
+    assert (
+        doc['sqlite']['downtify_activity.db']['playback_positions'][0][
+            'position'
+        ]
+        == 42
+    )
+    assert doc['collections'][0]['playlists'] == ['Mix']
+    assert 'audio' not in json.dumps(doc)
+    assert not any(key == 'audio_bytes' for key in doc)
+
+
+def test_backup_rotation_keeps_two_private_atomic_files(tmp_path):
+    store = BackupStore(tmp_path / 'data')
+    paths = [store.write() for _ in range(3)]
+    assert paths[0] != paths[1] != paths[2]
+    assert sorted(path.name for path in store.list()) == sorted(
+        path.name for path in paths[1:]
+    )
+    for path in store.list():
+        assert path.stat().st_mode & 0o777 == 0o600
+        assert _read_backup(path)['version'] == 1
+    assert not list(store.backup_dir.glob('*.partial'))
+
+
+def test_restore_dry_run_is_additive_and_preserves_existing_rows(tmp_path):
+    source = tmp_path / 'source'
+    _seed(source)
+    backup = BackupStore(source).write()
+
+    target = tmp_path / 'target'
+    _seed(target)
+    with connect_sqlite(target / 'downtify.db', row_factory=True) as conn:
+        conn.execute(
+            'UPDATE users SET prefs_json=\'{"theme":"light"}\' WHERE username=\'alice\''
+        )
+    (
+        target / 'downloads' / 'Playlists' / '.collections' / 'Favourites.json'
+    ).write_text(
+        json.dumps({
+            'version': 1,
+            'name': 'Favourites',
+            'playlists': ['Local'],
+        })
+    )
+    store = BackupStore(target)
+
+    preview = store.preview(backup)
+    assert preview['settings']['format'] == 'flac'
+    counts = {
+        'users': 0,
+        'library_tracks': 0,
+        'liked_tracks': 0,
+        'playlists': 0,
+        'pending_downloads': 0,
+        'monitored_playlists': 0,
+        'playback_positions': 0,
+        'collections': 0,
+    }
+    result = store.restore(backup, dry_run=True)
+
+    assert result['dry_run'] is True
+    for table, count in counts.items():
+        assert result['added'][table] == count
+    with connect_sqlite(target / 'downtify.db', row_factory=True) as conn:
+        assert (
+            json.loads(
+                conn.execute(
+                    "SELECT prefs_json FROM users WHERE username='alice'"
+                ).fetchone()[0]
+            )['theme']
+            == 'light'
+        )
+    assert collections.get_collection(target / 'downloads', 'Favourites')[
+        'playlists'
+    ] == ['Local']
+
+
+def test_restore_adds_missing_rows_and_requeues_only_identified_songs(
+    tmp_path,
+):
+    source = tmp_path / 'source'
+    _seed(source)
+    backup = BackupStore(source).write()
+    target = tmp_path / 'target'
+    target.mkdir()
+    store = BackupStore(target)
+
+    result = store.restore(backup, dry_run=False, requeue_missing=True)
+
+    assert result['dry_run'] is False
+    assert result['added']['users'] == 1
+    assert result['requeued'] == ['0TnOYISbd1XYRBk9myaseg']
+    assert result['unresolved'] == []
+    assert (target / 'settings.json').exists()
+    assert (target / 'notifications.json').stat().st_mode & 0o777 == 0o600
+    with connect_sqlite(
+        target / 'downtify_library.db', row_factory=True
+    ) as conn:
+        assert (
+            conn.execute('SELECT COUNT(*) FROM pending_downloads').fetchone()[
+                0
+            ]
+            == 1
+        )
+        assert (
+            conn.execute('SELECT COUNT(*) FROM library_tracks').fetchone()[0]
+            == 1
+        )
+    assert collections.get_collection(target / 'downloads', 'Favourites')[
+        'playlists'
+    ] == ['Mix']
+
+
+def test_restore_lists_songs_without_stable_spotify_identity(tmp_path):
+    source = tmp_path / 'source'
+    _seed(source)
+    doc = _read_backup(BackupStore(source).write())
+    doc['sqlite']['downtify_library.db']['library_tracks'][0][
+        'spotify_track_id'
+    ] = 'youtube-id'
+    doc['sqlite']['downtify_library.db']['pending_downloads'][0]['song_id'] = (
+        'youtube-id'
+    )
+    doc['sqlite']['downtify_library.db']['pending_downloads'][0]['song'] = {
+        'name': 'Unknown'
+    }
+    backup = source / 'backups' / 'downtify-manual.json.gz'
+    with gzip.open(backup, 'wt', encoding='utf-8') as handle:
+        json.dump(doc, handle)
+
+    result = BackupStore(tmp_path / 'target').restore(
+        backup, dry_run=False, requeue_missing=True
+    )
+
+    assert result['requeued'] == []
+    assert result['unresolved'] == ['youtube-id']
+
+
+def test_preview_rejects_corrupt_and_future_versions(tmp_path):
+    store = BackupStore(tmp_path / 'data')
+    bad = store.backup_dir / 'downtify-bad.json.gz'
+    bad.parent.mkdir(parents=True)
+    with gzip.open(bad, 'wt', encoding='utf-8') as handle:
+        handle.write('{broken')
+    with pytest.raises(ValueError, match='corrupt'):
+        store.preview(bad)
+
+    future = store.backup_dir / 'downtify-future.json.gz'
+    with gzip.open(future, 'wt', encoding='utf-8') as handle:
+        json.dump({'version': 999}, handle)
+    with pytest.raises(ValueError, match='version'):
+        store.preview(future)
