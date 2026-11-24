@@ -22,6 +22,7 @@ from typing import Any, Optional
 from .library_catalog import fold_text
 
 RULE_TYPES = ('added', 'plays', 'genre', 'artist', 'album', 'format')
+_GROUP_OPS = {'and', 'or', 'not'}
 
 _ARTIST_SPLIT = re.compile(r'\s*[;,/]\s*|\s+&\s+')
 
@@ -70,6 +71,17 @@ def normalize_rules(raw: Any) -> list[dict[str, Any]]:
     for item in raw:
         if not isinstance(item, dict):
             raise RuleError('each rule must be an object')
+        if 'op' in item:
+            op = str(item.get('op') or '').strip().lower()
+            if op not in _GROUP_OPS:
+                raise RuleError(f'unknown rule group {op!r}')
+            children = item.get('rules')
+            if not isinstance(children, list) or not children:
+                raise RuleError('a rule group needs at least one rule')
+            if op == 'not' and len(children) != 1:
+                raise RuleError('a not group needs exactly one rule')
+            out.append({'op': op, 'rules': normalize_rules(children)})
+            continue
         rtype = str(item.get('type') or '').strip()
         if rtype not in RULE_TYPES:
             raise RuleError(f'unknown rule type {rtype!r}')
@@ -188,16 +200,39 @@ def _rule_holds(
     )
 
 
+def _node_matches(
+    node: dict[str, Any],
+    member: dict[str, Any],
+    tracks: dict[str, dict[str, Any]],
+    play_counts: dict[str, int],
+) -> bool:
+    op = node.get('op')
+    if op is None:
+        return _rule_holds(node, member, tracks, play_counts)
+    children = node.get('rules') or []
+    if op == 'and':
+        return all(
+            _node_matches(child, member, tracks, play_counts)
+            for child in children
+        )
+    if op == 'or':
+        return any(
+            _node_matches(child, member, tracks, play_counts)
+            for child in children
+        )
+    return not _node_matches(children[0], member, tracks, play_counts)
+
+
 def playlist_matches(
     rules: list[dict[str, Any]],
     member: dict[str, Any],
     tracks: dict[str, dict[str, Any]],
     play_counts: dict[str, int],
 ) -> bool:
-    """Whether *member* satisfies every rule (AND). No rules match all."""
+    """Whether *member* satisfies every top-level node (legacy AND)."""
 
     return all(
-        _rule_holds(rule, member, tracks, play_counts) for rule in rules
+        _node_matches(rule, member, tracks, play_counts) for rule in rules
     )
 
 

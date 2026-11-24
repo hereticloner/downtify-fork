@@ -153,6 +153,58 @@ def test_save_rules_rejects_bad_payload(client):
     assert resp.status_code == 400
 
 
+def test_preview_resolves_groups_without_saving(client, monkeypatch):
+    _library(monkeypatch)
+    client.downloads.mkdir(parents=True, exist_ok=True)
+    (client.downloads / 'Rocky.m3u').write_text('#EXTM3U\n')
+    client.post('/api/collections', json={'name': 'Smart'})
+    client.post('/api/collections/Smart/items', json={'add': ['Rocky']})
+    rules = [
+        {
+            'op': 'or',
+            'rules': [
+                {'type': 'genre', 'value': 'Jazz'},
+                {'type': 'plays', 'min': 10},
+            ],
+        }
+    ]
+
+    preview = client.post(
+        '/api/collections/Smart/preview', json={'rules': rules}
+    )
+
+    assert preview.status_code == 200, preview.text
+    assert preview.json() == {
+        'name': 'Smart',
+        'playlists': ['Rocky', 'Blue'],
+        'computed': ['Blue'],
+    }
+    assert client.get('/api/collections/Smart').json()['rules'] == []
+
+    saved = client.post('/api/collections/Smart/rules', json={'rules': rules})
+    assert saved.status_code == 200
+    detail = client.get('/api/collections/Smart').json()
+    assert detail['playlists'] == preview.json()['playlists']
+    assert detail['computed'] == preview.json()['computed']
+
+
+def test_preview_rejects_bad_nested_rules_without_saving(client):
+    client.post('/api/collections', json={'name': 'Smart'})
+    response = client.post(
+        '/api/collections/Smart/preview',
+        json={
+            'rules': [
+                {
+                    'op': 'or',
+                    'rules': [{'type': 'bpm', 'value': 120}],
+                }
+            ]
+        },
+    )
+    assert response.status_code == 400
+    assert client.get('/api/collections/Smart').json()['rules'] == []
+
+
 def test_save_rules_unknown_collection_returns_404(client):
     resp = client.post(
         '/api/collections/Yok/rules',

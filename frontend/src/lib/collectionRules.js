@@ -7,7 +7,8 @@
 //   added  — from/to dates (YYYY-MM-DD), at least one
 //   plays  — min/max total play count, at least one
 //   genre | artist | album | format — one value
-// Rules combine with AND; there is no OR on purpose (keep it simple).
+// Rules may be flat conditions (combined with AND) or nested AND/OR/NOT
+// groups. The server evaluates them; this module only cleans draft nodes.
 
 export const RULE_TYPES = [
   'added',
@@ -18,11 +19,17 @@ export const RULE_TYPES = [
   'format',
 ]
 
+export const GROUP_OPS = ['and', 'or', 'not']
+
 /** A fresh, empty draft row for a rule type. */
 export function blankRule(type = 'genre') {
   if (type === 'added') return { type, from: '', to: '' }
   if (type === 'plays') return { type, min: '', max: '' }
   return { type, value: '' }
+}
+
+export function blankGroup(op = 'and') {
+  return { op: GROUP_OPS.includes(op) ? op : 'and', rules: [blankRule()] }
 }
 
 function toInt(raw) {
@@ -34,7 +41,15 @@ function toInt(raw) {
 
 /** One saved rule, or `null` when the row is incomplete. */
 export function cleanRule(rule) {
-  if (!rule || !RULE_TYPES.includes(rule.type)) return null
+  if (!rule || typeof rule !== 'object') return null
+  if ('op' in rule) {
+    if (!GROUP_OPS.includes(rule.op) || !Array.isArray(rule.rules)) return null
+    const rules = cleanRules(rule.rules)
+    if (!rules.length) return null
+    if (rule.op === 'not' && rules.length !== 1) return null
+    return { op: rule.op, rules }
+  }
+  if (!RULE_TYPES.includes(rule.type)) return null
   if (rule.type === 'added') {
     const from = String(rule.from || '').trim()
     const to = String(rule.to || '').trim()

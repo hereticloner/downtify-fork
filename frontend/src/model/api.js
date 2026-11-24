@@ -539,6 +539,12 @@ function saveCollectionRules(name, rules) {
   })
 }
 
+function previewCollectionRules(name, rules) {
+  return API.post(`/api/collections/${encodeURIComponent(name)}/preview`, {
+    rules,
+  })
+}
+
 function reconcileLibrary() {
   return API.post('/api/library/reconcile')
 }
@@ -1033,6 +1039,7 @@ export default {
   deleteCollection,
   getCollection,
   saveCollectionRules,
+  previewCollectionRules,
   prepareLibraryArchive,
   libraryArchiveURL,
   reconcileLibrary,

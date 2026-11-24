@@ -150,6 +150,37 @@ async def set_collection_rules_endpoint(
         _raise(exc)
 
 
+@router.post('/api/collections/{name}/preview')
+async def preview_collection_rules_endpoint(
+    name: str, request: Request
+) -> dict[str, Any]:
+    payload = await request.json()
+    try:
+        data = coll.get_collection(_download_dir(), name)
+        normalized = coll.normalize_rules(
+            payload.get('rules') if isinstance(payload, dict) else None
+        )
+        draft = dict(data)
+        if normalized:
+            draft['rules'] = normalized
+        else:
+            draft.pop('rules', None)
+        playlists, tracks, play_counts = _library_view()
+        resolved = coll.resolve_collection(
+            draft,
+            playlists=playlists,
+            tracks=tracks,
+            play_counts=play_counts,
+        )
+    except (coll.CollectionError, coll.RuleError) as exc:
+        _raise(exc)
+    return {
+        'name': resolved['name'],
+        'playlists': resolved.get('playlists') or [],
+        'computed': resolved.get('computed') or [],
+    }
+
+
 @router.post('/api/collections')
 async def create_collection_endpoint(request: Request) -> dict[str, Any]:
     payload = await request.json()

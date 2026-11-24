@@ -5,12 +5,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const api = vi.hoisted(() => ({
   getCollection: vi.fn(),
   saveCollectionRules: vi.fn(),
+  previewCollectionRules: vi.fn(),
 }))
 
 vi.mock('/src/model/api', () => ({ default: api }))
 
-import { blankRule, cleanRule, cleanRules } from '../lib/collectionRules'
-import { getCollection, saveCollectionRules } from '../model/collections'
+import {
+  blankGroup,
+  blankRule,
+  cleanRule,
+  cleanRules,
+} from '../lib/collectionRules'
+import {
+  getCollection,
+  previewCollectionRules,
+  saveCollectionRules,
+} from '../model/collections'
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -58,6 +68,48 @@ describe('collection rule drafts', () => {
       ])
     ).toEqual([{ type: 'genre', value: 'Rock' }])
   })
+
+  it('blanks and cleans nested rule groups', () => {
+    expect(blankGroup('or')).toEqual({
+      op: 'or',
+      rules: [{ type: 'genre', value: '' }],
+    })
+    expect(
+      cleanRules([
+        {
+          op: 'or',
+          rules: [
+            { type: 'genre', value: ' Jazz ' },
+            { op: 'not', rules: [{ type: 'format', value: 'MP3' }] },
+          ],
+        },
+      ])
+    ).toEqual([
+      {
+        op: 'or',
+        rules: [
+          { type: 'genre', value: 'Jazz' },
+          { op: 'not', rules: [{ type: 'format', value: 'MP3' }] },
+        ],
+      },
+    ])
+  })
+
+  it('drops empty groups and not groups with multiple children', () => {
+    expect(cleanRule({ op: 'and', rules: [] })).toBeNull()
+    expect(
+      cleanRule({
+        op: 'not',
+        rules: [
+          { type: 'genre', value: 'Rock' },
+          { type: 'genre', value: 'Jazz' },
+        ],
+      })
+    ).toBeNull()
+    expect(
+      cleanRule({ op: 'xor', rules: [{ type: 'genre', value: 'Rock' }] })
+    ).toBeNull()
+  })
 })
 
 describe('collections controller rules', () => {
@@ -75,5 +127,19 @@ describe('collections controller rules', () => {
     api.getCollection.mockResolvedValue({ data: { name: 'Smart' } })
     expect(await getCollection('Smart')).toEqual({ name: 'Smart' })
     expect(api.getCollection).toHaveBeenCalledWith('Smart')
+  })
+
+  it('previews rules without saving them', async () => {
+    api.previewCollectionRules.mockResolvedValue({
+      data: { name: 'Smart', playlists: ['Rocky'], computed: [] },
+    })
+    const rules = [{ type: 'genre', value: 'Rock' }]
+    expect(await previewCollectionRules('Smart', rules)).toEqual({
+      name: 'Smart',
+      playlists: ['Rocky'],
+      computed: [],
+    })
+    expect(api.previewCollectionRules).toHaveBeenCalledWith('Smart', rules)
+    expect(api.saveCollectionRules).not.toHaveBeenCalled()
   })
 })

@@ -130,6 +130,54 @@ def test_normalize_text_rule_trims_the_value() -> None:
     ]
 
 
+def test_normalize_keeps_nested_groups() -> None:
+    raw = [
+        {
+            'op': 'or',
+            'rules': [
+                {'type': 'genre', 'value': ' Jazz '},
+                {
+                    'op': 'not',
+                    'rules': [{'type': 'format', 'value': 'MP3'}],
+                },
+            ],
+        }
+    ]
+    assert normalize_rules(raw) == [
+        {
+            'op': 'or',
+            'rules': [
+                {'type': 'genre', 'value': 'Jazz'},
+                {
+                    'op': 'not',
+                    'rules': [{'type': 'format', 'value': 'MP3'}],
+                },
+            ],
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'group',
+    [
+        {'op': 'xor', 'rules': [{'type': 'genre', 'value': 'Rock'}]},
+        {'op': 'and', 'rules': []},
+        {'op': 'not', 'rules': []},
+        {
+            'op': 'not',
+            'rules': [
+                {'type': 'genre', 'value': 'Rock'},
+                {'type': 'genre', 'value': 'Jazz'},
+            ],
+        },
+        {'op': 'or', 'rules': [{'type': 'bpm', 'value': 120}]},
+    ],
+)
+def test_normalize_rejects_bad_groups(group) -> None:
+    with pytest.raises(RuleError):
+        normalize_rules([group])
+
+
 # ── one rule type at a time ─────────────────────────────────────────
 
 
@@ -235,6 +283,67 @@ def test_rules_are_combined_with_and() -> None:
 
 def test_no_rule_matches_every_playlist() -> None:
     assert playlist_matches([], playlist('P', ['rock/one.mp3']), TRACKS, PLAYS)
+
+
+def test_or_group_matches_either_child() -> None:
+    rules = normalize_rules([
+        {
+            'op': 'or',
+            'rules': [
+                {'type': 'genre', 'value': 'Jazz'},
+                {'type': 'plays', 'min': 10},
+            ],
+        }
+    ])
+    assert playlist_matches(
+        rules, playlist('Jazz', ['jazz/two.flac']), TRACKS, PLAYS
+    )
+    assert playlist_matches(
+        rules, playlist('Rock', ['rock/one.mp3']), TRACKS, PLAYS
+    )
+    other_tracks = {
+        'other.mp3': track(genre='Polka', file='other.mp3'),
+    }
+    assert not playlist_matches(
+        rules,
+        playlist('Silent polka', ['other.mp3']),
+        other_tracks,
+        {'other.mp3': 0},
+    )
+
+
+def test_not_group_excludes_its_child() -> None:
+    rules = normalize_rules([
+        {
+            'op': 'not',
+            'rules': [{'type': 'format', 'value': 'MP3'}],
+        }
+    ])
+    assert playlist_matches(
+        rules, playlist('Lossless', ['jazz/two.flac']), TRACKS, PLAYS
+    )
+    assert not playlist_matches(
+        rules, playlist('Lossy', ['rock/one.mp3']), TRACKS, PLAYS
+    )
+
+
+def test_nested_groups_combine_with_legacy_top_level_and() -> None:
+    rules = normalize_rules([
+        {
+            'op': 'or',
+            'rules': [
+                {'type': 'genre', 'value': 'Jazz'},
+                {'type': 'genre', 'value': 'Rock'},
+            ],
+        },
+        {'type': 'plays', 'min': 10},
+    ])
+    assert playlist_matches(
+        rules, playlist('Played rock', ['rock/one.mp3']), TRACKS, PLAYS
+    )
+    assert not playlist_matches(
+        rules, playlist('Silent jazz', ['jazz/two.flac']), TRACKS, PLAYS
+    )
 
 
 def test_empty_result_when_nothing_matches() -> None:
