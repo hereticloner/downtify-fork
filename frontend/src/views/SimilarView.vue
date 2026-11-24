@@ -96,6 +96,17 @@
             >
               {{ resultsTitle }}
             </h2>
+            <UiButton
+              v-if="newSimilarCount"
+              size="sm"
+              variant="ghost"
+              icon="download"
+              :loading="downloadingNew"
+              class="border-l-2 border-line"
+              @click="downloadVisibleNew"
+            >
+              {{ t('similar.downloadNew') }}
+            </UiButton>
             <span
               class="mono flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
               >{{ similar.songs.value.length }}</span
@@ -198,6 +209,9 @@ import TrackDownPlayHeader from '/src/components/library/TrackDownPlayHeader.vue
 import SimilarTrackRow from '/src/components/similar/SimilarTrackRow.vue'
 import { useSimilar } from '/src/model/similar'
 import { useLibrary } from '/src/model/library'
+import { useDownloadManager } from '/src/model/download'
+import { useUi } from '/src/model/ui'
+import { filterNewSimilarSongs } from '/src/lib/similarBulk'
 import { usePlayer } from '/src/model/player'
 import { songToPlayerTrack } from '/src/model/stream'
 import { useI18n } from '/src/i18n'
@@ -208,6 +222,9 @@ const router = useRouter()
 const similar = useSimilar()
 const library = useLibrary()
 const player = usePlayer()
+const dm = useDownloadManager()
+const ui = useUi()
+const downloadingNew = ref(false)
 
 const artistInput = ref(similar.artist.value)
 const trackInput = ref(similar.track.value)
@@ -244,6 +261,36 @@ const resultsTitle = computed(() => {
   if (a) return t('similar.resultsForArtist', { artist: a })
   return t('similar.resultsForTrack', { track: seedTrack })
 })
+
+const newSimilarCount = computed(
+  () =>
+    filterNewSimilarSongs(
+      similar.songs.value,
+      (song) => !!library.findTrack(song)
+    ).length
+)
+
+async function downloadVisibleNew() {
+  if (!newSimilarCount.value || downloadingNew.value) return
+  const songs = filterNewSimilarSongs(
+    similar.songs.value,
+    (song) => !!library.findTrack(song)
+  )
+  downloadingNew.value = true
+  try {
+    await dm.fromSongs(songs, {
+      playlistName: resultsTitle.value,
+      m3u: false,
+    })
+    ui.toast(t('similar.downloadNewCount', { count: songs.length }), {
+      kind: 'success',
+    })
+  } catch {
+    ui.toast(t('queue.failedGeneric'), { kind: 'error' })
+  } finally {
+    downloadingNew.value = false
+  }
+}
 
 function submit() {
   const artist = artistInput.value.trim()
