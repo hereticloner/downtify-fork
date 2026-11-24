@@ -320,6 +320,7 @@ from . import (
     audio_replace,
     cover_sources,
     deezer,
+    download_queue,
     integration_check,
     library_import,
     library_upgrade,
@@ -2848,6 +2849,7 @@ def _pending_download(
     playlist_name: Optional[str] = None,
     spotify_playlist_id: Optional[str] = None,
     track_order: int = 0,
+    priority: str = download_queue.PRIORITY_NORMAL,
 ) -> PendingDownload:
     """The saved copy of a job, with what ``_run_download`` was given."""
 
@@ -2862,6 +2864,7 @@ def _pending_download(
             'track_order': track_order,
         },
         user_ids=[],
+        priority=priority,
     )
 
 
@@ -2982,7 +2985,12 @@ async def _queue_turn(
     return False
 
 
-def _register_job(song: dict[str, Any], status: str = 'queued') -> str:
+def _register_job(
+    song: dict[str, Any],
+    status: str = 'queued',
+    *,
+    priority: str = download_queue.PRIORITY_NORMAL,
+) -> str:
     song_id = str(song.get('song_id') or song.get('url') or id(song))
     state.download_jobs[song_id] = {
         'song': song,
@@ -2991,6 +2999,9 @@ def _register_job(song: dict[str, Any], status: str = 'queued') -> str:
         'message': '',
         'provider': '',
         'filename': None,
+        'priority': priority
+        if priority in download_queue.PRIORITIES
+        else download_queue.PRIORITY_NORMAL,
     }
     return song_id
 
@@ -3004,6 +3015,7 @@ async def _run_download(
     playlist_name: Optional[str] = None,
     spotify_playlist_id: Optional[str] = None,
     track_order: int = 0,
+    priority: str = download_queue.PRIORITY_NORMAL,
     refresh_playlists: bool = True,
     pending_saved: bool = False,
 ) -> Optional[str]:
@@ -3058,6 +3070,7 @@ async def _run_download(
                 playlist_name=playlist_name,
                 spotify_playlist_id=spotify_playlist_id,
                 track_order=track_order,
+                priority=priority,
             )
         ])
 
@@ -5912,7 +5925,7 @@ async def restore_download_queue() -> int:
         song = row.song
         if not (song.get('song_id') or song.get('url')):
             song['song_id'] = row.song_id
-        _register_job(song, status='queued')
+        _register_job(song, status='queued', priority=row.priority)
     logger.info(
         'Download queue: {} unfinished job(s) restored{}',
         len(rows),
@@ -5946,6 +5959,7 @@ async def _run_restored_group(
                 playlist_name=playlist_name or None,
                 spotify_playlist_id=options.get('spotify_playlist_id') or None,
                 track_order=int(options.get('track_order') or 0),
+                priority=row.priority,
                 refresh_playlists=not playlist_name,
                 pending_saved=True,
             )

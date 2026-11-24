@@ -30,6 +30,9 @@ from .sqlite_utils import connect_sqlite
 STATE_RUNNING = 'running'
 STATE_PAUSING = 'pausing'
 STATE_PAUSED = 'paused'
+PRIORITY_NORMAL = 'normal'
+PRIORITY_HIGH = 'high'
+PRIORITIES = (PRIORITY_NORMAL, PRIORITY_HIGH)
 
 #: Keeps every ``IN (...)`` under SQLite's bound-parameter limit.
 _CHUNK = 500
@@ -126,6 +129,7 @@ class PendingDownload:
     #: ``spotify_playlist_id`` and ``track_order``.
     options: dict[str, Any] = field(default_factory=dict)
     user_ids: list[int] = field(default_factory=list)
+    priority: str = PRIORITY_NORMAL
 
 
 class PendingDownloads:
@@ -146,9 +150,19 @@ class PendingDownloads:
                     song_id TEXT NOT NULL UNIQUE,
                     song TEXT NOT NULL,
                     options TEXT NOT NULL DEFAULT '{}',
-                    user_ids TEXT NOT NULL DEFAULT '[]'
+                    user_ids TEXT NOT NULL DEFAULT '[]',
+                    priority TEXT NOT NULL DEFAULT 'normal'
                 )
             """)
+            columns = {
+                row[1]
+                for row in conn.execute('PRAGMA table_info(pending_downloads)')
+            }
+            if 'priority' not in columns:
+                conn.execute(
+                    'ALTER TABLE pending_downloads ADD COLUMN priority '
+                    "TEXT NOT NULL DEFAULT 'normal'"
+                )
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS download_queue_state (
                     key TEXT PRIMARY KEY,
@@ -169,20 +183,26 @@ class PendingDownloads:
             for row in rows:
                 users = sorted({int(uid) for uid in row.user_ids if uid})
                 saved = conn.execute(
-                    'SELECT song, options, user_ids FROM pending_downloads '
-                    'WHERE song_id = ?',
+                    'SELECT song, options, user_ids, priority FROM '
+                    'pending_downloads WHERE song_id = ?',
                     (row.song_id,),
                 ).fetchone()
+                priority = (
+                    row.priority
+                    if row.priority in PRIORITIES
+                    else PRIORITY_NORMAL
+                )
                 if saved is None:
                     conn.execute(
                         'INSERT INTO pending_downloads '
-                        '(song_id, song, options, user_ids) '
-                        'VALUES (?, ?, ?, ?)',
+                        '(song_id, song, options, user_ids, priority) '
+                        'VALUES (?, ?, ?, ?, ?)',
                         (
                             row.song_id,
                             json.dumps(row.song, default=str),
                             json.dumps(row.options, default=str),
                             json.dumps(users),
+                            priority,
                         ),
                     )
                     continue
@@ -216,6 +236,25 @@ class PendingDownloads:
                     ),
                 )
 
+    def set_priorities(self, song_ids: Collection[str], priority: str) -> int:
+        if priority not in PRIORITIES:
+            raise ValueError('priority must be normal or high')
+        ids = list(dict.fromkeys(str(sid) for sid in song_ids if sid))
+        if not ids:
+            return 0
+        changed = 0
+        with self._connect() as conn:
+            for start in range(0, len(ids), _CHUNK):
+                chunk = ids[start : start + _CHUNK]
+                marks = ','.join('?' * len(chunk))
+                cur = conn.execute(
+                    f'UPDATE pending_downloads SET priority = ? '
+                    f'WHERE song_id IN ({marks}) AND priority != ?',
+                    (priority, *chunk, priority),
+                )
+                changed += cur.rowcount
+        return changed
+
     def forget(self, song_ids: Collection[str]) -> None:
         ids = list(dict.fromkeys(str(sid) for sid in song_ids if sid))
         if not ids:
@@ -238,11 +277,12 @@ class PendingDownloads:
 
         with self._connect() as conn:
             found = conn.execute(
-                'SELECT song_id, song, options, user_ids '
-                'FROM pending_downloads ORDER BY seq'
+                'SELECT song_id, song, options, user_ids, priority '
+                'FROM pending_downloads '
+                "ORDER BY CASE priority WHEN 'high' THEN 0 ELSE 1 END, seq"
             ).fetchall()
         rows: list[PendingDownload] = []
-        for song_id, song, options, user_ids in found:
+        for song_id, song, options, user_ids, priority in found:
             try:
                 song_dict = json.loads(song)
                 options_dict = json.loads(options or '{}')
@@ -261,6 +301,9 @@ class PendingDownloads:
                     if isinstance(options_dict, dict)
                     else {},
                     user_ids=_user_ids(user_ids),
+                    priority=priority
+                    if priority in PRIORITIES
+                    else PRIORITY_NORMAL,
                 )
             )
         return rows
