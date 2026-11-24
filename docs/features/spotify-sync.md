@@ -34,6 +34,12 @@ catalog write, no request beyond the snapshot itself. A pure reorder is
 not a change; the local playlist is a set, and shuffling it would only
 be noise.
 
+The first sync of a playlist records a baseline and downloads nothing.
+With **Auto-download new additions** on, only tracks added after that
+baseline are queued automatically. Tracks already missing when you enable
+the option stay manual: use the playlist page's **Download missing** button.
+A track already in the library or already queued is not added twice.
+
 Audio files are **never deleted**. A track removed from one Spotify
 playlist keeps its file on disk — it may belong to other playlists, and
 deleting audio is not the sync's call. Only the playlist's membership
@@ -62,8 +68,9 @@ In **Settings → Spotify Sync**:
 1. Switch **Enable Spotify Sync** on. The interval field appears.
 2. Pick a **Sync interval** — 15 minutes, 1 hour, 6 hours or 1 day (or
    type your own, from 5 minutes to 7 days).
-3. Save the page.
-4. **Sync now** runs one sweep immediately, ignoring the interval — a
+3. Optionally enable **Auto-download new additions**. It is off by default.
+4. Save the page.
+5. **Sync now** runs one sweep immediately, ignoring the interval — a
    quick check that the connection works. It works even while the
    switch is off, so the account can be tested before committing to the
    automatic schedule.
@@ -150,7 +157,8 @@ The switch and interval live in the `spotify_sync` block of
 {
   "spotify_sync": {
     "enabled": true,
-    "interval_minutes": 60
+    "interval_minutes": 60,
+    "auto_download_added": false
   }
 }
 ```

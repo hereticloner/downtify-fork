@@ -29,9 +29,15 @@ The queue outlives a restart, a crash or a container update. The songs that were
 When the songs of a playlist download finish after a restart, its [M3U](m3u-export.md) and Navidrome playlist are refreshed once, as at the end of the original download.
 
 ::: info What isn't kept
-- Finished and failed songs: after a restart the queue lists only what is still to do.
+- Finished songs and the current session's failed rows: after a restart the queue lists only what is still to do.
 - [Replace Audio](replace-audio.md) jobs: replace the song again.
 :::
+
+## Persistent failures
+
+Failed downloads are also kept in the **Persistent failures** panel on the Queue page, so they survive restarts. Each row shows the track, the last error and how many attempts it has had. An admin can **Retry** it, **exclude** it from future downloads, or clear resolved entries.
+
+A retry joins the normal queue. The failure stays open until that retry succeeds; a successful download closes it automatically. The panel reads `GET /api/download-failures`; retry and clear are admin-only.
 
 ## API
 

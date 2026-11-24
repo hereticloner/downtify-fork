@@ -695,7 +695,52 @@ Admin. Carry on with the waiting jobs, with the current settings and audio provi
 
 **Response:** the [`GET /api/queue/state`](#get-apiqueuestate) object.
 
-Unfinished jobs (waiting, or interrupted mid-download) are saved in `/data` and queued again when Downtify starts, paused or not; finished and failed ones are not.
+Unfinished jobs (waiting, or interrupted mid-download) are saved in `/data` and queued again when Downtify starts, paused or not; finished jobs and the current session's failed rows are not. Persistent failures are kept separately below.
+
+---
+
+## Download failures
+
+### `GET /api/download-failures`
+
+Client. List open download failures, newest first.
+
+**Response:**
+
+```json
+{
+  "items": [
+    {
+      "song_id": "track-1",
+      "song": { "name": "One", "artist": "A" },
+      "message": "No audio match",
+      "code": "no_audio_match",
+      "provider": "youtube",
+      "playlists": ["Mix"],
+      "user_ids": [1],
+      "attempts": 2,
+      "first_seen": "2026-11-24T10:00:00+00:00",
+      "last_seen": "2026-11-24T10:01:00+00:00",
+      "resolved_at": null
+    }
+  ],
+  "count": 1
+}
+```
+
+### `POST /api/download-failures/retry`
+
+Admin. Queue one failed song again without resolving its failure. A successful retry closes the row.
+
+**Body:** `{ "song_id": "track-1" }`
+
+**Response:** `{ "queued": true, "song_id": "track-1" }`
+
+### `DELETE /api/download-failures`
+
+Admin. Delete resolved failure rows, keeping open ones.
+
+**Response:** `{ "cleared": 1 }`
 
 ---
 
@@ -1000,7 +1045,7 @@ The connect flow's two redirects (browser): authorize sends the browser to Spoti
 
 ## Spotify Sync
 
-Backs **Settings → Spotify Sync** (see [Spotify Sync](features/spotify-sync.md)): keeps a downloaded playlist's membership in step with its Spotify source, reusing the Spotify Mirror's OAuth tokens. Admin-only. The switch and interval live in the `spotify_sync` settings block.
+Backs **Settings → Spotify Sync** (see [Spotify Sync](features/spotify-sync.md)): keeps a downloaded playlist's membership in step with its Spotify source, reusing the Spotify Mirror's OAuth tokens. Admin-only. The switch, interval and auto-download option live in the `spotify_sync` settings block.
 
 ### `GET /api/spotify-sync`
 
@@ -1012,6 +1057,7 @@ The switch, the interval and each known playlist's last snapshot.
 {
   "enabled": true,
   "interval_minutes": 60,
+  "auto_download_added": false,
   "connected": true,
   "playlist_count": 1,
   "last_synced": "2026-10-11T20:00:00+00:00",
@@ -1045,6 +1091,7 @@ Run one sweep now, ignoring the interval **and** the switch, so the connection c
       "name": "Road trip",
       "added": ["4uLU…"],
       "removed": [],
+      "queued_added": 1,
       "changed": true,
       "first_run": false,
       "error": ""
@@ -1052,6 +1099,7 @@ Run one sweep now, ignoring the interval **and** the switch, so the connection c
   ],
   "added": 1,
   "removed": 0,
+  "queued_added": 1,
   "changed": 1,
   "errors": 0,
   "skipped": 0,
