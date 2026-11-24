@@ -1010,6 +1010,8 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         (_ALL, r'^/integrations/spotify/', ADMIN),
         (_m('POST'), r'^/api/queue/(pause|resume)$', ADMIN),
         (_ALL, r'^/api/queue/(priority|bulk)$', ADMIN),
+        (_READ, r'^/api/collections(/|$)', CLIENT),
+        (_m('POST', 'PUT', 'DELETE'), r'^/api/collections(/|$)', ADMIN),
         (_READ, r'^/api/library/summary$', CLIENT),
         (_READ, r'^/api/library/(albums|artists)$', CLIENT),
         (_m('POST'), r'^/api/library/lookup$', CLIENT),

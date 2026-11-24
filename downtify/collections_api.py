@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import FileResponse
 
 from . import collections as coll
 from . import stats as stats_mod
@@ -179,6 +180,52 @@ async def preview_collection_rules_endpoint(
         'playlists': resolved.get('playlists') or [],
         'computed': resolved.get('computed') or [],
     }
+
+
+@router.get('/api/collections/{name}/cover')
+def get_collection_cover_endpoint(name: str) -> FileResponse:
+    try:
+        data = coll.get_collection(_download_dir(), name)
+    except coll.CollectionError as exc:
+        _raise(exc)
+    cover = data.get('cover')
+    if not cover:
+        raise HTTPException(status_code=404, detail='Cover not found')
+    path = (
+        Path(_download_dir())
+        / 'Playlists'
+        / coll.COLLECTIONS_DIR
+        / 'covers'
+        / cover
+    )
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail='Cover not found')
+    return FileResponse(path, media_type='image/jpeg')
+
+
+@router.put('/api/collections/{name}/cover')
+async def put_collection_cover_endpoint(
+    name: str, request: Request
+) -> dict[str, Any]:
+    content_type = request.headers.get('content-type', '').split(';', 1)[0]
+    try:
+        return coll.set_collection_cover(
+            _download_dir(), name, await request.body(), content_type
+        )
+    except coll.CollectionError as exc:
+        _raise(exc)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.delete('/api/collections/{name}/cover')
+def delete_collection_cover_endpoint(name: str) -> dict[str, Any]:
+    try:
+        return coll.remove_collection_cover(_download_dir(), name)
+    except coll.CollectionError as exc:
+        _raise(exc)
 
 
 @router.post('/api/collections')

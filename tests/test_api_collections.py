@@ -9,8 +9,9 @@ import pytest
 from starlette.testclient import TestClient
 
 import main
-from downtify import api
+from downtify import api, playlist_mosaic
 from downtify import collections_api as capi
+from downtify.auth import ADMIN, CLIENT, classify
 
 
 @pytest.fixture
@@ -58,6 +59,45 @@ def test_collections_crud_over_http(client):
 def test_collections_missing_returns_404(client):
     resp = client.request('DELETE', '/api/collections/Yok')
     assert resp.status_code == 404
+
+
+def test_collection_cover_upload_get_and_delete(client, monkeypatch):
+    monkeypatch.setattr(
+        playlist_mosaic,
+        'normalize_uploaded_cover',
+        lambda data, content_type: b'jpeg-data',
+    )
+    client.post('/api/collections', json={'name': 'Covered'})
+    uploaded = client.put(
+        '/api/collections/Covered/cover',
+        content=b'png-data',
+        headers={'content-type': 'image/png'},
+    )
+    assert uploaded.status_code == 200, uploaded.text
+    assert uploaded.json()['cover'] == 'Covered.jpg'
+    fetched = client.get('/api/collections/Covered/cover')
+    assert fetched.status_code == 200
+    assert fetched.content == b'jpeg-data'
+    removed = client.delete('/api/collections/Covered/cover')
+    assert removed.status_code == 200
+    assert 'cover' not in removed.json()
+    assert client.get('/api/collections/Covered/cover').status_code == 404
+
+
+def test_collection_cover_rejects_invalid_image(client):
+    client.post('/api/collections', json={'name': 'Covered'})
+    response = client.put(
+        '/api/collections/Covered/cover',
+        content=b'not-an-image',
+        headers={'content-type': 'image/png'},
+    )
+    assert response.status_code == 400
+
+
+def test_collection_cover_auth_scopes():
+    assert classify('GET', '/api/collections/Covered/cover') == CLIENT
+    assert classify('PUT', '/api/collections/Covered/cover') == ADMIN
+    assert classify('DELETE', '/api/collections/Covered/cover') == ADMIN
 
 
 def test_collections_rename_and_unknown_playlist(client):

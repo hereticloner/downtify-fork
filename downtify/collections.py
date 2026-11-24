@@ -18,7 +18,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from . import m3u
+from . import m3u, playlist_mosaic
 from .collection_rules import RuleError, normalize_rules, resolve_collection
 from .manual_playlists import ManualPlaylistError
 
@@ -33,9 +33,11 @@ __all__ = [
     'delete_collection',
     'get_collection',
     'list_collections',
+    'remove_collection_cover',
     'remove_from_collection',
     'rename_collection',
     'resolve_collection',
+    'set_collection_cover',
     'set_rules',
 ]
 
@@ -50,6 +52,10 @@ def _safe_name(raw: str) -> str:
 
 def _path(download_dir: Path, name: str) -> Path:
     return _dir(download_dir) / f'{_safe_name(name)}.json'
+
+
+def _cover_path(download_dir: Path, name: str) -> Path:
+    return _dir(download_dir) / 'covers' / f'{_safe_name(name)}.jpg'
 
 
 def _read(download_dir: Path, path: Path) -> dict[str, Any]:
@@ -72,6 +78,9 @@ def _read(download_dir: Path, path: Path) -> dict[str, Any]:
             rules = []
         if rules:
             out['rules'] = rules
+    cover = str(data.get('cover') or '')
+    if cover and Path(cover).name == cover and cover.endswith('.jpg'):
+        out['cover'] = cover
     return out
 
 
@@ -84,6 +93,9 @@ def _document(data: dict[str, Any]) -> dict[str, Any]:
     rules = data.get('rules')
     if rules:
         doc['rules'] = rules
+    cover = str(data.get('cover') or '')
+    if cover and Path(cover).name == cover and cover.endswith('.jpg'):
+        doc['cover'] = cover
     return doc
 
 
@@ -160,6 +172,32 @@ def set_rules(download_dir: Path, name: str, rules: Any) -> dict[str, Any]:
     return dict(data)
 
 
+def set_collection_cover(
+    download_dir: Path, name: str, data: bytes, content_type: str
+) -> dict[str, Any]:
+    """Validate and atomically replace a collection's custom cover."""
+
+    collection = _require(download_dir, name)
+    normalized = playlist_mosaic.normalize_uploaded_cover(data, content_type)
+    path = _cover_path(download_dir, collection['name'])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_suffix('.jpg.partial')
+    partial.write_bytes(normalized)
+    partial.replace(path)
+    collection['cover'] = path.name
+    _write(download_dir, collection)
+    return dict(collection)
+
+
+def remove_collection_cover(download_dir: Path, name: str) -> dict[str, Any]:
+    collection = _require(download_dir, name)
+    path = _cover_path(download_dir, collection['name'])
+    path.unlink(missing_ok=True)
+    collection.pop('cover', None)
+    _write(download_dir, collection)
+    return dict(collection)
+
+
 def add_to_collection(
     download_dir: Path, name: str, playlists: list[str]
 ) -> dict[str, Any]:
@@ -208,6 +246,12 @@ def rename_collection(
         old_path.unlink(missing_ok=True)
     except OSError as exc:
         raise _err(f'Could not remove {old_path.name}') from exc
+    old_cover = _cover_path(download_dir, name)
+    new_cover = _cover_path(download_dir, safe)
+    if data.get('cover') and old_cover.is_file():
+        new_cover.parent.mkdir(parents=True, exist_ok=True)
+        old_cover.replace(new_cover)
+        data['cover'] = new_cover.name
     data['name'] = safe
     _write(download_dir, data)
     return data
@@ -216,6 +260,7 @@ def rename_collection(
 def delete_collection(download_dir: Path, name: str) -> dict[str, Any]:
     data = _require(download_dir, name)
     path = _path(download_dir, name)
+    _cover_path(download_dir, name).unlink(missing_ok=True)
     try:
         path.unlink(missing_ok=True)
     except OSError as exc:

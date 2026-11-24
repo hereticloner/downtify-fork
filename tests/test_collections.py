@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from downtify import playlist_mosaic
 from downtify.collection_rules import RuleError
 from downtify.collections import (
     CollectionError,
@@ -20,8 +21,10 @@ from downtify.collections import (
     delete_collection,
     get_collection,
     list_collections,
+    remove_collection_cover,
     remove_from_collection,
     rename_collection,
+    set_collection_cover,
     set_rules,
 )
 
@@ -86,6 +89,64 @@ def test_storage_format_is_marker_json(downloads: Path) -> None:
     assert data['name'] == 'Format'
     assert data['playlists'] == []
     assert data.get('version') == 1
+
+
+def test_custom_cover_is_stored_and_removed(
+    downloads: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        playlist_mosaic,
+        'normalize_uploaded_cover',
+        lambda data, content_type: b'jpeg-data',
+    )
+    create_collection(downloads, 'Covered')
+    data = set_collection_cover(downloads, 'Covered', b'png-data', 'image/png')
+    cover = downloads / 'Playlists' / '.collections' / 'covers' / 'Covered.jpg'
+    assert data['cover'] == 'Covered.jpg'
+    assert cover.read_bytes() == b'jpeg-data'
+    assert get_collection(downloads, 'Covered')['cover'] == 'Covered.jpg'
+
+    removed = remove_collection_cover(downloads, 'Covered')
+    assert 'cover' not in removed
+    assert not cover.exists()
+
+
+def test_cover_rejects_empty_and_oversized_images(downloads: Path) -> None:
+    create_collection(downloads, 'Covered')
+    with pytest.raises(ValueError, match='between'):
+        set_collection_cover(downloads, 'Covered', b'', 'image/png')
+    with pytest.raises(ValueError, match='between'):
+        set_collection_cover(
+            downloads,
+            'Covered',
+            b'x' * (playlist_mosaic.MAX_PLAYLIST_COVER_BYTES + 1),
+            'image/png',
+        )
+
+
+def test_rename_and_delete_move_or_remove_the_cover(
+    downloads: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        playlist_mosaic,
+        'normalize_uploaded_cover',
+        lambda data, content_type: b'jpeg-data',
+    )
+    create_collection(downloads, 'Old')
+    set_collection_cover(downloads, 'Old', b'png', 'image/png')
+    renamed = rename_collection(downloads, 'Old', 'New')
+    assert renamed['cover'] == 'New.jpg'
+    assert (
+        downloads / 'Playlists' / '.collections' / 'covers' / 'New.jpg'
+    ).is_file()
+    assert not (
+        downloads / 'Playlists' / '.collections' / 'covers' / 'Old.jpg'
+    ).exists()
+
+    delete_collection(downloads, 'New')
+    assert not (
+        downloads / 'Playlists' / '.collections' / 'covers' / 'New.jpg'
+    ).exists()
 
 
 # ── Smart rules (backward compatible) ───────────────────────────────
