@@ -280,3 +280,34 @@ def test_smart_collection_reads_a_real_empty_library(client):
     body = client.get('/api/collections/Smart').json()
     assert body['playlists'] == []
     assert body['rules'] == [{'type': 'genre', 'value': 'Rock'}]
+
+
+def test_collection_tracks_and_analysis_resolve_smart_members(
+    client, monkeypatch
+):
+    playlists = [_playlist('Rocky', ['rock/one.mp3', 'missing.mp3'])]
+    tracks = {
+        'rock/one.mp3': _track(
+            'rock/one.mp3', genre='Rock', duration=123.5, size=456
+        )
+    }
+    monkeypatch.setattr(capi, '_library_view', lambda: (playlists, tracks, {}))
+    client.post('/api/collections', json={'name': 'Smart'})
+    client.post(
+        '/api/collections/Smart/rules',
+        json={'rules': [{'type': 'genre', 'value': 'Rock'}]},
+    )
+
+    response = client.get('/api/collections/Smart/tracks')
+    assert response.status_code == 200, response.text
+    assert response.json() == {'tracks': [tracks['rock/one.mp3']]}
+
+    analysis = client.get('/api/collections/Smart/analysis')
+    assert analysis.status_code == 200, analysis.text
+    assert analysis.json() == {
+        'tracks': 1,
+        'duration_seconds': 123.5,
+        'bytes': 456,
+        'missing_tracks': 1,
+        'missing_ratio': 0.5,
+    }

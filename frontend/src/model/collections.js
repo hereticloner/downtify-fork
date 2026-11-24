@@ -56,6 +56,16 @@ export async function previewCollectionRules(name, rules) {
   return res.data
 }
 
+export async function getCollectionTracks(name) {
+  const res = await API.getCollectionTracks(name)
+  return res.data
+}
+
+export async function getCollectionAnalysis(name) {
+  const res = await API.getCollectionAnalysis(name)
+  return res.data
+}
+
 /**
  * Queue the missing tracks of each member playlist (from
  * `collectionMissingPlaylists`) through the existing per-playlist

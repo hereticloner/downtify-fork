@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse
 
 from . import collections as coll
 from . import stats as stats_mod
+from .collection_actions import collection_analysis, collection_tracks
 from .library_paths_cache import invalidate_library_paths_cache
 
 router = APIRouter()
@@ -138,6 +139,39 @@ async def get_collection_endpoint(name: str) -> dict[str, Any]:
         )
     data.setdefault('rules', [])
     return data
+
+
+def _collection_action_view(
+    name: str,
+) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, dict[str, Any]]]:
+    data = coll.get_collection(_download_dir(), name)
+    playlists, tracks, play_counts = _library_view()
+    if data.get('rules'):
+        data = coll.resolve_collection(
+            data,
+            playlists=playlists,
+            tracks=tracks,
+            play_counts=play_counts,
+        )
+    return data, playlists, tracks
+
+
+@router.get('/api/collections/{name}/tracks')
+def collection_tracks_endpoint(name: str) -> dict[str, Any]:
+    try:
+        data, playlists, tracks = _collection_action_view(name)
+    except coll.CollectionError as exc:
+        _raise(exc)
+    return {'tracks': collection_tracks(data, playlists, tracks)}
+
+
+@router.get('/api/collections/{name}/analysis')
+def collection_analysis_endpoint(name: str) -> dict[str, Any]:
+    try:
+        data, playlists, tracks = _collection_action_view(name)
+    except coll.CollectionError as exc:
+        _raise(exc)
+    return collection_analysis(data, playlists, tracks)
 
 
 @router.post('/api/collections/{name}/rules')

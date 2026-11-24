@@ -545,6 +545,14 @@ function previewCollectionRules(name, rules) {
   })
 }
 
+function getCollectionTracks(name) {
+  return API.get(`/api/collections/${encodeURIComponent(name)}/tracks`)
+}
+
+function getCollectionAnalysis(name) {
+  return API.get(`/api/collections/${encodeURIComponent(name)}/analysis`)
+}
+
 function reconcileLibrary() {
   return API.post('/api/library/reconcile')
 }
@@ -1040,6 +1048,8 @@ export default {
   getCollection,
   saveCollectionRules,
   previewCollectionRules,
+  getCollectionTracks,
+  getCollectionAnalysis,
   prepareLibraryArchive,
   libraryArchiveURL,
   reconcileLibrary,
