@@ -5966,6 +5966,8 @@ async def set_queue_priority(
     updated = store.set_priorities(eligible, priority) if eligible else 0
     for song_id in eligible:
         state.download_jobs[song_id]['priority'] = priority
+    if eligible:
+        await state.connections.broadcast({'type': 'queue_reload'})
     return {'updated': updated}
 
 
@@ -6009,18 +6011,25 @@ async def bulk_queue_action(
         else:
             if state.downloader is None:
                 raise HTTPException(status_code=503, detail='Queue not ready')
-            if eligible:
-                store.set_jobs_paused(eligible, False)
-            for song_id in eligible:
+            saved_ids = {row.song_id for row in store.rows()}
+            restorable = [
+                song_id for song_id in eligible if song_id in saved_ids
+            ]
+            if restorable:
+                store.set_jobs_paused(restorable, False)
+            for song_id in restorable:
                 queue_pause.resume_job(song_id)
                 del state.download_jobs[song_id]
-            if eligible:
-                changed = await restore_download_queue(eligible)
+            if restorable:
+                changed = await restore_download_queue(restorable)
                 eligible = [
                     song_id
-                    for song_id in eligible
+                    for song_id in restorable
                     if song_id in state.download_jobs
                 ]
+            else:
+                changed = 0
+                eligible = []
         if eligible:
             await asyncio.gather(
                 *(

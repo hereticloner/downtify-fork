@@ -112,6 +112,10 @@ def test_priority_changes_only_queued_jobs(queue_client):
     assert rows['running'].priority == 'normal'
     assert api.state.download_jobs['queued']['priority'] == 'high'
     assert api.state.download_jobs['running']['priority'] == 'normal'
+    assert any(
+        message.get('type') == 'queue_reload'
+        for message in api.state.connections.messages
+    )
 
 
 def test_priority_rejects_unknown_values(queue_client):
@@ -181,7 +185,7 @@ def test_bulk_pause_and_resume_only_waiting_jobs(queue_client):
     assert {row.song_id: row for row in store.rows()}['queued'].paused is False
 
 
-def test_bulk_resume_ignores_a_paused_job_missing_from_storage(queue_client):
+def test_bulk_resume_keeps_a_paused_job_missing_from_storage(queue_client):
     client, store = queue_client
     _login(client)
     _job('paused')
@@ -195,7 +199,8 @@ def test_bulk_resume_ignores_a_paused_job_missing_from_storage(queue_client):
 
     assert response.status_code == 200
     assert response.json() == {'action': 'resume', 'changed': 0}
-    assert 'paused' not in api.state.download_jobs
+    assert api.state.download_jobs['paused']['status'] == 'paused'
+    assert queue_pause.job_paused('paused') is True
     assert store.rows() == []
 
 
