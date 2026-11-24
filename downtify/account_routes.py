@@ -309,6 +309,8 @@ async def delete_user(user_id: int, request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=status, detail=str(exc)) from exc
     await _sign_out_user(user_id)
     api.state.now_playing.forget_user(user_id)
+    if api.state.playback is not None:
+        await asyncio.to_thread(api.state.playback.forget_user, user_id)
     api.state.scrobble_tracker.forget_user(user_id)
     await api.log_activity(request, 'user_deleted', user['username'])
     logger.info('Deleted user {}', user['username'])
@@ -380,6 +382,18 @@ async def report_playback(request: Request) -> dict[str, Any]:
         position=position,
         ip=api.request_ip(request),
     )
+    playback = api.state.playback
+    if playback is not None:
+        await asyncio.to_thread(
+            playback.report,
+            user_id=me.user_id,
+            device_id=me.device_id or 'web',
+            player=player,
+            state=state,
+            track=track,
+            position=position,
+            seek=seek_requested,
+        )
     if started:
         await api.log_activity(
             request, 'playback', track_label(track), {'track': track}

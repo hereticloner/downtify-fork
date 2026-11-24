@@ -439,6 +439,7 @@ from .monitor import (
 )
 from .navidrome import _effective_navidrome_settings, cache_navidrome_song_id
 from .navidrome_index import NavidromeIndex
+from .playback import PlaybackStore
 from .playlist_batches import (
     PlaylistBatchStore,
     active_queue_count_for_playlist,
@@ -1088,6 +1089,7 @@ class AppState:
     listen: dict[str, Any] = {}
     # What users do (downtify/activity.py), for admins.
     activity: Optional[ActivityLog] = None
+    playback: Optional[PlaybackStore] = None
     now_playing: NowPlaying = NowPlaying()
     # Which player already got a now-playing/scrobble (downtify.scrobbling).
     scrobble_tracker: Any = scrobbling.ScrobbleTracker()

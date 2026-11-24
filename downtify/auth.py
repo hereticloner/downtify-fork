@@ -1056,6 +1056,7 @@ RULES: list[tuple[frozenset[str], re.Pattern[str], str]] = [
         ),
         (_ALL, r'^/api/discover/blocked$', CLIENT),
         (_m('POST'), r'^/api/activity/playback$', CLIENT),
+        (_READ, r'^/api/playback/(resume|positions)$', CLIENT),
         (_READ, r'^/api/monitor/playlists$', CLIENT),
         (_READ, r'^/api/check_update$', CLIENT),
         # Admin (after the client rules, which carve out exceptions):

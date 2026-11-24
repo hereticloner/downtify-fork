@@ -49,6 +49,7 @@ from downtify import (
     auth_routes,
     download_policy_routes,
     mobile_routes,
+    playback_routes,
     spotify_history,
     spotify_sync,
     spotify_sync_api,
@@ -101,6 +102,7 @@ from downtify.lyrics import read_track_lyrics
 from downtify.lyrics_cache import LyricsLookupCache
 from downtify.monitor import PlaylistMonitorDB, monitor_loop, reconcile_loop
 from downtify.navidrome_index import NavidromeIndex
+from downtify.playback import PlaybackStore
 from downtify.playlist_batches import PlaylistBatchStore, ensure_batch_records
 from downtify.playlist_catalog import PlaylistCatalog
 from downtify.playlist_listing import list_library_playlists
@@ -841,6 +843,7 @@ def build_app() -> FastAPI:
     api.state.listen = _LISTEN
     api.state.auth = open_auth_store()
     api.state.activity = ActivityLog(DATABASE_DIR / 'downtify_activity.db')
+    api.state.playback = PlaybackStore(DATABASE_DIR / 'downtify_activity.db')
     app.add_middleware(
         AuthMiddleware,
         get_store=lambda: api.state.auth,
@@ -928,6 +931,7 @@ def build_app() -> FastAPI:
     app.include_router(api.router)
     app.include_router(auth_routes.router)
     app.include_router(account_routes.router)
+    app.include_router(playback_routes.router)
     app.include_router(mobile_routes.router)
     app.include_router(trash_routes.router)
     app.include_router(download_policy_routes.router)
