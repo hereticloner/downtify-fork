@@ -65,8 +65,8 @@ def test_equal_start_and_end_is_not_a_full_day_pause():
 
 
 def test_dst_uses_local_wall_clock_on_both_transitions():
-    spring = ZoneInfo('Europe/Istanbul')
-    settings = _settings(start='00:00', end='04:00')
+    spring = ZoneInfo('Europe/Berlin')
+    settings = _settings(start='00:00', end='04:00', timezone='Europe/Berlin')
     assert (
         quiet_hours(settings, datetime(2026, 3, 29, 0, 30, tzinfo=spring))
         is True
@@ -80,8 +80,8 @@ def test_dst_uses_local_wall_clock_on_both_transitions():
         is False
     )
 
-    fall = ZoneInfo('Europe/Istanbul')
-    settings = _settings(start='01:00', end='02:00')
+    fall = ZoneInfo('Europe/Berlin')
+    settings = _settings(start='01:00', end='02:00', timezone='Europe/Berlin')
     first = datetime(2026, 10, 25, 1, 30, tzinfo=fall, fold=0)
     second = datetime(2026, 10, 25, 1, 30, tzinfo=fall, fold=1)
     assert quiet_hours(settings, first) is True
@@ -167,6 +167,18 @@ async def test_settings_update_validates_and_cleans_queue_control(monkeypatch):
     )
     assert api.state.settings['queue_control']['quiet_hours'] == {
         'enabled': True,
+        'start': '23:00',
+        'end': '07:30',
+        'timezone': 'Europe/Istanbul',
+    }
+
+    await api.update_settings_endpoint(
+        _SettingsRequest({
+            'queue_control': {'quiet_hours': {'enabled': False}}
+        })
+    )
+    assert api.state.settings['queue_control']['quiet_hours'] == {
+        'enabled': False,
         'start': '23:00',
         'end': '07:30',
         'timezone': 'Europe/Istanbul',

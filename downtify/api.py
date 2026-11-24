@@ -6336,13 +6336,29 @@ async def update_settings_endpoint(
         )
         if 'queue_control' in payload:
             try:
+                current_control = state.settings.get('queue_control') or {}
+                incoming_control = (
+                    payload.get('queue_control')
+                    if isinstance(payload.get('queue_control'), dict)
+                    else {}
+                )
+                current_quiet = current_control.get('quiet_hours') or {}
+                incoming_quiet = incoming_control.get('quiet_hours') or {}
                 pending_queue_control = queue_schedule.clean_queue_control({
-                    **(state.settings.get('queue_control') or {}),
-                    **(
-                        payload.get('queue_control')
-                        if isinstance(payload.get('queue_control'), dict)
-                        else {}
-                    ),
+                    **current_control,
+                    **incoming_control,
+                    'quiet_hours': {
+                        **(
+                            current_quiet
+                            if isinstance(current_quiet, dict)
+                            else {}
+                        ),
+                        **(
+                            incoming_quiet
+                            if isinstance(incoming_quiet, dict)
+                            else {}
+                        ),
+                    },
                 })
             except ValueError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
