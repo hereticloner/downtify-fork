@@ -786,17 +786,18 @@ def build_app() -> FastAPI:
         except Exception:
             logger.exception('Download queue: could not restore')
 
-        telegram_bot = TelegramCommandBot.from_settings(
-            api.state.settings,
-            api.state.notification_store.load(),
+        telegram_bot = TelegramCommandBot(
+            token='',
+            admin_chat_id='',
+            settings_provider=lambda: api.state.settings,
+            secrets_provider=api.state.notification_store.load,
             status_provider=lambda: {
                 'version': api.state.version,
                 'queue': api.get_queue_state(),
             },
             queue_provider=api.get_queue,
         )
-        if telegram_bot is not None:
-            api.spawn_task(telegram_bot.run(), name='telegram-command-bot')
+        api.spawn_task(telegram_bot.run(), name='telegram-command-bot')
         api.spawn_task(
             backup_schedule.backup_schedule_loop(), name='backup-schedule-loop'
         )

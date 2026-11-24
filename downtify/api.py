@@ -5904,7 +5904,9 @@ async def resume_queue() -> dict[str, Any]:
     return await _set_queue_paused(False)
 
 
-async def restore_download_queue() -> int:
+async def restore_download_queue(
+    song_ids: Optional[Collection[str]] = None,
+) -> int:
     """Pick the saved queue back up after a restart; how many jobs.
 
     The pause switch comes back first, so a queue paused before an
@@ -5919,20 +5921,28 @@ async def restore_download_queue() -> int:
     if await asyncio.to_thread(store.paused):
         queue_pause.pause()
     rows = await asyncio.to_thread(store.rows)
+    if song_ids is not None:
+        wanted = {str(song_id) for song_id in song_ids}
+        rows = [row for row in rows if row.song_id in wanted]
     if not rows or state.downloader is None:
         return 0
+    restored = []
     for row in rows:
+        if row.song_id in state.download_jobs:
+            continue
         song = row.song
         if not (song.get('song_id') or song.get('url')):
             song['song_id'] = row.song_id
         _register_job(song, status='queued', priority=row.priority)
+        restored.append(row)
     logger.info(
         'Download queue: {} unfinished job(s) restored{}',
-        len(rows),
+        len(restored),
         ' (paused)' if queue_pause.paused else '',
     )
-    spawn_task(_run_restored_queue(rows), name='queue-restore')
-    return len(rows)
+    if restored:
+        spawn_task(_run_restored_queue(restored), name='queue-restore')
+    return len(restored)
 
 
 async def _run_restored_queue(rows: list[PendingDownload]) -> None:
@@ -6366,8 +6376,8 @@ async def test_navidrome_endpoint(request: Request) -> dict[str, Any]:
 
 
 @router.post('/api/notifications/test')
-async def test_notifications_endpoint(
-    request: Request, channel: str
+async def notifications_test_endpoint(
+    request: Request, channel: str = Query('telegram')
 ) -> dict[str, Any]:
     """Test one channel with typed credentials or the saved secret store."""
 

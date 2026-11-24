@@ -7,12 +7,12 @@ import {
 } from '../lib/backupSettings'
 
 describe('backup settings form', () => {
-  it('requires a dry-run before a confirmed restore', () => {
+  it('allows restore after a successful dry-run preview', () => {
     expect(canRestoreBackup(null)).toBe(false)
-    expect(canRestoreBackup({ dry_run: true })).toBe(false)
-    expect(canRestoreBackup({ dry_run: false, name: 'backup.json.gz' })).toBe(
+    expect(canRestoreBackup({ dry_run: true, name: 'backup.json.gz' })).toBe(
       true
     )
+    expect(canRestoreBackup({ dry_run: true })).toBe(false)
   })
 
   it('builds separate preview and confirmed restore requests', () => {

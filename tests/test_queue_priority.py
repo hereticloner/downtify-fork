@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 
+from downtify import api
 from downtify.download_queue import PendingDownload, PendingDownloads
 
 
@@ -36,6 +38,36 @@ def test_existing_queue_rows_migrate_to_normal_priority(tmp_path):
             for row in conn.execute('PRAGMA table_info(pending_downloads)')
         }
     assert 'priority' in columns
+
+
+def test_restore_queue_filters_ids_and_does_not_duplicate_running_jobs(
+    tmp_path, monkeypatch
+):
+    store = PendingDownloads(tmp_path / 'queue.db')
+    store.add([
+        PendingDownload('one', {'song_id': 'one', 'name': 'One'}),
+        PendingDownload('two', {'song_id': 'two', 'name': 'Two'}),
+    ])
+    monkeypatch.setattr(api.state, 'pending_downloads', store)
+    monkeypatch.setattr(api.state, 'downloader', object())
+    monkeypatch.setitem(
+        api.state.download_jobs, 'one', {'song': {'name': 'One'}}
+    )
+    captured = []
+
+    async def fake_run(rows):
+        captured.extend(row.song_id for row in rows)
+
+    monkeypatch.setattr(api, '_run_restored_queue', fake_run)
+
+    async def scenario():
+        count = await api.restore_download_queue(['two'])
+        await asyncio.sleep(0)
+        return count
+
+    assert asyncio.run(scenario()) == 1
+    assert captured == ['two']
+    assert 'two' in api.state.download_jobs
 
 
 def test_rows_sort_high_before_normal_and_keep_fifo(tmp_path):

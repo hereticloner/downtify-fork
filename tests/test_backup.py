@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from downtify import backup as backup_module
 from downtify import collections, monitor
 from downtify.backup import BackupStore
 from downtify.download_queue import PendingDownload, PendingDownloads
@@ -249,6 +250,206 @@ def test_restore_adds_missing_rows_and_requeues_only_identified_songs(
     ] == ['Mix']
 
 
+def test_restore_preserves_existing_settings_and_secret_values(tmp_path):
+    source = tmp_path / 'source'
+    _seed(source)
+    (source / 'settings.json').write_text(
+        json.dumps({
+            'format': 'flac',
+            'bitrate': '320',
+            'notifications': {
+                'enabled': True,
+                'channels': {
+                    'telegram': {
+                        'enabled': True,
+                        'events': ['download.failed'],
+                    },
+                    'webhook': {
+                        'enabled': True,
+                        'url': 'https://evil.test/hook',
+                    },
+                },
+            },
+        })
+    )
+    (source / 'notifications.json').write_text(
+        json.dumps({
+            'version': 1,
+            'channels': {
+                'telegram': {'bot_token': 'backup-token', 'chat_id': '11'},
+                'webhook': {'url': 'https://evil.test/hook', 'token': 'evil'},
+            },
+        })
+    )
+    backup = BackupStore(source).write()
+
+    target = tmp_path / 'target'
+    target.mkdir()
+    settings_path = target / 'settings.json'
+    secrets_path = target / 'notifications.json'
+    settings_path.write_text(
+        json.dumps({
+            'format': 'mp3',
+            'notifications': {
+                'enabled': False,
+                'channels': {
+                    'telegram': {
+                        'enabled': False,
+                        'events': ['watch.downloaded'],
+                    },
+                    'webhook': {'enabled': False},
+                },
+            },
+        })
+    )
+    secrets_path.write_text(
+        json.dumps({
+            'version': 1,
+            'channels': {
+                'telegram': {'bot_token': 'current-token', 'chat_id': '42'},
+                'webhook': {'url': 'https://current.test/hook'},
+            },
+        })
+    )
+
+    BackupStore(target).restore(backup, dry_run=False)
+
+    settings = json.loads(settings_path.read_text())
+    secrets = json.loads(secrets_path.read_text())
+    assert settings['format'] == 'mp3'
+    assert settings['bitrate'] == '320'
+    assert settings['notifications']['enabled'] is False
+    assert (
+        settings['notifications']['channels']['telegram']['enabled'] is False
+    )
+    assert secrets['channels']['telegram']['bot_token'] == 'current-token'
+    assert secrets['channels']['telegram']['chat_id'] == '42'
+    assert secrets['channels']['webhook']['url'] == 'https://current.test/hook'
+    assert secrets['channels']['webhook']['token'] == 'evil'
+    assert 'evil.test' not in settings_path.read_text()
+
+
+def test_restore_leaves_fully_populated_json_files_byte_for_byte(tmp_path):
+    source = tmp_path / 'source'
+    _seed(source)
+    backup = BackupStore(source).write()
+    target = tmp_path / 'target'
+    _seed(target)
+    settings_before = (target / 'settings.json').read_bytes()
+    secrets_before = (target / 'notifications.json').read_bytes()
+
+    BackupStore(target).restore(backup, dry_run=False)
+
+    assert (target / 'settings.json').read_bytes() == settings_before
+    assert (target / 'notifications.json').read_bytes() == secrets_before
+
+
+def test_restore_rejects_collection_path_traversal(tmp_path):
+    source = tmp_path / 'source'
+    _seed(source)
+    doc = _read_backup(BackupStore(source).write())
+    doc['collections'] = [
+        {
+            'version': 1,
+            'name': '../../../escape.json',
+            'playlists': [],
+        }
+    ]
+    backup = source / 'backups' / 'downtify-traversal.json.gz'
+    with gzip.open(backup, 'wt', encoding='utf-8') as handle:
+        json.dump(doc, handle)
+    target = tmp_path / 'target'
+    target.mkdir()
+
+    result = BackupStore(target).restore(backup, dry_run=False)
+
+    assert result['invalid_collections'] == ['../../../escape.json']
+    assert not (target / 'escape.json').exists()
+
+
+def test_restore_rolls_back_all_tables_in_a_database_on_failure(
+    tmp_path, monkeypatch
+):
+    source = tmp_path / 'source'
+    _seed(source)
+    backup = BackupStore(source).write()
+    target = tmp_path / 'target'
+    target.mkdir()
+    store = BackupStore(target)
+    original = backup_module._insert_missing
+
+    def fail_second(conn, table, rows, keys):
+        if table == 'liked_tracks':
+            raise OSError('disk full')
+        return original(conn, table, rows, keys)
+
+    monkeypatch.setattr(backup_module, '_insert_missing', fail_second)
+    with pytest.raises(OSError, match='disk full'):
+        store.restore(backup, dry_run=False)
+
+    with connect_sqlite(
+        target / 'downtify_library.db', row_factory=True
+    ) as conn:
+        assert (
+            conn.execute('SELECT COUNT(*) FROM library_tracks').fetchone()[0]
+            == 0
+        )
+        assert (
+            conn.execute('SELECT COUNT(*) FROM liked_tracks').fetchone()[0]
+            == 0
+        )
+
+
+def test_restore_does_not_requeue_a_track_already_on_disk(tmp_path):
+    source = tmp_path / 'source'
+    _seed(source)
+    backup = BackupStore(source).write()
+    target = tmp_path / 'target'
+    (target / 'downloads' / 'Artist').mkdir(parents=True)
+    (target / 'downloads' / 'Artist' / 'Song.mp3').write_bytes(b'audio')
+
+    result = BackupStore(target).restore(
+        backup, dry_run=False, requeue_missing=True
+    )
+
+    assert result['requeued'] == []
+    with connect_sqlite(
+        target / 'downtify_library.db', row_factory=True
+    ) as conn:
+        assert (
+            conn.execute('SELECT COUNT(*) FROM pending_downloads').fetchone()[
+                0
+            ]
+            == 0
+        )
+
+
+def test_restore_rolls_back_json_files_when_a_later_write_fails(
+    tmp_path, monkeypatch
+):
+    source = tmp_path / 'source'
+    _seed(source)
+    backup = BackupStore(source).write()
+    target = tmp_path / 'target'
+    _seed(target)
+    (target / 'settings.json').write_text(json.dumps({'format': 'mp3'}))
+    settings_before = (target / 'settings.json').read_bytes()
+    secrets_before = (target / 'notifications.json').read_bytes()
+    original = backup_module._atomic_json
+
+    def fail_settings(path, data):
+        if path.name == 'settings.json':
+            raise OSError('disk full')
+        return original(path, data)
+
+    monkeypatch.setattr(backup_module, '_atomic_json', fail_settings)
+    with pytest.raises(OSError, match='disk full'):
+        BackupStore(target).restore(backup, dry_run=False)
+
+    assert (target / 'settings.json').read_bytes() == settings_before
+    assert (target / 'notifications.json').read_bytes() == secrets_before
+
+
 def test_restore_lists_songs_without_stable_spotify_identity(tmp_path):
     source = tmp_path / 'source'
     _seed(source)
@@ -272,6 +473,27 @@ def test_restore_lists_songs_without_stable_spotify_identity(tmp_path):
 
     assert result['requeued'] == []
     assert result['unresolved'] == ['youtube-id']
+    with connect_sqlite(
+        tmp_path / 'target' / 'downtify_library.db', row_factory=True
+    ) as conn:
+        assert (
+            conn.execute('SELECT COUNT(*) FROM pending_downloads').fetchone()[
+                0
+            ]
+            == 0
+        )
+
+
+def test_preview_rejects_decompressed_bomb(tmp_path, monkeypatch):
+    monkeypatch.setattr(backup_module, 'MAX_BACKUP_BYTES', 1024)
+    store = BackupStore(tmp_path / 'data')
+    bomb = store.backup_dir / 'downtify-bomb.json.gz'
+    bomb.parent.mkdir(parents=True)
+    with gzip.open(bomb, 'wt', encoding='utf-8') as handle:
+        json.dump({'version': 1, 'sqlite': {}, 'padding': 'x' * 2048}, handle)
+
+    with pytest.raises(ValueError, match='too large'):
+        store.preview(bomb)
 
 
 def test_preview_rejects_corrupt_and_future_versions(tmp_path):

@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from downtify import api, auth_routes
+from downtify import backup as backup_module
 from downtify.auth import AuthMiddleware, AuthStore
 from downtify.backup import BackupStore
 from downtify.backup_routes import router as backup_router
@@ -72,7 +73,9 @@ def test_restore_requires_dry_run_then_confirmation(client, tmp_path):
     _login(client)
     source = tmp_path / 'source'
     source.mkdir()
-    (source / 'settings.json').write_text(json.dumps({'format': 'flac'}))
+    (source / 'settings.json').write_text(
+        json.dumps({'format': 'flac', 'bitrate': '320'})
+    )
     backup = BackupStore(source).write()
     target = api.state.backup_store.backup_dir / backup.name
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -112,12 +115,48 @@ def test_restore_requires_dry_run_then_confirmation(client, tmp_path):
     )
     assert restored.status_code == 200
     assert restored.json()['dry_run'] is False
-    assert (
-        json.loads(
-            (api.state.backup_store.data_dir / 'settings.json').read_text()
-        )['format']
-        == 'flac'
+    settings = json.loads(
+        (api.state.backup_store.data_dir / 'settings.json').read_text()
     )
+    assert settings['format'] == 'mp3'
+    assert settings['bitrate'] == '320'
+
+
+def test_restore_starts_the_reported_missing_downloads(client, monkeypatch):
+    _login(client)
+    source = BackupStore(api.state.backup_store.data_dir)
+    backup = source.write()
+    name = backup.name
+
+    def fake_restore(*args, **kwargs):
+        return {
+            'dry_run': False,
+            'added': {},
+            'requeued': ['0TnOYISbd1XYRBk9myaseg'],
+            'unresolved': [],
+        }
+
+    queued = []
+
+    async def fake_queue(song_ids):
+        queued.extend(song_ids)
+        return len(song_ids)
+
+    monkeypatch.setattr(api.state.backup_store, 'restore', fake_restore)
+    monkeypatch.setattr(api, 'restore_download_queue', fake_queue)
+
+    response = client.post(
+        '/api/backups/restore',
+        json={
+            'name': name,
+            'dry_run': False,
+            'confirm': True,
+            'requeue_missing': True,
+        },
+    )
+
+    assert response.status_code == 200
+    assert queued == ['0TnOYISbd1XYRBk9myaseg']
 
 
 def test_backup_routes_reject_path_traversal(client):
@@ -125,6 +164,71 @@ def test_backup_routes_reject_path_traversal(client):
     for name in ('../settings.json', '/etc/passwd', 'other.json.gz'):
         assert client.get(f'/api/backups/{name}').status_code in {400, 404}
         assert client.delete(f'/api/backups/{name}').status_code in {400, 404}
+
+
+def test_upload_rejects_a_decompressed_bomb(client, monkeypatch):
+    monkeypatch.setattr(backup_module, 'MAX_BACKUP_BYTES', 1024)
+    _login(client)
+    payload = json.dumps({
+        'version': 1,
+        'sqlite': {},
+        'padding': 'x' * 2048,
+    }).encode()
+    content = gzip.compress(payload)
+    name = 'downtify-bomb.json.gz'
+
+    response = client.post(
+        '/api/backups/upload',
+        files={'file': (name, content, 'application/gzip')},
+    )
+
+    assert response.status_code == 413
+    assert not (api.state.backup_store.backup_dir / name).exists()
+
+
+def test_upload_keeps_the_partial_backup_private(client, monkeypatch):
+    _login(client)
+    source = BackupStore(api.state.backup_store.data_dir)
+    backup = source.write()
+    partial = api.state.backup_store.backup_dir / f'.{backup.name}.partial'
+    partial.parent.mkdir(parents=True, exist_ok=True)
+    partial.write_bytes(b'old')
+    partial.chmod(0o644)
+    modes = []
+    original = api.state.backup_store.validate_upload
+
+    def validate(path):
+        modes.append(path.stat().st_mode & 0o777)
+        return original(path)
+
+    monkeypatch.setattr(api.state.backup_store, 'validate_upload', validate)
+
+    response = client.post(
+        '/api/backups/upload',
+        files={'file': (backup.name, backup.read_bytes(), 'application/gzip')},
+    )
+
+    assert response.status_code == 200
+    assert modes == [0o600]
+
+
+def test_upload_rejects_a_malformed_sqlite_section(client):
+    _login(client)
+    content = gzip.compress(
+        json.dumps({'version': 1, 'sqlite': {'downtify.db': []}}).encode()
+    )
+
+    response = client.post(
+        '/api/backups/upload',
+        files={
+            'file': ('downtify-malformed.json.gz', content, 'application/gzip')
+        },
+    )
+
+    assert response.status_code == 400
+    assert not (
+        api.state.backup_store.backup_dir / 'downtify-malformed.json.gz'
+    ).exists()
 
 
 def test_upload_preview_and_restore_an_uploaded_backup(client):

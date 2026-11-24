@@ -33,9 +33,6 @@ markers = [
     "windows_broken: Windows'ta bilinen kırık (yol/.sh sınıfı)",
 ]
 
-[tool.uv]
-upgrade = true
-
 [tool.ruff]
 line-length = 79
 # Design-canvas generator scripts (design/), not shipped code.

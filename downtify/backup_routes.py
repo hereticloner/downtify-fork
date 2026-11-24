@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-import gzip
-import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -13,7 +12,7 @@ from fastapi import APIRouter, Body, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from downtify import api
-from downtify.backup import BackupStore
+from downtify.backup import BackupStore, BackupTooLarge
 from downtify.backup_schedule import _read_schedule
 from downtify.backup_schedule import router as schedule_router
 
@@ -90,7 +89,9 @@ async def upload_backup(file: UploadFile = File(...)) -> dict[str, Any]:
     _store().backup_dir.mkdir(parents=True, exist_ok=True)
     size = 0
     try:
-        with partial.open('wb') as handle:
+        fd = os.open(partial, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'wb') as handle:
+            os.fchmod(handle.fileno(), 0o600)
             while chunk := await file.read(1024 * 1024):
                 size += len(chunk)
                 if size > _MAX_UPLOAD_BYTES:
@@ -99,13 +100,14 @@ async def upload_backup(file: UploadFile = File(...)) -> dict[str, Any]:
                     )
                 handle.write(chunk)
             handle.flush()
-        with gzip.open(partial, 'rb') as handle:
-            json.loads(handle.read())
+        _store().validate_upload(partial)
         partial.chmod(0o600)
         partial.replace(target)
         target.chmod(0o600)
     except HTTPException:
         raise
+    except BackupTooLarge as exc:
+        raise HTTPException(status_code=413, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:
@@ -139,6 +141,8 @@ async def restore_backup(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not dry_run:
+        if requeue and result.get('requeued'):
+            await api.restore_download_queue(result['requeued'])
         if api.state.settings_path is not None:
             api.state.settings = api._load_settings(api.state.settings_path)
         await api.notify_event(

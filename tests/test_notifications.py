@@ -12,7 +12,8 @@ import json
 from types import SimpleNamespace
 
 import pytest
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
+from starlette.testclient import TestClient
 
 from downtify import api, monitor, notifications
 
@@ -431,7 +432,7 @@ def test_notification_test_endpoint_passes_channel_and_saved_secrets(
 
     monkeypatch.setattr(notifications, 'send_test_message', fake_send)
     result = asyncio.run(
-        api.test_notifications_endpoint(
+        api.notifications_test_endpoint(
             _FakeRequest({'enabled': True}), channel='ntfy'
         )
     )
@@ -440,6 +441,23 @@ def test_notification_test_endpoint_passes_channel_and_saved_secrets(
     assert (
         seen['secrets']['channels']['ntfy']['url'] == 'https://ntfy.sh/saved'
     )
+
+
+def test_notification_test_route_defaults_to_telegram(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(
+        notifications,
+        'send_test_message',
+        lambda block, **kwargs: seen.update(kwargs) or {'ok': True},
+    )
+    app = FastAPI()
+    app.include_router(api.router)
+    client = TestClient(app)
+
+    response = client.post('/api/notifications/test', json={'enabled': True})
+
+    assert response.status_code == 200
+    assert seen['channel'] == 'telegram'
 
 
 # ── credentials ──────────────────────────────────────────────────────

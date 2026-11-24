@@ -23,6 +23,8 @@ class TelegramCommandBot:
         client: Optional[httpx.AsyncClient] = None,
         status_provider: Optional[Callable[[], dict[str, Any]]] = None,
         queue_provider: Optional[Callable[[], list[dict[str, Any]]]] = None,
+        settings_provider: Optional[Callable[[], dict[str, Any]]] = None,
+        secrets_provider: Optional[Callable[[], dict[str, Any]]] = None,
         poll_timeout: int = 30,
         retry_delay: float = 3.0,
     ) -> None:
@@ -31,9 +33,52 @@ class TelegramCommandBot:
         self.client = client
         self.status_provider = status_provider or (lambda: {})
         self.queue_provider = queue_provider or (lambda: [])
+        self.settings_provider = settings_provider
+        self.secrets_provider = secrets_provider
         self.poll_timeout = poll_timeout
         self.retry_delay = retry_delay
         self.last_poll_failed = False
+        self.active_token = ''
+        self.configured = self.refresh_config()
+        self.active_token = self.token if self.configured else ''
+
+    def refresh_config(self) -> bool:
+        """Re-read runtime settings so chat/token changes need no restart."""
+
+        if self.settings_provider is None or self.secrets_provider is None:
+            return bool(self.token and self.admin_chat_id)
+        try:
+            settings = self.settings_provider()
+            secrets = self.secrets_provider()
+            config = (
+                notifications
+                .effective_settings(settings, secrets)
+                .get('notifications', {})
+                .get('channels', {})
+                .get('telegram', {})
+            )
+            block = (
+                settings.get('notifications')
+                if isinstance(settings, dict)
+                else None
+            )
+            enabled = (
+                isinstance(block, dict)
+                and bool(block.get('enabled'))
+                and isinstance(config, dict)
+                and bool(config.get('enabled'))
+            )
+            token = str(config.get('bot_token') or '').strip()
+            chat_id = str(config.get('chat_id') or '').strip()
+            self.configured = bool(enabled and token and chat_id)
+            self.token = token if self.configured else ''
+            self.admin_chat_id = chat_id if self.configured else ''
+            return self.configured
+        except Exception:
+            self.configured = False
+            self.token = ''
+            self.admin_chat_id = ''
+            return False
 
     @classmethod
     def from_settings(
@@ -65,6 +110,8 @@ class TelegramCommandBot:
         return cls(token=token, admin_chat_id=chat_id, **kwargs)
 
     async def handle_update(self, update: dict[str, Any]) -> None:
+        if not self.refresh_config():
+            return
         message = update.get('message') if isinstance(update, dict) else None
         if not isinstance(message, dict):
             return
@@ -118,8 +165,11 @@ class TelegramCommandBot:
             await self._reply('\n'.join(lines) + suffix)
 
     async def poll_once(self, offset: int) -> int:
-        if self.client is None:
+        if self.client is None or not self.refresh_config():
             return offset
+        if self.token != self.active_token:
+            offset = 0
+            self.active_token = self.token
         try:
             response = await self.client.get(
                 f'{notifications.TELEGRAM_API}/bot{self.token}/getUpdates',
@@ -156,7 +206,7 @@ class TelegramCommandBot:
         try:
             while True:
                 offset = await self.poll_once(offset)
-                if self.last_poll_failed:
+                if self.last_poll_failed or not self.configured:
                     await asyncio.sleep(self.retry_delay)
         finally:
             if owns_client:

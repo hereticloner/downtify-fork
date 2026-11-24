@@ -1,5 +1,5 @@
 export function canRestoreBackup(preview) {
-  return Boolean(preview?.dry_run === false && preview?.name)
+  return Boolean(preview?.dry_run === true && preview?.name)
 }
 
 export function backupRestoreRequest(name, dryRun, requeueMissing) {
