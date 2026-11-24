@@ -181,6 +181,24 @@ def test_bulk_pause_and_resume_only_waiting_jobs(queue_client):
     assert {row.song_id: row for row in store.rows()}['queued'].paused is False
 
 
+def test_bulk_resume_ignores_a_paused_job_missing_from_storage(queue_client):
+    client, store = queue_client
+    _login(client)
+    _job('paused')
+    api.state.download_jobs['paused']['status'] = 'paused'
+    queue_pause.pause_job('paused')
+
+    response = client.post(
+        '/api/queue/bulk',
+        json={'action': 'resume', 'song_ids': ['paused']},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {'action': 'resume', 'changed': 0}
+    assert 'paused' not in api.state.download_jobs
+    assert store.rows() == []
+
+
 def test_paused_job_stays_paused_after_restart(queue_client, monkeypatch):
     client, store = queue_client
     _login(client)

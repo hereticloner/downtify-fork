@@ -5991,6 +5991,7 @@ async def bulk_queue_action(
     store = state.pending_downloads
     if store is None:
         raise HTTPException(status_code=503, detail='Queue not ready')
+    changed = len(eligible)
     if action == 'remove':
         if eligible:
             store.forget(eligible)
@@ -6014,7 +6015,12 @@ async def bulk_queue_action(
                 queue_pause.resume_job(song_id)
                 del state.download_jobs[song_id]
             if eligible:
-                await restore_download_queue(eligible)
+                changed = await restore_download_queue(eligible)
+                eligible = [
+                    song_id
+                    for song_id in eligible
+                    if song_id in state.download_jobs
+                ]
         if eligible:
             await asyncio.gather(
                 *(
@@ -6027,7 +6033,7 @@ async def bulk_queue_action(
                     for song_id in eligible
                 )
             )
-    return {'action': action, 'changed': len(eligible)}
+    return {'action': action, 'changed': changed}
 
 
 async def restore_download_queue(
