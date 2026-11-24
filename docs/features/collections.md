@@ -52,7 +52,7 @@ A collection can also carry **rules**, which turns it into a smart collection: i
 Click the trash button on a collection and confirm. Only the collection is deleted — its playlists, their M3U files and their audio all stay exactly where they were.
 
 ::: info Removing one playlist vs. deleting the collection
-To drop a single playlist from a collection without deleting the group, use the [API](#api) (`POST /api/collections/{name}/items` with a `remove` list). The page itself offers adding playlists, renaming and deleting a whole collection.
+To drop a single playlist from a collection, click the **×** on its chip. The playlist itself is not deleted. In a smart collection the rules may add it again on the next read; edit the rules if you want it kept out.
 :::
 
 ## Where collections are stored

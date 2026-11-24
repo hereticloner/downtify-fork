@@ -94,6 +94,10 @@ The same actions apply to a multi-track selection in the Library.
 
 The queue, the current track, its position, shuffle and repeat are remembered, so reopening Downtify resumes where you left off (queues of more than 2000 tracks aren't remembered). Deleted files drop out of the queue automatically.
 
+## Saving the queue as a playlist
+
+In **Up next**, **Save as playlist** opens the normal create-playlist dialog with the queue's downloaded tracks already selected. Streams without a local file are skipped; the queue itself is unchanged. The new playlist keeps the queue order.
+
 ## Continue on another device
 
 Downtify also keeps the last playback position with your account. When you open **Home** on another browser or paired app, a **Continue listening** card offers the most recently updated track and the device it came from. Press **Resume** to start it at that position.

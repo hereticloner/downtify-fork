@@ -45,6 +45,8 @@ Each tab has its own box. Pasting an artist link into the Playlists tab (or a pl
 
 You can also start watching from a playlist's page: paste its link in the search bar and use **Watch for new tracks** (or **Watch for new releases** on a YouTube Music artist). Downloaded playlists in the Library offer the same action in their **⋯** menu. Watches added this way use a 6-hour interval — change it on the Monitor page.
 
+An artist's own page also offers **Watch new releases** when Downtify knows its Spotify id. That shortcut starts an artist watch with **New releases only** enabled and a 1-hour interval, so it skips the back catalogue. If the artist is already watched, the button reads **Watching**.
+
 ## YouTube Music playlists
 
 Use a YouTube Music playlist for songs that aren't on Spotify: remixes, live sets, covers, uploads by promo channels. Each track is downloaded from **the exact video in the playlist**. Downtify doesn't search for it again, so what you get is what you added to the playlist.
