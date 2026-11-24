@@ -18,6 +18,24 @@ Everything you download goes through the **Queue** page: what is downloading (**
 
 Everyone sees whether the queue is paused; only an admin can pause or resume it, since it holds everyone's downloads.
 
+## Priority and selected jobs
+
+Waiting jobs have a **Normal** or **High** priority. High-priority jobs run first; jobs with the same priority keep their original FIFO order. Priority survives restarts and can be changed for one waiting row or a selection.
+
+Admins can select waiting rows on the Queue page and **pause**, **resume** or **remove** them together. Pausing a selected job does not cancel a running download, and a paused job does not take a download slot away from other waiting jobs. Removing a waiting job prevents it from starting; a running or finished row is never removed by a bulk waiting-job action.
+
+## Quiet hours
+
+Open **Settings → Server → Queue control**. Quiet hours are off by default. When enabled, new downloads wait during the configured local-time window:
+
+- The timezone defaults to `Europe/Istanbul` and accepts any IANA timezone.
+- A window may cross midnight, for example `22:00–08:00`.
+- The start is included and the end is excluded. Equal start/end times mean no quiet window.
+- Downloads already running finish normally. Waiting jobs continue when the window ends.
+- A manual **Pause downloads** wins over quiet hours and stays paused after the window ends.
+
+The setting lives in the `queue_control.quiet_hours` block of `settings.json` and is checked every 30 seconds.
+
 ## Restarting or updating
 
 The queue outlives a restart, a crash or a container update. The songs that were waiting — and the ones that were mid-download when Downtify stopped, which start over — are queued again on the next start, and a paused queue comes back paused. So with a long queue:
@@ -41,4 +59,4 @@ A retry joins the normal queue. The failure stays open until that retry succeeds
 
 ## API
 
-[`GET /api/queue/state`](../api-reference.md#get-apiqueuestate), [`POST /api/queue/pause`](../api-reference.md#post-apiqueuepause) and [`POST /api/queue/resume`](../api-reference.md#post-apiqueueresume); every change is also a `queue_state` [WebSocket](../api-reference.md#websocket) frame.
+[`GET /api/queue/state`](../api-reference.md#get-apiqueuestate), [`POST /api/queue/pause`](../api-reference.md#post-apiqueuepause), [`POST /api/queue/resume`](../api-reference.md#post-apiqueueresume), [`POST /api/queue/priority`](../api-reference.md#post-apiqueuepriority) and [`POST /api/queue/bulk`](../api-reference.md#post-apiqueuebulk); global pause changes are also `queue_state` [WebSocket](../api-reference.md#websocket) frames, and selected-job changes are per-track `paused`/`queued` frames.

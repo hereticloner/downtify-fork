@@ -627,9 +627,9 @@ Returns `400` if the CSV has no recognizable title/artist columns, is empty, or 
 
 ### `GET /api/queue`
 
-List all download jobs (queued, in progress, done, error).
+List all download jobs (queued, individually paused, in progress, done, error).
 
-**Response:** Array of job objects (`song`, `status`, `progress`, `message`, `filename`, and `provider` — the audio source that served it: `youtube-music` or `youtube`).
+**Response:** Array of job objects (`song`, `status`, `priority`, `progress`, `message`, `filename`, and `provider` — the audio source that served it: `youtube-music` or `youtube`). `priority` is `normal` or `high`; a selected waiting job may have `status: "paused"`.
 
 ---
 
@@ -695,7 +695,47 @@ Admin. Carry on with the waiting jobs, with the current settings and audio provi
 
 **Response:** the [`GET /api/queue/state`](#get-apiqueuestate) object.
 
-Unfinished jobs (waiting, or interrupted mid-download) are saved in `/data` and queued again when Downtify starts, paused or not; finished jobs and the current session's failed rows are not. Persistent failures are kept separately below.
+Unfinished jobs (waiting, individually paused, or interrupted mid-download) are saved in `/data` and queued again when Downtify starts, paused or not; finished jobs and the current session's failed rows are not. Persistent failures are kept separately below.
+
+---
+
+### `POST /api/queue/priority`
+
+Admin. Set the priority of waiting jobs. Running, done and failed jobs are ignored.
+
+**Body:**
+
+```json
+{ "song_ids": ["track-1", "track-2"], "priority": "high" }
+```
+
+`priority` is `normal` or `high`. Duplicate ids are ignored; an unknown id changes nothing.
+
+**Response:** `{ "updated": 1 }`
+
+High-priority jobs run first, with original FIFO order preserved inside each priority. The choice survives restarts.
+
+---
+
+### `POST /api/queue/bulk`
+
+Admin. Apply one action to selected waiting jobs.
+
+**Body:**
+
+```json
+{ "action": "pause", "song_ids": ["track-1", "track-2"] }
+```
+
+| Action | Behavior |
+|--------|----------|
+| `remove` | Delete selected `queued` and `paused` jobs so they never start |
+| `pause` | Hold selected `queued` jobs; running jobs finish and are not changed |
+| `resume` | Resume selected `paused` jobs through the normal download flow |
+
+**Response:** `{ "action": "pause", "changed": 1 }`
+
+A paused job remains visible as waiting and does not occupy a download slot while it waits.
 
 ---
 
@@ -3111,7 +3151,7 @@ The handshake needs a device token (`Authorization: Bearer …`), a web session 
 }
 ```
 
-`status` on a per-track event is `downloading`, `done`, or `error` (or `queued` for a job a paused queue holds back, see below). `filename` is set (non-null) on the final `done` event. A row that is still waiting has `status: "queued"` on [`GET /api/queue`](#get-apiqueue), not as its own socket event.
+`status` on a per-track event is `downloading`, `paused`, `queued`, `done`, or `error`. `filename` is set (non-null) on the final `done` event. Waiting and individually paused rows keep those statuses on [`GET /api/queue`](#get-apiqueue); selection pause/resume also broadcasts a per-track `paused`/`queued` frame.
 
 Queuing a playlist batch or a CSV import registers every job, then broadcasts one reload so open pages fetch that list once:
 

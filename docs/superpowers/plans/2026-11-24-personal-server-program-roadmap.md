@@ -11,9 +11,9 @@
 - [x] **Oynatma hafızası + gerçek Stats** → `2026-11-24-playback-memory-stats.md` — canlıda (`befabe1`), health `ok`.
 - [x] **Spotify Sync otomatik eksik indirme + başarısızlık merkezi** → `2026-11-24-spotify-sync-failures.md` — canlıda (`fef46c3`), health `ok`.
 - [x] **Birleşik arama + hızlı kazanımlar** → `2026-11-24-search-quickwins.md` — canlıda (`9e4b92e`), health `ok`.
-- [x] **Bildirim/Telegram + yedek/geri yükleme** → `2026-11-24-notifications-backup.md` — canlıda (`8ec60c0`), health `ok`.
-- [ ] **Kuyruk önceliği + sessiz saatler** → `2026-11-24-queue-priority-quiet-hours.md`
-- [ ] **Collections güç araçları** → alt plan Faz 6'da yazılacak
+- [x] **Bildirim/Telegram + yedek/geri yükleme** → `2026-11-24-notifications-backup.md` — canlıda (`bbb0033`), health `ok`.
+- [x] **Kuyruk önceliği + sessiz saatler** → `2026-11-24-queue-priority-quiet-hours.md` — canlıda (`0fcf1d5`), health `ok`.
+- [ ] **Collections güç araçları** → `2026-11-24-collections-tools.md`
 - [ ] **Library Health** → alt plan Faz 7'de yazılacak
 - [ ] **Söz sağlığı + senkron ofset** → alt plan Faz 8'de yazılacak
 - [ ] **Playlist-albüm + Monitor dry-run/Wanted** → alt plan Faz 9'da yazılacak
