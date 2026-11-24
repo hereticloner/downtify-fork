@@ -713,7 +713,7 @@ Admin. Set the priority of waiting jobs. Running, done and failed jobs are ignor
 
 **Response:** `{ "updated": 1 }`
 
-High-priority jobs run first, with original FIFO order preserved inside each priority. The choice survives restarts.
+High-priority jobs run first, with original FIFO order preserved inside each priority. The choice survives restarts. A successful change broadcasts `{ "type": "queue_reload" }` so open clients refetch the order.
 
 ---
 

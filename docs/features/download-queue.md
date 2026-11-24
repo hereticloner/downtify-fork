@@ -59,4 +59,4 @@ A retry joins the normal queue. The failure stays open until that retry succeeds
 
 ## API
 
-[`GET /api/queue/state`](../api-reference.md#get-apiqueuestate), [`POST /api/queue/pause`](../api-reference.md#post-apiqueuepause), [`POST /api/queue/resume`](../api-reference.md#post-apiqueueresume), [`POST /api/queue/priority`](../api-reference.md#post-apiqueuepriority) and [`POST /api/queue/bulk`](../api-reference.md#post-apiqueuebulk); global pause changes are also `queue_state` [WebSocket](../api-reference.md#websocket) frames, and selected-job changes are per-track `paused`/`queued` frames.
+[`GET /api/queue/state`](../api-reference.md#get-apiqueuestate), [`POST /api/queue/pause`](../api-reference.md#post-apiqueuepause), [`POST /api/queue/resume`](../api-reference.md#post-apiqueueresume), [`POST /api/queue/priority`](../api-reference.md#post-apiqueuepriority) and [`POST /api/queue/bulk`](../api-reference.md#post-apiqueuebulk); global pause changes are also `queue_state` [WebSocket](../api-reference.md#websocket) frames, priority changes broadcast `queue_reload`, and selected-job changes are per-track `paused`/`queued` frames.
