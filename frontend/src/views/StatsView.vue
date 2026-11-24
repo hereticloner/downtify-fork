@@ -41,7 +41,7 @@
             >{{ String(i + 1).padStart(2, '0') }}</span
           >
           <div
-            v-count-up
+            v-count-up="1500"
             class="text-display stat-reveal tabular text-[34px] leading-none font-bold"
           >
             {{ metric.value }}

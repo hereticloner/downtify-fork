@@ -62,6 +62,12 @@ describe('B9 count-up stats', () => {
     expect(typeof countUpDirective.unmounted).toBe('function')
   })
 
+  it('lets a site slow its count with a numeric binding', () => {
+    expect(countUp).toMatch(/binding\?\.value/)
+    expect(countUp).toMatch(/entry\.duration/)
+    expect(stats).toMatch(/v-count-up="1500"/)
+  })
+
   it('is registered globally and applied to both stat families', () => {
     expect(main).not.toMatch(/countUpDirective/)
     expect(home).toMatch(/countUpDirective as vCountUp/)

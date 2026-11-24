@@ -65,19 +65,23 @@ export function formatCount(value, template) {
 const states = new WeakMap()
 
 export const countUpDirective = {
-  mounted(el) {
+  mounted(el, binding) {
     const target = el.textContent.trim()
     const template = parseCountTarget(target)
     // Empty, NaN or reduced motion: keep the node exactly as the view wrote it.
     if (!template || prefersReducedMotion()) return
-    const entry = { target, template, done: false, frame: 0, observer: null }
+    // A numeric binding slows (or speeds) this one site up without touching
+    // the shared default; garbage falls back to COUNT_UP_MS.
+    const requested = Number(binding?.value)
+    const duration = Number.isFinite(requested) && requested > 0 ? requested : COUNT_UP_MS
+    const entry = { target, template, duration, done: false, frame: 0, observer: null }
     states.set(el, entry)
 
     const start = () => {
       if (entry.done || entry.frame) return
       const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now()
       const tick = (now) => {
-        const p = Math.min(1, ((now ?? Date.now()) - t0) / COUNT_UP_MS)
+        const p = Math.min(1, ((now ?? Date.now()) - t0) / entry.duration)
         const out = 1 - (1 - p) * (1 - p) // simple out, no spring
         el.textContent = formatCount(entry.template.value * out, entry.template)
         if (p < 1) {
