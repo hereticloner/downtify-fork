@@ -278,6 +278,10 @@ export default {
     openLibrary: 'Abrir biblioteca',
     size: 'En disco',
     jumpBackIn: 'Sigue escuchando',
+    resumeTitle: 'Continuar escuchando',
+    resumeAction: 'Reanudar',
+    resumeOnDevice: 'Última posición: {device}',
+    resumeEmpty: 'Aún no hay nada que reanudar.',
     recentlyAdded: 'Añadido recientemente',
     playlists: 'Tus playlists',
     kind: {

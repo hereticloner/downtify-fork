@@ -104,6 +104,12 @@
 
     <div class="grid xl:grid-cols-[minmax(0,1fr)_360px]">
       <div class="flex min-w-0 flex-col">
+        <ResumeCard
+          v-if="resume.item.value"
+          :item="resume.item.value"
+          @resume="resumeListening"
+        />
+
         <!-- Continue listening -->
         <section v-if="jumpBackIn.length" class="flex flex-col">
           <div class="flex items-stretch border-b-2 border-line bg-surface-2">
@@ -449,11 +455,13 @@ import UiButton from '/src/components/ui/UiButton.vue'
 import UiPanel from '/src/components/ui/UiPanel.vue'
 import UiProgress from '/src/components/ui/UiProgress.vue'
 import MediaTile from '/src/components/library/MediaTile.vue'
+import ResumeCard from '/src/components/library/ResumeCard.vue'
 import { useDownloadManager, useProgressTracker } from '/src/model/download'
 import { useHistory } from '/src/model/history'
 import { useLibrary } from '/src/model/library'
 import { usePlayer } from '/src/model/player'
 import { usePlaylistActions } from '/src/model/playlistActions'
+import { useResume } from '/src/model/resume'
 import { useStats } from '/src/model/stats'
 import { useUi } from '/src/model/ui'
 import { classifyInput } from '/src/lib/input'
@@ -473,6 +481,7 @@ const tracker = useProgressTracker()
 const dm = useDownloadManager()
 const playlistActions = usePlaylistActions()
 const statsStore = useStats()
+const resume = useResume()
 const ui = useUi()
 
 const text = ref('')
@@ -558,6 +567,13 @@ const jumpBackIn = computed(() =>
     .slice(0, 5)
 )
 
+async function resumeListening() {
+  const item = resume.item.value
+  if (!item?.track) return
+  await player.resumeTrack(item.track, item.position)
+  resume.dismiss()
+}
+
 function isPlaying(entry) {
   const ctx = player.context.value
   return (
@@ -583,6 +599,7 @@ const mostPlayed = computed(() =>
   (statsStore.stats.value?.playback?.top_tracks || []).slice(0, 5)
 )
 onMounted(() => {
+  resume.load()
   if (!statsStore.stats.value?.playback) statsStore.load()
 })
 

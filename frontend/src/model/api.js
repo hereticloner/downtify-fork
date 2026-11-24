@@ -783,6 +783,10 @@ function clearCompletedQueue() {
   return API.delete('/api/queue/completed')
 }
 
+function getResume() {
+  return API.get('/api/playback/resume')
+}
+
 function getStats() {
   return API.get('/api/stats')
 }
@@ -1037,6 +1041,7 @@ export default {
   removeQueueItem,
   clearQueue,
   clearCompletedQueue,
+  getResume,
   getStats,
   getQueueStatus,
   getQueueState,

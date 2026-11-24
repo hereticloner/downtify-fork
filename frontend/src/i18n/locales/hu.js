@@ -274,6 +274,10 @@ export default {
     openLibrary: 'Könyvtár megnyitása',
     size: 'Lemezen',
     jumpBackIn: 'Folytasd',
+    resumeTitle: 'Hallgatás folytatása',
+    resumeAction: 'Folytatás',
+    resumeOnDevice: 'Utolsó pozíció: {device}',
+    resumeEmpty: 'Még nincs folytatható szám.',
     recentlyAdded: 'Nemrég hozzáadva',
     playlists: 'Lejátszási listáid',
     kind: {

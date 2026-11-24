@@ -284,6 +284,10 @@ export default {
     openLibrary: 'Άνοιγμα βιβλιοθήκης',
     size: 'Στον δίσκο',
     jumpBackIn: 'Συνέχισε',
+    resumeTitle: 'Συνέχιση ακρόασης',
+    resumeAction: 'Συνέχιση',
+    resumeOnDevice: 'Τελευταία θέση: {device}',
+    resumeEmpty: 'Δεν υπάρχει κάτι για συνέχιση ακόμη.',
     recentlyAdded: 'Πρόσφατες προσθήκες',
     playlists: 'Οι λίστες σου',
     kind: {

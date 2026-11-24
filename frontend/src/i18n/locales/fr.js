@@ -287,6 +287,10 @@ export default {
     openLibrary: 'Ouvrir la bibliothèque',
     size: 'Sur le disque',
     jumpBackIn: 'Reprendre l’écoute',
+    resumeTitle: 'Reprendre l’écoute',
+    resumeAction: 'Reprendre',
+    resumeOnDevice: 'Dernière position : {device}',
+    resumeEmpty: 'Rien à reprendre pour le moment.',
     recentlyAdded: 'Ajouts récents',
     playlists: 'Vos playlists',
     kind: {

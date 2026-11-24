@@ -267,6 +267,10 @@ export default {
     openLibrary: 'Open library',
     size: 'On disk',
     jumpBackIn: 'Jump back in',
+    resumeTitle: 'Continue listening',
+    resumeAction: 'Resume',
+    resumeOnDevice: 'Last position: {device}',
+    resumeEmpty: 'Nothing to resume yet.',
     recentlyAdded: 'Recently added',
     playlists: 'Your playlists',
     kind: {

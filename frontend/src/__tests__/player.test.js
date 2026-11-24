@@ -121,6 +121,7 @@ describe('usePlayer initial volume', () => {
 // Queue editing, driven through a fake <audio> element.
 class FakeAudio {
   constructor() {
+    globalThis.Audio.latest = this
     this.src = ''
     this.currentTime = 0
     this.paused = true
@@ -174,6 +175,26 @@ describe('usePlayer queue', () => {
     expect(player.isPlaying.value).toBe(true)
     expect(player.context.value.title).toBe('Numbers')
     expect(upcoming()).toEqual(['Two', 'Three'])
+  })
+
+  it('resumes a saved track after metadata loads', async () => {
+    await player.resumeTrack(
+      {
+        file: 'A - One.mp3',
+        url: '/downloads/A%20-%20One.mp3',
+        title: 'One',
+        artist: 'A',
+        duration: 100,
+      },
+      42
+    )
+
+    expect(player.currentTrack.value.title).toBe('One')
+    const audio = globalThis.Audio.latest
+    audio.duration = 100
+    audio.listeners.loadedmetadata()
+    expect(audio.currentTime).toBe(42)
+    expect(player.currentTime.value).toBe(42)
   })
 
   it('queues tracks next or last', () => {

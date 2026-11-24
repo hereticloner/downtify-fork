@@ -89,6 +89,7 @@ function ensureAudio() {
     duration.value = isFinite(audio.duration) ? audio.duration : 0
     if (restoreTime) {
       audio.currentTime = Math.min(restoreTime, duration.value || 0)
+      currentTime.value = audio.currentTime
       restoreTime = 0
     }
   })
@@ -315,6 +316,22 @@ function stop() {
   currentTime.value = 0
   duration.value = 0
   context.value = null
+}
+
+async function resumeTrack(track, position = 0) {
+  if (!track?.file) return
+  const base = normalizeTrack(track.file)
+  const resumed = { ...base, ...track, url: track.url || base.url }
+  restoreTime = Math.max(0, Number(position) || 0)
+  currentTime.value = restoreTime
+  duration.value = Number(track.duration) || 0
+  shuffle.value = false
+  playlist.value = [resumed]
+  currentIndex.value = 0
+  context.value = track.context
+    ? { type: track.context_type || 'library', title: track.context }
+    : null
+  playAt(0)
 }
 
 // ── Transport ────────────────────────────────────────────────────────
@@ -866,6 +883,7 @@ export function usePlayer() {
     sleepAt,
     resolving,
     setPlaylist,
+    resumeTrack,
     playList,
     enqueue,
     playNext,

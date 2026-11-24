@@ -273,6 +273,10 @@ export default {
     openLibrary: 'Kitaplığı aç',
     size: 'Diskte',
     jumpBackIn: 'Kaldığın yerden devam et',
+    resumeTitle: 'Kaldığın yerden devam et',
+    resumeAction: 'Devam et',
+    resumeOnDevice: 'Son konum: {device}',
+    resumeEmpty: 'Devam edilecek parça yok.',
     recentlyAdded: 'Son eklenenler',
     playlists: 'Çalma listelerin',
     kind: {

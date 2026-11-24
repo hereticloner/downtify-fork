@@ -270,6 +270,10 @@ export default {
     openLibrary: 'Отвори библиотеката',
     size: 'На диска',
     jumpBackIn: 'Продължи слушането',
+    resumeTitle: 'Продължете слушането',
+    resumeAction: 'Продължи',
+    resumeOnDevice: 'Последна позиция: {device}',
+    resumeEmpty: 'Още няма нищо за продължаване.',
     recentlyAdded: 'Наскоро добавени',
     playlists: 'Твоите плейлисти',
     kind: {
