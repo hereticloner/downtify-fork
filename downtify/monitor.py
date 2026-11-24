@@ -957,14 +957,6 @@ async def check_playlist(
             library,
             settings,
         )
-    if downloaded > 0:
-        # Best-effort: a Telegram hiccup must never fail the sweep.
-        await asyncio.to_thread(
-            notifications.notify_watch_downloads,
-            settings,
-            playlist.name,
-            downloaded,
-        )
     return downloaded
 
 
@@ -1510,6 +1502,8 @@ async def check_watch(
     loop: asyncio.AbstractEventLoop,
     settings: Optional[dict[str, Any]] = None,
     library: Optional[LibraryStores] = None,
+    *,
+    notify: Optional[Callable[[str, dict[str, Any]], Any]] = None,
 ) -> int:
     """Run the right check for a watch by kind, unless one is already
     running.
@@ -1575,6 +1569,19 @@ async def check_watch(
             kind=playlist.kind,
             downloaded=count,
         )
+        if count > 0:
+            if notify is not None:
+                await notify(
+                    'watch.downloaded',
+                    {'name': playlist.name, 'count': count},
+                )
+            else:
+                await asyncio.to_thread(
+                    notifications.notify_watch_downloads,
+                    settings,
+                    playlist.name,
+                    count,
+                )
         return count
     finally:
         _checks_running.discard(playlist.id)
@@ -1587,6 +1594,8 @@ async def monitor_loop(
     loop: asyncio.AbstractEventLoop,
     settings: Optional[dict[str, Any]] = None,
     get_library: Optional[Callable[[], LibraryStores]] = None,
+    *,
+    notify: Optional[Callable[[str, dict[str, Any]], Any]] = None,
 ) -> None:
     """Background task: sweep all enabled playlists that are due for checking."""
     while True:
@@ -1613,6 +1622,7 @@ async def monitor_loop(
                         loop,
                         settings,
                         get_library() if get_library else None,
+                        notify=notify,
                     )
                     if count > 0:
                         logger.info(

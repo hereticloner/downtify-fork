@@ -682,76 +682,7 @@
 
               <!-- Notifications -->
               <template v-else-if="section === 'notifications'">
-                <SettingGroup
-                  :title="t('settings.notificationsTitle')"
-                  :description="t('settings.notificationsHint')"
-                >
-                  <SettingRow
-                    :label="t('settings.notificationsEnabled')"
-                    :description="t('settings.notificationsEnabledHint')"
-                  >
-                    <UiSwitch
-                      v-model="s.notifications.enabled"
-                      :aria-label="t('settings.notificationsEnabled')"
-                    />
-                  </SettingRow>
-                  <template v-if="s.notifications.enabled">
-                    <SettingRow
-                      :label="t('settings.telegramEnabled')"
-                      :description="t('settings.telegramEnabledHint')"
-                    >
-                      <UiSwitch
-                        v-model="s.notifications.telegram_enabled"
-                        :aria-label="t('settings.telegramEnabled')"
-                      />
-                    </SettingRow>
-                    <template v-if="s.notifications.telegram_enabled">
-                      <div class="grid gap-4 px-4 py-4 sm:grid-cols-2">
-                        <UiInput
-                          v-model="s.notifications.telegram_bot_token"
-                          :label="t('settings.telegramBotToken')"
-                          autocomplete="off"
-                        />
-                        <UiInput
-                          v-model.trim="s.notifications.telegram_chat_id"
-                          :label="t('settings.telegramChatId')"
-                          :hint="t('settings.telegramChatIdHint')"
-                          autocomplete="off"
-                        />
-                      </div>
-                      <div class="flex flex-wrap items-center gap-3 px-4 py-4">
-                        <UiButton
-                          variant="secondary"
-                          :disabled="notificationTest === 'sending'"
-                          @click="sendTestNotification"
-                        >
-                          {{ t('settings.testNotification') }}
-                        </UiButton>
-                        <span
-                          v-if="notificationTest === 'sent'"
-                          class="text-[13px] text-accent"
-                        >
-                          {{ t('settings.notificationSent') }}
-                        </span>
-                        <span
-                          v-else-if="notificationTest === 'failed'"
-                          class="text-[13px] text-danger"
-                        >
-                          {{ t('settings.notificationFailed') }}
-                        </span>
-                      </div>
-                      <SettingRow
-                        :label="t('settings.notifyWatchDownloads')"
-                        :description="t('settings.notifyWatchDownloadsHint')"
-                      >
-                        <UiSwitch
-                          v-model="s.notifications.notify_watch_downloads"
-                          :aria-label="t('settings.notifyWatchDownloads')"
-                        />
-                      </SettingRow>
-                    </template>
-                  </template>
-                </SettingGroup>
+                <NotificationsPanel :config="s.notifications" />
               </template>
 
               <!-- Scrobbling -->
@@ -1452,6 +1383,7 @@ import ServerPortSetting from '/src/components/settings/ServerPortSetting.vue'
 import UsersSettings from '/src/components/settings/UsersSettings.vue'
 import SettingGroup from '/src/components/settings/SettingGroup.vue'
 import SettingRow from '/src/components/settings/SettingRow.vue'
+import NotificationsPanel from '/src/components/settings/NotificationsPanel.vue'
 import SourceOrder from '/src/components/settings/SourceOrder.vue'
 import LyricsOrder from '/src/components/settings/LyricsOrder.vue'
 import API from '/src/model/api'
@@ -1490,19 +1422,6 @@ const update = useUpdateCheck().status
 const hasTrack = computed(() => !!player.currentTrack.value)
 const s = sm.settings
 const version = localStorage.getItem('version')
-
-// Telegram test: sends the notifications block as it stands in the form,
-// saved or not, so a token/chat id can be checked before saving.
-const notificationTest = ref('')
-async function sendTestNotification() {
-  notificationTest.value = 'sending'
-  try {
-    const res = await API.testNotifications(s.value.notifications)
-    notificationTest.value = res?.data?.ok ? 'sent' : 'failed'
-  } catch {
-    notificationTest.value = 'failed'
-  }
-}
 
 // last.fm scrobbling: the Connect flow asks for a request token, the user
 // approves on last.fm, then the token is traded for a session key that the

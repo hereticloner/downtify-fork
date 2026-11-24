@@ -852,8 +852,14 @@ function testNavidrome(config) {
   return API.post('/api/navidrome/test', config)
 }
 
-function testNotifications(config) {
-  return API.post('/api/notifications/test', config)
+function testNotifications(config, channel = 'telegram') {
+  return API.post(
+    '/api/notifications/test',
+    { channel, config },
+    {
+      params: { channel },
+    }
+  )
 }
 
 function spotifyMirrorDevices() {

@@ -544,18 +544,11 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         'artwork_source': cover_sources.PREFERENCE_HIGHEST,
         'recheck_days': library_upgrade.DEFAULT_RECHECK_DAYS,
     },
-    # Outbound notifications (Telegram) for background events. Off until
-    # a bot token and chat id are set; sending is best-effort and never
-    # blocks the download that triggered it (see downtify.notifications).
-    'notifications': {
-        'enabled': False,
-        'telegram_enabled': False,
-        'telegram_bot_token': '',
-        'telegram_chat_id': '',
-        # Announce a watch (playlist/artist monitor) that pulled in new
-        # tracks. Other events can join this block later.
-        'notify_watch_downloads': True,
-    },
+    # Outbound notifications for background events. Credentials live in
+    # notifications.json (0600); settings carry only switches and set flags.
+    'notifications': notifications.clean_settings({
+        'events': ['watch.downloaded'],
+    }),
     # Scrobble plays to last.fm (see downtify.scrobbling). Off until the
     # account is connected; sending is best-effort and never blocks the
     # player's report.
@@ -740,43 +733,73 @@ def _validate_navidrome_settings(navidrome: dict[str, Any]) -> None:
                 )
 
 
+def _notification_secrets() -> dict[str, Any]:
+    store = state.notification_store
+    return store.load() if store is not None else {'version': 1}
+
+
 def _clean_notifications(value: Any) -> dict[str, Any]:
-    """Coerce a notifications block to the stored shape.
+    """Public settings only; raw credentials are stripped before storage."""
 
-    Strings are trimmed and booleans coerced so a saved block always has
-    every key, whatever the client sent.
-    """
+    return notifications.clean_settings(value, _notification_secrets())
 
-    base = dict(DEFAULT_SETTINGS['notifications'])
-    if isinstance(value, dict):
-        base.update(value)
-    return {
-        'enabled': bool(base.get('enabled')),
-        'telegram_enabled': bool(base.get('telegram_enabled')),
-        'telegram_bot_token': str(
-            base.get('telegram_bot_token') or ''
-        ).strip(),
-        'telegram_chat_id': str(base.get('telegram_chat_id') or '').strip(),
-        'notify_watch_downloads': bool(
-            base.get('notify_watch_downloads', True)
-        ),
+
+def _notification_secret_updates(value: Any) -> dict[str, Any]:
+    raw = value if isinstance(value, dict) else {}
+    channels = (
+        raw.get('channels') if isinstance(raw.get('channels'), dict) else {}
+    )
+    updates: dict[str, Any] = {}
+    for name, fields in notifications._SECRET_FIELDS.items():
+        config = (
+            channels.get(name) if isinstance(channels.get(name), dict) else {}
+        )
+        updates[name] = {field: config.get(field) for field in fields}
+    if not any(updates['telegram'].values()):
+        updates['telegram'] = {
+            'bot_token': raw.get('telegram_bot_token'),
+            'chat_id': raw.get('telegram_chat_id'),
+        }
+    return updates
+
+
+def _validate_notifications_settings(raw: dict[str, Any]) -> None:
+    """Reject enabling a channel without its required saved credentials."""
+
+    channels = (
+        raw.get('channels') if isinstance(raw.get('channels'), dict) else {}
+    )
+    already_clean = any(
+        isinstance(config, dict)
+        and any(key.endswith('_set') for key in config)
+        for config in channels.values()
+    )
+    cleaned = (
+        raw
+        if already_clean
+        else notifications.clean_settings(raw, _notification_secrets())
+    )
+    if not cleaned.get('enabled'):
+        return
+    requirements = {
+        'telegram': ('bot_token_set', 'chat_id_set', 'Telegram'),
+        'ntfy': ('url_set', None, 'ntfy'),
+        'webhook': ('url_set', None, 'Webhook'),
     }
-
-
-def _validate_notifications_settings(notifications: dict[str, Any]) -> None:
-    """Reject enabling Telegram without the fields it needs."""
-
-    if not notifications.get('enabled'):
-        return
-    if not notifications.get('telegram_enabled'):
-        return
-    for key, label in (
-        ('telegram_bot_token', 'bot token'),
-        ('telegram_chat_id', 'chat id'),
-    ):
-        if not notifications.get(key):
-            detail = f'Telegram {label} is required when enabled'
-            raise HTTPException(status_code=400, detail=detail)
+    for name, (first, second, label) in requirements.items():
+        config = (cleaned.get('channels') or {}).get(name) or {}
+        if not config.get('enabled'):
+            continue
+        missing = []
+        if not config.get(first):
+            missing.append(first.removesuffix('_set').replace('_', ' '))
+        if second and not config.get(second):
+            missing.append(second.removesuffix('_set').replace('_', ' '))
+        if missing:
+            raise HTTPException(
+                status_code=400,
+                detail=f'{label} {" and ".join(missing)} required when enabled',
+            )
 
 
 def _clean_scrobbling(value: Any) -> dict[str, Any]:
@@ -1049,6 +1072,7 @@ class AppState:
     connections: ConnectionManager = ConnectionManager()
     settings: dict[str, Any] = dict(DEFAULT_SETTINGS)
     settings_path: Optional[Path] = None
+    notification_store: Optional[notifications.NotificationStore] = None
     cookies_store: Optional[CookiesStore] = None
     update_checker: Optional[UpdateChecker] = None
     loop: Optional[asyncio.AbstractEventLoop] = None
@@ -1637,6 +1661,18 @@ def _load_settings(path: Path) -> dict[str, Any]:
             merged['ui_language'] = _clean_ui_language(merged['ui_language'])
             merged['external_library'] = effective_external_library(merged)
             normalize_lyrics_location(merged)
+            store = (
+                state.notification_store
+                or notifications.NotificationStore(
+                    path.parent / 'notifications.json'
+                )
+            )
+            migrated = notifications.migrate_legacy_settings(merged, store)
+            merged['notifications'] = notifications.clean_settings(
+                merged.get('notifications'), store.load()
+            )
+            if migrated:
+                _save_settings(path, merged)
             return merged
     except Exception:
         pass
@@ -3265,9 +3301,32 @@ async def download_endpoint(
             track_order=int(pl_ctx.get('track_order') or 0),
         )
     except NoAudioMatchError as exc:
+        await notify_event(
+            'download.failed',
+            {
+                'title': song_label(song) or 'Track',
+                'code': 'no_audio_match',
+                'message': str(exc),
+            },
+        )
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
+        await notify_event(
+            'download.failed',
+            {
+                'title': song_label(song) or 'Track',
+                'code': 'download_failed',
+                'message': _redact_download_message(str(exc)),
+            },
+        )
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+    await notify_event(
+        'download.completed',
+        {
+            'title': song_label(song) or 'Track',
+            'artist': str((song.get('artists') or [''])[0] or ''),
+        },
+    )
     return filename
 
 
@@ -3449,6 +3508,30 @@ async def _fetch_playlist_cover(
         )
 
 
+def _download_batch_payload(
+    name: Optional[str],
+    songs: list[dict[str, Any]],
+    resolved: dict[int, Optional[str]],
+) -> dict[str, Any]:
+    succeeded = sum(1 for filename in resolved.values() if filename)
+    return {
+        'name': name or 'batch',
+        'total': len(songs),
+        'succeeded': succeeded,
+        'failed': len(songs) - succeeded,
+    }
+
+
+async def _notify_download_batch(
+    name: Optional[str],
+    songs: list[dict[str, Any]],
+    resolved: dict[int, Optional[str]],
+) -> None:
+    await notify_event(
+        'download.batch', _download_batch_payload(name, songs, resolved)
+    )
+
+
 async def _process_batch(
     songs: list[dict[str, Any]],
     job_ids: list[str],
@@ -3572,6 +3655,7 @@ async def _process_batch(
         ],
         return_exceptions=False,
     )
+    await _notify_download_batch(playlist_name, songs, resolved)
 
     if wants_m3u:
         await _write_batch_m3u(songs, resolved, playlist_name, playlist_subdir)
@@ -4600,6 +4684,11 @@ async def download_album_endpoint(
         return song_id, filename
 
     results = await asyncio.gather(*(_one(song) for song in songs))
+    await _notify_download_batch(
+        str(first_song.get('album_name') or 'album'),
+        songs,
+        {index: result[1] for index, result in enumerate(results)},
+    )
     return {
         song_id: filename
         for song_id, filename in results
@@ -5030,6 +5119,42 @@ def _upgrade_options(
     return library_upgrade.options_from(merged)
 
 
+_upgrade_notices: set[tuple[int, str]] = set()
+
+
+def _upgrade_notice(
+    status: dict[str, Any],
+) -> Optional[tuple[str, dict[str, Any]]]:
+    counts = status.get('counts') or {}
+    state_name = str(status.get('state') or '')
+    if state_name == library_upgrade.STATE_RUNNING:
+        return 'upgrade.started', {'count': int(counts.get('total') or 0)}
+    if state_name == library_upgrade.STATE_DONE:
+        return 'upgrade.finished', {
+            'done': int(counts.get('completed') or 0),
+            'failed': int(counts.get('failed') or 0),
+            'skipped': int(counts.get('skipped') or 0),
+        }
+    return None
+
+
+async def notify_event(event: str, payload: dict[str, Any]) -> None:
+    """Deliver a background event without letting a failure affect work."""
+
+    store = state.notification_store
+    if store is None:
+        return
+    try:
+        settings = notifications.effective_settings(
+            state.settings, await asyncio.to_thread(store.load)
+        )
+        await asyncio.to_thread(
+            notifications.notify_event, settings, event, payload
+        )
+    except Exception:
+        logger.exception('Could not deliver notification event {}', event)
+
+
 def broadcast_upgrade_progress(status: dict[str, Any]) -> None:
     """Push upgrade progress to connected clients from the worker thread."""
 
@@ -5043,6 +5168,15 @@ def broadcast_upgrade_progress(status: dict[str, Any]) -> None:
         }),
         loop,
     )
+    notice = _upgrade_notice(status)
+    run = status.get('run') or {}
+    if notice is None or not run.get('id'):
+        return
+    key = (int(run['id']), notice[0])
+    if key in _upgrade_notices:
+        return
+    _upgrade_notices.add(key)
+    asyncio.run_coroutine_threadsafe(notify_event(notice[0], notice[1]), loop)
 
 
 def _upgrade_payload(
@@ -5819,6 +5953,9 @@ async def _run_restored_group(
             return None
 
     results = await asyncio.gather(*(_one(row) for row in rows))
+    await _notify_download_batch(
+        playlist_name, [row.song for row in rows], dict(enumerate(results))
+    )
     if playlist_name and any(results):
         await _schedule_playlist_refresh_after_download({playlist_name})
 
@@ -6042,6 +6179,26 @@ async def update_settings_endpoint(
             pending_spotify_sync if 'spotify_sync' in payload else {},
             mirror=pending_spotify_mirror,
         )
+        if 'notifications' in payload:
+            store = state.notification_store
+            if store is None and state.settings_path is not None:
+                store = notifications.NotificationStore(
+                    state.settings_path.parent / 'notifications.json'
+                )
+                state.notification_store = store
+            if store is None:
+                raise HTTPException(
+                    status_code=500, detail='Notification store not ready'
+                )
+            try:
+                store.update(
+                    _notification_secret_updates(payload.get('notifications'))
+                )
+            except OSError as exc:
+                raise HTTPException(
+                    status_code=500,
+                    detail='Could not save notification secrets',
+                ) from exc
         for key, raw_value in payload.items():
             if key not in DEFAULT_SETTINGS:
                 continue
@@ -6194,19 +6351,23 @@ async def test_navidrome_endpoint(request: Request) -> dict[str, Any]:
 
 
 @router.post('/api/notifications/test')
-async def test_notifications_endpoint(request: Request) -> dict[str, Any]:
-    """Send a test notification without saving the settings.
+async def test_notifications_endpoint(
+    request: Request, channel: str
+) -> dict[str, Any]:
+    """Test one channel with typed credentials or the saved secret store."""
 
-    The body is the ``notifications`` settings object as it stands in
-    the form; an empty body tests the saved one. Works whether or not
-    notifications are enabled - the point is to try the credentials.
-    A failed send is a normal answer, not an error: ``{ok, error?}``.
-    """
-
+    channel = channel or 'telegram'
     payload = await _json_object(request)
-    saved = state.settings.get('notifications')
-    block = payload or (saved if isinstance(saved, dict) else {})
-    return await asyncio.to_thread(notifications.send_test_message, block)
+    if isinstance(payload.get('config'), dict):
+        block = payload['config']
+    else:
+        block = payload or state.settings.get('notifications') or {}
+    return await asyncio.to_thread(
+        notifications.send_test_message,
+        block,
+        channel=channel,
+        secrets=_notification_secrets(),
+    )
 
 
 @router.post('/api/scrobbling/test')
@@ -7414,6 +7575,7 @@ def _start_initial_check(
                 loop,
                 state.settings,
                 library_stores(),
+                notify=notify_event,
             )
         except Exception:
             logger.exception('Initial check failed for watch {}', playlist.id)
@@ -7549,6 +7711,7 @@ async def manual_check_playlist(playlist_id: int) -> dict[str, Any]:
                 # delay-between-downloads setting on a manual check.
                 state.settings,
                 library_stores(),
+                notify=notify_event,
             )
             logger.info(
                 'Manual check: downloaded {} new track(s) from "{}"',

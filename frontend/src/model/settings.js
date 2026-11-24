@@ -5,6 +5,10 @@ import { useAuth } from '/src/model/auth'
 import { currentLocale, t } from '/src/i18n'
 import { friendlyError } from '/src/lib/errors'
 import { needsLanguageSync, splitUiLanguage } from '/src/lib/uiLanguage'
+import {
+  blankNotificationSettings,
+  mergeNotificationSettings,
+} from '/src/lib/notificationSettings'
 
 const settings = ref({
   audio_providers: ['youtube-music'],
@@ -37,13 +41,7 @@ const settings = ref({
     client_name: 'Downtify',
     api_version: '1.16.1',
   },
-  notifications: {
-    enabled: false,
-    telegram_enabled: false,
-    telegram_bot_token: '',
-    telegram_chat_id: '',
-    notify_watch_downloads: true,
-  },
+  notifications: blankNotificationSettings(),
   scrobbling: {
     enabled: false,
     lastfm_enabled: false,
@@ -239,10 +237,7 @@ function loadServerSettings() {
         ...settings.value,
         ...rest,
         navidrome: { ...settings.value.navidrome, ...(rest.navidrome || {}) },
-        notifications: {
-          ...settings.value.notifications,
-          ...(rest.notifications || {}),
-        },
+        notifications: mergeNotificationSettings(rest.notifications),
         scrobbling: {
           ...settings.value.scrobbling,
           ...(rest.scrobbling || {}),

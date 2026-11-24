@@ -695,6 +695,7 @@ def build_app() -> FastAPI:
                 loop=loop,
                 settings=api.state.settings,
                 get_library=api.library_stores,
+                notify=api.notify_event,
             ),
             name='monitor-loop',
         )
@@ -879,6 +880,9 @@ def build_app() -> FastAPI:
 
     settings_path = DATABASE_DIR / 'settings.json'
     api.state.settings_path = settings_path
+    api.state.notification_store = api.notifications.NotificationStore(
+        DATABASE_DIR / 'notifications.json'
+    )
     api.state.settings = api._load_settings(settings_path)
 
     # Lives alongside settings.json in the /data volume so an uploaded
