@@ -354,6 +354,7 @@ from .discover import (
     recommendations,
     spotify_collections,
 )
+from .download_failures import DownloadFailureStore
 from .download_queue import PendingDownload, PendingDownloads, queue_pause
 from .downloader import (
     AUDIO_PROVIDERS,
@@ -1056,6 +1057,7 @@ class AppState:
     # The unfinished jobs and the pause switch, for the next start
     # (downtify/download_queue.py).
     pending_downloads: Optional[PendingDownloads] = None
+    download_failures: Optional[DownloadFailureStore] = None
     # Fire-and-forget work owned by the process (import batches, monitor
     # loops, playlist refresh). Cancelled in :func:`shutdown_resources`.
     background_tasks: set[asyncio.Task[Any]] = set()
@@ -2857,6 +2859,42 @@ async def _forget_pending(song_ids: Collection[str]) -> None:
         await asyncio.to_thread(_drop_pending, song_ids)
 
 
+async def _resolve_download_failure(song_id: str) -> None:
+    store = state.download_failures
+    if store is None:
+        return
+    try:
+        await asyncio.to_thread(store.resolve, song_id)
+    except Exception:
+        logger.exception('Could not resolve the download failure {}', song_id)
+
+
+async def _record_download_failure(
+    song_id: str,
+    song: dict[str, Any],
+    message: str,
+    *,
+    code: str,
+    provider: str = '',
+    playlist_name: str = '',
+) -> None:
+    store = state.download_failures
+    if store is None:
+        return
+    try:
+        await asyncio.to_thread(
+            store.record,
+            song_id=song_id,
+            song=song,
+            message=message,
+            code=code,
+            provider=provider,
+            playlist_name=playlist_name,
+        )
+    except Exception:
+        logger.exception('Could not save the download failure {}', song_id)
+
+
 async def _broadcast_queue_state() -> None:
     await state.connections.broadcast({
         'type': 'queue_state',
@@ -3013,6 +3051,7 @@ async def _run_download(
                             'status': 'done',
                             'filename': existing,
                         })
+                        await _resolve_download_failure(song_id)
                         return existing
 
                 job['status'] = 'downloading'
@@ -3063,6 +3102,7 @@ async def _run_download(
                         track_order=track_order,
                         refresh_playlists=refresh_playlists,
                     )
+                await _resolve_download_failure(song_id)
                 invalidate_library_paths_cache()
                 await state.connections.broadcast({
                     'song': song,
@@ -3083,9 +3123,15 @@ async def _run_download(
             # An expected outcome, not a crash: no traceback in the log.
             logger.warning('{} ({})', exc, song_id)
             message = str(exc)
+            code = 'no_audio_match'
         else:
             logger.exception('Download failed for {}', song_id)
             message = f'Error: {exc}'
+            code = (
+                message
+                if message in {'download_excluded', 'library_trash_excluded'}
+                else 'download_failed'
+            )
         job['status'] = 'error'
         job['message'] = message
         await state.connections.broadcast({
@@ -3094,6 +3140,14 @@ async def _run_download(
             'message': message,
             'status': 'error',
         })
+        await _record_download_failure(
+            song_id,
+            song,
+            message,
+            code=code,
+            provider=str(job.get('provider') or ''),
+            playlist_name=playlist_name or '',
+        )
         raise
     if not keep_pending:
         await _forget_pending([song_id])

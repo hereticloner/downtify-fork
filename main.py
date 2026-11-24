@@ -64,6 +64,7 @@ from downtify.cover_thumbs import CoverThumbs
 from downtify.cover_thumbs import normalize_size as normalize_cover_size
 from downtify.discover import DiscoverStore
 from downtify.discovery import Announcer, discovery_enabled
+from downtify.download_failures import DownloadFailureStore
 from downtify.download_queue import PendingDownloads
 from downtify.downloader import Downloader
 from downtify.errors import code_for
@@ -467,6 +468,7 @@ def _open_library_stores(monitor_db_path: Path) -> bool:
     api.state.playlist_catalog = PlaylistCatalog(library_db)
     api.state.file_providers = FileProviders(library_db)
     api.state.pending_downloads = PendingDownloads(library_db)
+    api.state.download_failures = DownloadFailureStore(library_db)
     api.state.playlist_batch_store = PlaylistBatchStore(library_db)
     api.state.playlist_spotify_cache = PlaylistSpotifyCache(library_db)
     api.state.playlist_sync_store = spotify_sync.SyncSnapshotStore(
