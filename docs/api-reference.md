@@ -883,9 +883,11 @@ The `scan` check reads whether the account used for library scans (the admin log
 
 ### `POST /api/notifications/test`
 
-Send a Telegram test message without saving anything. See [Notifications](features/notifications.md).
+Admin. Test one notification channel without saving anything. See [Notifications](features/notifications.md).
 
-**Request body:** the `notifications` settings object as it stands in the form (`telegram_bot_token`, `telegram_chat_id`, and optionally `enabled` and `telegram_enabled`). Works whether or not notifications are enabled. An empty body tests the saved settings instead.
+**Query:** `channel=telegram|ntfy|webhook` (default `telegram`).
+
+**Request body:** `{ "channel": "ntfy", "config": { ... } }`, where `config` is the notification form. A legacy flat Telegram block is also accepted. Typed secrets override saved ones; blank fields keep the saved secret. Works whether or not notifications are enabled.
 
 **Response:** always `200`, whether or not the message went out:
 
@@ -893,7 +895,45 @@ Send a Telegram test message without saving anything. See [Notifications](featur
 { "ok": true }
 ```
 
-`ok` is `false` with `"error": "missing_credentials"` when the token or chat id is blank, or `"error": "send_failed"` when Telegram refuses the message or can't be reached. Each request gives up after 6 seconds.
+`ok` is `false` with `"error": "missing_credentials"` when the channel lacks its required URL/token/chat id, or `"error": "send_failed"` when the endpoint refuses the message or can't be reached. Each request gives up after 6 seconds.
+
+---
+
+### `GET /api/backups`
+
+Admin. List local metadata backups and the configured schedule.
+
+**Response:** `{ "items": [{ "name", "size", "created_at" }], "count": 2, "schedule": "off|daily|three_days|weekly" }`.
+
+### `POST /api/backups`
+
+Admin. Create, verify and rotate a local backup. Response: one `{name, size, created_at}` item. See [Backups](features/backups.md).
+
+### `GET /api/backups/{name}`
+
+Admin. Download a `downtify-*.json.gz` backup. Names outside that allowlist are rejected.
+
+### `DELETE /api/backups/{name}`
+
+Admin. Delete one local backup.
+
+### `POST /api/backups/upload`
+
+Admin. Multipart upload with a `file` field. The gzip JSON must be valid and version 1. Response: the stored `{name, size, created_at}` item.
+
+### `POST /api/backups/restore`
+
+Admin. Preview or perform an additive metadata restore.
+
+**Body:** `{ "name": "downtify-….json.gz", "dry_run": true, "requeue_missing": true }`. A real restore also requires `"confirm": true`.
+
+**Response:** `{ "dry_run": true|false, "added": { "table": count }, "requeued": ["spotify-id"], "unresolved": ["song-id"] }`.
+
+A dry run writes nothing. Existing records are never overwritten. Only missing queue tracks with a stable Spotify id are reported for requeue; unresolved ids are never guessed.
+
+### `GET|POST /api/backups/schedule`
+
+Admin. Read or set `{ "schedule": "off|daily|three_days|weekly" }`.
 
 ---
 
@@ -2449,7 +2489,7 @@ Who this server is, signing in, and pairing apps — see [Users & Sign-in](featu
 | Public | none | The web app's own files, `GET /api/health`, `GET /api/version`, `GET /api/server/info`, `GET /api/auth/status`, `POST /api/auth/login`, `POST /api/auth/logout`, `POST /api/auth/pair` |
 | Client | a device token (`Authorization: Bearer dtfy_…`), a signed URL (reads only), a WebSocket ticket, or any web session | Library and media reads (`/tracks`, `/list`, `/playlists`, `/lyrics`, `/cover`, `/playlist-cover`, `/downloads/…`, `/media/…`), `/api/v1/…`, search and link resolving, previews, `POST /api/download/url\|batch\|album`, likes, Discover and listens, the queue and monitor lists (read), `GET /api/me`, `POST /api/activity/playback`, `POST /api/auth/ws-ticket`, `WS /api/ws` |
 | User | a web session of any user (the `downtify_session` cookie) | Client, plus your own account (`/api/me…`), your paired devices and pairing (`/api/auth/devices…`, `/api/auth/pairing…`) |
-| Admin | a web session of an **admin** | Everything else: settings, cookies, deleting files and playlists, library upgrade/reconcile/archive, queue changes, monitor changes, artist photo/bio edits, CSV import, renaming the server, users, the activity log, signing everyone out |
+| Admin | a web session of an **admin** | Everything else: settings, cookies, notifications, backups/restore, deleting files and playlists, library upgrade/reconcile/archive, queue changes, monitor changes, artist photo/bio edits, CSV import, renaming the server, users, the activity log, signing everyone out |
 
 Without credentials: `401` (`WWW-Authenticate: Bearer`). A normal user's browser calling an admin route: `403` `{"detail": "This needs an admin"}`; a device calling a route that needs a browser: `403` `{"detail": "This needs a signed-in browser"}`. A cookie-authenticated change (`POST`/`PUT`/`PATCH`/`DELETE`, or the WebSocket) whose `Origin`/`Referer` is another site: `403`. CORS allows any origin **without** credentials, so a web session only works from Downtify's own page.
 

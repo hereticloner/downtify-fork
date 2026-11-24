@@ -6,8 +6,9 @@ icon: lucide/bell
 
 Downtify can message you when something happens in the background, so you
 do not have to keep the Queue page open to know a long sweep finished.
-Today the only channel is **Telegram**, and the event is a
-[Playlist Monitor](playlist-monitor.md) watch that downloaded new tracks.
+Channels are **Telegram**, **ntfy** and a generic **JSON webhook**. Events
+include watch downloads, single/batch download results, library upgrades and
+backups.
 
 Notifications are a Settings section for admins: **Settings → Notifications**.
 
@@ -35,8 +36,8 @@ In **Settings → Notifications**:
 3. Paste the **Bot token** and the **Chat id**.
 4. Press **Send test message**. A message should arrive in the chat; if
    not, the token or chat id is wrong.
-5. Leave **New tracks from a watch** on to be told when a playlist or
-   artist watch downloads new tracks.
+5. Choose the events each channel receives. Automatic download and upgrade
+   notices start off; enable only what you want.
 
 Notifications are off until you enter a token and a chat id: Downtify
 refuses to save Telegram enabled without them.
@@ -46,6 +47,10 @@ refuses to save Telegram enabled without them.
 | Event | Message |
 |-------|---------|
 | A watch downloads new tracks | `Downtify downloaded 3 new tracks from "Road Trip"` |
+| A download finishes or fails | Track title and artist, or a short failure reason |
+| A batch finishes | One summary with downloaded/failed counts |
+| A library upgrade starts/finishes | Queue size, then updated/failed/skipped counts |
+| A backup completes | Backup filename |
 
 Only actual downloads are announced. A track the watch found already on
 disk (with *Overwrite existing files* off) is linked silently, not
@@ -55,22 +60,45 @@ Sending is best-effort: if Telegram is slow or down, the failure is
 logged and the download sweep finishes anyway. The swap happens off the
 download loop, so a stuck notification never holds up a download.
 
+## ntfy and webhooks
+
+**ntfy** needs the full topic URL, for example `https://ntfy.sh/my-topic`.
+A protected topic also needs its access token. **Webhook** POSTs JSON with
+`event`, `message` and `payload`; an optional token is sent as
+`Authorization: Bearer …`. Only HTTP and HTTPS endpoints are accepted.
+
+## Telegram commands
+
+When Telegram is enabled, the bot long-polls for commands. It answers only
+the configured chat id, and only accepts `/help`, `/status` and `/queue`.
+These commands are read-only; there are no pause, resume or delete commands.
+
 ## Where the settings live
 
-The block is `notifications` in `settings.json`:
+Public switches and event selections live in the `notifications` block of
+`settings.json`. Credentials live separately in `notifications.json`, written
+atomically with mode `0600`. API responses expose only `<field>_set` flags:
 
 ```json
 {
   "notifications": {
     "enabled": true,
-    "telegram_enabled": true,
-    "telegram_bot_token": "123456789:AA...",
-    "telegram_chat_id": "987654321",
-    "notify_watch_downloads": true
+    "events": ["watch.downloaded"],
+    "channels": {
+      "telegram": {
+        "enabled": true,
+        "events": ["watch.downloaded"],
+        "bot_token_set": true,
+        "chat_id_set": true
+      }
+    }
   }
 }
 ```
 
-`POST /api/notifications/test` sends a test message from the values you
-send it, whether or not they are saved — the same call the **Send test
-message** button makes. See the [API reference](../api-reference.md).
+Old inline Telegram credentials are moved to `notifications.json` on first
+start. Leaving a secret field blank in Settings keeps the saved value.
+
+`POST /api/notifications/test?channel=telegram|ntfy|webhook` tests one channel.
+The body may be `{ "channel": "ntfy", "config": { ... } }`; typed secrets
+override saved ones. See the [API reference](../api-reference.md).
