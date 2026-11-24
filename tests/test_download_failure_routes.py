@@ -26,6 +26,8 @@ def client(tmp_path, monkeypatch):
         'download_failures',
         DownloadFailureStore(data / 'library.db'),
     )
+    monkeypatch.setattr(api.state, 'activity', None)
+    monkeypatch.setattr(api.state, 'playback', None)
     app = TestClient(main.build_app(), base_url='http://testserver')
     app.post(
         '/api/auth/login', json={'username': 'admin', 'password': 'downtify'}
