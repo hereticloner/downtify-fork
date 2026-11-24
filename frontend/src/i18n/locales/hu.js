@@ -736,6 +736,9 @@ export default {
     delete: 'Album törlése',
   },
   artist: {
+    watchNew: 'Új kiadások figyelése',
+    watching: 'Figyelve',
+    watchFailed: 'A figyelés nem indult el.',
     kicker: 'Előadó',
     notFound: 'Az előadó nem található',
     findMore: 'Továbbiak keresése',

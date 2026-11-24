@@ -757,6 +757,9 @@ export default {
     delete: 'Supprimer l’album',
   },
   artist: {
+    watchNew: 'Suivre les nouveautés',
+    watching: 'Suivi',
+    watchFailed: 'Impossible de suivre cet artiste.',
     kicker: 'Artiste',
     notFound: 'Artiste introuvable',
     findMore: 'En trouver plus',

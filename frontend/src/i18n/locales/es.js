@@ -743,6 +743,9 @@ export default {
     delete: 'Eliminar álbum',
   },
   artist: {
+    watchNew: 'Ver nuevos lanzamientos',
+    watching: 'Siguiendo',
+    watchFailed: 'No se pudo seguir a este artista.',
     kicker: 'Artista',
     notFound: 'Artista no encontrado',
     findMore: 'Buscar más',

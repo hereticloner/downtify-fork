@@ -72,6 +72,16 @@
           >
             {{ t('artist.findMore') }}
           </UiButton>
+          <UiButton
+            v-if="auth.isAdmin.value && artistWatchLink"
+            :variant="artBannerUrl ? 'photo' : 'secondary'"
+            icon="radar"
+            :loading="watchBusy"
+            :disabled="watching"
+            @click="watchArtist"
+          >
+            {{ watching ? t('artist.watching') : t('artist.watchNew') }}
+          </UiButton>
           <UiMenu v-if="moreMenu.length" :items="moreMenu">
             <template #trigger>
               <UiIconButton
@@ -331,6 +341,8 @@ import API from '/src/model/api'
 import { useLibrary } from '/src/model/library'
 import { usePlayer } from '/src/model/player'
 import { usePlaylistActions } from '/src/model/playlistActions'
+import monitorAPI from '/src/model/monitor'
+import { useAuth } from '/src/model/auth'
 import { useTrackActions } from '/src/model/trackActions'
 import { useTrackSelection } from '/src/model/selection'
 import { useUi } from '/src/model/ui'
@@ -340,6 +352,7 @@ import { proxiedArtistPhotoUrl } from '/src/lib/artistPhotoProxy'
 import { versionedArtUrl } from '/src/lib/artistArt'
 import { artistFacts } from '/src/lib/artistBio'
 import { artistPlatformLinks, artistSocialLinks } from '/src/lib/artistLinks'
+import { artistWatchUrl, isArtistWatched } from '/src/lib/artistWatch'
 import { useI18n } from '/src/i18n'
 import { friendlyError } from '/src/lib/errors'
 
@@ -349,6 +362,7 @@ const library = useLibrary()
 const player = usePlayer()
 const actions = useTrackActions()
 const playlistActions = usePlaylistActions()
+const auth = useAuth()
 const ui = useUi()
 
 const ready = ref(false)
@@ -359,7 +373,42 @@ async function loadArtist() {
   ready.value = true
 }
 
-onMounted(loadArtist)
+const monitored = ref([])
+const watchBusy = ref(false)
+const artistWatchLink = computed(() => artistWatchUrl(spotifyId.value))
+const watching = computed(() =>
+  isArtistWatched(monitored.value, spotifyId.value)
+)
+
+async function loadWatches() {
+  try {
+    const res = await monitorAPI.listMonitoredPlaylists()
+    monitored.value = res.data || []
+  } catch {
+    monitored.value = []
+  }
+}
+
+async function watchArtist() {
+  if (!artistWatchLink.value || watching.value || watchBusy.value) return
+  watchBusy.value = true
+  try {
+    await monitorAPI.addMonitoredPlaylist(artistWatchLink.value, 60, {
+      new_only: true,
+    })
+    await loadWatches()
+    ui.toast(t('artist.watching'), { kind: 'success' })
+  } catch {
+    ui.toast(t('artist.watchFailed'), { kind: 'error' })
+  } finally {
+    watchBusy.value = false
+  }
+}
+
+onMounted(() => {
+  loadArtist()
+  loadWatches()
+})
 watch(
   () => route.query.name,
   () => loadArtist()

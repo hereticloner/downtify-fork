@@ -726,6 +726,9 @@ export default {
     delete: 'Изтрий албума',
   },
   artist: {
+    watchNew: 'Следване на новите',
+    watching: 'Следва се',
+    watchFailed: 'Неуспешно следване.',
     kicker: 'Изпълнител',
     notFound: 'Изпълнителят не е намерен',
     findMore: 'Намери още',

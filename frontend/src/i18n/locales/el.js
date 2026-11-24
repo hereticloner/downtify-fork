@@ -745,6 +745,9 @@ export default {
     delete: 'Διαγραφή άλμπουμ',
   },
   artist: {
+    watchNew: 'Παρακολούθηση νέων',
+    watching: 'Παρακολουθείται',
+    watchFailed: 'Αποτυχία παρακολούθησης.',
     kicker: 'Καλλιτέχνης',
     notFound: 'Ο καλλιτέχνης δεν βρέθηκε',
     findMore: 'Βρες περισσότερα',

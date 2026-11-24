@@ -722,6 +722,9 @@ export default {
     delete: 'Delete album',
   },
   artist: {
+    watchNew: 'Watch new releases',
+    watching: 'Watching',
+    watchFailed: 'Could not start watching this artist.',
     kicker: 'Artist',
     notFound: 'Artist not found',
     findMore: 'Find more',

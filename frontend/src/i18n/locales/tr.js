@@ -736,6 +736,9 @@ export default {
     delete: 'Albümü sil',
   },
   artist: {
+    watchNew: 'Yeni çıkanları izle',
+    watching: 'İzleniyor',
+    watchFailed: 'Bu sanatçı izlenemeye başlanmadı.',
     kicker: 'Sanatçı',
     notFound: 'Sanatçı bulunamadı',
     findMore: 'Daha fazlasını bul',
