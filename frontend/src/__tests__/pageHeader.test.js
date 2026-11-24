@@ -13,7 +13,18 @@ vi.mock('/src/model/api', () => ({
         data: {
           library: { tracks: 7, playlists: 2, likes: 1 },
           downloads: { total: 3, last_30_days: 1, per_day: [] },
-          playback: { total: 11, top_tracks: [] },
+          playback: {
+            total: 11,
+            measured: {
+              seconds: 3661,
+              plays: 11,
+              completions: 9,
+              skips: 1,
+              completion_rate: 0.8181,
+              skip_rate: 0.0909,
+            },
+            top_tracks: [],
+          },
           spotify: {
             recent: [
               {
@@ -157,13 +168,15 @@ describe('StatsView', () => {
     const html = await render(StatsView)
     expect(html).toMatch(/>7<\/div>/)
     expect(html).toMatch(/>3<\/div>/)
-    expect(html).toMatch(/>11<\/div>/)
+    expect(html).toContain('1:01:01')
     for (const key of [
       'stats.tracks',
       'stats.playlists',
       'stats.downloads30',
       'stats.downloadsTotal',
-      'stats.plays',
+      'stats.listeningTime',
+      'stats.completed',
+      'stats.skipped',
       'stats.likes',
     ]) {
       expect(html, key).toContain(t(key))
