@@ -33,13 +33,33 @@ class PlaybackStore:
                     track_key TEXT NOT NULL,
                     track_json TEXT NOT NULL,
                     position REAL NOT NULL,
+                    max_position REAL NOT NULL DEFAULT 0,
                     duration REAL NOT NULL,
                     state TEXT NOT NULL,
                     started_at TEXT NOT NULL,
+                    completed_at TEXT,
                     updated_at TEXT NOT NULL,
                     PRIMARY KEY (user_id, device_id, track_key)
                 )
             """)
+            columns = {
+                row[1]
+                for row in conn.execute(
+                    'PRAGMA table_info(playback_positions)'
+                )
+            }
+            if 'max_position' not in columns:
+                conn.execute(
+                    'ALTER TABLE playback_positions ADD COLUMN '
+                    'max_position REAL NOT NULL DEFAULT 0'
+                )
+                conn.execute(
+                    'UPDATE playback_positions SET max_position = position'
+                )
+            if 'completed_at' not in columns:
+                conn.execute(
+                    'ALTER TABLE playback_positions ADD COLUMN completed_at TEXT'
+                )
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS playback_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,13 +128,45 @@ class PlaybackStore:
                 float(track.get('duration') or 0),
                 float(previous['duration']) if previous else 0.0,
             )
-            started = previous is None and state == 'playing'
-            started_at = previous['started_at'] if previous else now
+            previous_max = (
+                float(previous['max_position'])
+                if previous is not None
+                else 0.0
+            )
+            if (
+                not seek
+                and state == 'playing'
+                and previous is not None
+                and previous['state'] == 'playing'
+            ):
+                pos = max(pos, float(previous['position']))
+            replay = bool(
+                previous is not None
+                and state == 'playing'
+                and pos <= 1
+                and (
+                    seek
+                    or previous['state'] == 'stopped'
+                    or previous['completed_at']
+                )
+            )
+            started = previous is None or replay
+            started_at = (
+                now if started or previous is None else previous['started_at']
+            )
+            completed_at = (
+                None
+                if started or previous is None
+                else previous['completed_at']
+            )
+            max_position = max(previous_max, pos)
             completed = False
             if state == 'playing' and duration > 0 and pos >= duration * 0.9:
                 completed = not self._has_event(
                     conn, user_id, device_id, key, 'complete', started_at
                 )
+                if completed:
+                    completed_at = now
             skipped_row = None
             if (
                 current is not None
@@ -145,19 +197,24 @@ class PlaybackStore:
                 and state == 'playing'
                 and not seek
             ):
-                delta = pos - float(previous['position'])
+                delta = pos - previous_max
                 if 0 < delta <= 45:
                     seconds = delta
             if key:
                 conn.execute(
                     'INSERT INTO playback_positions '
                     '(user_id, device_id, player, track_key, track_json, '
-                    'position, duration, state, started_at, updated_at) '
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '
+                    'position, max_position, duration, state, started_at, '
+                    'completed_at, updated_at) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '
                     'ON CONFLICT(user_id, device_id, track_key) DO UPDATE SET '
                     'player=excluded.player, track_json=excluded.track_json, '
-                    'position=excluded.position, duration=excluded.duration, '
-                    'state=excluded.state, updated_at=excluded.updated_at',
+                    'position=excluded.position, '
+                    'max_position=excluded.max_position, '
+                    'duration=excluded.duration, state=excluded.state, '
+                    'started_at=excluded.started_at, '
+                    'completed_at=excluded.completed_at, '
+                    'updated_at=excluded.updated_at',
                     (
                         user_id,
                         device_id,
@@ -165,9 +222,11 @@ class PlaybackStore:
                         key,
                         json.dumps(track),
                         pos,
+                        max_position,
                         duration,
                         state,
                         started_at,
+                        completed_at,
                         now,
                     ),
                 )
@@ -199,21 +258,42 @@ class PlaybackStore:
                     'skip',
                     now,
                 )
-            if started or seconds or completed:
+            event_row = {
+                'track_key': key,
+                'track_json': json.dumps(track),
+                'position': pos,
+                'duration': duration,
+            }
+            if completed:
                 self._insert_event(
                     conn,
                     user_id,
                     device_id,
                     player,
-                    {
-                        'track_key': key,
-                        'track_json': json.dumps(track),
-                        'position': pos,
-                        'duration': duration,
-                    },
-                    'start'
-                    if started
-                    else ('complete' if completed else 'heartbeat'),
+                    event_row,
+                    'complete',
+                    now,
+                    seconds=seconds,
+                )
+            elif started:
+                self._insert_event(
+                    conn,
+                    user_id,
+                    device_id,
+                    player,
+                    event_row,
+                    'start',
+                    now,
+                    seconds=seconds,
+                )
+            elif seconds:
+                self._insert_event(
+                    conn,
+                    user_id,
+                    device_id,
+                    player,
+                    event_row,
+                    'heartbeat',
                     now,
                     seconds=seconds,
                 )

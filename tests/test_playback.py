@@ -232,6 +232,76 @@ def test_prune_removes_old_playback_rows(tmp_path):
     assert len(store.positions(1)) == 1
 
 
+def test_out_of_order_heartbeats_do_not_rewind_or_double_count(tmp_path):
+    store = PlaybackStore(tmp_path / 'playback.db')
+    track = {'file': 'A - One.mp3', 'duration': 200}
+    for position in (0, 30, 60, 45, 75):
+        store.report(
+            user_id=1,
+            device_id='web',
+            player='tab',
+            state='playing',
+            track=track,
+            position=position,
+        )
+
+    assert store.summary(1)['seconds'] == 75
+    assert store.latest(1)['position'] == 75
+
+
+def test_first_report_at_completion_counts_once(tmp_path):
+    store = PlaybackStore(tmp_path / 'playback.db')
+    track = {'file': 'A - One.mp3', 'duration': 100}
+    for _ in range(3):
+        store.report(
+            user_id=1,
+            device_id='web',
+            player='tab',
+            state='playing',
+            track=track,
+            position=95,
+        )
+
+    assert store.summary(1)['completions'] == 1
+
+
+def test_replay_counts_a_new_session_without_counting_seconds_twice(tmp_path):
+    store = PlaybackStore(tmp_path / 'playback.db')
+    track = {'file': 'A - One.mp3', 'duration': 100}
+    for position in (0, 30, 60, 90):
+        store.report(
+            user_id=1,
+            device_id='web',
+            player='tab',
+            state='playing',
+            track=track,
+            position=position,
+        )
+    store.report(
+        user_id=1,
+        device_id='web',
+        player='tab',
+        state='playing',
+        track=track,
+        position=0,
+        seek=True,
+    )
+    for position in (30, 60, 90):
+        store.report(
+            user_id=1,
+            device_id='web',
+            player='tab',
+            state='playing',
+            track=track,
+            position=position,
+        )
+
+    summary = store.summary(1)
+    assert summary['seconds'] == 90
+    assert summary['plays'] == 2
+    assert summary['completions'] == 2
+
+
 def test_switching_tracks_early_counts_previous_as_skip(tmp_path, monkeypatch):
     stamps = iter([
         '2026-11-24T10:00:00+00:00',
