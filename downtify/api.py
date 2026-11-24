@@ -328,6 +328,7 @@ from . import (
     m3u,
     notifications,
     providers,
+    queue_schedule,
     scrobbling,
     spotify,
     spotify_mirror,
@@ -550,6 +551,8 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     'notifications': notifications.clean_settings({
         'events': ['watch.downloaded'],
     }),
+    # Time window when new downloads wait; running jobs finish normally.
+    'queue_control': queue_schedule.DEFAULT_QUEUE_CONTROL,
     # Scrobble plays to last.fm (see downtify.scrobbling). Off until the
     # account is connected; sending is best-effort and never blocks the
     # player's report.
@@ -602,6 +605,7 @@ _NESTED_SETTINGS = (
     'library_upgrade',
     'external_library',
     'notifications',
+    'queue_control',
     'scrobbling',
     'spotify_mirror',
     'spotify_sync',
@@ -1673,6 +1677,14 @@ def _load_settings(path: Path) -> dict[str, Any]:
             merged['notifications'] = notifications.clean_settings(
                 merged.get('notifications'), store.load()
             )
+            try:
+                merged['queue_control'] = queue_schedule.clean_queue_control(
+                    merged.get('queue_control')
+                )
+            except ValueError:
+                merged['queue_control'] = (
+                    queue_schedule.clean_queue_control({})
+                )
             if migrated:
                 _save_settings(path, merged)
             return merged
@@ -6322,6 +6334,18 @@ async def update_settings_endpoint(
             pending_spotify_sync if 'spotify_sync' in payload else {},
             mirror=pending_spotify_mirror,
         )
+        if 'queue_control' in payload:
+            try:
+                pending_queue_control = queue_schedule.clean_queue_control({
+                    **(state.settings.get('queue_control') or {}),
+                    **(
+                        payload.get('queue_control')
+                        if isinstance(payload.get('queue_control'), dict)
+                        else {}
+                    ),
+                })
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
         if 'notifications' in payload:
             store = state.notification_store
             if store is None and state.settings_path is not None:
@@ -6381,6 +6405,8 @@ async def update_settings_endpoint(
                 state.settings[key] = cleaned
             elif key == 'notifications':
                 state.settings[key] = pending_notifications
+            elif key == 'queue_control':
+                state.settings[key] = pending_queue_control
             elif key == 'scrobbling':
                 state.settings[key] = pending_scrobbling
             elif key == 'spotify_mirror':

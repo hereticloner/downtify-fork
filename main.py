@@ -53,6 +53,7 @@ from downtify import (
     download_policy_routes,
     mobile_routes,
     playback_routes,
+    queue_schedule,
     spotify_history,
     spotify_sync,
     spotify_sync_api,
@@ -779,6 +780,11 @@ def build_app() -> FastAPI:
                 api.state.upgrade_runner.resume_after_restart()
             except Exception:
                 logger.exception('Library upgrade: could not resume')
+        # Apply the time window before restoring jobs so a quiet period
+        # never starts downloads during startup.
+        queue_schedule.QueueSchedule(
+            lambda: api.state.settings, api.queue_pause.set_quiet
+        ).apply()
         # The download queue (and its pause switch) outlives a restart
         # or an update: unfinished jobs are queued again.
         try:
@@ -800,6 +806,12 @@ def build_app() -> FastAPI:
         api.spawn_task(telegram_bot.run(), name='telegram-command-bot')
         api.spawn_task(
             backup_schedule.backup_schedule_loop(), name='backup-schedule-loop'
+        )
+        api.spawn_task(
+            queue_schedule.schedule_loop(
+                lambda: api.state.settings, api.queue_pause.set_quiet
+            ),
+            name='queue-schedule-loop',
         )
 
         yield

@@ -48,6 +48,8 @@ class QueuePause:
 
     def __init__(self) -> None:
         self._paused = False
+        self._manual_paused = False
+        self._quiet_paused = False
         self._active = 0
         self._waiters: list[asyncio.Future[None]] = []
         self._paused_jobs: dict[str, asyncio.Event] = {}
@@ -76,16 +78,27 @@ class QueuePause:
             'active': self._active,
         }
 
+    def _sync_pause(self) -> None:
+        paused = self._manual_paused or self._quiet_paused
+        if self._paused and not paused:
+            waiters, self._waiters = self._waiters, []
+            for waiter in waiters:
+                # A waiter may belong to a loop that already closed (tests).
+                with contextlib.suppress(RuntimeError):
+                    waiter.get_loop().call_soon_threadsafe(_release, waiter)
+        self._paused = paused
+
     def pause(self) -> None:
-        self._paused = True
+        self._manual_paused = True
+        self._sync_pause()
 
     def resume(self) -> None:
-        self._paused = False
-        waiters, self._waiters = self._waiters, []
-        for waiter in waiters:
-            # A waiter may belong to a loop that already closed (tests).
-            with contextlib.suppress(RuntimeError):
-                waiter.get_loop().call_soon_threadsafe(_release, waiter)
+        self._manual_paused = False
+        self._sync_pause()
+
+    def set_quiet(self, paused: bool) -> None:
+        self._quiet_paused = bool(paused)
+        self._sync_pause()
 
     def pause_job(self, song_id: str) -> None:
         event = self._paused_jobs.setdefault(str(song_id), asyncio.Event())
