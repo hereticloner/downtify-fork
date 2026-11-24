@@ -23,7 +23,7 @@ def is_public_http_url(url: str) -> bool:
         port = parsed.port or (443 if parsed.scheme == 'https' else 80)
     except ValueError:
         return False
-    if parsed.scheme not in ('http', 'https') or not parsed.hostname:
+    if parsed.scheme not in {'http', 'https'} or not parsed.hostname:
         return False
     try:
         infos = socket.getaddrinfo(parsed.hostname, port)

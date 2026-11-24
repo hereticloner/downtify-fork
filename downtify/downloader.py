@@ -1233,7 +1233,9 @@ def _download_cover(url: str) -> Optional[bytes]:
             for chunk in response.iter_bytes():
                 data.extend(chunk)
                 if len(data) > _MAX_COVER_BYTES:
-                    logger.warning('Cover art over {} bytes: {}', _MAX_COVER_BYTES, url)
+                    logger.warning(
+                        'Cover art over {} bytes: {}', _MAX_COVER_BYTES, url
+                    )
                     return None
     except Exception:
         logger.opt(exception=True).warning('Failed to fetch cover art {}', url)

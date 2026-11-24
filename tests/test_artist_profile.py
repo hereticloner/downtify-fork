@@ -2941,8 +2941,9 @@ def _fetch_returning_png():
     resp = MagicMock()
     resp.raise_for_status = lambda: None
     resp.content = _TINY_PNG
-    with patch('downtify.artist_profile.httpx.get', return_value=resp), patch(
-        'downtify.artist_profile.is_public_http_url', return_value=True
+    with (
+        patch('downtify.artist_profile.httpx.get', return_value=resp),
+        patch('downtify.artist_profile.is_public_http_url', return_value=True),
     ):
         yield
 

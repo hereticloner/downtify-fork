@@ -128,8 +128,14 @@ git commit -m "docs: plan personal/server feature program"
 def test_positions_are_user_scoped(tmp_path):
     store = PlaybackStore(tmp_path / 'playback.db')
     track = {'file': 'A - One.mp3', 'title': 'One', 'duration': 100}
-    store.report(user_id=1, device_id='web', player='tab', state='paused',
-                 track=track, position=42)
+    store.report(
+        user_id=1,
+        device_id='web',
+        player='tab',
+        state='paused',
+        track=track,
+        position=42,
+    )
     assert store.latest(1)['position'] == 42
     assert store.latest(2) is None
 ```
@@ -150,8 +156,14 @@ def test_heartbeats_count_unique_seconds_once(tmp_path):
     store = PlaybackStore(tmp_path / 'playback.db')
     track = {'file': 'A - One.mp3', 'duration': 200}
     for position in (0, 30, 60):
-        store.report(user_id=1, device_id='web', player='tab',
-                     state='playing', track=track, position=position)
+        store.report(
+            user_id=1,
+            device_id='web',
+            player='tab',
+            state='playing',
+            track=track,
+            position=position,
+        )
     assert store.summary(1)['seconds'] == 60
     assert store.summary(1)['plays'] == 1
 ```
