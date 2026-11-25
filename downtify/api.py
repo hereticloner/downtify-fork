@@ -564,6 +564,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         'lastfm_api_secret': '',
         'lastfm_session_key': '',
         'lastfm_username': '',
+        'import_history': False,
         'scrobble_now_playing': True,
     },
     # Mirror plays to Spotify Connect (see downtify.spotify_mirror): a
@@ -827,6 +828,7 @@ def _clean_scrobbling(value: Any) -> dict[str, Any]:
             base.get('lastfm_session_key') or ''
         ).strip(),
         'lastfm_username': str(base.get('lastfm_username') or '').strip(),
+        'import_history': bool(base.get('import_history')),
         'scrobble_now_playing': bool(base.get('scrobble_now_playing', True)),
     }
 

@@ -113,7 +113,8 @@ Mevcut tablo güvenli biçimde yeniden kurulur:
 - `played_at` (UTC ISO), `artist_name`, `track_name`, `album_name`, `mbid`
 - `raw_json` (orijinal track objesi), `imported_at`
 - `nowplaying=true` ve tarihsiz kayıtlar canonical play'a çevrilmez.
-- Aynı saniye/sanatçı/başlık için birden fazla gerçek scrobble varsa kararlı occurrence sıra numarası `source_key`e eklenir; import tekrarı aynı sırayı üretir.
+- Aynı saniye/sanatçı/başlık için birden fazla gerçek scrobble varsa içe alınan sayfa içindeki sıra numarası `source_key`e eklenir; aynı sayfanın tekrar importu aynı anahtarları üretir.
+- Bilinen sınır: Last.fm kararlı scrobble ID'si vermediğinden, aynı saniyedeki birebir aynı scrobble sonradan ayrı bir sayfada gelirse sağlayıcı ID ekleneene kadar yeni sayılmayabilir.
 
 ### 6.4 `history_import_state`
 

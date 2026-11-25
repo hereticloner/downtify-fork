@@ -327,6 +327,7 @@ def test_defaults_present_and_off():
     block = api.DEFAULT_SETTINGS['scrobbling']
     assert block['enabled'] is False
     assert block['lastfm_enabled'] is False
+    assert block['import_history'] is False
     assert block['scrobble_now_playing'] is True
 
 
@@ -346,6 +347,7 @@ def test_clean_coerces_and_fills():
         'lastfm_api_secret': '',
         'lastfm_session_key': '',
         'lastfm_username': '',
+        'import_history': False,
         'scrobble_now_playing': True,
     }
 

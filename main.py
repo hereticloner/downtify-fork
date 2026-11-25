@@ -51,6 +51,7 @@ from downtify import (
     backup_schedule,
     download_failure_routes,
     download_policy_routes,
+    lastfm_history,
     mobile_routes,
     playback_routes,
     queue_schedule,
@@ -746,6 +747,20 @@ def build_app() -> FastAPI:
                 persist_tokens=api._persist_mirror_tokens,
             ),
             name='spotify-history-loop',
+        )
+        # Imports the connected Last.fm account's scrobbles, newest first
+        # and then backwards in bounded pages. Off by default; the loop
+        # idles until scrobbling.import_history is enabled.
+        api.spawn_task(
+            lastfm_history.lastfm_history_loop(
+                cfg_getter=lambda: api.state.settings,
+                db_path=DATABASE_DIR / 'downtify_activity.db',
+                listening_getter=lambda: getattr(api.state, 'listening', None),
+                user_id_getter=lambda: int(
+                    (api.state.auth.users.first_admin() or {}).get('id') or 0
+                ),
+            ),
+            name='lastfm-history-loop',
         )
         # Hourly check against GitHub Releases (see
         # downtify/update_check.py) so the footer can tell the user a
