@@ -242,18 +242,28 @@ def rename_collection(
         raise _err(
             f'A collection named {safe!r} already exists', status_code=409
         )
-    try:
-        old_path.unlink(missing_ok=True)
-    except OSError as exc:
-        raise _err(f'Could not remove {old_path.name}') from exc
     old_cover = _cover_path(download_dir, name)
     new_cover = _cover_path(download_dir, safe)
-    if data.get('cover') and old_cover.is_file():
-        new_cover.parent.mkdir(parents=True, exist_ok=True)
-        old_cover.replace(new_cover)
-        data['cover'] = new_cover.name
+    if new_path.resolve() == old_path.resolve():
+        data['name'] = safe
+        _write(download_dir, data)
+        return data
     data['name'] = safe
-    _write(download_dir, data)
+    if data.get('cover') and old_cover.is_file():
+        data['cover'] = new_cover.name
+    moved_cover = False
+    try:
+        _write(download_dir, data)
+        if data.get('cover') and old_cover.is_file():
+            new_cover.parent.mkdir(parents=True, exist_ok=True)
+            old_cover.replace(new_cover)
+            moved_cover = True
+        old_path.unlink(missing_ok=True)
+    except Exception:
+        if moved_cover and new_cover.is_file() and not old_cover.is_file():
+            new_cover.replace(old_cover)
+        new_path.unlink(missing_ok=True)
+        raise
     return data
 
 

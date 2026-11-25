@@ -245,6 +245,32 @@ def test_preview_rejects_bad_nested_rules_without_saving(client):
     assert client.get('/api/collections/Smart').json()['rules'] == []
 
 
+def test_save_rejects_bad_nested_rules_without_replacing_saved_rules(client):
+    client.post('/api/collections', json={'name': 'Smart'})
+    saved = [{'type': 'genre', 'value': 'Rock'}]
+    assert (
+        client.post(
+            '/api/collections/Smart/rules', json={'rules': saved}
+        ).status_code
+        == 200
+    )
+
+    response = client.post(
+        '/api/collections/Smart/rules',
+        json={
+            'rules': [
+                {
+                    'op': 'or',
+                    'rules': [{'type': 'bpm', 'value': 120}],
+                }
+            ]
+        },
+    )
+
+    assert response.status_code == 400
+    assert client.get('/api/collections/Smart').json()['rules'] == saved
+
+
 def test_save_rules_unknown_collection_returns_404(client):
     resp = client.post(
         '/api/collections/Yok/rules',

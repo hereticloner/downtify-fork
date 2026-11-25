@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from downtify import collections as collmod
 from downtify import playlist_mosaic
 from downtify.collection_rules import RuleError
 from downtify.collections import (
@@ -222,6 +223,56 @@ def test_rename_keeps_the_rules(downloads: Path) -> None:
             'rules': [{'type': 'genre', 'value': 'Rock'}],
         }
     ]
+
+
+def test_rename_write_failure_keeps_the_original(
+    downloads: Path, monkeypatch
+) -> None:
+    create_collection(downloads, 'Old')
+    original = collmod._write
+
+    def fail_new(download_dir, data):
+        if data['name'] == 'New':
+            raise OSError('disk full')
+        return original(download_dir, data)
+
+    monkeypatch.setattr(collmod, '_write', fail_new)
+    with pytest.raises(OSError, match='disk full'):
+        rename_collection(downloads, 'Old', 'New')
+
+    assert get_collection(downloads, 'Old')['name'] == 'Old'
+    assert not (downloads / 'Playlists' / '.collections' / 'New.json').exists()
+
+
+def test_rename_cover_failure_keeps_the_original(
+    downloads: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        playlist_mosaic,
+        'normalize_uploaded_cover',
+        lambda data, content_type: b'jpeg-data',
+    )
+    create_collection(downloads, 'Old')
+    set_collection_cover(downloads, 'Old', b'png', 'image/png')
+    original_replace = Path.replace
+
+    def fail_cover(self, target):
+        if self.name == 'Old.jpg':
+            raise OSError('disk full')
+        return original_replace(self, target)
+
+    monkeypatch.setattr(Path, 'replace', fail_cover)
+    with pytest.raises(OSError, match='disk full'):
+        rename_collection(downloads, 'Old', 'New')
+
+    assert get_collection(downloads, 'Old')['cover'] == 'Old.jpg'
+    assert (
+        downloads / 'Playlists' / '.collections' / 'covers' / 'Old.jpg'
+    ).is_file()
+    assert not (downloads / 'Playlists' / '.collections' / 'New.json').exists()
+    assert not (
+        downloads / 'Playlists' / '.collections' / 'covers' / 'New.jpg'
+    ).exists()
 
 
 def test_hand_written_broken_rules_do_not_crash_the_listing(
