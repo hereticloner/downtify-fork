@@ -46,9 +46,10 @@ path. It is safe to attach to a support conversation without publishing the
 shape of your library.
 
 If a store cannot be read, the page reports a partial scan instead of failing
-the whole report. A missing or unreadable downloads root is also partial
-(`disk_unavailable`), never a clean bill of health. Exception text and paths
-are not copied into warnings.
+the whole report. A missing or unreadable downloads root or configured external
+folder is also partial (`disk_unavailable` or `external_folder_unavailable`),
+never a clean bill of health. Cross-store findings are suppressed for that
+scan. Exception text and paths are not copied into warnings.
 
 ## API
 

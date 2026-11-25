@@ -67,13 +67,15 @@ def _finding(
     return row
 
 
-def _disk_available(ctx: LibraryContext) -> bool:
+def _path_available(path: Path) -> bool:
     try:
-        return ctx.download_dir.is_dir() and os.access(
-            ctx.download_dir, os.R_OK | os.X_OK
-        )
+        return path.is_dir() and os.access(path, os.R_OK | os.X_OK)
     except OSError:
         return False
+
+
+def _disk_available(ctx: LibraryContext) -> bool:
+    return _path_available(ctx.download_dir)
 
 
 def scan_library_health(
@@ -87,6 +89,7 @@ def scan_library_health(
     """Compare a fresh disk snapshot with the library's read-only stores."""
 
     disk_available = _disk_available(ctx)
+    roots_available = disk_available
     if disk_available:
         disk_by_path, disk_by_key = _disk_snapshot(ctx)
     else:
@@ -100,6 +103,9 @@ def scan_library_health(
 
     if not disk_available:
         warn('disk_unavailable')
+    elif any(not _path_available(path) for path in ctx.extra_dirs):
+        roots_available = False
+        warn('external_folder_unavailable')
     for name, full in disk_by_path.items():
         try:
             metadata = read_audio_metadata(full)
@@ -165,7 +171,7 @@ def scan_library_health(
     def classify(
         source: str, filename: str, record_id: str, content_key: str
     ) -> None:
-        if not disk_available:
+        if not roots_available:
             return
         name = _name(filename)
         if not name:
@@ -224,7 +230,7 @@ def scan_library_health(
             content_keys.get(track_id, ''),
         )
     for row in navidrome_rows:
-        if not disk_available:
+        if not roots_available:
             break
         if _name(row.get('content_key')) not in disk_by_key:
             add(
@@ -259,7 +265,7 @@ def scan_library_health(
             'by_category': by_category,
         },
         'sources': {
-            'disk': disk_available,
+            'disk': roots_available,
             'track_index': track_index is not None
             and not any(
                 warning == 'track_index_unavailable' for warning in warnings
@@ -289,6 +295,7 @@ def redact_health_report(report: dict[str, Any]) -> dict[str, Any]:
     sources = report.get('sources') or {}
     warning_codes = {
         'disk_unavailable',
+        'external_folder_unavailable',
         'metadata_unavailable',
         'track_index_unavailable',
         'playlist_unavailable',

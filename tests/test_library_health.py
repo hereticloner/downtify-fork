@@ -425,6 +425,25 @@ def test_missing_download_root_is_partial_not_healthy(tmp_path: Path) -> None:
     assert report['findings'] == []
 
 
+def test_unavailable_external_folder_is_partial(tmp_path: Path) -> None:
+    downloads = tmp_path / 'downloads'
+    downloads.mkdir()
+    index = TrackIndex(tmp_path / 'library.db')
+    index.register(TRACK_ID, 'ext/nas/Artist/Track.mp3')
+
+    report = scan_library_health(
+        LibraryContext(
+            download_dir=downloads,
+            extra_dirs=(tmp_path / 'missing-nas',),
+        ),
+        track_index=index,
+    )
+
+    assert report['sources']['disk'] is False
+    assert report['warnings'] == ['external_folder_unavailable']
+    assert report['findings'] == []
+
+
 def test_unavailable_reference_store_does_not_create_orphans(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -474,8 +493,15 @@ def test_redacted_export_keeps_only_known_warning_codes() -> None:
         'summary': {},
         'sources': {},
         'findings': [],
-        'warnings': ['disk_unavailable', '/home/yeet/private'],
+        'warnings': [
+            'disk_unavailable',
+            'external_folder_unavailable',
+            '/home/yeet/private',
+        ],
     })
 
-    assert redacted['warnings'] == ['disk_unavailable']
+    assert redacted['warnings'] == [
+        'disk_unavailable',
+        'external_folder_unavailable',
+    ]
     assert '/home/yeet/private' not in str(redacted)

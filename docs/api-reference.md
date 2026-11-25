@@ -1915,8 +1915,8 @@ with the same content key is a path mismatch rather than a missing file.
 `missing_metadata` or `orphan_record`. `recommendation` is one of `redownload`,
 `reconcile_paths`, `refresh_navidrome`, `repair_metadata` or `review_record`.
 A path mismatch also carries `suggested_path`. Warnings are stable codes such
-as `disk_unavailable`, `metadata_unavailable` or `track_index_unavailable`,
-never exception text.
+as `disk_unavailable`, `external_folder_unavailable`, `metadata_unavailable`
+or `track_index_unavailable`, never exception text.
 
 ---
 
