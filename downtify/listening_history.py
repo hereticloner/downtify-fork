@@ -68,9 +68,25 @@ class ListeningStore:
                 CREATE TABLE IF NOT EXISTS listening_event_sources (
                     event_id INTEGER NOT NULL,
                     source TEXT NOT NULL,
+                    source_key TEXT NOT NULL DEFAULT '',
                     PRIMARY KEY (event_id, source)
                 )
             """)
+            columns = {
+                row[1]
+                for row in conn.execute(
+                    'PRAGMA table_info(listening_event_sources)'
+                )
+            }
+            if 'source_key' not in columns:
+                conn.execute(
+                    'ALTER TABLE listening_event_sources ADD COLUMN '
+                    "source_key TEXT NOT NULL DEFAULT ''"
+                )
+            conn.execute(
+                'CREATE INDEX IF NOT EXISTS listening_source_identity '
+                'ON listening_event_sources (source, source_key)'
+            )
             conn.execute(
                 'CREATE INDEX IF NOT EXISTS listening_match '
                 'ON listening_events (user_id, match_key, played_at)'
@@ -105,13 +121,30 @@ class ListeningStore:
         when = _parse_time(played_at)
         duration = max(0, int(duration_ms or 0))
         with self._connect() as conn:
+            conn.execute('BEGIN IMMEDIATE')
             existing = conn.execute(
-                'SELECT id FROM listening_events '
-                'WHERE user_id=? AND identity_key=?',
-                (int(user_id), identity_key),
+                'SELECT s.event_id FROM listening_event_sources s '
+                'JOIN listening_events e ON e.id=s.event_id '
+                'WHERE e.user_id=? AND s.source=? AND s.source_key=?',
+                (int(user_id), source, source_key),
             ).fetchone()
+            if existing is None:
+                existing = conn.execute(
+                    'SELECT id FROM listening_events '
+                    'WHERE user_id=? AND identity_key=?',
+                    (int(user_id), identity_key),
+                ).fetchone()
             if existing is not None:
-                return int(existing['id']), False
+                if 'event_id' in existing.keys():
+                    event_id = int(existing['event_id'])
+                else:
+                    event_id = int(existing['id'])
+                    conn.execute(
+                        'UPDATE listening_event_sources SET source_key=? '
+                        'WHERE event_id=? AND source=?',
+                        (source_key, event_id, source),
+                    )
+                return event_id, False
             candidates = conn.execute(
                 'SELECT * FROM listening_events '
                 'WHERE user_id=? AND match_key=? '
@@ -175,9 +208,9 @@ class ListeningStore:
                         ),
                     )
                 conn.execute(
-                    'INSERT INTO listening_event_sources (event_id, source) '
-                    'VALUES (?, ?)',
-                    (candidate['id'], source),
+                    'INSERT INTO listening_event_sources '
+                    '(event_id, source, source_key) VALUES (?, ?, ?)',
+                    (candidate['id'], source, source_key),
                 )
                 return int(candidate['id']), False
             cursor = conn.execute(
@@ -205,9 +238,9 @@ class ListeningStore:
             )
             event_id = int(cursor.lastrowid)
             conn.execute(
-                'INSERT INTO listening_event_sources (event_id, source) '
-                'VALUES (?, ?)',
-                (event_id, source),
+                'INSERT INTO listening_event_sources '
+                '(event_id, source, source_key) VALUES (?, ?, ?)',
+                (event_id, source, source_key),
             )
         return event_id, True
 

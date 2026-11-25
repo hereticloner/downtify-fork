@@ -291,3 +291,44 @@ def test_http_429_does_not_advance_cursor(tmp_path):
     assert summary['error'] == 'fetch_failed'
     assert lastfm_history.count_plays(db) == 0
     assert not lastfm_history._load_state(db)['oldest_at']
+
+
+def test_failed_page_write_does_not_advance_cursor(tmp_path):
+    settings = {
+        'scrobbling': {
+            'enabled': True,
+            'lastfm_enabled': True,
+            'lastfm_api_key': 'k',
+            'lastfm_username': 'u',
+            'import_history': True,
+        }
+    }
+    db = tmp_path / 'activity.db'
+    lastfm_history.ensure_schema(db)
+    with sqlite3.connect(db) as conn:
+        conn.execute(
+            'CREATE TRIGGER fail_lastfm_insert BEFORE INSERT ON '
+            "lastfm_recent_tracks BEGIN SELECT RAISE(ABORT, 'disk full'); END"
+        )
+
+    def sender(method, url, **kwargs):
+        return FakeResponse({
+            'recenttracks': {
+                'track': [
+                    {
+                        'name': 'T',
+                        'artist': {'name': 'A'},
+                        'date': {'uts': '100'},
+                    }
+                ]
+            }
+        })
+
+    with pytest.raises(sqlite3.IntegrityError, match='disk full'):
+        lastfm_history.run_once(settings, db, request=sender)
+    assert lastfm_history.count_plays(db) == 0
+    assert lastfm_history._load_state(db) == {
+        'newest_at': '',
+        'oldest_at': '',
+        'backfill_done': False,
+    }

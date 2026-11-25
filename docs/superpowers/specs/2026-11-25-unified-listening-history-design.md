@@ -125,8 +125,9 @@ Last.fm backfill'i hangi zaman aralığının içe alındığını ve yeni kayı
 
 ### 6.5 `listening_event_sources` — kaynak başına tek gözlem kapısı
 
-- `event_id`, `source`, `PRIMARY KEY(event_id, source)`
-- Bir canonical play'a aynı kaynaktan ikinci gözlem bağlanamaz.
+- `event_id`, `source`, `source_key`, `PRIMARY KEY(event_id, source)`
+- `(source, source_key)` indeksli her gözlem kimliği saklanır; yeniden import önce bu tabloda aranır.
+- Bir canonical play'a aynı kaynaktan ikinci **farklı** gözlem bağlanamaz.
 - Aynı kaynaktan gelen yeni gerçek play yeni canonical satır açar.
 - Bu tablo kaynak yükseltmesi sırasında da korunur; eski kayıtların provenance bağı kopmaz.
 
@@ -144,7 +145,8 @@ Last.fm backfill'i hangi zaman aralığının içe alındığını ve yeni kayı
 - Aynı `user_id` ve `match_key` için adaylar `played_at` çevresinde aranır.
 - Zaman penceresi: `max(300 saniye, min(parça süresi + 300 saniye, 1800 saniye))`.
 - Adaylar arasında en yakın zaman seçilir.
-- Aynı kaynağın ikinci gözlemi aynı canonical satıra bağlanamaz; `listening_event_sources` bunu transaction içinde zorunlu kılar. Yeni gerçek play olarak değerlendirilir.
+- Aynı kaynağın ikinci **farklı** gözlemi aynı canonical satıra bağlanamaz; `listening_event_sources` bunu transaction içinde zorunlu kılar. Yeni gerçek play olarak değerlendirilir.
+- Aynı `(source, source_key)` yeniden geldiğinde `listening_event_sources` üzerinden mevcut canonical satır döner; kaynak yükseltmesi ikinci satır açmaz.
 - Daha yüksek öncelikli kaynak geldiğinde canonical satırın `source`, `source_key`, `played_at` ve metadata'sı yükseltilir; `identity_key` ve önceki kaynak bağlantıları korunur.
 - Last.fm scrobble zamanı bazen play başlangıcından birkaç dakika sonradır. Downtify veya Spotify gözlemi geldiğinde doğru başlangıç zamanı canonical satıra taşınır; gün sınırı da bu doğru zamana göre hesaplanır.
 - Spotify ID varsa eşleşmeyi güçlendirir; Last.fm MBID'si Spotify ID'si değildir ve doğrudan eşleştirme anahtarı yapılmaz.
@@ -177,6 +179,7 @@ Bilinen sınır: farklı sanatçı yazımı, sürüm veya remaster aynı play'ı
   3. Her sayfayı işledikten sonra cursor'ı kalıcı yazar; hata durumunda sonraki koşu aynı yerden devam eder.
 - Sayfa boyutu 200; `from`/`to` Unix saniye cinsindendir.
 - 429/16 hatalarında döngü koşuyu bırakır, sonraki periyodunda tekrar dener; token veya session key loglanmaz.
+- Sayfa yazımı SQLite hatası verirse cursor ilerletilmez ve hata arka plan döngüsünde loglanır; aynı sayfa sonraki koşuda yeniden denenir.
 - İlk kurulumda 98.601 kayıt yaklaşık 494 sayfa olduğundan tam backfill birkaç saat sürebilir; Stats içe alındıkça büyür.
 
 ## 9. Stats ve API

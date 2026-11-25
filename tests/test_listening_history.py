@@ -1,4 +1,6 @@
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from downtify.listening_history import ListeningStore, normalize_match_key
@@ -59,6 +61,77 @@ def test_higher_priority_promotes_without_changing_identity(tmp_path):
         '2026-11-25T23:56:00Z',
         'spotify-1',
     )
+
+
+def test_promoted_and_merged_observations_remain_idempotent(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    event_id, _ = store.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='lastfm:1',
+        played_at='2026-11-25T20:18:00Z',
+        artist='A',
+        title='T',
+    )
+    store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:01Z',
+        artist='A',
+        title='T',
+    )
+    store.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+    )
+    for source, key, at in (
+        ('lastfm', 'lastfm:1', '2026-11-25T20:18:00Z'),
+        ('spotify', 'spotify:1', '2026-11-25T20:15:01Z'),
+        ('downtify', 'activity:1', '2026-11-25T20:15:00Z'),
+    ):
+        again, created = store.link_or_create(
+            user_id=1,
+            source=source,
+            source_key=key,
+            played_at=at,
+            artist='A',
+            title='T',
+        )
+        assert (again, created) == (event_id, False)
+    assert store.stats(user_id=1)['total'] == 1
+
+
+def test_concurrent_sources_merge_one_play(tmp_path):
+    for index in range(20):
+        store = ListeningStore(tmp_path / f'activity-{index}.db')
+        barrier = threading.Barrier(2)
+
+        def add(source, key, at):
+            barrier.wait()
+            return store.link_or_create(
+                user_id=1,
+                source=source,
+                source_key=key,
+                played_at=at,
+                artist='A',
+                title='T',
+            )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            downtify = pool.submit(
+                add, 'downtify', 'activity:1', '2026-11-25T20:15:00Z'
+            )
+            spotify = pool.submit(
+                add, 'spotify', 'spotify:1', '2026-11-25T20:15:01Z'
+            )
+            ids = {downtify.result()[0], spotify.result()[0]}
+        assert len(ids) == 1
+        assert store.stats(user_id=1)['total'] == 1
 
 
 def test_same_source_second_observation_is_a_new_play(tmp_path):

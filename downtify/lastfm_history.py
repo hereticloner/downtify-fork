@@ -203,8 +203,7 @@ def save_recent_tracks(db_path: Any, rows: Any, *, user_id: int = 0) -> int:
     ]
     if not clean:
         return 0
-    conn = _connect(db_path)
-    try:
+    with _connect(db_path) as conn:
         before = conn.total_changes
         # shortcut: Last.fm has no scrobble id; identical same-second rows
         # use their position in the imported batch. Upgrade if one appears.
@@ -236,13 +235,7 @@ def save_recent_tracks(db_path: Any, rows: Any, *, user_id: int = 0) -> int:
                     datetime.now(timezone.utc).isoformat(),
                 ),
             )
-        conn.commit()
         return conn.total_changes - before
-    except sqlite3.Error as exc:
-        logger.warning('last.fm history store failed: {}', exc)
-        return 0
-    finally:
-        conn.close()
 
 
 def count_plays(db_path: Any) -> int:
