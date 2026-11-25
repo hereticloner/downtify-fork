@@ -73,3 +73,29 @@ def test_forget_filename(tmp_path: Path) -> None:
     index.forget_filename('gone.mp3', full_path=track)
     assert index.lookup_filename('gone.mp3') is None
     assert index.lookup_file(track) is None
+
+
+def test_all_rows_returns_navidrome_mappings(tmp_path: Path) -> None:
+    db = tmp_path / 'library.db'
+    index = NavidromeIndex(db)
+    track = _touch(tmp_path / 'Artist/Track.mp3')
+    index.store(
+        'Artist/Track.mp3',
+        'nd-1',
+        spotify_track_id='4uLU6hMCjMI75M1A2tKUQC',
+        full_path=track,
+    )
+
+    rows = index.all_rows()
+
+    assert len(rows) == 1
+    assert set(rows[0]) == {
+        'content_key',
+        'filename',
+        'navidrome_song_id',
+        'spotify_track_id',
+        'resolved_at',
+    }
+    assert rows[0]['filename'] == 'Artist/Track.mp3'
+    assert rows[0]['navidrome_song_id'] == 'nd-1'
+    assert rows[0]['spotify_track_id'] == '4uLU6hMCjMI75M1A2tKUQC'

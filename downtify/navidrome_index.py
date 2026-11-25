@@ -209,6 +209,15 @@ class NavidromeIndex:
             return self.lookup_spotify(tid)
         return None
 
+    def all_rows(self) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """SELECT content_key, filename, navidrome_song_id,
+                          spotify_track_id, resolved_at
+                   FROM navidrome_tracks"""
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def store(
         self,
         filename: str,
