@@ -553,6 +553,20 @@ function getCollectionAnalysis(name) {
   return API.get(`/api/collections/${encodeURIComponent(name)}/analysis`)
 }
 
+function uploadCollectionCover(name, file) {
+  return API.put(`/api/collections/${encodeURIComponent(name)}/cover`, file, {
+    headers: { 'Content-Type': file.type },
+  })
+}
+
+function removeCollectionCover(name) {
+  return API.delete(`/api/collections/${encodeURIComponent(name)}/cover`)
+}
+
+function collectionCoverURL(name) {
+  return `/api/collections/${encodeURIComponent(name)}/cover`
+}
+
 function reconcileLibrary() {
   return API.post('/api/library/reconcile')
 }
@@ -1050,6 +1064,9 @@ export default {
   previewCollectionRules,
   getCollectionTracks,
   getCollectionAnalysis,
+  uploadCollectionCover,
+  removeCollectionCover,
+  collectionCoverURL,
   prepareLibraryArchive,
   libraryArchiveURL,
   reconcileLibrary,

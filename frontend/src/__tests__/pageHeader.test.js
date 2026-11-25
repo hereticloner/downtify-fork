@@ -8,6 +8,9 @@ vi.mock('/src/model/api', () => ({
     onForbidden: () => () => {},
     getAuthStatus: () =>
       Promise.resolve({ data: { signed_in: true, user: { role: 'admin' } } }),
+    getSettings: () => Promise.resolve({ data: {} }),
+    getQueue: () => Promise.resolve({ data: [] }),
+    onMessage: () => () => {},
     getStats: () =>
       Promise.resolve({
         data: {

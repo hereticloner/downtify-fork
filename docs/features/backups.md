@@ -6,9 +6,10 @@ icon: lucide/archive
 
 Downtify keeps two local, versioned `JSON.gz` snapshots under `/data/backups`.
 They cover settings, notification secrets, account password hashes and
-preferences, likes, playlists, Collections, watches, the saved download queue,
-exclusions, trash metadata, playback history and activity. Audio files and
-active sign-in sessions are never included.
+preferences, likes, playlists, Collections (including custom cover images),
+watches, the saved download queue, exclusions, trash metadata, playback
+history and activity. Audio files and active sign-in sessions are never
+included.
 
 Open **Settings → Server → Backups**.
 

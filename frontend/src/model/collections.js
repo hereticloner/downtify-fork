@@ -66,6 +66,20 @@ export async function getCollectionAnalysis(name) {
   return res.data
 }
 
+export async function uploadCollectionCover(name, file) {
+  const res = await API.uploadCollectionCover(name, file)
+  return res.data
+}
+
+export async function removeCollectionCover(name) {
+  const res = await API.removeCollectionCover(name)
+  return res.data
+}
+
+export function collectionCoverURL(name) {
+  return API.collectionCoverURL(name)
+}
+
 /**
  * Queue the missing tracks of each member playlist (from
  * `collectionMissingPlaylists`) through the existing per-playlist

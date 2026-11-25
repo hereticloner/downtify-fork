@@ -344,6 +344,40 @@ def test_restore_leaves_fully_populated_json_files_byte_for_byte(tmp_path):
     assert (target / 'notifications.json').read_bytes() == secrets_before
 
 
+def test_backup_restores_custom_collection_covers(tmp_path):
+    source = tmp_path / 'source'
+    _seed(source)
+    collection = collections.create_collection(source / 'downloads', 'Covered')
+    cover = (
+        source
+        / 'downloads'
+        / 'Playlists'
+        / '.collections'
+        / 'covers'
+        / 'Covered.jpg'
+    )
+    cover.parent.mkdir(parents=True)
+    cover.write_bytes(b'custom-cover')
+    collection['cover'] = cover.name
+    (
+        source / 'downloads' / 'Playlists' / '.collections' / 'Covered.json'
+    ).write_text(json.dumps(collection))
+    backup = BackupStore(source).write()
+    target = tmp_path / 'target'
+
+    BackupStore(target).restore(backup, dry_run=False)
+
+    restored = (
+        target
+        / 'downloads'
+        / 'Playlists'
+        / '.collections'
+        / 'covers'
+        / 'Covered.jpg'
+    )
+    assert restored.read_bytes() == b'custom-cover'
+
+
 def test_restore_rejects_collection_path_traversal(tmp_path):
     source = tmp_path / 'source'
     _seed(source)

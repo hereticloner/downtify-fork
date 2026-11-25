@@ -15,6 +15,7 @@ import {
   blankRule,
   cleanRule,
   cleanRules,
+  ruleNodesFromSaved,
 } from '../lib/collectionRules'
 import {
   getCollection,
@@ -109,6 +110,26 @@ describe('collection rule drafts', () => {
     expect(
       cleanRule({ op: 'xor', rules: [{ type: 'genre', value: 'Rock' }] })
     ).toBeNull()
+  })
+
+  it('wraps legacy flat rules in an editable AND group', () => {
+    expect(ruleNodesFromSaved([])).toEqual([
+      { op: 'and', rules: [{ type: 'genre', value: '' }] },
+    ])
+    expect(
+      ruleNodesFromSaved([
+        { type: 'genre', value: 'Rock' },
+        { op: 'or', rules: [{ type: 'genre', value: 'Jazz' }] },
+      ])
+    ).toEqual([
+      {
+        op: 'and',
+        rules: [
+          { type: 'genre', value: 'Rock' },
+          { op: 'or', rules: [{ type: 'genre', value: 'Jazz' }] },
+        ],
+      },
+    ])
   })
 })
 

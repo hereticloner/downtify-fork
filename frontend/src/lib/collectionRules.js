@@ -66,6 +66,13 @@ export function cleanRule(rule) {
   return value ? { type: rule.type, value } : null
 }
 
+export function ruleNodesFromSaved(rules) {
+  const nodes = (rules || []).map((rule) => structuredClone(rule))
+  if (!nodes.length) return [blankGroup('and')]
+  if (nodes.every((node) => GROUP_OPS.includes(node?.op))) return nodes
+  return [{ op: 'and', rules: nodes }]
+}
+
 /** The rule list to send to the API (incomplete rows dropped). */
 export function cleanRules(rules) {
   return (rules || []).map(cleanRule).filter(Boolean)

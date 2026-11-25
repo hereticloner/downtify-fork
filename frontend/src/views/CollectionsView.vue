@@ -72,6 +72,7 @@
         >
           <div class="relative border-b-2 border-line">
             <CoverArt
+              :src="col.cover ? collectionCoverURL(col.name) : ''"
               :covers="collectionCoversFor(col)"
               :name="col.name"
               icon="playlist"
@@ -99,6 +100,19 @@
               >{{ col.playlists.length }}</span
             >
           </div>
+
+          <p
+            v-if="col._analysis"
+            class="mono border-b border-line-2 px-3 py-2 text-[11px] text-muted"
+          >
+            {{
+              t('collections.analysisSummary', {
+                count: col._analysis.tracks,
+                missing: col._analysis.missing_tracks,
+                megabytes: formatMegabytes(col._analysis.bytes),
+              })
+            }}
+          </p>
 
           <label
             class="flex h-9 items-center border-b border-line-2 transition-colors duration-100 focus-within:border-accent"
@@ -144,6 +158,25 @@
 
           <div class="flex items-stretch gap-1 border-t-2 border-line p-1">
             <UiButton
+              size="sm"
+              variant="ghost"
+              icon="play"
+              :disabled="!col.playlists.length"
+              @click="playCollection(col)"
+            >
+              {{ t('collections.play') }}
+            </UiButton>
+            <UiButton
+              v-if="auth.isAdmin.value"
+              size="sm"
+              variant="ghost"
+              icon="plus"
+              :disabled="!col.playlists.length"
+              @click="queueCollection(col)"
+            >
+              {{ t('collections.queue') }}
+            </UiButton>
+            <UiButton
               v-if="missingMembers(col).length"
               size="sm"
               variant="ghost"
@@ -156,6 +189,12 @@
               }}
             </UiButton>
             <div class="ml-auto flex items-center gap-1">
+              <CollectionCoverPicker
+                v-if="auth.isAdmin.value"
+                :name="col.name"
+                :has-cover="Boolean(col.cover)"
+                @changed="load"
+              />
               <UiIconButton
                 icon="sliders"
                 size="sm"
@@ -222,72 +261,40 @@
       width="sm:max-w-xl"
       @close="closeRules"
     >
-      <div class="flex flex-col gap-2">
-        <div
-          v-for="(rule, index) in rulesDraft"
-          :key="index"
-          class="flex flex-col gap-2 border-2 border-line-2 p-3 sm:flex-row sm:items-end"
-        >
-          <UiSelect
-            :model-value="rule.type"
-            :options="rulesTypeOptions"
-            :label="t('collections.ruleType')"
-            block
-            class="sm:w-40"
-            @update:model-value="onTypeChange(rule, $event)"
-          />
-          <template v-if="rule.type === 'added'">
-            <UiInput
-              v-model="rule.from"
-              type="date"
-              :label="t('collections.ruleFrom')"
-            />
-            <UiInput
-              v-model="rule.to"
-              type="date"
-              :label="t('collections.ruleTo')"
-            />
-          </template>
-          <template v-else-if="rule.type === 'plays'">
-            <UiInput
-              v-model="rule.min"
-              type="number"
-              min="0"
-              inputmode="numeric"
-              :label="t('collections.ruleMin')"
-            />
-            <UiInput
-              v-model="rule.max"
-              type="number"
-              min="0"
-              inputmode="numeric"
-              :label="t('collections.ruleMax')"
-            />
-          </template>
-          <UiInput
-            v-else
-            v-model="rule.value"
-            :label="t('collections.ruleValue')"
-            :placeholder="t('collections.ruleValuePlaceholder')"
-          />
-          <UiIconButton
-            icon="trash"
-            :label="t('common.delete')"
-            class="self-end"
-            @click="removeRule(index)"
-          />
-        </div>
-        <p v-if="!rulesDraft.length" class="mono text-faint">
-          {{ t('collections.noRules') }}
+      <CollectionRuleEditor v-model="rulesDraft" />
+      <div v-if="rulesPreview" class="border-2 border-line-2 p-3 text-[13px]">
+        <p class="font-medium">{{ t('collections.previewTitle') }}</p>
+        <p class="mt-1 text-muted">
+          {{
+            t('collections.previewCount', {
+              count: rulesPreview.playlists.length,
+            })
+          }}
         </p>
-        <UiButton variant="ghost" icon="plus" @click="addRule">
-          {{ t('collections.addRule') }}
-        </UiButton>
+        <ul
+          v-if="rulesPreview.playlists.length"
+          class="mono mt-2 flex flex-wrap gap-1"
+        >
+          <li
+            v-for="name in rulesPreview.playlists"
+            :key="name"
+            class="border border-line-2 px-1.5 py-1 text-muted"
+          >
+            {{ name }}
+          </li>
+        </ul>
       </div>
       <template #footer>
         <UiButton variant="ghost" @click="closeRules">{{
           t('common.cancel')
         }}</UiButton>
+        <UiButton
+          variant="secondary"
+          :loading="previewingRules"
+          @click="previewRules"
+        >
+          {{ t('collections.preview') }}
+        </UiButton>
         <UiButton
           variant="primary"
           icon="check"
@@ -309,6 +316,9 @@ import PageHeader from '/src/components/library/PageHeader.vue'
 import AppIcon from '/src/components/ui/AppIcon.vue'
 import CoverArt from '/src/components/ui/CoverArt.vue'
 import { useLibrary } from '/src/model/library'
+import { useAuth } from '/src/model/auth'
+import { usePlayer } from '/src/model/player'
+import { useDownloadManager } from '/src/model/download'
 import { useUi } from '/src/model/ui'
 import UiBadge from '/src/components/ui/UiBadge.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
@@ -316,19 +326,24 @@ import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiIconButton from '/src/components/ui/UiIconButton.vue'
 import UiInput from '/src/components/ui/UiInput.vue'
 import UiModal from '/src/components/ui/UiModal.vue'
-import UiSelect from '/src/components/ui/UiSelect.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
+import CollectionCoverPicker from '/src/components/collections/CollectionCoverPicker.vue'
+import CollectionRuleEditor from '/src/components/collections/CollectionRuleEditor.vue'
 import {
+  collectionCoverURL,
   createCollection,
   deleteCollection,
   downloadCollectionMissing,
   editCollectionItems,
+  getCollectionAnalysis,
+  getCollectionTracks,
   listCollections,
+  previewCollectionRules,
   removeCollectionItem,
   renameCollection,
   saveCollectionRules,
 } from '/src/model/collections'
-import { RULE_TYPES, blankRule, cleanRules } from '/src/lib/collectionRules'
+import { cleanRules, ruleNodesFromSaved } from '/src/lib/collectionRules'
 import {
   collectionMissingCount,
   collectionMissingPlaylists,
@@ -337,18 +352,11 @@ import { collectionCovers } from '/src/lib/mosaic'
 import { friendlyError } from '/src/lib/errors'
 import { canSubmitRename } from '/src/lib/rename'
 
-// Label keys for the rule-type picker, one per type the API understands.
-const RULE_LABEL_KEYS = {
-  added: 'collections.ruleAdded',
-  plays: 'collections.rulePlays',
-  genre: 'collections.ruleGenre',
-  artist: 'collections.ruleArtist',
-  album: 'collections.ruleAlbum',
-  format: 'collections.ruleFormat',
-}
-
 const { t } = useI18n()
 const library = useLibrary()
+const auth = useAuth()
+const player = usePlayer()
+const dm = useDownloadManager()
 const ui = useUi()
 const router = useRouter()
 const collections = ref([])
@@ -410,6 +418,31 @@ async function downloadMissing(col) {
   }
 }
 
+function formatMegabytes(bytes) {
+  return (Number(bytes || 0) / 1024 / 1024).toFixed(1)
+}
+
+async function playCollection(col) {
+  try {
+    const data = await getCollectionTracks(col.name)
+    player.playList(data.tracks || [], {
+      context: { type: 'collection', name: col.name },
+    })
+  } catch (err) {
+    failed(err)
+  }
+}
+
+async function queueCollection(col) {
+  try {
+    const data = await getCollectionTracks(col.name)
+    await dm.fromSongs(data.tracks || [], { playlistName: col.name })
+    ui.toast(t('collections.queued'), { kind: 'success' })
+  } catch (err) {
+    failed(err)
+  }
+}
+
 function failed(err) {
   ui.toast(friendlyError(t, err, 'toast.actionFailed'), { kind: 'error' })
 }
@@ -418,10 +451,13 @@ async function load() {
   loading.value = true
   error.value = false
   try {
-    collections.value = (await listCollections()).map((c) => ({
-      ...c,
-      _add: '',
-    }))
+    collections.value = await Promise.all(
+      (await listCollections()).map(async (c) => ({
+        ...c,
+        _add: '',
+        _analysis: await getCollectionAnalysis(c.name).catch(() => null),
+      }))
+    )
   } catch {
     error.value = true
   } finally {
@@ -515,23 +551,19 @@ async function submitRename() {
   }
 }
 
-// Smart rules: the editor holds a draft row per rule; saving replaces the
-// collection's whole rule list, so clearing every row makes it static.
+// Smart rules: the editor holds a tree of conditions/groups; saving
+// replaces the whole rule list, and an empty tree makes it static.
 const rulesOpen = ref(false)
 const rulesTarget = ref(null)
 const rulesDraft = ref([])
+const rulesPreview = ref(null)
 const savingRules = ref(false)
-
-const rulesTypeOptions = computed(() =>
-  RULE_TYPES.map((type) => ({
-    value: type,
-    label: t(RULE_LABEL_KEYS[type]),
-  }))
-)
+const previewingRules = ref(false)
 
 function openRules(col) {
   rulesTarget.value = col
-  rulesDraft.value = (col.rules || []).map((rule) => ({ ...rule }))
+  rulesDraft.value = ruleNodesFromSaved(col.rules)
+  rulesPreview.value = null
   rulesOpen.value = true
 }
 
@@ -539,23 +571,23 @@ function closeRules() {
   rulesOpen.value = false
   rulesTarget.value = null
   rulesDraft.value = []
+  rulesPreview.value = null
 }
 
-function addRule() {
-  rulesDraft.value.push(blankRule())
-}
-
-function removeRule(index) {
-  rulesDraft.value.splice(index, 1)
-}
-
-// Switching a row's type resets its fields to the new type's blanks, so a
-// leftover value can't leak into an unrelated rule.
-function onTypeChange(rule, type) {
-  if (rule.type === type) return
-  const fresh = blankRule(type)
-  for (const key of Object.keys(rule)) delete rule[key]
-  Object.assign(rule, fresh)
+async function previewRules() {
+  const col = rulesTarget.value
+  if (!col) return
+  previewingRules.value = true
+  try {
+    rulesPreview.value = await previewCollectionRules(
+      col.name,
+      cleanRules(rulesDraft.value)
+    )
+  } catch (err) {
+    failed(err)
+  } finally {
+    previewingRules.value = false
+  }
 }
 
 async function submitRules() {

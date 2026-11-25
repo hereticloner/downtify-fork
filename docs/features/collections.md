@@ -6,7 +6,7 @@ icon: lucide/layers
 
 Collections are named groups of the playlists already in your library — a level above the playlist. Where a playlist holds songs, a collection holds playlists, so a library that has grown to dozens of downloaded playlists can be sorted into a handful of groups like *Road trip*, *Dinner party* or *2024 albums*.
 
-A collection only groups: it never copies or moves a song and never rewrites a playlist. The only download it can start is the [missing-tracks](#downloading-missing-tracks) one, which behaves exactly like downloading from the playlist page. Deleting a collection removes the group and nothing else.
+A collection only groups: it never copies or moves a song and never rewrites a playlist. **Play** starts its resolved tracks in the player, **Queue** sends them through the normal download flow, and **Download missing** only fills gaps from a tracked Spotify source. Deleting a collection removes the group and nothing else.
 
 ## Opening the page
 
@@ -33,6 +33,12 @@ Click the pencil button on a collection, type the new name and confirm. Only the
 
 Each playlist in a collection is shown as a chip, and every chip is a link: click it to open that playlist's page (the built-in player's playlist view, with its tracks).
 
+## Playing and queueing
+
+**Play** resolves the collection's member playlists into one ordered, deduplicated track list and starts it in the player. **Queue** (admin) sends that same list through the existing batch download flow. A track present in two member playlists appears only once.
+
+Each card also shows a compact analysis: unique track count, missing-file count and total size on disk.
+
 ## Downloading missing tracks
 
 If a member playlist is still missing tracks from its Spotify source (the same state the [Queue](queue.md) page and the playlist page report), the collection card shows a **Download N missing** button. Clicking it queues only the tracks the member playlists are still missing, through the same download-missing flow those pages use: nothing already in the library is downloaded again, and the collection's own data is untouched. A collection with nothing missing shows no button.
@@ -41,7 +47,9 @@ The queued tracks are ordinary download jobs — progress, retries and the compl
 
 ## Cover art
 
-Each collection card shows a mosaic built from its member playlists: a playlist's own artwork when it has one, otherwise its first track's cover. Up to four covers make a 2×2 tile, up to nine a 3×3 one. When no member has a cover — or the collection is still empty — the card falls back to the collection name's initials, so it always has an image.
+By default each collection card shows a mosaic built from its member playlists: a playlist's own artwork when it has one, otherwise its first track's cover. Up to four covers make a 2×2 tile, up to nine a 3×3 one. When no member has a cover — or the collection is still empty — the card falls back to the collection name's initials.
+
+An admin can upload a custom JPEG, PNG or WebP (up to 10 MiB). It is normalized to a JPEG sidecar under `.collections/covers/`, overrides the mosaic, follows the collection on rename and is removed with it. Removing the custom cover restores the mosaic fallback.
 
 ## Smart collections
 
@@ -83,6 +91,12 @@ There is no database and no migration: the file is read when the page opens and 
 | `POST /api/collections` | Create a collection; body `{name}`. `409` if the name already exists |
 | `POST /api/collections/{name}` | Rename a collection; body `{name}` |
 | `POST /api/collections/{name}/items` | Add and/or remove playlists; body `{add: [...], remove: [...]}`. A name that isn't a library playlist gives `404` |
+| `GET /api/collections/{name}/tracks` | Resolved, deduplicated tracks in playlist order |
+| `GET /api/collections/{name}/analysis` | Track/duration/size/missing summary |
+| `GET /api/collections/{name}/cover` | Custom cover JPEG, or `404` when using the mosaic fallback |
+| `PUT /api/collections/{name}/cover` | Admin; raw JPEG/PNG/WebP body, maximum 10 MiB |
+| `DELETE /api/collections/{name}/cover` | Admin; restore the mosaic fallback |
+| `POST /api/collections/{name}/preview` | Admin; resolve draft rules without saving |
 | `DELETE /api/collections/{name}` | Delete the collection (never its playlists) |
 
 See the [API reference](../api-reference.md#collections) for request and response shapes.

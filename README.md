@@ -34,7 +34,7 @@
 
 The fork carries everything the original Downtify does — link pasting, YouTube Music matching, tagging, lyrics, the player, playlist monitoring — and adds on top:
 
-Cross-device **Continue listening**, unified local/remote search, account-scoped listening time/completion/skip stats with 7/30/90-day periods, save-queue-as-playlist, one-click artist watching and Similar bulk downloads, persistent download failures with retry/exclude, opt-in Spotify Sync auto-downloads, queue priority and bulk waiting-job controls with quiet hours, plus the fork's Collections, Smart Collections, multi-channel notifications, read-only Telegram commands, atomic metadata backups with safe restore, storage tools, Spotify Mirror/Sync and Monitor.
+Cross-device **Continue listening**, unified local/remote search, account-scoped listening time/completion/skip stats with 7/30/90-day periods, save-queue-as-playlist, one-click artist watching and Similar bulk downloads, persistent download failures with retry/exclude, opt-in Spotify Sync auto-downloads, queue priority and bulk waiting-job controls with quiet hours, plus the fork's Collections with grouped smart rules, previews, custom covers, play/queue actions and analysis, multi-channel notifications, read-only Telegram commands, atomic metadata backups with safe restore, storage tools, Spotify Mirror/Sync and Monitor.
 
 <table>
 <tr>

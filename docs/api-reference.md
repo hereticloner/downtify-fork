@@ -1883,9 +1883,57 @@ One collection, with its members computed from its rules (if any) and unioned wi
 
 Replace a collection's rules. An empty list (`{ "rules": [] }`) makes the collection static again.
 
-**Body:** `{ "rules": [{ "type": "genre", "value": "Rock" }] }`. A rule is `added` (`{type, from?, to?}`), `plays` (`{type, min?, max?}`), or `genre`/`artist`/`album`/`format` (`{type, value}`); rules combine with AND.
+**Body:** `{ "rules": [{ "type": "genre", "value": "Rock" }] }`. A rule is `added` (`{type, from?, to?}`), `plays` (`{type, min?, max?}`), or `genre`/`artist`/`album`/`format` (`{type, value}`). A flat list combines with AND. Groups use `{ "op": "and"|"or"|"not", "rules": [node, ...] }`; `not` requires exactly one child and groups may nest.
 
 **Response:** the updated collection. `400` when a rule is malformed; `404` when `name` doesn't exist.
+
+---
+
+### `POST /api/collections/{name}/preview`
+
+Admin. Resolve draft rules against the current library without saving them.
+
+**Body:** `{ "rules": [ ... ] }`, using the same condition/group shape as the rules endpoint.
+
+**Response:** `{ "name": "Road trip", "playlists": ["Chill", "Drive"], "computed": ["Drive"] }`. `400` for malformed rules; `404` when the collection doesn't exist.
+
+---
+
+### `GET /api/collections/{name}/tracks`
+
+Client. Resolved tracks from all member playlists, in playlist order and deduplicated by library filename.
+
+**Response:** `{ "tracks": [{ "file": "Artist/Song.mp3", "song_id": "…", "…": "…" }] }`.
+
+---
+
+### `GET /api/collections/{name}/analysis`
+
+Client. Basic size/coverage summary over the same unique file set.
+
+**Response:** `{ "tracks": 42, "duration_seconds": 9876.5, "bytes": 123456789, "missing_tracks": 2, "missing_ratio": 0.045 }`.
+
+---
+
+### `GET /api/collections/{name}/cover`
+
+Client. The custom JPEG sidecar. `404` when the collection uses the mosaic/initials fallback.
+
+---
+
+### `PUT /api/collections/{name}/cover`
+
+Admin. Upload a raw JPEG, PNG or WebP body with the matching `Content-Type`, maximum 10 MiB. The image is normalized to a JPEG sidecar.
+
+**Response:** the updated collection, including `cover`. `400` for invalid/oversized images.
+
+---
+
+### `DELETE /api/collections/{name}/cover`
+
+Admin. Remove the custom cover and restore the mosaic fallback.
+
+**Response:** the updated collection without `cover`.
 
 ---
 

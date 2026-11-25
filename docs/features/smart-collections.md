@@ -15,10 +15,7 @@ exactly like a plain collection.
 
 ## Adding rules
 
-Open a collection and click the **sliders** button. The rule editor lets you
-add one row per condition. Rules combine with **AND**: a playlist joins the
-collection only when it matches *every* rule. There is no OR on purpose — to
-cover two genres, make two collections.
+Open a collection and click the **sliders** button. The editor holds a tree of conditions and groups. A flat list keeps the legacy **AND** behavior; use an **OR** group for alternatives or a **NOT** group (exactly one child) to exclude a match. Groups can be nested. **Preview** resolves the draft without saving it.
 
 | Rule type | Field | What it matches |
 |-----------|-------|-----------------|
@@ -76,6 +73,7 @@ collection is opened.
 | Endpoint | What it does |
 |----------|--------------|
 | `GET /api/collections/{name}` | One collection with its members computed: static playlists unioned with the rule matches (`rules` and `computed` are included) |
+| `POST /api/collections/{name}/preview` | Admin; resolve draft rules without saving; body `{ "rules": [ ... ] }` |
 | `POST /api/collections/{name}/rules` | Replace the rule list; body `{ "rules": [ ... ] }`. An empty list makes the collection static |
 
 See the [API reference](../api-reference.md#collections) for request and

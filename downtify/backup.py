@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import gzip
 import json
 import os
@@ -11,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from . import collections, m3u, monitor, notifications
+from . import collections, m3u, monitor, notifications, playlist_mosaic
 from .download_queue import PendingDownloads
 from .likes import LikedTracks
 from .playback import PlaybackStore
@@ -199,6 +200,18 @@ def _queue_restore_plan(
     return kept, requeued, unresolved
 
 
+def _collection_covers(download_dir: Path) -> dict[str, str]:
+    covers = Path(download_dir) / 'Playlists' / '.collections' / 'covers'
+    if not covers.is_dir():
+        return {}
+    return {
+        path.stem: base64.b64encode(path.read_bytes()).decode('ascii')
+        for path in covers.glob('*.jpg')
+        if path.is_file()
+        and m3u.sanitize_playlist_name(path.stem) == path.stem
+    }
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
     return datetime.now(timezone.utc).isoformat()
@@ -316,6 +329,31 @@ def _table_rows(conn: sqlite3.Connection, table: str) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def _decode_collection_covers(doc: dict[str, Any]) -> dict[str, bytes]:
+    raw = doc.get('collection_covers')
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError('corrupt backup')
+    out: dict[str, bytes] = {}
+    for name, encoded in raw.items():
+        if (
+            not isinstance(name, str)
+            or m3u.sanitize_playlist_name(name) != name
+            or Path(name).name != name
+            or not isinstance(encoded, str)
+        ):
+            raise ValueError('corrupt backup')
+        try:
+            data = base64.b64decode(encoded, validate=True)
+        except ValueError as exc:
+            raise ValueError('corrupt backup') from exc
+        if not data or len(data) > playlist_mosaic.MAX_PLAYLIST_COVER_BYTES:
+            raise ValueError('corrupt backup')
+        out[name] = data
+    return out
+
+
 class BackupStore:
     """Write, inspect and additively restore local ``backups/*.json.gz``."""
 
@@ -348,6 +386,7 @@ class BackupStore:
             or {'version': 1},
             'sqlite': sqlite,
             'collections': collections.list_collections(downloads),
+            'collection_covers': _collection_covers(downloads),
         }
 
     def write(self) -> Path:
@@ -402,6 +441,7 @@ class BackupStore:
         requeue_missing: bool = False,
     ) -> dict[str, Any]:
         doc = self.preview(path)
+        cover_payloads = _decode_collection_covers(doc)
         added: dict[str, int] = {}
         requeued: list[str] = []
         unresolved: list[str] = []
@@ -519,6 +559,7 @@ class BackupStore:
                 else None,
             }
             created_collections: list[Path] = []
+            created_covers: list[Path] = []
             try:
                 if isinstance(secrets, dict) and secrets:
                     _restore_json_file(secrets_path, secrets)
@@ -565,6 +606,19 @@ class BackupStore:
                     path_out.parent.mkdir(parents=True, exist_ok=True)
                     created_collections.append(path_out)
                     _atomic_json(path_out, item)
+                covers_dir = (
+                    self.data_dir
+                    / 'downloads'
+                    / 'Playlists'
+                    / '.collections'
+                    / 'covers'
+                )
+                for name, data in cover_payloads.items():
+                    path_out = covers_dir / f'{name}.jpg'
+                    if path_out.exists():
+                        continue
+                    _atomic_bytes(path_out, data)
+                    created_covers.append(path_out)
             except Exception:
                 for json_path, original in originals.items():
                     if original is None:
@@ -573,6 +627,8 @@ class BackupStore:
                         _atomic_bytes(json_path, original)
                 for collection_path in created_collections:
                     collection_path.unlink(missing_ok=True)
+                for cover_path in created_covers:
+                    cover_path.unlink(missing_ok=True)
                 raise
         return {
             'dry_run': dry_run,
