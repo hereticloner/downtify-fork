@@ -1376,6 +1376,9 @@ export default {
     lyrics: 'Télécharger les paroles',
     lyricsHint:
       'Intègre les paroles dans chaque fichier. Les versions synchronisées sont aussi enregistrées en .lrc.',
+    lyricsSyncedOnly: 'Paroles synchronisées uniquement',
+    lyricsSyncedOnlyHint:
+      'Ignore les résultats sans horodatage et continue à chercher des paroles synchronisées.',
     lyricsLrcBeside: 'Garder le .lrc à côté de l’audio',
     lyricsLrcBesideHint:
       'Désactivez pour écrire les .lrc dans leur propre dossier, pas à côté de chaque MP3.',

@@ -131,6 +131,7 @@ def test_default_download_lyrics_is_true():
     assert DEFAULT_SETTINGS['download_lyrics'] is True
     assert DEFAULT_SETTINGS['lyrics_lrc_beside'] is True
     assert DEFAULT_SETTINGS['lyrics_lrc_dir'] == '/data/lyrics'
+    assert DEFAULT_SETTINGS['lyrics_synced_only'] is False
 
 
 def test_default_format_is_mp3():
@@ -437,6 +438,19 @@ def test_update_settings_clamps_zero_parallel_downloads(monkeypatch):
 def test_update_settings_accepts_in_range_parallel_downloads(monkeypatch):
     result = _call_update_settings(monkeypatch, {'max_parallel_downloads': 25})
     assert result['max_parallel_downloads'] == 25
+
+
+def test_update_settings_coerces_synced_only(monkeypatch, tmp_path):
+    downloader = Downloader(tmp_path)
+    monkeypatch.setattr(api.state, 'downloader', downloader)
+    result = _call_update_settings(
+        monkeypatch, {'lyrics_synced_only': 'false'}
+    )
+    assert result['lyrics_synced_only'] is False
+    assert downloader.lyrics_synced_only is False
+    result = _call_update_settings(monkeypatch, {'lyrics_synced_only': True})
+    assert result['lyrics_synced_only'] is True
+    assert downloader.lyrics_synced_only is True
 
 
 def test_ui_language_defaults_to_unknown():

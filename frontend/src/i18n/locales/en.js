@@ -1315,6 +1315,9 @@ export default {
     lyrics: 'Download lyrics',
     lyricsHint:
       'Embed lyrics in each file. Time-synced lyrics are also saved as a .lrc sidecar.',
+    lyricsSyncedOnly: 'Synced lyrics only',
+    lyricsSyncedOnlyHint:
+      'Skip plain-only matches and keep looking for timed lyrics.',
     lyricsLrcBeside: 'Keep .lrc next to the audio',
     lyricsLrcBesideHint:
       'Turn this off to write sidecar files in their own folder instead of beside every MP3.',

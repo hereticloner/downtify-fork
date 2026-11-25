@@ -345,6 +345,7 @@ class Downloader:
         output_template: str = '{artists} - {title}',
         lyrics_providers: Optional[list[str]] = None,
         lyrics_cache: Optional[Any] = None,
+        lyrics_synced_only: bool = False,
         organize_by_artist: bool = False,
         organize_by_album: bool = False,
         download_cover_art: bool = True,
@@ -370,6 +371,7 @@ class Downloader:
         # Optional LyricsLookupCache: skips providers that already came
         # back empty for a song.
         self.lyrics_cache = lyrics_cache
+        self.lyrics_synced_only = bool(lyrics_synced_only)
         self.organize_by_artist = organize_by_artist
         self.organize_by_album = organize_by_album
         self.overwrite_existing_files = overwrite_existing_files
@@ -1163,6 +1165,7 @@ class _MetadataLookups:
                 song,
                 downloader.lyrics_providers,
                 downloader.lyrics_cache,
+                synced_only=downloader.lyrics_synced_only,
             )
             if downloader.lyrics_providers
             else None

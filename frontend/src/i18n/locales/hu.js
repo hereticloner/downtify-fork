@@ -1347,6 +1347,9 @@ export default {
     lyrics: 'Dalszövegek letöltése',
     lyricsHint:
       'Beágyazza a dalszöveget minden fájlba. Az időzítettek .lrc-ként is mentődnek.',
+    lyricsSyncedOnly: 'Csak szinkron szöveg',
+    lyricsSyncedOnlyHint:
+      'Időjel nélküli találatok kihagyása és további keresés szinkron szövegre.',
     lyricsLrcBeside: '.lrc a hangfájl mellett',
     lyricsLrcBesideHint:
       'Kapcsold ki, ha a .lrc fájlokat külön mappába szeretnéd, nem minden MP3 mellé.',

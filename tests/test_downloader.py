@@ -9,7 +9,32 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from downtify import downloader as downloader_mod
+from downtify import lyrics as lyrics_mod
 from downtify.downloader import Downloader
+
+
+def test_metadata_lookup_forwards_synced_only(tmp_path, monkeypatch):
+    seen = []
+
+    def fetch(song, providers, cache, *, synced_only=False):
+        seen.append(synced_only)
+        return lyrics_mod.Lyrics(synced='[00:01.00]words')
+
+    monkeypatch.setattr(lyrics_mod, 'fetch', fetch)
+    downloader = Downloader(
+        tmp_path,
+        lyrics_providers=['lrclib'],
+        lyrics_synced_only=True,
+        download_cover_art=False,
+    )
+    song = {'name': 'Song', 'artists': ['Artist'], 'genre': 'Rock'}
+    lookups = downloader_mod._MetadataLookups(downloader, song)
+    try:
+        assert lookups._lyrics.result(timeout=1).synced == '[00:01.00]words'
+    finally:
+        lookups.cancel()
+    assert seen == [True]
 
 
 def _make_downloader(tmp_path: Path) -> Downloader:

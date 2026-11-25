@@ -83,6 +83,32 @@ def test_a_failing_provider_does_not_stop_the_chain(calls):
     assert asked == ['lrclib', 'netease']
 
 
+def test_synced_only_skips_plain_hit_and_uses_next_provider(calls):
+    asked, answers = calls
+    answers['lrclib'] = Lyrics(plain='words')
+    answers['netease'] = Lyrics(synced='[00:01.00]timed')
+    assert (
+        lyrics.fetch(SONG, ['lrclib', 'netease'], synced_only=True).synced
+        == '[00:01.00]timed'
+    )
+    assert asked == ['lrclib', 'netease']
+
+
+def test_synced_only_returns_none_when_all_plain(calls):
+    asked, answers = calls
+    answers['lrclib'] = Lyrics(plain='words')
+    answers['netease'] = Lyrics(plain='more words')
+    assert lyrics.fetch(SONG, ['lrclib', 'netease'], synced_only=True) is None
+    assert asked == ['lrclib', 'netease']
+
+
+def test_plain_only_still_accepts_plain_by_default(calls):
+    asked, answers = calls
+    answers['lrclib'] = Lyrics(plain='words')
+    assert lyrics.fetch(SONG, ['lrclib', 'netease']).plain == 'words'
+    assert asked == ['lrclib']
+
+
 def test_unknown_providers_are_skipped(calls):
     asked, answers = calls
     answers['lrclib'] = Lyrics(plain='words')
@@ -156,6 +182,80 @@ def test_cache_ignores_songs_without_a_key(tmp_path):
     cache.record('', 'lrclib', found=False)
     assert cache.should_skip('', 'lrclib') is False
     assert cache.forget('') == 0
+
+
+def test_lrclib_search_fallback_uses_best_record(monkeypatch):
+    calls = []
+
+    class Response:
+        def __init__(self, status_code, data):
+            self.status_code = status_code
+            self._data = data
+
+        def json(self):
+            return self._data
+
+    exact = {
+        'trackName': SONG['name'],
+        'artistName': SONG['artists'][0],
+        'albumName': SONG['album_name'],
+        'duration': SONG['duration'],
+        'plainLyrics': None,
+        'syncedLyrics': '[00:01.00]exact words',
+    }
+    wrong = {
+        **exact,
+        'artistName': 'Another Artist',
+        'syncedLyrics': '[00:01.00]wrong words',
+    }
+
+    def get(url, **kwargs):
+        calls.append((url, kwargs.get('params') or {}))
+        if url.endswith('/api/get'):
+            return Response(404, {})
+        return Response(200, [wrong, exact])
+
+    monkeypatch.setattr(lyrics.httpx, 'get', get)
+
+    result = lyrics._fetch_lrclib(SONG)
+
+    assert result.synced == '[00:01.00]exact words'
+    assert [url.rsplit('/api/', 1)[-1] for url, _ in calls] == [
+        'get',
+        'search',
+    ]
+    assert calls[1][1]['track_name'] == SONG['name']
+    assert calls[1][1]['artist_name'] == SONG['artists'][0]
+
+
+def test_lrclib_search_fallback_rejects_wrong_match(monkeypatch):
+    class Response:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return [
+                {
+                    'trackName': SONG['name'],
+                    'artistName': 'Another Artist',
+                    'duration': SONG['duration'],
+                    'syncedLyrics': '[00:01.00]wrong words',
+                }
+            ]
+
+    class Miss:
+        status_code = 404
+
+        @staticmethod
+        def json():
+            return {}
+
+    def get(url, **kwargs):
+        return Miss() if url.endswith('/api/get') else Response()
+
+    monkeypatch.setattr(lyrics.httpx, 'get', get)
+
+    assert lyrics._fetch_lrclib(SONG) is None
 
 
 # ── NetEase ──────────────────────────────────────────────────────────

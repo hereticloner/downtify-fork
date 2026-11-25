@@ -335,6 +335,38 @@ def test_enrich_embeds_lyrics_like_a_download(tmp_path, monkeypatch):
     assert track.with_suffix('.lrc').is_file()
 
 
+def test_enrich_forwards_synced_only(tmp_path, monkeypatch):
+    download = tmp_path / 'downloads'
+    extra = tmp_path / 'ripped'
+    download.mkdir()
+    track = extra / 'Song.mp3'
+    _write_mp3(track, title='Harbor Lights', artist='Kenji Aoki')
+    seen = []
+
+    def fetch(*_args, **kwargs):
+        seen.append(kwargs.get('synced_only'))
+        return Lyrics(synced='[00:01.00]The tide comes in')
+
+    monkeypatch.setattr('downtify.lyrics.fetch', fetch)
+    monkeypatch.setattr('downtify.itunes.fetch_genre', lambda _song: '')
+    ctx = LibraryContext(download_dir=download, extra_dirs=(extra,))
+    stored = library_stored_path(track, download, extra_dirs=(extra,))
+
+    result = enrich_imported_track(
+        stored,
+        ctx,
+        settings={
+            'download_cover_art': False,
+            'download_lyrics': True,
+            'lyrics_providers': ['lrclib'],
+            'lyrics_synced_only': True,
+        },
+    )
+
+    assert result['lyrics'] is True
+    assert seen == [True]
+
+
 def test_enrich_skips_lyrics_when_disabled(tmp_path, monkeypatch):
     download = tmp_path / 'downloads'
     extra = tmp_path / 'ripped'

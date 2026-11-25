@@ -478,6 +478,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     'audio_providers': ['youtube-music'],
     'lyrics_providers': list(lyrics.PROVIDER_ORDER),
     'download_lyrics': True,
+    'lyrics_synced_only': False,
     'lyrics_lrc_beside': True,
     'lyrics_lrc_dir': lyrics.DEFAULT_LYRICS_LRC_DIR,
     'format': 'mp3',
@@ -6423,6 +6424,8 @@ async def update_settings_endpoint(
                     if isinstance(raw_value, dict)
                     else {}
                 })
+            elif key == 'lyrics_synced_only':
+                state.settings[key] = lyrics.coerce_bool(raw_value, False)
             elif key == 'lyrics_lrc_beside':
                 state.settings[key] = lyrics.coerce_bool(raw_value, True)
             elif key == 'lyrics_lrc_dir':
@@ -6475,9 +6478,16 @@ async def update_settings_endpoint(
                 state.downloader.output_template = output.replace(
                     '.{output-ext}', ''
                 )
-            if 'lyrics_providers' in payload or 'download_lyrics' in payload:
+            if {
+                'lyrics_providers',
+                'download_lyrics',
+                'lyrics_synced_only',
+            } & set(payload):
                 state.downloader.lyrics_providers = (
                     _effective_lyrics_providers(state.settings)
+                )
+                state.downloader.lyrics_synced_only = bool(
+                    state.settings.get('lyrics_synced_only', False)
                 )
             if 'organize_by_artist' in payload:
                 state.downloader.organize_by_artist = bool(

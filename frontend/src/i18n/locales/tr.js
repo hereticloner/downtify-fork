@@ -1342,6 +1342,9 @@ export default {
     lyrics: 'Şarkı sözlerini indir',
     lyricsHint:
       'Sözleri her dosyaya göm. Zamanlı olanlar ayrıca .lrc olarak kaydedilir.',
+    lyricsSyncedOnly: 'Yalnız senkron sözler',
+    lyricsSyncedOnlyHint:
+      'Düz metin eşleşmelerini atla ve zaman damgalı sözleri aramaya devam et.',
     lyricsLrcBeside: '.lrc dosyasını sesin yanında tut',
     lyricsLrcBesideHint:
       'Kapatınca .lrc dosyaları her MP3’ün yanına değil, ayrı bir klasöre yazılır.',

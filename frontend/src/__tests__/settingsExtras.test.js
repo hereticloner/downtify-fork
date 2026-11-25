@@ -39,6 +39,16 @@ describe('hidden server settings are wired', () => {
     expect(settings.value.mini_player_enabled).toBe(true)
   })
 
+  it('defaults synced-only lyrics off and saves the toggle', async () => {
+    const { settings, saveSettings } = useSettingsManager()
+    expect(settings.value.lyrics_synced_only).toBe(false)
+    settings.value.lyrics_synced_only = true
+
+    await saveSettings()
+
+    expect(api.setSettings.mock.calls.at(-1)[0].lyrics_synced_only).toBe(true)
+  })
+
   it('sends them when the settings form is saved', async () => {
     const { settings, saveSettings } = useSettingsManager()
     settings.value.navidrome.scan_after_download = false

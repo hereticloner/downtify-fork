@@ -356,6 +356,33 @@ def test_lyrics_upgrade_embeds_and_writes_a_sidecar(
     assert not staging_path(track).with_suffix('.lrc').exists()
 
 
+def test_lyrics_upgrade_forwards_synced_only(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    ctx = _context(tmp_path)
+    _write_track(ctx.download_dir / 'a.mp3', cover_px=1200)
+    seen = []
+
+    def fetch(*_args, **kwargs):
+        seen.append(kwargs.get('synced_only'))
+        return Lyrics(synced='[00:01.00] one')
+
+    monkeypatch.setattr(library_upgrade.lyrics_mod, 'fetch', fetch)
+    upgrade_track(
+        'a.mp3',
+        deps=_deps(
+            ctx,
+            settings={
+                'lyrics_providers': ['lrclib'],
+                'lyrics_synced_only': True,
+            },
+        ),
+        options=UpgradeOptions(categories=(CATEGORY_LYRICS,)),
+    )
+
+    assert seen == [True]
+
+
 def test_a_track_that_has_lyrics_is_not_asked_about_again(
     tmp_path: Path, monkeypatch: Any
 ) -> None:

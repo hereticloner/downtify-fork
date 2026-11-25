@@ -483,7 +483,12 @@ def _pick_lyrics(
     providers = list(deps.settings().get('lyrics_providers') or [])
     if not providers:
         return None
-    found = lyrics_mod.fetch(song, providers, deps.lyrics_cache)
+    found = lyrics_mod.fetch(
+        song,
+        providers,
+        deps.lyrics_cache,
+        synced_only=bool(deps.settings().get('lyrics_synced_only', False)),
+    )
     return found if found is not None and found.has_any() else None
 
 

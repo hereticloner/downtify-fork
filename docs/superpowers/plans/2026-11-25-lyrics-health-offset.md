@@ -37,12 +37,16 @@
 - Modify: `downtify/lyrics.py`
 - Modify: `downtify/downloader.py`
 - Modify: `downtify/api.py`
+- Modify: `downtify/library_upgrade.py`
+- Modify: `downtify/external_library.py`
 - Modify: `frontend/src/model/settings.js`
 - Modify: `frontend/src/views/SettingsView.vue`
 - Modify: all eight `frontend/src/i18n/locales/*.js`
 - Test: `tests/test_lyrics_providers.py`
 - Test: `tests/test_downloader.py`
-- Test: `frontend/src/__tests__/settings.test.js`
+- Test: `tests/test_library_upgrade.py`
+- Test: `tests/test_external_library.py`
+- Test: `frontend/src/__tests__/settingsExtras.test.js`
 
 **Interfaces:**
 - Produces: `lyrics.fetch(song, providers, cache=None, *, synced_only=False) -> Optional[Lyrics]`.
@@ -78,13 +82,13 @@ Add the default to the frontend settings model and a **Synced lyrics only** swit
 
 - [ ] **Step 4: Run tests and verify GREEN**
 
-Run: `docker exec downtify-feature-py uv run pytest tests/test_lyrics_providers.py tests/test_downloader.py -q && docker exec downtify-feature-node npm --prefix frontend test -- --maxWorkers=1 src/__tests__/settings.test.js src/__tests__/i18nParity.test.js`
+Run: `docker exec downtify-feature-py uv run pytest tests/test_lyrics_providers.py tests/test_downloader.py -q && docker exec downtify-feature-node npm --prefix frontend test -- --maxWorkers=1 src/__tests__/settingsExtras.test.js src/__tests__/i18nParity.test.js`
 Expected: all pass.
 
 - [ ] **Step 5: Lint and commit**
 
 ```bash
-git add downtify/lyrics.py downtify/downloader.py downtify/api.py frontend/src/model/settings.js frontend/src/views/SettingsView.vue frontend/src/i18n/locales tests/test_lyrics_providers.py tests/test_downloader.py frontend/src/__tests__/settings.test.js
+git add downtify/lyrics.py downtify/downloader.py downtify/api.py main.py downtify/library_upgrade.py downtify/external_library.py frontend/src/model/settings.js frontend/src/views/SettingsView.vue frontend/src/i18n/locales tests/test_lyrics_providers.py tests/test_downloader.py tests/test_api_settings.py tests/test_library_upgrade.py tests/test_external_library.py frontend/src/__tests__/settingsExtras.test.js
 git commit -m "feat(lyrics): add search fallback and synced-only mode"
 ```
 

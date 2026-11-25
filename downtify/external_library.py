@@ -426,7 +426,12 @@ def _lyrics_for_import(
         plain = lyrics_mod._strip_lrc_timestamps(tagged) or tagged
         return lyrics_mod.Lyrics(synced=tagged, plain=plain), False
     try:
-        found = lyrics_mod.fetch(song, providers, lyrics_cache)
+        found = lyrics_mod.fetch(
+            song,
+            providers,
+            lyrics_cache,
+            synced_only=bool(settings.get('lyrics_synced_only', False)),
+        )
     except Exception:
         logger.opt(exception=True).debug(
             'External sync: lyrics fetch failed for {!r}',

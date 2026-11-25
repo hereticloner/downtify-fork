@@ -1346,6 +1346,9 @@ export default {
     lyrics: 'Baixar letras',
     lyricsHint:
       'Incorpora a letra em cada arquivo. Letras sincronizadas também são salvas como .lrc.',
+    lyricsSyncedOnly: 'Apenas letras sincronizadas',
+    lyricsSyncedOnlyHint:
+      'Ignore resultados sem marcação de tempo e continue procurando letras sincronizadas.',
     lyricsLrcBeside: 'Guardar .lrc na mesma pasta do áudio',
     lyricsLrcBesideHint:
       'Desative para gravar os .lrc numa pasta à parte, sem misturá-los com os MP3.',

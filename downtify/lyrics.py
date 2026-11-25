@@ -312,6 +312,8 @@ def fetch(
     song: dict[str, Any],
     providers: list[str],
     cache: Optional[Any] = None,
+    *,
+    synced_only: bool = False,
 ) -> Optional[Lyrics]:
     """Try each provider in order; return the first successful match.
 
@@ -332,7 +334,11 @@ def fetch(
         except Exception:
             logger.exception('Lyrics provider {!r} failed', name)
             continue
-        found = bool(result and result.has_any())
+        found = bool(
+            result
+            and result.has_any()
+            and (not synced_only or bool(result.synced))
+        )
         if cache is not None:
             cache.record(key, name, found)
         if found:
@@ -342,6 +348,79 @@ def fetch(
                 )
             return result
     return None
+
+
+def _lyrics_from_record(data: dict[str, Any]) -> Optional[Lyrics]:
+    plain = (data.get('plainLyrics') or '').strip() or None
+    synced = (data.get('syncedLyrics') or '').strip() or None
+    if not plain and not synced:
+        return None
+    return Lyrics(plain=plain, synced=synced)
+
+
+def _search_lrclib(
+    song: dict[str, Any], params: dict[str, Any]
+) -> Optional[Lyrics]:
+    query = {key: value for key, value in params.items() if key != 'duration'}
+    try:
+        response = httpx.get(
+            f'{LRCLIB_BASE}/search',
+            params=query,
+            headers={'User-Agent': _USER_AGENT},
+            timeout=10,
+        )
+    except httpx.RequestError:
+        logger.opt(exception=True).warning('lrclib search request failed')
+        return None
+    if response.status_code != 200:
+        logger.warning('lrclib search returned HTTP {}', response.status_code)
+        return None
+    try:
+        records = response.json()
+    except ValueError:
+        return None
+    if not isinstance(records, list):
+        return None
+
+    title = _normalize(song.get('name'))
+    artist = _normalize((song.get('artists') or [''])[0])
+    album = _normalize(song.get('album_name'))
+    duration = float(song.get('duration') or 0)
+    best = None
+    best_score = -1.0
+    for record in records:
+        if not isinstance(record, dict) or record.get('instrumental'):
+            continue
+        record_title = _normalize(
+            record.get('trackName') or record.get('name')
+        )
+        record_artist = _normalize(record.get('artistName'))
+        if not record_title or not record_artist:
+            continue
+        if record_title == title:
+            score = 4.0
+        elif title and (title in record_title or record_title in title):
+            score = 2.0
+        else:
+            continue
+        if record_artist == artist:
+            score += 4.0
+        elif artist and (artist in record_artist or record_artist in artist):
+            score += 2.0
+        else:
+            continue
+        if album and album == _normalize(record.get('albumName')):
+            score += 1.0
+        if duration:
+            delta = abs(float(record.get('duration') or 0) - duration)
+            if delta > 15:
+                continue
+            score += max(0.0, 2.0 - delta / 5.0)
+        if score > best_score:
+            found = _lyrics_from_record(record)
+            if found is not None:
+                best, best_score = found, score
+    return best
 
 
 def _fetch_lrclib(song: dict[str, Any]) -> Optional[Lyrics]:
@@ -373,7 +452,7 @@ def _fetch_lrclib(song: dict[str, Any]) -> Optional[Lyrics]:
         return None
 
     if response.status_code == 404:
-        return None
+        return _search_lrclib(song, params)
     if response.status_code != 200:
         logger.warning(
             'lrclib returned HTTP {} for {!r}', response.status_code, title
@@ -384,12 +463,9 @@ def _fetch_lrclib(song: dict[str, Any]) -> Optional[Lyrics]:
         data = response.json()
     except ValueError:
         return None
-
-    plain = (data.get('plainLyrics') or '').strip() or None
-    synced = (data.get('syncedLyrics') or '').strip() or None
-    if not plain and not synced:
+    if not isinstance(data, dict):
         return None
-    return Lyrics(plain=plain, synced=synced)
+    return _lyrics_from_record(data)
 
 
 # ── NetEase Cloud Music ──────────────────────────────────────────────
