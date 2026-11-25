@@ -334,13 +334,12 @@ def fetch(
         except Exception:
             logger.exception('Lyrics provider {!r} failed', name)
             continue
-        found = bool(
-            result
-            and result.has_any()
-            and (not synced_only or bool(result.synced))
+        provider_found = bool(result and result.has_any())
+        found = provider_found and (
+            not synced_only or bool(result and result.synced)
         )
         if cache is not None:
-            cache.record(key, name, found)
+            cache.record(key, name, provider_found)
         if found:
             if name != providers[0]:
                 logger.info(

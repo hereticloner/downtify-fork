@@ -257,6 +257,20 @@ def test_scan_is_read_only(tmp_path: Path, monkeypatch) -> None:
     )
 
 
+def test_scan_external_warning_keeps_disk_source_true(tmp_path: Path) -> None:
+    downloads = tmp_path / 'downloads'
+    downloads.mkdir()
+    report = lyrics_health.scan_lyrics_health(
+        LibraryContext(
+            download_dir=downloads,
+            extra_dirs=(tmp_path / 'missing-nas',),
+        )
+    )
+
+    assert report['sources']['disk'] is True
+    assert report['warnings'] == ['external_folder_unavailable']
+
+
 def test_scan_missing_root_is_partial(tmp_path: Path) -> None:
     report = lyrics_health.scan_lyrics_health(
         LibraryContext(download_dir=tmp_path / 'missing')

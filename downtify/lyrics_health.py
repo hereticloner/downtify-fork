@@ -104,7 +104,7 @@ def scan_lyrics_health(
         'scanned_at': datetime.now(timezone.utc).isoformat(),
         'summary': summary,
         'findings': findings,
-        'sources': {'disk': not warnings},
+        'sources': {'disk': disk_available},
         'warnings': warnings,
     }
 

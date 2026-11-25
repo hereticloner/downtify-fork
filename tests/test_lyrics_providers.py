@@ -109,6 +109,25 @@ def test_plain_only_still_accepts_plain_by_default(calls):
     assert asked == ['lrclib']
 
 
+def test_synced_only_does_not_cache_plain_hit_as_provider_miss(
+    calls, tmp_path
+):
+    asked, answers = calls
+    cache = LyricsLookupCache(tmp_path / 'lyrics.db')
+    answers['lrclib'] = Lyrics(plain='words')
+    answers['netease'] = None
+
+    assert (
+        lyrics.fetch(SONG, ['lrclib', 'netease'], cache, synced_only=True)
+        is None
+    )
+    assert cache.should_skip(song_key(SONG), 'lrclib') is False
+
+    asked.clear()
+    assert lyrics.fetch(SONG, ['lrclib', 'netease'], cache).plain == 'words'
+    assert asked == ['lrclib']
+
+
 def test_unknown_providers_are_skipped(calls):
     asked, answers = calls
     answers['lrclib'] = Lyrics(plain='words')
