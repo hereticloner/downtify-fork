@@ -1126,6 +1126,7 @@ class AppState:
     # What users do (downtify/activity.py), for admins.
     activity: Optional[ActivityLog] = None
     playback: Optional[PlaybackStore] = None
+    listening: Optional[Any] = None
     now_playing: NowPlaying = NowPlaying()
     # Which player already got a now-playing/scrobble (downtify.scrobbling).
     scrobble_tracker: Any = scrobbling.ScrobbleTracker()
@@ -1202,17 +1203,17 @@ async def log_activity(
     kind: str,
     summary: str = '',
     detail: Optional[dict[str, Any]] = None,
-) -> None:
+) -> Optional[int]:
     """Add what *request*'s user did to the activity log. Never fails the
-    request it's called from."""
+    request it's called from; returns the inserted id when one landed."""
 
     log = state.activity
     if log is None:
-        return
+        return None
     principal = principal_of(request)
     try:
         label = await asyncio.to_thread(client_label, request, principal)
-        await asyncio.to_thread(
+        return await asyncio.to_thread(
             log.record,
             kind,
             user_id=principal.user_id if principal else 0,
@@ -1224,6 +1225,7 @@ async def log_activity(
         )
     except Exception:
         logger.exception('Activity log: could not record {}', kind)
+        return None
 
 
 def song_label(song: dict[str, Any]) -> str:

@@ -338,6 +338,14 @@ def test_admins_manage_users(client):
     )
     assert created.status_code == 200
     maria = created.json()
+    api.state.listening.link_or_create(
+        user_id=maria['id'],
+        source='lastfm',
+        source_key='maria-play',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+    )
     taken = client.post(
         '/api/users', json={'username': 'maria', 'password': PASSWORD}
     )
@@ -354,6 +362,7 @@ def test_admins_manage_users(client):
     admin_id = listed['admin']['id']
     assert client.delete(f'/api/users/{admin_id}').status_code == 400  # self
     assert client.delete(f'/api/users/{maria["id"]}').json()['deleted']
+    assert api.state.listening.stats(user_id=maria['id'])['total'] == 0
     assert client.delete(f'/api/users/{maria["id"]}').status_code == 404
     assert {'user_created', 'user_updated', 'user_deleted'} <= set(
         _kinds(client)

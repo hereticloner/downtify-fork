@@ -51,6 +51,153 @@ def client(tmp_path, monkeypatch):
     return app
 
 
+def test_stats_counts_downtify_play_in_canonical_history(client):
+    response = client.post(
+        '/api/activity/playback',
+        json={
+            'player': 'web',
+            'state': 'playing',
+            'track': {
+                'file': 'A - T.mp3',
+                'title': 'T',
+                'artist': 'A',
+                'duration': 100,
+            },
+            'position': 0,
+        },
+    )
+    assert response.status_code == 200, response.text
+    data = client.get('/api/stats').json()['playback']
+    assert data['total'] == 1
+    assert data['recent'][0]['source'] == 'downtify'
+    assert data['measured']['plays'] == 1
+    assert data['measured']['seconds'] == 0
+
+
+def test_stats_counts_spotify_and_lastfm_without_faking_measured_time(client):
+    listening = api.state.listening
+    listening.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='s1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+    )
+    listening.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='l1',
+        played_at='2026-11-25T21:15:00Z',
+        artist='B',
+        title='U',
+    )
+    data = client.get('/api/stats').json()['playback']
+    assert data['total'] == 2
+    assert {row['source'] for row in data['recent']} == {'spotify', 'lastfm'}
+    assert data['measured']['seconds'] == 0
+    assert data['measured']['plays'] == 0
+
+
+def test_downtify_spotify_lastfm_same_play_is_one_event(client):
+    listening = api.state.listening
+    listening.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+        spotify_track_id='s1',
+    )
+    listening.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:01Z',
+        artist='A',
+        title='T',
+        spotify_track_id='s1',
+    )
+    listening.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='lastfm:1',
+        played_at='2026-11-25T20:18:00Z',
+        artist='A',
+        title='T',
+    )
+    data = client.get('/api/stats').json()['playback']
+    assert data['total'] == 1
+    assert data['recent'][0]['source'] == 'downtify'
+
+
+def test_canonical_history_is_user_scoped_and_server_total_is_admin_only(
+    client,
+):
+    second = api.state.auth.users.create('second', 'second-password')
+    _device, token = api.state.auth.create_device(
+        'second phone', user_id=second['id']
+    )
+    api.state.listening.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='s1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+    )
+    api.state.listening.link_or_create(
+        user_id=second['id'],
+        source='lastfm',
+        source_key='l1',
+        played_at='2026-11-25T21:15:00Z',
+        artist='B',
+        title='U',
+    )
+    assert client.get('/api/stats').json()['playback']['total'] == 1
+    assert (
+        client.get('/api/stats', params={'scope': 'server'}).json()[
+            'playback'
+        ]['total']
+        == 2
+    )
+    forbidden = client.get(
+        '/api/stats',
+        params={'scope': 'server'},
+        headers={'Authorization': f'Bearer {token}'},
+    )
+    assert forbidden.status_code == 403
+
+
+def test_priority_upgrade_moves_heatmap_to_the_correct_day(client):
+    today = datetime.now(timezone.utc).date()
+    yesterday = today - timedelta(days=1)
+    listening = api.state.listening
+    listening.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='l1',
+        played_at=f'{today.isoformat()}T00:00:30Z',
+        artist='A',
+        title='T',
+    )
+    listening.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at=f'{yesterday.isoformat()}T23:58:00Z',
+        artist='A',
+        title='T',
+    )
+    counts = {
+        row['date']: row['count']
+        for row in client.get('/api/stats').json()['playback']['heatmap']
+    }
+    assert counts[today.isoformat()] == 0
+    assert counts[yesterday.isoformat()] == 1
+
+
 def test_stats_measured_metrics_are_user_scoped(client):
     first = api.state.auth.users.create('first', 'first-password')
     second = api.state.auth.users.create('second', 'second-password')
@@ -126,6 +273,7 @@ def test_stats_counts_activity_kinds(client):
     log.record('download', user_id=1, summary='Song A')
     log.record('download', user_id=1, summary='Song B')
     log.record('playback', user_id=1, summary='Song A')
+    _sync_activity()
     resp = client.get('/api/stats')
     data = resp.json()
     assert data['downloads']['total'] >= 2
@@ -214,6 +362,10 @@ def test_stats_spotify_survives_a_broken_history_store(client, monkeypatch):
 # ── the listening heatmap ──────────────────────────────────────────────────
 
 
+def _sync_activity() -> None:
+    api.state.listening.backfill_activity(api.state.activity)
+
+
 def _record_on(kind: str, day: date, summary: str = 'Song') -> None:
     """An activity entry stamped on *day* rather than on now."""
 
@@ -259,6 +411,7 @@ def test_stats_heatmap_counts_the_plays_of_each_day(client):
     _record_on('playback', before_that)
     _record_on('download', today)
 
+    _sync_activity()
     data = client.get('/api/stats').json()
     counts = {d['date']: d['count'] for d in data['playback']['heatmap']}
     assert counts[yesterday.isoformat()] == 3
@@ -278,6 +431,7 @@ def test_stats_streak_counts_today_when_there_were_plays(client):
     for offset in range(4):
         _record_on('playback', today - timedelta(days=offset))
 
+    _sync_activity()
     data = client.get('/api/stats').json()
     assert data['playback']['streak_days'] == 4
 
@@ -315,6 +469,7 @@ def test_stats_reports_the_queue_a_play_came_from(client):
     _play_from(today, 'Dummy', 'Chill Deploy')
     _play_from(today, 'Roads', 'Gece')
 
+    _sync_activity()
     recent = client.get('/api/stats').json()['playback']['recent']
     assert len(recent) == 3
     assert {r['context'] for r in recent} == {'Chill Deploy', 'Gece'}
@@ -339,6 +494,7 @@ def test_stats_counts_the_queues_played_most(client):
             (f'{today.isoformat()}T20:00:00+00:00', '{}'),
         )
 
+    _sync_activity()
     contexts = client.get('/api/stats').json()['playback']['top_contexts']
     assert contexts[0] == {'context': 'Chill Deploy', 'count': 2}
     assert contexts[1] == {'context': 'Gece', 'count': 1}
@@ -351,6 +507,7 @@ def test_stats_recent_plays_are_capped(client):
     for n in range(stats_mod.PLAYBACK_RECENT_LIMIT + 10):
         _play_from(today, f'Song {n}', 'Chill Deploy')
 
+    _sync_activity()
     recent = client.get('/api/stats').json()['playback']['recent']
     assert len(recent) == stats_mod.PLAYBACK_RECENT_LIMIT
 
@@ -365,6 +522,7 @@ def test_stats_survives_a_playback_entry_without_detail(client):
             "1, 'admin', 'playback', 'Song A', 'not json', 'test', '')"
         )
 
+    _sync_activity()
     resp = client.get('/api/stats')
     assert resp.status_code == 200, resp.text
     recent = resp.json()['playback']['recent']

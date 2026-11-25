@@ -403,7 +403,7 @@ Expected: canonical play'lar Stats yanıtında görünmediği için FAIL.
 
 - [ ] **Step 4: Run tests to verify GREEN**
 
-Run: Step 2 komutu ve `ssh home 'docker exec -e PYTHONDONTWRITEBYTECODE=1 downtify-feature-py sh -c "cd /work && .venv/bin/python -m pytest -p no:cacheprovider tests/test_playback.py tests/test_activity.py -q"'`.
+Run: Step 2 komutu ve `ssh home 'docker exec -e PYTHONDONTWRITEBYTECODE=1 downtify-feature-py sh -c "cd /work && .venv/bin/python -m pytest -p no:cacheprovider tests/test_playback.py tests/test_playback_api.py tests/test_users.py -q"'`.
 Expected: tüm testler PASS.
 
 - [ ] **Step 5: Commit**

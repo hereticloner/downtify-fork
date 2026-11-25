@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
@@ -311,6 +312,8 @@ async def delete_user(user_id: int, request: Request) -> dict[str, Any]:
     api.state.now_playing.forget_user(user_id)
     if api.state.playback is not None:
         await asyncio.to_thread(api.state.playback.forget_user, user_id)
+    if api.state.listening is not None:
+        await asyncio.to_thread(api.state.listening.forget_user, user_id)
     api.state.scrobble_tracker.forget_user(user_id)
     await api.log_activity(request, 'user_deleted', user['username'])
     logger.info('Deleted user {}', user['username'])
@@ -395,9 +398,29 @@ async def report_playback(request: Request) -> dict[str, Any]:
             seek=seek_requested,
         )
     if started:
-        await api.log_activity(
+        activity_id = await api.log_activity(
             request, 'playback', track_label(track), {'track': track}
         )
+        listening = api.state.listening
+        if activity_id is not None and listening is not None:
+            try:
+                duration_ms = int(float(track.get('duration') or 0) * 1000)
+            except (TypeError, ValueError):
+                duration_ms = 0
+            await asyncio.to_thread(
+                listening.link_or_create,
+                user_id=me.user_id,
+                source='downtify',
+                source_key=f'activity:{activity_id}',
+                played_at=datetime.now(timezone.utc).isoformat(),
+                title=str(track.get('title') or '').strip(),
+                artist=str(track.get('artist') or '').strip(),
+                album=str(track.get('album') or '').strip(),
+                spotify_track_id=str(track.get('track_id') or '').strip(),
+                duration_ms=duration_ms,
+                context=str(track.get('context') or '').strip(),
+                context_type=str(track.get('context_type') or '').strip(),
+            )
     config = scrobbling.active_lastfm_config(api.state.settings)
     if config:
         song = str(

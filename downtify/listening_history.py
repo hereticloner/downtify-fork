@@ -211,6 +211,45 @@ class ListeningStore:
             )
         return event_id, True
 
+    def backfill_activity(self, activity: Any) -> int:
+        created = 0
+        before = 0
+        while True:
+            page = activity.entries(
+                kinds=['playback'], limit=100, before=before, user_id=0
+            )
+            for entry in page['entries']:
+                detail = entry.get('detail')
+                track = (
+                    detail.get('track') if isinstance(detail, dict) else None
+                )
+                if not isinstance(track, dict):
+                    track = {}
+                try:
+                    duration_ms = int(float(track.get('duration') or 0) * 1000)
+                except (TypeError, ValueError):
+                    duration_ms = 0
+                summary = str(entry.get('summary') or '').strip()
+                _event_id, landed = self.link_or_create(
+                    user_id=int(entry.get('user_id') or 0),
+                    source='downtify',
+                    source_key=f'activity:{entry["id"]}',
+                    played_at=str(entry.get('at') or ''),
+                    title=str(track.get('title') or summary).strip(),
+                    artist=str(track.get('artist') or '').strip(),
+                    album=str(track.get('album') or '').strip(),
+                    spotify_track_id=str(track.get('track_id') or '').strip(),
+                    duration_ms=duration_ms,
+                    context=str(track.get('context') or '').strip(),
+                    context_type=str(track.get('context_type') or '').strip(),
+                )
+                created += int(landed)
+            nxt = int(page.get('next') or 0)
+            if not nxt or not page['entries']:
+                break
+            before = nxt
+        return created
+
     def stats(
         self, user_id: int = 0, recent_limit: int = 400
     ) -> dict[str, Any]:
@@ -291,6 +330,17 @@ class ListeningStore:
     def forget_user(self, user_id: int) -> int:
         with self._connect() as conn:
             before = conn.total_changes
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+            for table in ('spotify_recently_played', 'lastfm_recent_tracks'):
+                if table in tables:
+                    conn.execute(
+                        f'DELETE FROM {table} WHERE user_id=?', (int(user_id),)
+                    )
             conn.execute(
                 'DELETE FROM listening_event_sources WHERE event_id IN '
                 '(SELECT id FROM listening_events WHERE user_id=?)',

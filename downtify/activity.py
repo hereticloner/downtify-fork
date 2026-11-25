@@ -148,12 +148,11 @@ class ActivityLog:
         detail: Optional[dict[str, Any]] = None,
         client: str = '',
         ip: str = '',
-    ) -> None:
-        """Add an entry. *summary* is the one line shown for it (a song,
-        a file, a username); *detail* anything else worth keeping."""
+    ) -> int:
+        """Add an entry and return its inserted id."""
 
         with self._connect() as conn:
-            conn.execute(
+            cursor = conn.execute(
                 'INSERT INTO activity (at, user_id, username, kind, '
                 'summary, detail_json, client, ip) '
                 'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -168,6 +167,7 @@ class ActivityLog:
                     _clip(ip, 64),
                 ),
             )
+        activity_id = int(cursor.lastrowid)
         with self._lock:
             self._since_prune += 1
             due = self._since_prune >= _PRUNE_EVERY
@@ -175,6 +175,7 @@ class ActivityLog:
                 self._since_prune = 0
         if due:
             self.prune()
+        return activity_id
 
     def entries(
         self,

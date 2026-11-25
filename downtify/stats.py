@@ -128,6 +128,7 @@ def _recent_plays(
             'summary': _text(entry.get('summary')),
             'context': context,
             'context_type': kind,
+            'source': 'downtify',
         })
     return out
 
@@ -146,25 +147,14 @@ def _top_contexts(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
-def build_activity_heatmap(
-    activity: list[dict[str, Any]],
+def _heatmap_from_counts(
+    counts: Counter,
     weeks: int = HEATMAP_WEEKS,
     *,
     today: Optional[date] = None,
 ) -> list[dict[str, Any]]:
-    """One ``{date, count}`` per day for the last *weeks* weeks.
-
-    Oldest first, and dense: a day without a play is a zero rather than
-    a gap, so the grid the page draws always has ``weeks * 7`` cells
-    (see ``frontend/src/lib/heatmap.js``). The window is capped at the
-    activity log's retention, since older plays are pruned and would
-    read as empty days anyway. *today* is only there to keep tests off
-    the clock.
-    """
-
     span = max(1, min(int(weeks or 0), HEATMAP_WEEKS)) * 7
     end = today or _today()
-    counts = _played_days(activity)
     out: list[dict[str, Any]] = []
     day = end - timedelta(days=span - 1)
     for _ in range(span):
@@ -174,18 +164,18 @@ def build_activity_heatmap(
     return out
 
 
-def build_listening_streak(
-    activity: list[dict[str, Any]], *, today: Optional[date] = None
-) -> int:
-    """Days in a row that had at least one play.
+def build_activity_heatmap(
+    activity: list[dict[str, Any]],
+    weeks: int = HEATMAP_WEEKS,
+    *,
+    today: Optional[date] = None,
+) -> list[dict[str, Any]]:
+    """One ``{date, count}`` per day for the last *weeks* weeks."""
 
-    A day still to come doesn't break the streak: until it is over,
-    yesterday's run still counts. Nothing played today *or* yesterday
-    means zero - that is a finished streak, not one waiting to start.
-    *today* is only there to keep tests off the clock.
-    """
+    return _heatmap_from_counts(_played_days(activity), weeks, today=today)
 
-    played = _played_days(activity)
+
+def _streak_from_counts(played: Counter, today: Optional[date] = None) -> int:
     cursor = today or _today()
     if cursor.isoformat() not in played:
         cursor -= timedelta(days=1)
@@ -194,6 +184,14 @@ def build_listening_streak(
         streak += 1
         cursor -= timedelta(days=1)
     return streak
+
+
+def build_listening_streak(
+    activity: list[dict[str, Any]], *, today: Optional[date] = None
+) -> int:
+    """Days in a row that had at least one play."""
+
+    return _streak_from_counts(_played_days(activity), today=today)
 
 
 def _spotify_recent(rows: Any) -> list[dict[str, Any]]:
@@ -238,6 +236,7 @@ def build_stats(
     user_id: int = 0,
     days: int = 30,
     playback: Any = None,
+    listening_stats: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """The numbers the Stats page renders.
 
@@ -256,8 +255,16 @@ def build_stats(
     """
 
     window = days if days in {7, 30, 90} else 30
-    downloads = _activity_kinds(activity, 'download', user_id=user_id)
-    playbacks = _activity_kinds(activity, 'playback', user_id=user_id)
+    downloads = (
+        _activity_kinds(activity, 'download', user_id=user_id)
+        if activity is not None
+        else []
+    )
+    playbacks = (
+        []
+        if listening_stats is not None
+        else _activity_kinds(activity, 'playback', user_id=user_id)
+    )
     measured = (
         playback.summary(user_id, days=window)
         if playback is not None
@@ -283,15 +290,32 @@ def build_stats(
         except (TypeError, ValueError):
             continue
 
-    top_tracks = Counter(
-        str(e.get('summary') or '') for e in playbacks if e.get('summary')
-    )
+    if listening_stats is None:
+        counts = Counter(
+            str(e.get('summary') or '') for e in playbacks if e.get('summary')
+        )
+        top_tracks = [
+            {'summary': summary, 'count': count}
+            for summary, count in counts.most_common(10)
+        ]
+        daily_counts = _played_days(playbacks)
+        recent_plays = _recent_plays(playbacks)
+        top_contexts = _top_contexts(playbacks)
+        playback_total = len(playbacks)
+    else:
+        top_tracks = list(listening_stats.get('top_tracks') or [])
+        daily_counts = Counter({
+            str(row.get('date') or ''): int(row.get('count') or 0)
+            for row in listening_stats.get('daily') or []
+            if row.get('date')
+        })
+        recent_plays = list(listening_stats.get('recent') or [])
+        top_contexts = list(listening_stats.get('top_contexts') or [])
+        playback_total = int(listening_stats.get('total') or 0)
     per_day = Counter(_parse_at(e.get('at')) for e in downloads if e.get('at'))
     recent = _spotify_recent(spotify_recent)
 
-    # The heatmap is dense (a playless day is a zero), so the busiest
-    # day is the first entry that isn't: the empties only lead.
-    heatmap = build_activity_heatmap(playbacks)
+    heatmap = _heatmap_from_counts(daily_counts)
     busiest = next(
         (day for day in reversed(heatmap) if day['count'] > 0), None
     )
@@ -311,14 +335,11 @@ def build_stats(
             ][-30:],
         },
         'playback': {
-            'total': len(playbacks),
+            'total': playback_total,
             'measured': measured,
-            'top_tracks': [
-                {'summary': summary, 'count': count}
-                for summary, count in top_tracks.most_common(10)
-            ],
+            'top_tracks': top_tracks,
             'heatmap': heatmap,
-            'streak_days': build_listening_streak(playbacks),
+            'streak_days': _streak_from_counts(daily_counts),
             'best_day': (
                 {'date': busiest['date'], 'count': busiest['count']}
                 if busiest
@@ -327,8 +348,8 @@ def build_stats(
             # What the plays were, and which queue served them: the page
             # lists these and filters them by the day a heatmap cell
             # stands for.
-            'recent': _recent_plays(playbacks),
-            'top_contexts': _top_contexts(playbacks),
+            'recent': recent_plays,
+            'top_contexts': top_contexts,
         },
         'spotify': {
             'recent': recent,

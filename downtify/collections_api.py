@@ -388,6 +388,9 @@ async def stats_endpoint(
             'skip_rate': 0.0,
         }
     )
+    listening_stats = (
+        st.listening.stats(user_id) if st.listening is not None else None
+    )
     if activity is None:
         return {
             'library': {'tracks': 0, 'playlists': 0, 'likes': 0},
@@ -399,6 +402,8 @@ async def stats_endpoint(
                 'heatmap': [],
                 'streak_days': 0,
                 'best_day': {'date': '', 'count': 0},
+                'recent': [],
+                'top_contexts': [],
             },
             'spotify': spotify,
         }
@@ -412,6 +417,7 @@ async def stats_endpoint(
         user_id=user_id,
         days=window,
         playback=st.playback,
+        listening_stats=listening_stats,
     )
 
 

@@ -105,6 +105,7 @@ from downtify.library_trash import trash_from_env
 from downtify.library_upgrade import LibraryUpgradeRunner, UpgradeDeps
 from downtify.library_upgrade_db import LibraryUpgradeDB
 from downtify.likes import LikedTracks
+from downtify.listening_history import ListeningStore
 from downtify.lyrics import read_track_lyrics
 from downtify.lyrics_cache import LyricsLookupCache
 from downtify.monitor import PlaylistMonitorDB, monitor_loop, reconcile_loop
@@ -745,6 +746,10 @@ def build_app() -> FastAPI:
                 cfg_getter=lambda: api.state.settings,
                 db_path=DATABASE_DIR / 'downtify_activity.db',
                 persist_tokens=api._persist_mirror_tokens,
+                listening_getter=lambda: api.state.listening,
+                user_id_getter=lambda: int(
+                    (api.state.auth.users.first_admin() or {}).get('id') or 0
+                ),
             ),
             name='spotify-history-loop',
         )
@@ -895,8 +900,17 @@ def build_app() -> FastAPI:
     # Where this server listens (downtify/server_port.py), for Settings.
     api.state.listen = _LISTEN
     api.state.auth = open_auth_store()
-    api.state.activity = ActivityLog(DATABASE_DIR / 'downtify_activity.db')
-    api.state.playback = PlaybackStore(DATABASE_DIR / 'downtify_activity.db')
+    activity_db = DATABASE_DIR / 'downtify_activity.db'
+    api.state.activity = ActivityLog(activity_db)
+    api.state.playback = PlaybackStore(activity_db)
+    api.state.listening = ListeningStore(activity_db)
+    admin = api.state.auth.users.first_admin()
+    history_user_id = int((admin or {}).get('id') or 0)
+    spotify_history.ensure_schema(activity_db, user_id=history_user_id)
+    spotify_history.link_pending(
+        activity_db, api.state.listening, user_id=history_user_id
+    )
+    api.state.listening.backfill_activity(api.state.activity)
     app.add_middleware(
         AuthMiddleware,
         get_store=lambda: api.state.auth,
