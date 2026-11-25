@@ -8,16 +8,20 @@ dedupes, what the switch does to the loop and what the reader returns.
 from __future__ import annotations
 
 import asyncio
+import json
 import sqlite3
 import threading
 from pathlib import Path
 
 from downtify import spotify_history
+from downtify.listening_history import ListeningStore
 from downtify.spotify_history import (
     clamp_limit,
+    ensure_schema,
     fetch_recently_played,
     get_recent_from_spotify,
     import_enabled,
+    link_pending,
     parse_plays,
     run_once,
     save_recently_played,
@@ -142,6 +146,11 @@ def test_parse_plays_reads_the_endpoint_shape():
                     'duration_ms': 201000,
                     'artists': [{'name': 'A'}, {'name': 'B'}],
                     'album': {'name': 'Album'},
+                    'external_ids': {'isrc': 'USAAA1200001'},
+                },
+                'context': {
+                    'type': 'playlist',
+                    'uri': 'spotify:playlist:p1',
                 },
             }
         ]
@@ -154,6 +163,9 @@ def test_parse_plays_reads_the_endpoint_shape():
             'album_name': 'Album',
             'spotify_track_id': 't1',
             'duration_ms': 201000,
+            'isrc': 'USAAA1200001',
+            'context': body['items'][0]['context'],
+            'raw_item': body['items'][0]['track'],
         }
     ]
 
@@ -267,6 +279,73 @@ def test_fetch_gives_up_on_a_429_without_a_usable_header(monkeypatch):
 # ── the store ────────────────────────────────────────────────────────
 
 
+def test_old_spotify_table_migrates_without_losing_rows(tmp_path: Path):
+    db = tmp_path / 'activity.db'
+    with sqlite3.connect(db) as conn:
+        conn.execute(
+            'CREATE TABLE spotify_recently_played ('
+            'played_at TEXT PRIMARY KEY, track_name TEXT NOT NULL, '
+            'artist_name TEXT NOT NULL, album_name TEXT NOT NULL, '
+            'spotify_track_id TEXT NOT NULL, duration_ms INTEGER NOT NULL, '
+            'synced_at TEXT NOT NULL)'
+        )
+        conn.execute(
+            'INSERT INTO spotify_recently_played VALUES (?,?,?,?,?,?,?)',
+            ('2026-11-25T20:15:00Z', 'T', 'A', 'Album', 's1', 1000, 'now'),
+        )
+    ensure_schema(db, user_id=1)
+    rows = get_recent_from_spotify(db)
+    assert len(rows) == 1
+    assert rows[0]['user_id'] == 1
+    assert rows[0]['raw_json'] == '{}'
+    assert rows[0]['source_key'] == 'spotify:2026-11-25T20:15:00Z:s1'
+
+
+def test_same_second_different_tracks_survive(tmp_path: Path):
+    rows = [
+        {
+            'played_at': '2026-11-25T20:15:00Z',
+            'spotify_track_id': 's1',
+            'track_name': 'T1',
+            'artist_name': 'A',
+        },
+        {
+            'played_at': '2026-11-25T20:15:00Z',
+            'spotify_track_id': 's2',
+            'track_name': 'T2',
+            'artist_name': 'A',
+        },
+    ]
+    db = tmp_path / 'activity.db'
+    assert save_recently_played(db, rows) == 2
+    assert spotify_history.count_plays(db) == 2
+
+
+def test_raw_payload_and_pending_link_are_idempotent(tmp_path: Path):
+    db = tmp_path / 'activity.db'
+    raw = {'id': 's1', 'external_ids': {'isrc': 'USAAA1200001'}}
+    rows = [
+        {
+            'played_at': '2026-11-25T20:15:00Z',
+            'spotify_track_id': 's1',
+            'track_name': 'T',
+            'artist_name': 'A',
+            'raw_item': raw,
+            'isrc': 'USAAA1200001',
+            'context': {'type': 'album', 'uri': 'spotify:album:a1'},
+        }
+    ]
+    assert save_recently_played(db, rows, user_id=1) == 1
+    listening = ListeningStore(db)
+    assert link_pending(db, listening, user_id=1) == 1
+    assert link_pending(db, listening, user_id=1) == 0
+    assert listening.stats(user_id=1)['total'] == 1
+    stored = get_recent_from_spotify(db)[0]
+    assert json.loads(stored['raw_json']) == raw
+    assert json.loads(stored['context_json']) == rows[0]['context']
+    assert stored['listening_event_id'] is not None
+
+
 def test_save_writes_and_the_reader_reads_it_back(tmp_path: Path):
     db = tmp_path / 'activity.db'
     assert (
@@ -354,6 +433,30 @@ def test_reader_of_a_database_without_the_table(tmp_path: Path):
 
 
 # ── one sweep ────────────────────────────────────────────────────────
+
+
+def test_run_once_links_imported_play_to_canonical_history(tmp_path: Path):
+    db = tmp_path / 'activity.db'
+    listening = ListeningStore(db)
+    summary = run_once(
+        _settings(),
+        db,
+        user_id=1,
+        listening=listening,
+        request=_history_request(
+            [],
+            {
+                'items': [
+                    {
+                        'played_at': '2026-11-25T20:15:00Z',
+                        'track': {'id': 's1', 'name': 'T'},
+                    }
+                ]
+            },
+        ),
+    )
+    assert summary['saved'] == 1
+    assert listening.stats(user_id=1)['total'] == 1
 
 
 def test_run_once_stores_what_it_reads(tmp_path: Path):

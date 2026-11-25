@@ -151,6 +151,7 @@ git commit -m "feat(stats): add canonical listening history store"
 - Produces:
   - `parse_plays(body: Any) -> list[dict[str, Any]]` artık `raw_item`, `isrc`, `context` taşır.
   - `save_recently_played(db_path: Any, rows: Any, *, user_id: int = 0) -> int`
+  - `ensure_schema(db_path: Any, *, user_id: int = 0) -> None`
   - `link_pending(db_path: Any, listening: Any, *, user_id: int = 0, limit: int = 500) -> int`
   - `run_once(settings: Any, db_path: Any, *, limit: int = 50, request: Optional[Request] = None, user_id: int = 0, listening: Any = None) -> dict[str, Any]`
   - `spotify_history_loop(..., listening_getter: Optional[Callable[[], Any]] = None, user_id_getter: Optional[Callable[[], int]] = None)`
@@ -174,7 +175,7 @@ def test_old_spotify_table_migrates_without_losing_rows(tmp_path):
             'INSERT INTO spotify_recently_played VALUES (?,?,?,?,?,?,?)',
             ('2026-11-25T20:15:00Z', 'T', 'A', 'Album', 's1', 1000, 'now'),
         )
-    assert spotify_history.save_recently_played(db, [], user_id=1) == 0
+    spotify_history.ensure_schema(db, user_id=1)
     rows = spotify_history.get_recent_from_spotify(db)
     assert len(rows) == 1
     assert rows[0]['user_id'] == 1
@@ -214,7 +215,7 @@ Expected: yeni alan/migration/link testleri FAIL.
 
 - [ ] **Step 3: Implement Spotify migration ve bağlama**
 
-Eski tabloyu transaction içinde yeni `id/user_id/source_key/listening_event_id/isrc/context_json/raw_json` şemasına taşı. `source_key=spotify:{played_at}:{track_id}` kullan. Eski satırlar `save_recently_played(..., user_id=<first admin id>)` çağrısıyla taşınır. Parser ham `item` objesini JSON olarak saklar. `save_recently_played` boş liste geldiğinde de `_connect` çağırarak migration'ın çalışmasını sağlar; ham gözlemleri yazar. `link_pending` yalnız `listening_event_id IS NULL` satırları canonical store'a bağlar. `run_once` kaydetme sonrası pending satırları bağlar. `main.py` loop'a `user_id_getter` olarak `api.state.auth.users.first_admin()` id'sini verir.
+Eski tabloyu transaction içinde yeni `id/user_id/source_key/listening_event_id/isrc/context_json/raw_json` şemasına taşı. `source_key=spotify:{played_at}:{track_id}` kullan. Eski satırlar `ensure_schema(..., user_id=<first admin id>)` çağrısıyla taşınır; `save_recently_played(db, [])` mevcut davranışı koruyup boş veritabanı yaratmaz. Parser ham `item` objesini JSON olarak saklar. `save_recently_played` ham gözlemleri yazar. `link_pending` yalnız `listening_event_id IS NULL` satırları canonical store'a bağlar. `run_once` kaydetme sonrası pending satırları bağlar. `main.py` loop'a `user_id_getter` olarak `api.state.auth.users.first_admin()` id'sini verir.
 
 - [ ] **Step 4: Run tests to verify GREEN**
 

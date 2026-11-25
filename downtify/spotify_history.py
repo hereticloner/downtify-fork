@@ -5,8 +5,8 @@ will hand that over through ``GET /v1/me/player/recently-played`` -
 50 entries per call, newest first, with the track id, names and
 duration. This module pulls that page on a slow timer and stores it, so
 "what did I listen to" can be answered from Downtify without asking
-Spotify again (the endpoint only reaches back a few hundred entries, and
-asks nothing more than that window).
+Spotify again (the endpoint only reaches back a rolling window of about
+50 entries).
 
 It reuses the OAuth connection the Spotify Mirror owns
 (``downtify.spotify_mirror``): the same client id and tokens, the same
@@ -15,16 +15,19 @@ unless the user turns on ``import_recent`` in the ``spotify_mirror``
 settings block, and every failure is logged - a history import that
 cannot run is not a reason to stop running.
 
-The stored rows are plain plays, not library entries: they are never
-written into the catalog, never tagged onto a file and never deleted.
-One table (``spotify_recently_played``) in the activity database, keyed
-by ``played_at`` so the same play arriving in two consecutive fetches
-lands once (the endpoint overlaps windows on purpose).
+The stored rows are raw provider observations, not library entries: they
+are never written into the catalog, never tagged onto a file and never
+deleted. One table (``spotify_recently_played``) in the activity database
+keeps the original track object and a stable
+``spotify:<played_at>:<track id>`` key, so overlapping fetches land once
+without collapsing two tracks that share a timestamp. Linked rows also
+feed the canonical listening history used by Stats.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import sqlite3
 import time
 from datetime import datetime, timezone
@@ -58,27 +61,36 @@ MAX_BACKOFF_SECONDS = 60.0
 
 _CREATE_TABLE = f"""
 CREATE TABLE IF NOT EXISTS {TABLE} (
-    played_at TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 0,
+    source_key TEXT NOT NULL UNIQUE,
+    played_at TEXT NOT NULL,
     track_name TEXT NOT NULL DEFAULT '',
     artist_name TEXT NOT NULL DEFAULT '',
     album_name TEXT NOT NULL DEFAULT '',
     spotify_track_id TEXT NOT NULL DEFAULT '',
     duration_ms INTEGER NOT NULL DEFAULT 0,
+    isrc TEXT NOT NULL DEFAULT '',
+    context_json TEXT NOT NULL DEFAULT '{{}}',
+    raw_json TEXT NOT NULL DEFAULT '{{}}',
+    listening_event_id INTEGER,
     synced_at TEXT NOT NULL DEFAULT ''
 )
 """
 
 _INSERT = f"""
 INSERT OR IGNORE INTO {TABLE} (
-    played_at, track_name, artist_name, album_name,
-    spotify_track_id, duration_ms, synced_at
-) VALUES (?, ?, ?, ?, ?, ?, ?)
+    user_id, source_key, played_at, track_name, artist_name, album_name,
+    spotify_track_id, duration_ms, isrc, context_json, raw_json,
+    listening_event_id, synced_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 _SELECT = f"""
-SELECT played_at, track_name, artist_name, album_name,
-       spotify_track_id, duration_ms, synced_at
-FROM {TABLE} ORDER BY played_at DESC LIMIT ?
+SELECT id, user_id, source_key, played_at, track_name, artist_name,
+       album_name, spotify_track_id, duration_ms, isrc, context_json,
+       raw_json, listening_event_id, synced_at
+FROM {TABLE} ORDER BY played_at DESC, id DESC LIMIT ?
 """
 
 #: Request seam: tests inject a fake; the default is a plain httpx call.
@@ -188,6 +200,8 @@ def parse_plays(body: Any) -> list[dict[str, Any]]:
         if not played_at or not track_id:
             continue
         album = track.get('album')
+        external_ids = track.get('external_ids')
+        context = item.get('context')
         rows.append({
             'played_at': played_at,
             'track_name': _text(track.get('name')),
@@ -197,6 +211,11 @@ def parse_plays(body: Any) -> list[dict[str, Any]]:
             else '',
             'spotify_track_id': track_id,
             'duration_ms': _duration_ms(track.get('duration_ms')),
+            'isrc': _text(external_ids.get('isrc'))
+            if isinstance(external_ids, dict)
+            else '',
+            'context': context if isinstance(context, dict) else {},
+            'raw_item': track,
         })
     return rows
 
@@ -287,41 +306,93 @@ def fetch_recently_played(
 # ── the local store ──────────────────────────────────────────────────
 
 
-def _connect(db_path: Any) -> sqlite3.Connection:
+def _connect(db_path: Any, *, user_id: int = 0) -> sqlite3.Connection:
     path = Path(db_path)
     parent = path.parent
     if str(parent):
         parent.mkdir(parents=True, exist_ok=True)
     conn = connect_sqlite(str(path))
     conn.execute(_CREATE_TABLE)
+    columns = {row[1] for row in conn.execute(f'PRAGMA table_info({TABLE})')}
+    if 'source_key' not in columns:
+        old = f'{TABLE}_old'
+        exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (old,)
+        ).fetchone()
+        if exists is not None:
+            conn.close()
+            raise sqlite3.OperationalError(f'{old} already exists')
+        try:
+            conn.execute(f'ALTER TABLE {TABLE} RENAME TO {old}')
+            conn.execute(_CREATE_TABLE)
+            conn.execute(
+                f'INSERT INTO {TABLE} '
+                '(user_id, source_key, played_at, track_name, artist_name, '
+                'album_name, spotify_track_id, duration_ms, isrc, '
+                'context_json, raw_json, listening_event_id, synced_at) '
+                f"SELECT ?, 'spotify:' || played_at || ':' || "
+                'spotify_track_id, played_at, track_name, artist_name, '
+                "album_name, spotify_track_id, duration_ms, '', '{}', "
+                f"'{{}}', NULL, synced_at FROM {old}",
+                (int(user_id),),
+            )
+            conn.execute(f'DROP TABLE {old}')
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            conn.close()
+            raise
     return conn
 
 
-def save_recently_played(db_path: Any, rows: Any) -> int:
-    """Store *rows*, ignoring the ones already there; how many landed.
+def ensure_schema(db_path: Any, *, user_id: int = 0) -> None:
+    """Create or migrate the raw Spotify store without importing plays."""
 
-    ``INSERT OR IGNORE`` on the ``played_at`` key is what makes the
-    overlapping windows the endpoint returns cheap: the same play
-    arriving in the next fetch is a no-op instead of a second row.
-    Rows missing the key are dropped rather than stored.
+    conn = _connect(db_path, user_id=user_id)
+    conn.close()
+
+
+def save_recently_played(db_path: Any, rows: Any, *, user_id: int = 0) -> int:
+    """Store raw plays, ignoring ones already there; how many landed.
+
+    The stable ``source_key`` is ``spotify:<played_at>:<track id>``. It
+    keeps overlapping fetches idempotent without collapsing two different
+    tracks that happen to share a timestamp. Rows missing a timestamp are
+    dropped rather than stored.
     """
 
-    clean = [
-        (
-            _text(row.get('played_at')),
+    clean = []
+    for row in rows or []:
+        if not isinstance(row, dict) or not _text(row.get('played_at')):
+            continue
+        played_at = _text(row.get('played_at'))
+        track_id = _text(row.get('spotify_track_id'))
+        context = (
+            row.get('context') if isinstance(row.get('context'), dict) else {}
+        )
+        raw = (
+            row.get('raw_item')
+            if isinstance(row.get('raw_item'), dict)
+            else {}
+        )
+        clean.append((
+            int(user_id or 0),
+            _text(row.get('source_key')) or f'spotify:{played_at}:{track_id}',
+            played_at,
             _text(row.get('track_name')),
             _text(row.get('artist_name')),
             _text(row.get('album_name')),
-            _text(row.get('spotify_track_id')),
+            track_id,
             _duration_ms(row.get('duration_ms')),
+            _text(row.get('isrc')),
+            json.dumps(context, ensure_ascii=False, separators=(',', ':')),
+            json.dumps(raw, ensure_ascii=False, separators=(',', ':')),
+            None,
             _text(row.get('synced_at')) or _now_iso(),
-        )
-        for row in rows or []
-        if isinstance(row, dict) and _text(row.get('played_at'))
-    ]
+        ))
     if not clean:
         return 0
-    conn = _connect(db_path)
+    conn = _connect(db_path, user_id=user_id)
     try:
         before = conn.total_changes
         conn.executemany(_INSERT, clean)
@@ -332,6 +403,68 @@ def save_recently_played(db_path: Any, rows: Any) -> int:
         return 0
     finally:
         conn.close()
+
+
+def link_pending(
+    db_path: Any, listening: Any, *, user_id: int = 0, limit: int = 500
+) -> int:
+    """Link unlinked raw Spotify rows to canonical listening events."""
+
+    if listening is None or not Path(db_path).is_file():
+        return 0
+    try:
+        conn = connect_sqlite(str(db_path), row_factory=True)
+    except sqlite3.Error as exc:
+        logger.warning('Spotify history: could not link plays: {}', exc)
+        return 0
+    try:
+        where = 'listening_event_id IS NULL'
+        args: list[Any] = []
+        if user_id:
+            where += ' AND user_id=?'
+            args.append(int(user_id))
+        rows = conn.execute(
+            f'SELECT * FROM {TABLE} WHERE {where} '
+            'ORDER BY played_at, id LIMIT ?',
+            (*args, max(1, min(int(limit), 5000))),
+        ).fetchall()
+    except sqlite3.Error:
+        return 0
+    finally:
+        conn.close()
+    linked: list[tuple[int, int]] = []
+    for row in rows:
+        try:
+            context = json.loads(row['context_json'] or '{}')
+        except (TypeError, ValueError):
+            context = {}
+        if not isinstance(context, dict):
+            context = {}
+        event_id, _created = listening.link_or_create(
+            user_id=int(row['user_id'] or user_id),
+            source='spotify',
+            source_key=row['source_key'],
+            played_at=row['played_at'],
+            title=row['track_name'],
+            artist=row['artist_name'],
+            album=row['album_name'],
+            spotify_track_id=row['spotify_track_id'],
+            duration_ms=row['duration_ms'],
+            context=_text(context.get('uri') or context.get('href')),
+            context_type=_text(context.get('type')),
+        )
+        linked.append((event_id, int(row['id'])))
+    if not linked:
+        return 0
+    try:
+        with connect_sqlite(str(db_path)) as conn:
+            conn.executemany(
+                f'UPDATE {TABLE} SET listening_event_id=? WHERE id=?', linked
+            )
+    except sqlite3.Error as exc:
+        logger.warning('Spotify history: could not save play links: {}', exc)
+        return 0
+    return len(linked)
 
 
 def get_recent_from_spotify(
@@ -390,6 +523,8 @@ def run_once(
     *,
     limit: int = DEFAULT_LIMIT,
     request: Optional[Request] = None,
+    user_id: int = 0,
+    listening: Any = None,
 ) -> dict[str, Any]:
     """One sweep: read the page, store what's new. Never raises.
 
@@ -417,7 +552,9 @@ def run_once(
         summary['error'] = 'fetch_failed'
         return summary
     summary['fetched'] = len(rows)
-    summary['saved'] = save_recently_played(db_path, rows)
+    summary['saved'] = save_recently_played(db_path, rows, user_id=user_id)
+    if listening is not None:
+        link_pending(db_path, listening, user_id=user_id)
     if config.get('access_token') != before_token:
         summary['tokens'] = {
             'access_token': config.get('access_token', ''),
@@ -435,6 +572,8 @@ async def spotify_history_loop(
     limit: int = DEFAULT_LIMIT,
     request: Optional[Request] = None,
     persist_tokens: Optional[PersistTokens] = None,
+    listening_getter: Optional[Callable[[], Any]] = None,
+    user_id_getter: Optional[Callable[[], int]] = None,
 ) -> None:
     """Background task: sweep listening history while the switch is on.
 
@@ -452,6 +591,12 @@ async def spotify_history_loop(
                 db_path,
                 limit=limit,
                 request=request,
+                user_id=user_id_getter() if user_id_getter is not None else 0,
+                listening=(
+                    listening_getter()
+                    if listening_getter is not None
+                    else None
+                ),
             )
             tokens = summary.pop('tokens', None)
             if persist_tokens is not None and tokens:
