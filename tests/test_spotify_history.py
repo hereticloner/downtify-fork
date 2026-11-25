@@ -376,6 +376,24 @@ def test_save_ignores_a_play_it_already_has(tmp_path: Path):
     assert spotify_history.count_plays(db) == 2
 
 
+def test_overlapping_spotify_play_enriches_existing_raw_payload(
+    tmp_path: Path,
+):
+    db = tmp_path / 'activity.db'
+    assert save_recently_played(db, [_play()]) == 1
+    enriched = {
+        **_play(),
+        'isrc': 'USAAA1200001',
+        'context': {'type': 'album', 'uri': 'spotify:album:a1'},
+        'raw_item': {'id': 't1', 'external_ids': {'isrc': 'USAAA1200001'}},
+    }
+    assert save_recently_played(db, [enriched]) == 0
+    stored = get_recent_from_spotify(db)[0]
+    assert json.loads(stored['raw_json']) == enriched['raw_item']
+    assert stored['isrc'] == 'USAAA1200001'
+    assert json.loads(stored['context_json']) == enriched['context']
+
+
 def test_save_drops_rows_without_a_key_and_stamps_synced_at(tmp_path: Path):
     db = tmp_path / 'activity.db'
     assert (

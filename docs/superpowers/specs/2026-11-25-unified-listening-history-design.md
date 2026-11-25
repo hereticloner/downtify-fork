@@ -167,6 +167,7 @@ Bilinen sınır: farklı sanatçı yazımı, sürüm veya remaster aynı play'ı
 
 - Mevcut 30 dakikalık import döngüsü korunur.
 - Parser ham `item`, ISRC ve context'i de saklar.
+- Aynı play yeniden görüldüğünde `INSERT OR IGNORE` sayısı artırmaz; mevcut satırın boş ham gövde/ISRC/context alanları gelen payload ile zenginleştirilir.
 - Her yeni ham gözlem `link_or_create` üzerinden canonical satıra bağlanır.
 - Daha fazla geçmiş Spotify API'sinden çekilmez.
 

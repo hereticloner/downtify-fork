@@ -362,6 +362,7 @@ def save_recently_played(db_path: Any, rows: Any, *, user_id: int = 0) -> int:
     """
 
     clean = []
+    enrichments = []
     for row in rows or []:
         if not isinstance(row, dict) or not _text(row.get('played_at')):
             continue
@@ -375,29 +376,51 @@ def save_recently_played(db_path: Any, rows: Any, *, user_id: int = 0) -> int:
             if isinstance(row.get('raw_item'), dict)
             else {}
         )
+        source_key = (
+            _text(row.get('source_key')) or f'spotify:{played_at}:{track_id}'
+        )
+        isrc = _text(row.get('isrc'))
+        context_json = json.dumps(
+            context, ensure_ascii=False, separators=(',', ':')
+        )
+        raw_json = json.dumps(raw, ensure_ascii=False, separators=(',', ':'))
         clean.append((
             int(user_id or 0),
-            _text(row.get('source_key')) or f'spotify:{played_at}:{track_id}',
+            source_key,
             played_at,
             _text(row.get('track_name')),
             _text(row.get('artist_name')),
             _text(row.get('album_name')),
             track_id,
             _duration_ms(row.get('duration_ms')),
-            _text(row.get('isrc')),
-            json.dumps(context, ensure_ascii=False, separators=(',', ':')),
-            json.dumps(raw, ensure_ascii=False, separators=(',', ':')),
+            isrc,
+            context_json,
+            raw_json,
             None,
             _text(row.get('synced_at')) or _now_iso(),
         ))
+        if raw_json != '{}':
+            enrichments.append((
+                raw_json,
+                isrc,
+                context_json,
+                source_key,
+                raw_json,
+            ))
     if not clean:
         return 0
     conn = _connect(db_path, user_id=user_id)
     try:
         before = conn.total_changes
         conn.executemany(_INSERT, clean)
+        inserted = conn.total_changes - before
+        conn.executemany(
+            f'UPDATE {TABLE} SET raw_json=?, isrc=?, context_json=? '
+            "WHERE source_key=? AND ? != '{}'",
+            enrichments,
+        )
         conn.commit()
-        return conn.total_changes - before
+        return inserted
     except sqlite3.Error as exc:
         logger.warning('Spotify history: could not store plays: {}', exc)
         return 0
