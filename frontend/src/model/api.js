@@ -819,6 +819,14 @@ function getStats(params = {}) {
   return API.get('/api/stats', { params })
 }
 
+function getLibraryHealth() {
+  return API.get('/api/library/health')
+}
+
+function exportLibraryHealth(options = {}) {
+  return API.get('/api/library/health/export', options)
+}
+
 function getDownloadFailures() {
   return API.get('/api/download-failures')
 }
@@ -1133,6 +1141,8 @@ export default {
   clearCompletedQueue,
   getResume,
   getStats,
+  getLibraryHealth,
+  exportLibraryHealth,
   getDownloadFailures,
   retryDownloadFailure,
   clearDownloadFailures,

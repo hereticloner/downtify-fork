@@ -49,6 +49,12 @@ const routes = [
     component: () => import('/src/views/CollectionsView.vue'),
   },
   {
+    // Read-only diagnostics for files, indexes and integrations.
+    path: '/library/health',
+    name: 'LibraryHealth',
+    component: () => import('/src/views/LibraryHealthView.vue'),
+  },
+  {
     // Library maintenance: scan what's on disk and repair it.
     path: '/library/upgrade',
     name: 'Upgrade',
