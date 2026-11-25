@@ -7,10 +7,11 @@ from pathlib import Path
 import pytest
 
 from downtify import backup as backup_module
-from downtify import collections, monitor
+from downtify import collections, lastfm_history, monitor, spotify_history
 from downtify.backup import BackupStore
 from downtify.download_queue import PendingDownload, PendingDownloads
 from downtify.likes import LikedTracks
+from downtify.listening_history import ListeningStore
 from downtify.playback import PlaybackStore
 from downtify.playlist_catalog import PlaylistCatalog
 from downtify.sqlite_utils import connect_sqlite
@@ -146,6 +147,82 @@ def test_backup_contains_metadata_and_no_audio_or_sessions(tmp_path):
     assert doc['collections'][0]['playlists'] == ['Mix']
     assert 'audio' not in json.dumps(doc)
     assert not any(key == 'audio_bytes' for key in doc)
+
+
+def test_backup_restores_unified_history_and_raw_provider_rows(tmp_path):
+    source = tmp_path / 'source'
+    source.mkdir()
+    db = source / 'downtify_activity.db'
+    listening = ListeningStore(db)
+    spotify_history.save_recently_played(
+        db,
+        [
+            {
+                'played_at': '2026-11-25T20:15:00Z',
+                'spotify_track_id': 's1',
+                'track_name': 'T',
+                'artist_name': 'A',
+                'raw_item': {'id': 's1', 'external_ids': {'isrc': 'ISRC1'}},
+            }
+        ],
+        user_id=1,
+    )
+    lastfm_history.save_recent_tracks(
+        db,
+        [
+            {
+                'played_at': '2026-11-25T21:15:00+00:00',
+                'uts': 1795631700,
+                'artist_name': 'B',
+                'track_name': 'U',
+                'raw_item': {'name': 'U', 'artist': {'name': 'B'}},
+            }
+        ],
+        user_id=1,
+    )
+    spotify_history.link_pending(db, listening, user_id=1)
+    lastfm_history.link_pending(db, listening, user_id=1)
+    lastfm_history._save_state(
+        db,
+        {
+            'newest_at': '2026-11-25T21:15:00+00:00',
+            'oldest_at': '2026-11-20T21:15:00+00:00',
+            'backfill_done': False,
+        },
+    )
+    path = BackupStore(source).write()
+
+    target = tmp_path / 'target'
+    target.mkdir()
+    BackupStore(target).restore(path, dry_run=False, requeue_missing=False)
+
+    with connect_sqlite(
+        target / 'downtify_activity.db', row_factory=True
+    ) as conn:
+        assert (
+            conn.execute('SELECT COUNT(*) FROM listening_events').fetchone()[0]
+            == 2
+        )
+        assert (
+            conn.execute(
+                'SELECT COUNT(*) FROM listening_event_sources'
+            ).fetchone()[0]
+            == 2
+        )
+        raw = conn.execute(
+            'SELECT raw_json FROM spotify_recently_played'
+        ).fetchone()[0]
+        assert json.loads(raw)['external_ids']['isrc'] == 'ISRC1'
+        assert (
+            conn.execute(
+                'SELECT COUNT(*) FROM lastfm_recent_tracks'
+            ).fetchone()[0]
+            == 1
+        )
+        state = conn.execute(
+            "SELECT newest_at FROM history_import_state WHERE source='lastfm'"
+        ).fetchone()[0]
+        assert state == '2026-11-25T21:15:00+00:00'
 
 
 def test_backup_rotation_keeps_two_private_atomic_files(tmp_path):
@@ -534,6 +611,13 @@ def test_restore_lists_songs_without_stable_spotify_identity(tmp_path):
             ]
             == 0
         )
+
+
+def test_backup_limit_covers_measured_lastfm_archive():
+    # A live 200-row sample averaged 1,296 bytes per raw scrobble; the
+    # connected account's 98,601 rows therefore need about 122 MiB before
+    # JSON escaping and the rest of the metadata backup.
+    assert backup_module.MAX_BACKUP_BYTES >= 128 * 1024 * 1024
 
 
 def test_preview_rejects_decompressed_bomb(tmp_path, monkeypatch):

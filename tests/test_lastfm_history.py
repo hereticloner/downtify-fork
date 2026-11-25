@@ -290,4 +290,4 @@ def test_http_429_does_not_advance_cursor(tmp_path):
     summary = lastfm_history.run_once(settings, db, request=sender)
     assert summary['error'] == 'fetch_failed'
     assert lastfm_history.count_plays(db) == 0
-    assert lastfm_history._load_state(db)['oldest_at'] == ''
+    assert not lastfm_history._load_state(db)['oldest_at']

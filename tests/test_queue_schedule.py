@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from fastapi import HTTPException
 
-from downtify import api, notifications
+from downtify import api, notifications, queue_schedule
 from downtify.download_queue import QueuePause
 from downtify.queue_schedule import (
     QueueSchedule,
@@ -16,6 +16,15 @@ from downtify.queue_schedule import (
     quiet_hours,
     schedule_loop,
 )
+
+
+class _FixedDateTime(datetime):
+    @classmethod
+    def now(cls, tz=None):
+        instant = datetime(
+            2026, 1, 15, 23, 0, tzinfo=ZoneInfo('Europe/Istanbul')
+        )
+        return instant.astimezone(tz or ZoneInfo('Europe/Istanbul'))
 
 
 def _settings(
@@ -199,6 +208,7 @@ def test_queue_schedule_applies_only_transitions():
 
 @pytest.mark.asyncio
 async def test_schedule_loop_applies_then_waits(monkeypatch):
+    monkeypatch.setattr(queue_schedule, 'datetime', _FixedDateTime)
     changes = []
     waits = []
 
@@ -216,6 +226,7 @@ async def test_schedule_loop_applies_then_waits(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_schedule_loop_announces_transitions(monkeypatch):
+    monkeypatch.setattr(queue_schedule, 'datetime', _FixedDateTime)
     settings = _settings()
     changes = []
     announcements = []

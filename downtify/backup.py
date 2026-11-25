@@ -12,9 +12,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from . import collections, m3u, monitor, notifications, playlist_mosaic
+from . import (
+    collections,
+    lastfm_history,
+    m3u,
+    monitor,
+    notifications,
+    playlist_mosaic,
+    spotify_history,
+)
 from .download_queue import PendingDownloads
 from .likes import LikedTracks
+from .listening_history import ListeningStore
 from .playback import PlaybackStore
 from .playlist_catalog import PlaylistCatalog
 from .track_index import TrackIndex
@@ -22,7 +31,7 @@ from .users import UserStore
 
 BACKUP_VERSION = 1
 KEEP_COPIES = 2
-MAX_BACKUP_BYTES = 64 * 1024 * 1024
+MAX_BACKUP_BYTES = 256 * 1024 * 1024
 
 _SQLITE_TABLES: dict[str, tuple[str, ...]] = {
     'downtify.db': ('users', 'auth_config', 'auth_devices'),
@@ -48,6 +57,11 @@ _SQLITE_TABLES: dict[str, tuple[str, ...]] = {
         'playback_events',
         'playback_daily',
         'activity',
+        'listening_events',
+        'listening_event_sources',
+        'spotify_recently_played',
+        'lastfm_recent_tracks',
+        'history_import_state',
     ),
 }
 
@@ -73,6 +87,11 @@ _PRIMARY_KEYS: dict[str, tuple[str, ...]] = {
     'playback_events': ('id',),
     'playback_daily': ('user_id', 'day'),
     'activity': ('id',),
+    'listening_events': ('id',),
+    'listening_event_sources': ('event_id', 'source'),
+    'spotify_recently_played': ('source_key',),
+    'lastfm_recent_tracks': ('source_key',),
+    'history_import_state': ('source',),
 }
 
 
@@ -236,6 +255,9 @@ def _ensure_schema(filename: str, data_dir: Path) -> None:
         monitor.PlaylistMonitorDB(data_dir / filename)
     elif filename == 'downtify_activity.db':
         PlaybackStore(data_dir / filename)
+        ListeningStore(data_dir / filename)
+        spotify_history.ensure_schema(data_dir / filename)
+        lastfm_history.ensure_schema(data_dir / filename)
 
 
 def _merge_missing(existing: Any, incoming: Any) -> Any:

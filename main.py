@@ -908,7 +908,10 @@ def build_app() -> FastAPI:
     history_user_id = int((admin or {}).get('id') or 0)
     spotify_history.ensure_schema(activity_db, user_id=history_user_id)
     spotify_history.link_pending(
-        activity_db, api.state.listening, user_id=history_user_id
+        activity_db,
+        api.state.listening,
+        user_id=history_user_id,
+        limit=5000,
     )
     api.state.listening.backfill_activity(api.state.activity)
     app.add_middleware(

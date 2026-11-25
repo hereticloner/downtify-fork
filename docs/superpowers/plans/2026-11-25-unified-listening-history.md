@@ -56,12 +56,20 @@
 def test_same_source_is_idempotent(tmp_path):
     store = ListeningStore(tmp_path / 'activity.db')
     first, created = store.link_or_create(
-        user_id=1, source='spotify', source_key='spotify:1',
-        played_at='2026-11-25T20:15:00Z', artist='A', title='T',
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
     )
     again, created_again = store.link_or_create(
-        user_id=1, source='spotify', source_key='spotify:1',
-        played_at='2026-11-25T20:15:00Z', artist='A', title='T',
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
     )
     assert (first, created, again, created_again) == (1, True, 1, False)
 
@@ -69,12 +77,20 @@ def test_same_source_is_idempotent(tmp_path):
 def test_higher_priority_promotes_without_changing_identity(tmp_path):
     store = ListeningStore(tmp_path / 'activity.db')
     event_id, _ = store.link_or_create(
-        user_id=1, source='lastfm', source_key='lastfm:1',
-        played_at='2026-11-25T23:59:30Z', artist='A', title='T',
+        user_id=1,
+        source='lastfm',
+        source_key='lastfm:1',
+        played_at='2026-11-25T23:59:30Z',
+        artist='A',
+        title='T',
     )
     promoted, created = store.link_or_create(
-        user_id=1, source='downtify', source_key='activity:9',
-        played_at='2026-11-25T23:56:00Z', artist='A', title='T',
+        user_id=1,
+        source='downtify',
+        source_key='activity:9',
+        played_at='2026-11-25T23:56:00Z',
+        artist='A',
+        title='T',
         spotify_track_id='spotify-1',
     )
     row = store.stats(user_id=1)['recent'][0]
@@ -86,12 +102,20 @@ def test_higher_priority_promotes_without_changing_identity(tmp_path):
 def test_same_source_second_observation_is_a_new_play(tmp_path):
     store = ListeningStore(tmp_path / 'activity.db')
     store.link_or_create(
-        user_id=1, source='spotify', source_key='spotify:1',
-        played_at='2026-11-25T20:15:00Z', artist='A', title='T',
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
     )
     second, created = store.link_or_create(
-        user_id=1, source='spotify', source_key='spotify:2',
-        played_at='2026-11-25T20:20:00Z', artist='A', title='T',
+        user_id=1,
+        source='spotify',
+        source_key='spotify:2',
+        played_at='2026-11-25T20:20:00Z',
+        artist='A',
+        title='T',
     )
     assert created is True
     assert second != 1
@@ -101,13 +125,22 @@ def test_same_source_second_observation_is_a_new_play(tmp_path):
 def test_stats_are_user_scoped_and_sql_aggregated(tmp_path):
     store = ListeningStore(tmp_path / 'activity.db')
     store.link_or_create(
-        user_id=1, source='spotify', source_key='s1',
-        played_at='2026-11-25T20:15:00Z', artist='A', title='T',
-        context='Mix', context_type='playlist',
+        user_id=1,
+        source='spotify',
+        source_key='s1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+        context='Mix',
+        context_type='playlist',
     )
     store.link_or_create(
-        user_id=2, source='lastfm', source_key='l1',
-        played_at='2026-11-25T21:15:00Z', artist='B', title='U',
+        user_id=2,
+        source='lastfm',
+        source_key='l1',
+        played_at='2026-11-25T21:15:00Z',
+        artist='B',
+        title='U',
     )
     assert store.stats(user_id=1)['total'] == 1
     assert store.stats(user_id=0)['total'] == 2
@@ -184,27 +217,48 @@ def test_old_spotify_table_migrates_without_losing_rows(tmp_path):
 
 def test_same_second_different_tracks_survive(tmp_path):
     rows = [
-        {'played_at': '2026-11-25T20:15:00Z', 'spotify_track_id': 's1',
-         'track_name': 'T1', 'artist_name': 'A'},
-        {'played_at': '2026-11-25T20:15:00Z', 'spotify_track_id': 's2',
-         'track_name': 'T2', 'artist_name': 'A'},
+        {
+            'played_at': '2026-11-25T20:15:00Z',
+            'spotify_track_id': 's1',
+            'track_name': 'T1',
+            'artist_name': 'A',
+        },
+        {
+            'played_at': '2026-11-25T20:15:00Z',
+            'spotify_track_id': 's2',
+            'track_name': 'T2',
+            'artist_name': 'A',
+        },
     ]
-    assert spotify_history.save_recently_played(tmp_path / 'activity.db', rows) == 2
+    assert (
+        spotify_history.save_recently_played(tmp_path / 'activity.db', rows)
+        == 2
+    )
     assert spotify_history.count_plays(tmp_path / 'activity.db') == 2
 
 
 def test_raw_payload_and_pending_link_are_idempotent(tmp_path):
     db = tmp_path / 'activity.db'
     raw = {'id': 's1', 'external_ids': {'isrc': 'USAAA1200001'}}
-    rows = [{'played_at': '2026-11-25T20:15:00Z', 'spotify_track_id': 's1',
-             'track_name': 'T', 'artist_name': 'A', 'raw_item': raw,
-             'isrc': 'USAAA1200001'}]
+    rows = [
+        {
+            'played_at': '2026-11-25T20:15:00Z',
+            'spotify_track_id': 's1',
+            'track_name': 'T',
+            'artist_name': 'A',
+            'raw_item': raw,
+            'isrc': 'USAAA1200001',
+        }
+    ]
     assert spotify_history.save_recently_played(db, rows, user_id=1) == 1
     listening = ListeningStore(db)
     assert spotify_history.link_pending(db, listening, user_id=1) == 1
     assert spotify_history.link_pending(db, listening, user_id=1) == 0
     assert listening.stats(user_id=1)['total'] == 1
-    assert json.loads(spotify_history.get_recent_from_spotify(db)[0]['raw_json']) == raw
+    assert (
+        json.loads(spotify_history.get_recent_from_spotify(db)[0]['raw_json'])
+        == raw
+    )
 ```
 
 - [ ] **Step 2: Run tests to verify RED**
@@ -258,32 +312,80 @@ git commit -m "feat(stats): persist raw Spotify plays and link history"
 ```python
 def test_fetch_uses_public_read_params_and_skips_nowplaying():
     calls = []
+
     def sender(method, url, **kwargs):
         calls.append((method, url, kwargs))
-        return FakeResponse({'recenttracks': {'track': [
-            {'name': 'T', 'artist': {'name': 'A'}, 'date': {'uts': '1'},
-             'nowplaying': 'true'},
-            {'name': 'U', 'artist': {'name': 'B'}, 'date': {'uts': '2'}},
-        ]}})
+        return FakeResponse({
+            'recenttracks': {
+                'track': [
+                    {
+                        'name': 'T',
+                        'artist': {'name': 'A'},
+                        'date': {'uts': '1'},
+                        'nowplaying': 'true',
+                    },
+                    {
+                        'name': 'U',
+                        'artist': {'name': 'B'},
+                        'date': {'uts': '2'},
+                    },
+                ]
+            }
+        })
+
     body = lastfm_history.fetch_recent_tracks(
-        {'api_key': 'k', 'username': 'u'}, from_uts=10, to_uts=20,
-        limit=200, request=sender,
+        {'api_key': 'k', 'username': 'u'},
+        from_uts=10,
+        to_uts=20,
+        limit=200,
+        request=sender,
     )
     params = calls[0][2]['params']
-    assert params == {'method': 'user.getRecentTracks', 'user': 'u',
-                      'api_key': 'k', 'format': 'json', 'limit': 200,
-                      'from': 10, 'to': 20, 'extended': 1}
-    assert [row['track_name'] for row in lastfm_history.parse_plays(body)] == ['U']
+    assert params == {
+        'method': 'user.getRecentTracks',
+        'user': 'u',
+        'api_key': 'k',
+        'format': 'json',
+        'limit': 200,
+        'from': 10,
+        'to': 20,
+        'extended': 1,
+    }
+    assert [row['track_name'] for row in lastfm_history.parse_plays(body)] == [
+        'U'
+    ]
 
 
 def test_backfill_resumes_from_oldest_and_catches_up_newest(tmp_path):
-    newest_page = {'recenttracks': {'@attr': {'totalPages': '2'}, 'track': [
-        {'name': 'New', 'artist': {'name': 'A'}, 'date': {'uts': '200'}},
-        {'name': 'Old', 'artist': {'name': 'A'}, 'date': {'uts': '100'}},
-    ]}}
-    older_page = {'recenttracks': {'track': [
-        {'name': 'Older', 'artist': {'name': 'A'}, 'date': {'uts': '50'}},
-    ]}}
+    newest_page = {
+        'recenttracks': {
+            '@attr': {'totalPages': '2'},
+            'track': [
+                {
+                    'name': 'New',
+                    'artist': {'name': 'A'},
+                    'date': {'uts': '200'},
+                },
+                {
+                    'name': 'Old',
+                    'artist': {'name': 'A'},
+                    'date': {'uts': '100'},
+                },
+            ],
+        }
+    }
+    older_page = {
+        'recenttracks': {
+            'track': [
+                {
+                    'name': 'Older',
+                    'artist': {'name': 'A'},
+                    'date': {'uts': '50'},
+                },
+            ]
+        }
+    }
+
     def sender(method, url, **kwargs):
         params = kwargs['params']
         if params.get('from') is not None:
@@ -291,9 +393,16 @@ def test_backfill_resumes_from_oldest_and_catches_up_newest(tmp_path):
         if params.get('to') is not None:
             return FakeResponse(older_page)
         return FakeResponse(newest_page)
-    settings = {'scrobbling': {'enabled': True, 'lastfm_enabled': True,
-                'lastfm_api_key': 'k', 'lastfm_username': 'u',
-                'import_history': True}}
+
+    settings = {
+        'scrobbling': {
+            'enabled': True,
+            'lastfm_enabled': True,
+            'lastfm_api_key': 'k',
+            'lastfm_username': 'u',
+            'import_history': True,
+        }
+    }
     db = tmp_path / 'activity.db'
     first = lastfm_history.run_once(settings, db, max_pages=1, request=sender)
     second = lastfm_history.run_once(settings, db, max_pages=1, request=sender)
@@ -354,12 +463,20 @@ git commit -m "feat(stats): import resumable Last.fm listening history"
 def test_stats_counts_spotify_and_lastfm_without_faking_measured_time(client):
     listening = api.state.listening
     listening.link_or_create(
-        user_id=1, source='spotify', source_key='s1',
-        played_at='2026-11-25T20:15:00Z', artist='A', title='T',
+        user_id=1,
+        source='spotify',
+        source_key='s1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
     )
     listening.link_or_create(
-        user_id=1, source='lastfm', source_key='l1',
-        played_at='2026-11-25T21:15:00Z', artist='B', title='U',
+        user_id=1,
+        source='lastfm',
+        source_key='l1',
+        played_at='2026-11-25T21:15:00Z',
+        artist='B',
+        title='U',
     )
     data = client.get('/api/stats').json()['playback']
     assert data['total'] == 2
@@ -371,18 +488,30 @@ def test_stats_counts_spotify_and_lastfm_without_faking_measured_time(client):
 def test_downtify_spotify_lastfm_same_play_is_one_event(client):
     listening = api.state.listening
     listening.link_or_create(
-        user_id=1, source='downtify', source_key='activity:1',
-        played_at='2026-11-25T20:15:00Z', artist='A', title='T',
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
         spotify_track_id='s1',
     )
     listening.link_or_create(
-        user_id=1, source='spotify', source_key='spotify:1',
-        played_at='2026-11-25T20:15:01Z', artist='A', title='T',
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:01Z',
+        artist='A',
+        title='T',
         spotify_track_id='s1',
     )
     listening.link_or_create(
-        user_id=1, source='lastfm', source_key='lastfm:1',
-        played_at='2026-11-25T20:18:00Z', artist='A', title='T',
+        user_id=1,
+        source='lastfm',
+        source_key='lastfm:1',
+        played_at='2026-11-25T20:18:00Z',
+        artist='A',
+        title='T',
     )
     data = client.get('/api/stats').json()['playback']
     assert data['total'] == 1
@@ -484,7 +613,7 @@ Expected: yeni tablolar yedeğe alınmadığı için FAIL.
 
 - [ ] **Step 3: Implement backup kapsamı**
 
-`_SQLITE_TABLES['downtify_activity.db']` listesine `listening_events`, `listening_event_sources`, `spotify_recently_played`, `lastfm_recent_tracks`, `history_import_state` ekle. `_PRIMARY_KEYS` değerlerini ekle. `_ensure_schema` activity dalında `ListeningStore` ve history tablolarını oluştur. 64 MiB fail-closed sınırını koru.
+`_SQLITE_TABLES['downtify_activity.db']` listesine `listening_events`, `listening_event_sources`, `spotify_recently_played`, `lastfm_recent_tracks`, `history_import_state` ekle. `_PRIMARY_KEYS` değerlerini ekle. `_ensure_schema` activity dalında `ListeningStore` ve history tablolarını oluştur. Canlı örnek 98.601 Last.fm kaydı için ~122 MiB ham JSON ürettiğinden decompression-bomb sınırı 256 MiB'e çıkar; fail-closed davranışı koru.
 
 - [ ] **Step 4: Run backup test to verify GREEN**
 

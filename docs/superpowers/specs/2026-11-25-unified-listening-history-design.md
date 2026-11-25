@@ -211,7 +211,7 @@ Bilinen sınır: farklı sanatçı yazımı, sürüm veya remaster aynı play'ı
 
 - `listening_events`, `listening_event_sources`, `spotify_recently_played`, `lastfm_recent_tracks`, `history_import_state` mevcut metadata yedeğine eklenir.
 - Primary key'ler ve additive restore kuralları genişletilir.
-- Ham gövde nedeniyle yedek büyüyebilir; mevcut 64 MiB sınırı fail-closed kalır, sessiz kısmi yedek üretilmez.
+- Ham gövde nedeniyle yedek büyüyebilir; canlı örnekte 98.601 Last.fm kaydı yaklaşık 122 MiB ham JSON üretiyor. Decompression-bomb koruması için sınır **256 MiB** olarak korunur; sessiz kısmi yedek üretilmez.
 - Ses dosyaları yedeklenmez.
 
 ## 13. Test planı

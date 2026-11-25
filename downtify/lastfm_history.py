@@ -177,6 +177,12 @@ def _connect(db_path: Any) -> sqlite3.Connection:
     return conn
 
 
+def ensure_schema(db_path: Any) -> None:
+    """Create the raw Last.fm and import-state tables without importing."""
+
+    _connect(db_path).close()
+
+
 def _base_digest(row: dict[str, Any]) -> str:
     raw = '\0'.join((
         str(row.get('uts') or ''),
