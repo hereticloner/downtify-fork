@@ -217,6 +217,13 @@
             <h2 class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2">
               {{ t('stats.recentPlays') }}
             </h2>
+            <span
+              data-play-count
+              class="mono tabular flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+              :title="t('stats.plays')"
+            >
+              {{ stats.playback?.total ?? 0 }}
+            </span>
             <button
               v-if="selectedDay"
               type="button"

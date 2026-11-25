@@ -87,5 +87,6 @@ describe('unified listening sources', () => {
     expect(html).toContain('Downtify')
     expect(html).toContain('Spotify')
     expect(html).toContain('Last.fm')
+    expect(html).toMatch(/data-play-count[^>]*>3</)
   })
 })

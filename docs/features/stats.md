@@ -63,7 +63,7 @@ Both come from the same unified listening history as the other playback panels, 
 
 ## Recent plays
 
-**Recent plays** lists what you played across Downtify, Spotify and Last.fm, newest first: the time, the `Artist - Title` label, a small provider badge, and — when Downtify knew it — **the queue it came from** as a small tag. That is the playlist, album or artist you pressed play on, so "what did I listen to" answers with a source rather than a bare title. Without a day picked in the heatmap it lists your newest plays; with one, only that day's.
+**Recent plays** lists what you played across Downtify, Spotify and Last.fm, newest first: the time, the `Artist - Title` label, a small provider badge, and — when Downtify knew it — **the queue it came from** as a small tag. The panel header shows the all-time unified play total. That is the playlist, album or artist you pressed play on, so "what did I listen to" answers with a source rather than a bare title. Without a day picked in the heatmap it lists your newest plays; with one, only that day's.
 
 Only plays from after this shipped carry the tag. A player that reports no queue (an older app, a bare library play) is simply listed without one.
 

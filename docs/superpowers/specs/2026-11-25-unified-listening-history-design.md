@@ -206,7 +206,7 @@ Bilinen sınır: farklı sanatçı yazımı, sürüm veya remaster aynı play'ı
 
 ## 11. Arayüz
 
-- Stats son çalmalar listesindeki her satıra küçük kaynak rozeti eklenir: `Downtify`, `Spotify`, `Last.fm`.
+- Stats son çalmalar listesindeki her satıra küçük kaynak rozeti eklenir: `Downtify`, `Spotify`, `Last.fm`; panel başlığı all-time birleşik play sayısını gösterir.
 - Sekiz locale anahtarı eş zamanlı eklenir; mevcut palet, tipografi, 0 radius, 2px çizgi ve reduced-motion davranışı korunur.
 - Last.fm ayarlarına “geçmişi Stats'a aktar” switch'i ve açıklaması eklenir.
 - Spotify import açıklaması ham veri saklama ve birleşik Stats'a katkıyı belirtir.
