@@ -107,7 +107,7 @@ git commit -m "feat(lyrics): add search fallback and synced-only mode"
 **Interfaces:**
 - Produces: `scan_lyrics_health(ctx, track_index=None) -> dict[str, Any]`.
 - Produces: `fill_lyrics(files, ctx, settings, cache, track_index=None) -> dict[str, Any]`.
-- Report: `{version, scanned_at, summary: {tracks, synced, plain_only, missing}, findings: [{file, status, title, artist, album, duration, spotify_id}]}`.
+- Report: `{version, scanned_at, summary: {tracks, synced, plain_only, missing}, findings: [{file, status, title, artist, album, duration, spotify_id}], sources: {disk}, warnings: [code]}`.
 - Fill result: `{requested, found, written, skipped, failed, errors: [{file, code}]}`.
 - Endpoints: admin-only `GET /api/lyrics/health` and `POST /api/lyrics/health/fill`.
 - Fill body: `{files: [stored path, ...]}`, maximum 100 paths per request.
@@ -119,6 +119,7 @@ Add `tests/test_lyrics_health.py`:
 - `test_scan_classifies_synced_plain_and_missing`: three fake audio files with timed sidecar, embedded plain tag, and no lyrics; summary and statuses match.
 - `test_scan_is_read_only`: hash file bytes, sidecar bytes and store rows before/after two scans.
 - `test_scan_uses_fresh_disk_snapshot`: remove a file after seeding and observe `missing`/index behavior without relying on the warm listing cache.
+- `test_scan_missing_root_is_partial`: a missing downloads root yields `sources.disk=false` and `disk_unavailable`, not a healthy empty report.
 - `test_fill_skips_already_synced_and_rejects_outside_paths`: send one safe missing file plus `../secret.mp3`; only the safe file is considered and traversal is reported as failed.
 - `test_fill_writes_only_after_explicit_request`: monkeypatch provider fetch/write and assert scan alone never calls them; fill calls once and returns `written=1`.
 - `test_fill_continues_after_one_failure`: first provider/write raises, second succeeds; result counts one failed and one written.

@@ -992,6 +992,11 @@ def build_app() -> FastAPI:
     )
 
     app.include_router(library_health_router)
+    from downtify.lyrics_health_api import (  # noqa: PLC0415
+        router as lyrics_health_router,
+    )
+
+    app.include_router(lyrics_health_router)
     app.include_router(spotify_sync_api.router)
 
     @app.get('/list')
