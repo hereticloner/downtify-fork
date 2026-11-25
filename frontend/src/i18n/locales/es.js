@@ -534,6 +534,7 @@ export default {
     subtitle:
       'Comprobaciones de solo lectura de archivos, índices, playlists, Monitor y Navidrome.',
     scan: 'Escanear',
+    loading: 'Analizando…',
     export: 'Exportar',
     scannedAt: 'Escaneado: {date}',
     healthy: 'La biblioteca está bien',

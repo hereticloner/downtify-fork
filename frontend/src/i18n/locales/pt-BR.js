@@ -530,6 +530,7 @@ export default {
     subtitle:
       'Verificações somente leitura de arquivos, índices, playlists, Monitor e Navidrome.',
     scan: 'Verificar',
+    loading: 'Verificando…',
     export: 'Exportar',
     scannedAt: 'Verificado: {date}',
     healthy: 'A biblioteca está saudável',

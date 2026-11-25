@@ -516,6 +516,7 @@ export default {
     subtitle:
       'Read-only checks across disk files, library indexes, playlists, Monitor and Navidrome.',
     scan: 'Scan',
+    loading: 'Scanning…',
     export: 'Export',
     scannedAt: 'Scanned {date}',
     healthy: 'Library looks healthy',

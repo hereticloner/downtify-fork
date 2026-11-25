@@ -97,160 +97,160 @@
 
     <!-- Loading -->
     <Transition name="fade" mode="out-in">
+    <div
+      v-if="!catalogReady && library.loading.value"
+      class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
+    >
       <div
-        v-if="!catalogReady && library.loading.value"
-        class="grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6"
+        v-for="n in 12"
+        :key="n"
+        class="flex flex-col gap-2 border-r-2 border-b-2 border-line p-2"
       >
-        <div
-          v-for="n in 12"
-          :key="n"
-          class="flex flex-col gap-2 border-r-2 border-b-2 border-line p-2"
-        >
-          <UiSkeleton class="aspect-square" />
-          <UiSkeleton class="h-3 w-3/4" />
-          <UiSkeleton class="h-2.5 w-1/2" />
-        </div>
+        <UiSkeleton class="aspect-square" />
+        <UiSkeleton class="h-3 w-3/4" />
+        <UiSkeleton class="h-2.5 w-1/2" />
       </div>
+    </div>
 
-      <div
-        v-else-if="library.error.value && !library.trackCount.value"
-        class="border-b-2 border-line p-4"
+    <div
+      v-else-if="library.error.value && !library.trackCount.value"
+      class="border-b-2 border-line p-4"
+    >
+      <UiEmpty
+        icon="alert"
+        :title="t('library.loadFailed')"
+        :body="t('library.loadFailedHint')"
       >
-        <UiEmpty
-          icon="alert"
-          :title="t('library.loadFailed')"
-          :body="t('library.loadFailedHint')"
-        >
-          <UiButton icon="refresh" @click="library.load({ force: true })">
-            {{ t('common.retry') }}
-          </UiButton>
-        </UiEmpty>
-      </div>
+        <UiButton icon="refresh" @click="library.load({ force: true })">
+          {{ t('common.retry') }}
+        </UiButton>
+      </UiEmpty>
+    </div>
 
-      <div
-        v-else-if="
-          tab !== 'playlists' &&
-          !library.trackCount.value &&
-          !library.playlists.value.length
-        "
-        class="border-b-2 border-line p-4"
+    <div
+      v-else-if="
+        tab !== 'playlists' &&
+        !library.trackCount.value &&
+        !library.playlists.value.length
+      "
+      class="border-b-2 border-line p-4"
+    >
+      <UiEmpty
+        icon="library"
+        :title="t('library.emptyTitle')"
+        :body="t('library.emptyBody')"
       >
-        <UiEmpty
-          icon="library"
-          :title="t('library.emptyTitle')"
-          :body="t('library.emptyBody')"
-        >
-          <UiButton variant="primary" icon="search" @click="ui.focusSearch()">
-            {{ t('library.emptyAction') }}
-          </UiButton>
-        </UiEmpty>
-      </div>
+        <UiButton variant="primary" icon="search" @click="ui.focusSearch()">
+          {{ t('library.emptyAction') }}
+        </UiButton>
+      </UiEmpty>
+    </div>
 
-      <div
-        v-else-if="!items.length && !(tab === 'playlists' && !filter)"
-        class="border-b-2 border-line p-4"
+    <div
+      v-else-if="!items.length && !(tab === 'playlists' && !filter)"
+      class="border-b-2 border-line p-4"
+    >
+      <UiEmpty
+        icon="filter"
+        :title="t('library.noMatches')"
+        :body="t('library.noMatchesHint')"
       >
-        <UiEmpty
-          icon="filter"
-          :title="t('library.noMatches')"
-          :body="t('library.noMatchesHint')"
-        >
-          <UiButton variant="ghost" @click="clearFilters">{{
-            t('library.clearFilters')
-          }}</UiButton>
-        </UiEmpty>
-      </div>
+        <UiButton variant="ghost" @click="clearFilters">{{
+          t('library.clearFilters')
+        }}</UiButton>
+      </UiEmpty>
+    </div>
 
-      <!-- Tracks -->
-      <div v-else-if="tab === 'tracks'" class="flex min-w-0 flex-col">
-        <SelectionBar
-          :count="selectedCount"
-          :total="items.length"
-          :zipping="zipping"
-          @select-all="selectAll"
-          @clear="clear"
-          @play="playSelected"
-          @enqueue="enqueueSelected"
-          @zip="zipSelected"
-          @delete="deleteSelected"
-          @add-to-playlist="addSelectedToPlaylist"
-        />
-        <div class="flex flex-wrap items-center gap-2 px-4 py-2.5">
-          <UiButton
-            variant="primary"
-            icon="play"
-            @click="actions.play(items, 0, libraryContext)"
+    <!-- Tracks -->
+    <div v-else-if="tab === 'tracks'" class="flex min-w-0 flex-col">
+      <SelectionBar
+        :count="selectedCount"
+        :total="items.length"
+        :zipping="zipping"
+        @select-all="selectAll"
+        @clear="clear"
+        @play="playSelected"
+        @enqueue="enqueueSelected"
+        @zip="zipSelected"
+        @delete="deleteSelected"
+        @add-to-playlist="addSelectedToPlaylist"
+      />
+      <div class="flex flex-wrap items-center gap-2 px-4 py-2.5">
+        <UiButton
+          variant="primary"
+          icon="play"
+          @click="actions.play(items, 0, libraryContext)"
+        >
+          {{ t('actions.playAll') }}
+        </UiButton>
+        <UiButton
+          variant="secondary"
+          icon="shuffle"
+          @click="actions.play(items, 0, libraryContext, { shuffled: true })"
+        >
+          {{ t('actions.shuffle') }}
+        </UiButton>
+        <span class="mono ml-auto text-muted">
+          {{ t('common.tracks', { count: items.length }) }}
+        </span>
+      </div>
+      <TrackList
+        v-model:selected="selected"
+        v-model:sort="trackSort"
+        :tracks="items"
+        :context="libraryContext"
+      />
+    </div>
+
+    <!-- Albums / artists / playlists: flush grid -->
+    <div
+      v-else-if="view === 'grid'"
+      class="stagger grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 min-[1900px]:grid-cols-7"
+    >
+      <MediaTile
+        v-for="item in items"
+        :key="item.key"
+        v-bind="tileProps(item)"
+        class="[contain-intrinsic-size:auto_260px] [content-visibility:auto]"
+        @play="playItem(item)"
+      >
+        <template
+          v-if="tab === 'playlists' && item.batch?.missing_count"
+          #badge
+        >
+          <span
+            class="mono absolute right-0 bottom-0 border-l-2 border-t-2 border-line bg-warn px-1.5 py-0.5 text-[10px] text-bg"
           >
-            {{ t('actions.playAll') }}
-          </UiButton>
-          <UiButton
-            variant="secondary"
-            icon="shuffle"
-            @click="actions.play(items, 0, libraryContext, { shuffled: true })"
-          >
-            {{ t('actions.shuffle') }}
-          </UiButton>
-          <span class="mono ml-auto text-muted">
-            {{ t('common.tracks', { count: items.length }) }}
+            {{
+              t('playlists.missingShort', { count: item.batch.missing_count })
+            }}
           </span>
-        </div>
-        <TrackList
-          v-model:selected="selected"
-          v-model:sort="trackSort"
-          :tracks="items"
-          :context="libraryContext"
-        />
-      </div>
+        </template>
+      </MediaTile>
+    </div>
 
-      <!-- Albums / artists / playlists: flush grid -->
-      <div
-        v-else-if="view === 'grid'"
-        class="stagger grid grid-cols-2 border-l-2 border-line sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 min-[1900px]:grid-cols-7"
+    <!-- Albums / artists / playlists: ruled list -->
+    <div v-else class="stagger border-x-2 border-b-2 border-line">
+      <MediaRow
+        v-for="item in items"
+        :key="item.key"
+        v-bind="tileProps(item)"
+        :aside="asideFor(item)"
+        class="[contain-intrinsic-size:auto_72px] [content-visibility:auto]"
+        @play="playItem(item)"
       >
-        <MediaTile
-          v-for="item in items"
-          :key="item.key"
-          v-bind="tileProps(item)"
-          class="[contain-intrinsic-size:auto_260px] [content-visibility:auto]"
-          @play="playItem(item)"
-        >
-          <template
-            v-if="tab === 'playlists' && item.batch?.missing_count"
-            #badge
-          >
-            <span
-              class="mono absolute right-0 bottom-0 border-l-2 border-t-2 border-line bg-warn px-1.5 py-0.5 text-[10px] text-bg"
-            >
-              {{
-                t('playlists.missingShort', { count: item.batch.missing_count })
-              }}
-            </span>
-          </template>
-        </MediaTile>
-      </div>
-
-      <!-- Albums / artists / playlists: ruled list -->
-      <div v-else class="stagger border-x-2 border-b-2 border-line">
-        <MediaRow
-          v-for="item in items"
-          :key="item.key"
-          v-bind="tileProps(item)"
-          :aside="asideFor(item)"
-          class="[contain-intrinsic-size:auto_72px] [content-visibility:auto]"
-          @play="playItem(item)"
-        >
-          <template v-if="tab === 'playlists'" #meta>
-            <PlaylistStatus :playlist="item" class="w-56" />
-          </template>
-          <template v-if="tab === 'playlists'" #actions>
-            <UiMenu
-              :items="playlistMenu(item)"
-              :label="t('common.more')"
-              size="sm"
-            />
-          </template>
-        </MediaRow>
-      </div>
+        <template v-if="tab === 'playlists'" #meta>
+          <PlaylistStatus :playlist="item" class="w-56" />
+        </template>
+        <template v-if="tab === 'playlists'" #actions>
+          <UiMenu
+            :items="playlistMenu(item)"
+            :label="t('common.more')"
+            size="sm"
+          />
+        </template>
+      </MediaRow>
+    </div>
     </Transition>
   </div>
 </template>

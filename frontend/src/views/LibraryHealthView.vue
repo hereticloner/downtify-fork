@@ -33,13 +33,22 @@
       />
     </div>
 
-    <p v-else-if="error" role="alert" class="border-b-2 border-line p-4">
-      <UiEmpty icon="alert" :title="t('libraryHealth.loadFailed')">
+    <div
+      v-else-if="loading"
+      class="border-b-2 border-line p-4"
+      aria-busy="true"
+    >
+      <span class="sr-only">{{ t('libraryHealth.loading') }}</span>
+      <UiSkeleton class="h-24" />
+    </div>
+
+    <div v-else-if="error" role="alert" class="border-b-2 border-line p-4">
+      <UiEmpty icon="alert" :title="error">
         <UiButton icon="refresh" @click="load">{{
           t('common.retry')
         }}</UiButton>
       </UiEmpty>
-    </p>
+    </div>
 
     <template v-else-if="report">
       <section
@@ -164,6 +173,7 @@ import PageHeader from '/src/components/library/PageHeader.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiChips from '/src/components/ui/UiChips.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
+import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import { useI18n } from '/src/i18n'
 import { useAuth } from '/src/model/auth'
 import {
@@ -179,7 +189,7 @@ import {
 const { t, locale } = useI18n()
 const auth = useAuth()
 const report = ref(null)
-const loading = ref(false)
+const loading = ref(auth.isAdmin.value)
 const exporting = ref(false)
 const error = ref('')
 const category = ref('all')

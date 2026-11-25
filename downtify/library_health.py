@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -66,6 +67,15 @@ def _finding(
     return row
 
 
+def _disk_available(ctx: LibraryContext) -> bool:
+    try:
+        return ctx.download_dir.is_dir() and os.access(
+            ctx.download_dir, os.R_OK | os.X_OK
+        )
+    except OSError:
+        return False
+
+
 def scan_library_health(
     ctx: LibraryContext,
     *,
@@ -76,14 +86,25 @@ def scan_library_health(
 ) -> dict[str, Any]:
     """Compare a fresh disk snapshot with the library's read-only stores."""
 
-    disk_by_path, disk_by_key = _disk_snapshot(ctx)
+    disk_available = _disk_available(ctx)
+    if disk_available:
+        disk_by_path, disk_by_key = _disk_snapshot(ctx)
+    else:
+        disk_by_path, disk_by_key = {}, {}
     findings: dict[tuple[str, str, str], dict[str, Any]] = {}
     warnings: list[str] = []
+
+    def warn(code: str) -> None:
+        if code not in warnings:
+            warnings.append(code)
+
+    if not disk_available:
+        warn('disk_unavailable')
     for name, full in disk_by_path.items():
         try:
             metadata = read_audio_metadata(full)
         except Exception:
-            warnings.append('metadata_unavailable')
+            warn('metadata_unavailable')
             continue
         if (
             str(metadata.get('title') or '').strip()
@@ -103,7 +124,7 @@ def scan_library_health(
         try:
             target.extend(reader())
         except Exception:
-            warnings.append(f'{source}_unavailable')
+            warn(f'{source}_unavailable')
 
     if track_index is not None:
         read('track_index', track_index.all_rows, track_rows)
@@ -114,11 +135,23 @@ def scan_library_health(
     if navidrome_index is not None:
         read('navidrome', navidrome_index.all_rows, navidrome_rows)
 
+    references_complete = not any(
+        warning in {'playlist_unavailable', 'monitor_unavailable'}
+        for warning in warnings
+    )
     referenced = {
         _name(row.get('track_spotify_id'))
         for row in [*playlist_rows, *monitor_rows]
         if _name(row.get('track_spotify_id'))
     }
+    content_keys: dict[str, str] = {}
+    for row in [*track_rows, *playlist_rows]:
+        track_id = _name(
+            row.get('spotify_track_id') or row.get('track_spotify_id')
+        )
+        content_key = _name(row.get('content_key'))
+        if track_id and content_key:
+            content_keys.setdefault(track_id, content_key)
 
     def add(row: dict[str, Any]) -> None:
         key = (row['category'], row['file'], row['record_id'])
@@ -132,6 +165,8 @@ def scan_library_health(
     def classify(
         source: str, filename: str, record_id: str, content_key: str
     ) -> None:
+        if not disk_available:
+            return
         name = _name(filename)
         if not name:
             return
@@ -151,40 +186,46 @@ def scan_library_health(
             )
             return
         if source == 'track_index' and record_id not in referenced:
-            add(
-                _finding(
-                    'orphan_record',
-                    source,
-                    name,
-                    record_id,
-                    'review_record',
+            if references_complete:
+                add(
+                    _finding(
+                        'orphan_record',
+                        source,
+                        name,
+                        record_id,
+                        'review_record',
+                    )
                 )
-            )
             return
         add(_finding('missing_file', source, name, record_id, 'redownload'))
 
     for row in track_rows:
+        track_id = _name(row.get('spotify_track_id'))
         classify(
             'track_index',
             row.get('filename'),
-            row.get('spotify_track_id'),
-            row.get('content_key'),
+            track_id,
+            _name(row.get('content_key')) or content_keys.get(track_id, ''),
         )
     for row in playlist_rows:
+        track_id = _name(row.get('track_spotify_id'))
         classify(
             'playlist',
             row.get('filename'),
-            row.get('track_spotify_id'),
-            row.get('content_key'),
+            track_id,
+            _name(row.get('content_key')) or content_keys.get(track_id, ''),
         )
     for row in monitor_rows:
+        track_id = _name(row.get('track_spotify_id'))
         classify(
             'monitor',
             row.get('filename'),
-            row.get('track_spotify_id'),
-            '',
+            track_id,
+            content_keys.get(track_id, ''),
         )
     for row in navidrome_rows:
+        if not disk_available:
+            break
         if _name(row.get('content_key')) not in disk_by_key:
             add(
                 _finding(
@@ -218,7 +259,7 @@ def scan_library_health(
             'by_category': by_category,
         },
         'sources': {
-            'disk': True,
+            'disk': disk_available,
             'track_index': track_index is not None
             and not any(
                 warning == 'track_index_unavailable' for warning in warnings
@@ -247,6 +288,7 @@ def redact_health_report(report: dict[str, Any]) -> dict[str, Any]:
     summary = report.get('summary') or {}
     sources = report.get('sources') or {}
     warning_codes = {
+        'disk_unavailable',
         'metadata_unavailable',
         'track_index_unavailable',
         'playlist_unavailable',

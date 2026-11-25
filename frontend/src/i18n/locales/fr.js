@@ -549,6 +549,7 @@ export default {
     subtitle:
       'Contrôles en lecture seule des fichiers, index, playlists, Monitor et Navidrome.',
     scan: 'Analyser',
+    loading: 'Analyse…',
     export: 'Exporter',
     scannedAt: 'Analysé : {date}',
     healthy: 'La bibliothèque est saine',

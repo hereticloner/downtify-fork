@@ -30,6 +30,7 @@ Downtify covers everything you need to build and maintain a local music library 
 | [Discover](discover.md) | Artists, albums and playlists you don't have yet, suggested from your library, likes and listening; hide the ones you don't want |
 | [Navidrome](slskd-navidrome.md) | Mirror the playlists you download into Navidrome, and track playlist downloads |
 | [Library catalog & path sync](library-catalog.md) | How Downtify tracks library files and playlists, playlists you create in the Library, and fixing paths after moving files |
+| [Library Health](library-health.md) | Read-only diagnostics for missing files, moved paths, stale Navidrome mappings, missing tags and orphan records, with a redacted export |
 | [Collections](collections.md) | Group your library playlists into named collections, one level above the playlist |
 | [Stats](stats.md) | Library, download and play counts, a downloads-per-day chart, a year of listening as a heatmap with per-day detail, the playlists you played from, and your most-played tracks |
 | [Notifications](notifications.md) | A Telegram message when a watch downloads new tracks |

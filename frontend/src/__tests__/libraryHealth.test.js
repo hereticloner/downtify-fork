@@ -6,10 +6,11 @@ const api = vi.hoisted(() => ({
   getLibraryHealth: vi.fn(),
   exportLibraryHealth: vi.fn(),
 }))
+const authState = vi.hoisted(() => ({ value: false }))
 
 vi.mock('/src/model/api', () => ({ default: api }))
 vi.mock('/src/model/auth', () => ({
-  useAuth: () => ({ isAdmin: { value: false } }),
+  useAuth: () => ({ isAdmin: authState }),
 }))
 vi.mock('/src/i18n', () => ({
   useI18n: () => ({ t: (key) => key }),
@@ -18,7 +19,10 @@ vi.mock('/src/i18n', () => ({
 import { categoryCounts, filterFindings } from '../lib/libraryHealth'
 import { exportLibraryHealth, scanLibraryHealth } from '../model/libraryHealth'
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  authState.value = false
+})
 
 describe('library health helpers', () => {
   it('counts every category with zero defaults', () => {
@@ -83,6 +87,19 @@ describe('library health helpers', () => {
     expect(html).toMatch(/<h1[^>]*text-display[^>]*>/)
     expect(html).toContain('>libraryHealth.title</h1>')
     expect(html).toContain('libraryHealth.adminOnly')
+    expect(api.getLibraryHealth).not.toHaveBeenCalled()
+  })
+
+  it('shows a loading state for admins before the first scan', async () => {
+    authState.value = true
+    const LibraryHealthView = (await import('/src/views/LibraryHealthView.vue'))
+      .default
+    const app = createSSRApp({ render: () => h(LibraryHealthView) })
+
+    const html = await renderToString(app)
+
+    expect(html).toContain('libraryHealth.loading')
+    expect(html).not.toContain('libraryHealth.adminOnly')
     expect(api.getLibraryHealth).not.toHaveBeenCalled()
   })
 })

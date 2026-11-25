@@ -528,6 +528,7 @@ export default {
     subtitle:
       'Csak olvasható ellenőrzés a fájlok, indexek, lejátszási listák, Monitor és Navidrome ellen.',
     scan: 'Ellenőrzés',
+    loading: 'Ellenőrzés…',
     export: 'Exportálás',
     scannedAt: 'Ellenőrizve: {date}',
     healthy: 'A könyvtár egészséges',

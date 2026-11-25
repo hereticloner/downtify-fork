@@ -167,9 +167,13 @@ def test_main_includes_health_routes(tmp_path: Path, monkeypatch) -> None:
     (web / 'index.html').write_text('<html>Downtify</html>')
     monkeypatch.setattr(main, 'DATABASE_DIR', tmp_path / 'data')
     monkeypatch.setattr(main, 'WEB_GUI_LOCATION', str(web))
+    state_before = dict(vars(api.state))
 
-    app = main.build_app()
-
-    paths = app.openapi()['paths']
-    assert '/api/library/health' in paths
-    assert '/api/library/health/export' in paths
+    try:
+        app = main.build_app()
+        paths = app.openapi()['paths']
+        assert '/api/library/health' in paths
+        assert '/api/library/health/export' in paths
+    finally:
+        vars(api.state).clear()
+        vars(api.state).update(state_before)

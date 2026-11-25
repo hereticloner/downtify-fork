@@ -537,6 +537,7 @@ export default {
     subtitle:
       'Έλεγχοι μόνο για ανάγνωση αρχείων, ευρετηρίων, λιστών, Monitor και Navidrome.',
     scan: 'Σάρωση',
+    loading: 'Σάρωση…',
     export: 'Εξαγωγή',
     scannedAt: 'Σαρώθηκε: {date}',
     healthy: 'Η βιβλιοθήκη φαίνεται υγιής',

@@ -519,6 +519,7 @@ export default {
     subtitle:
       'Проверки само за четене на файлове, индекси, плейлисти, Monitor и Navidrome.',
     scan: 'Проверка',
+    loading: 'Проверка…',
     export: 'Експортиране',
     scannedAt: 'Проверено: {date}',
     healthy: 'Библиотеката изглежда здрава',

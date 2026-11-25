@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -118,6 +119,88 @@ def test_moved_file_is_path_mismatch(tmp_path: Path) -> None:
             'suggested_path': 'Moved/Track.mp3',
         }
     ]
+
+
+def test_moved_index_without_key_uses_playlist_key(tmp_path: Path) -> None:
+    downloads = tmp_path / 'downloads'
+    old = downloads / 'Old/Track.mp3'
+    old.parent.mkdir(parents=True)
+    old.write_bytes(b'same-bytes')
+    db = tmp_path / 'library.db'
+    index = TrackIndex(db)
+    index.register(TRACK_ID, 'Old/Track.mp3')
+    catalog = PlaylistCatalog(db)
+    catalog.upsert_track('Mix', {'song_id': TRACK_ID}, 'Old/Track.mp3', old)
+    moved = downloads / 'Moved/Track.mp3'
+    moved.parent.mkdir(parents=True)
+    old.replace(moved)
+
+    report = scan_library_health(
+        LibraryContext(download_dir=downloads),
+        track_index=index,
+        playlist_catalog=catalog,
+    )
+
+    assert len(report['findings']) == 1
+    assert report['findings'][0]['category'] == 'path_mismatch'
+    assert report['findings'][0]['source'] == 'track_index'
+    assert report['findings'][0]['suggested_path'] == 'Moved/Track.mp3'
+
+
+def test_moved_playlist_without_key_uses_index_key(tmp_path: Path) -> None:
+    downloads = tmp_path / 'downloads'
+    old = downloads / 'Old/Track.mp3'
+    old.parent.mkdir(parents=True)
+    old.write_bytes(b'same-bytes')
+    db = tmp_path / 'library.db'
+    index = TrackIndex(db)
+    index.register(TRACK_ID, 'Old/Track.mp3', full_path=old)
+    catalog = PlaylistCatalog(db)
+    catalog.upsert_track('Mix', {'song_id': TRACK_ID}, 'Old/Track.mp3', old)
+    with sqlite3.connect(db) as conn:
+        conn.execute('UPDATE playlist_tracks SET content_key = NULL')
+    moved = downloads / 'Moved/Track.mp3'
+    moved.parent.mkdir(parents=True)
+    old.replace(moved)
+
+    report = scan_library_health(
+        LibraryContext(download_dir=downloads),
+        track_index=index,
+        playlist_catalog=catalog,
+    )
+
+    assert len(report['findings']) == 1
+    assert report['findings'][0]['category'] == 'path_mismatch'
+    assert report['findings'][0]['source'] == 'track_index'
+    assert report['findings'][0]['suggested_path'] == 'Moved/Track.mp3'
+
+
+def test_moved_monitor_file_uses_index_content_key(tmp_path: Path) -> None:
+    downloads = tmp_path / 'downloads'
+    old = downloads / 'Old/Track.mp3'
+    old.parent.mkdir(parents=True)
+    old.write_bytes(b'same-bytes')
+    index = TrackIndex(tmp_path / 'library.db')
+    index.register(TRACK_ID, 'Old/Track.mp3', full_path=old)
+    watches = monitor_mod.PlaylistMonitorDB(tmp_path / 'monitor.db')
+    watch = watches.add_playlist(
+        'watch-1', 'Watch', 'https://example.test/watch'
+    )
+    watches.mark_track_downloaded(watch.id, TRACK_ID, 'Old/Track.mp3')
+    moved = downloads / 'Moved/Track.mp3'
+    moved.parent.mkdir(parents=True)
+    old.replace(moved)
+
+    report = scan_library_health(
+        LibraryContext(download_dir=downloads),
+        track_index=index,
+        monitor_db=watches,
+    )
+
+    assert len(report['findings']) == 1
+    assert report['findings'][0]['category'] == 'path_mismatch'
+    assert report['findings'][0]['source'] == 'track_index'
+    assert report['findings'][0]['suggested_path'] == 'Moved/Track.mp3'
 
 
 def test_playlist_and_monitor_missing_files_are_reported(
@@ -326,3 +409,73 @@ def test_redacted_export_contains_no_identifiers() -> None:
         secret not in str(redacted)
         for secret in (secret_path, secret_id, secret_url)
     )
+
+
+def test_missing_download_root_is_partial_not_healthy(tmp_path: Path) -> None:
+    index = TrackIndex(tmp_path / 'library.db')
+    index.register(TRACK_ID, 'Artist/Missing.mp3')
+
+    report = scan_library_health(
+        LibraryContext(download_dir=tmp_path / 'missing'),
+        track_index=index,
+    )
+
+    assert report['sources']['disk'] is False
+    assert report['warnings'] == ['disk_unavailable']
+    assert report['findings'] == []
+
+
+def test_unavailable_reference_store_does_not_create_orphans(
+    tmp_path: Path, monkeypatch
+) -> None:
+    downloads = tmp_path / 'downloads'
+    downloads.mkdir()
+    index = TrackIndex(tmp_path / 'library.db')
+    index.register(TRACK_ID, 'Artist/Missing.mp3')
+    catalog = PlaylistCatalog(tmp_path / 'library.db')
+
+    def unavailable():
+        raise OSError('database locked')
+
+    monkeypatch.setattr(catalog, 'all_track_rows', unavailable)
+
+    report = scan_library_health(
+        LibraryContext(download_dir=downloads),
+        track_index=index,
+        playlist_catalog=catalog,
+    )
+
+    assert report['warnings'] == ['playlist_unavailable']
+    assert report['findings'] == []
+
+
+def test_repeated_metadata_failures_produce_one_warning(
+    tmp_path: Path, monkeypatch
+) -> None:
+    downloads = tmp_path / 'downloads'
+    downloads.mkdir()
+    for name in ('one.mp3', 'two.mp3'):
+        (downloads / name).write_bytes(b'x')
+
+    def broken(path: Path) -> dict[str, object]:
+        raise OSError('private path')
+
+    monkeypatch.setattr(health_mod, 'read_audio_metadata', broken)
+
+    report = scan_library_health(LibraryContext(download_dir=downloads))
+
+    assert report['warnings'] == ['metadata_unavailable']
+
+
+def test_redacted_export_keeps_only_known_warning_codes() -> None:
+    redacted = health_mod.redact_health_report({
+        'version': 1,
+        'scanned_at': '2026-11-25T00:00:00+00:00',
+        'summary': {},
+        'sources': {},
+        'findings': [],
+        'warnings': ['disk_unavailable', '/home/yeet/private'],
+    })
+
+    assert redacted['warnings'] == ['disk_unavailable']
+    assert '/home/yeet/private' not in str(redacted)

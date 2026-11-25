@@ -528,6 +528,7 @@ export default {
     subtitle:
       'Disk dosyalarını, kütüphane indekslerini, playlist’leri, Monitor ve Navidrome eşleşmelerini salt okunur denetler.',
     scan: 'Tara',
+    loading: 'Taranıyor…',
     export: 'Dışa aktar',
     scannedAt: 'Tarama: {date}',
     healthy: 'Kütüphane sağlıklı',

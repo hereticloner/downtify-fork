@@ -1859,6 +1859,77 @@ Drop the rest of the queue. Tracks already upgraded stay upgraded.
 
 ---
 
+## Library Health
+
+Read-only diagnostics across disk audio, TrackIndex, the playlist catalog,
+Playlist Monitor and Navidrome mappings — see [Library Health](features/library-health.md).
+Both endpoints require an admin. There is no repair or write endpoint.
+
+### `GET /api/library/health`
+
+Walk the configured library folders fresh and compare them with the supporting
+stores. A file referenced by multiple stores is reported once; a moved file
+with the same content key is a path mismatch rather than a missing file.
+
+**Response:**
+
+```json
+{
+  "version": 1,
+  "scanned_at": "2026-11-25T00:00:00+00:00",
+  "summary": {
+    "disk_files": 120,
+    "indexed_tracks": 118,
+    "findings": 2,
+    "by_category": {
+      "missing_file": 1,
+      "path_mismatch": 0,
+      "stale_mapping": 0,
+      "missing_metadata": 1,
+      "orphan_record": 0
+    }
+  },
+  "sources": {
+    "disk": true,
+    "track_index": true,
+    "playlist_catalog": true,
+    "monitor": true,
+    "navidrome": true
+  },
+  "findings": [
+    {
+      "id": "track_index:4uLU6hMCjMI75M1A2tKUQC:Artist/Track.mp3",
+      "category": "missing_file",
+      "severity": "warning",
+      "source": "track_index",
+      "file": "Artist/Track.mp3",
+      "record_id": "4uLU6hMCjMI75M1A2tKUQC",
+      "recommendation": "redownload"
+    }
+  ],
+  "warnings": []
+}
+```
+
+`category` is one of `missing_file`, `path_mismatch`, `stale_mapping`,
+`missing_metadata` or `orphan_record`. `recommendation` is one of `redownload`,
+`reconcile_paths`, `refresh_navidrome`, `repair_metadata` or `review_record`.
+A path mismatch also carries `suggested_path`. Warnings are stable codes such
+as `disk_unavailable`, `metadata_unavailable` or `track_index_unavailable`,
+never exception text.
+
+---
+
+### `GET /api/library/health/export`
+
+Run the same scan and return a redacted JSON attachment named
+`downtify-library-health.json`. The document keeps `version`, `scanned_at`,
+`summary`, `sources`, `warnings` and findings reduced to sequential `id`,
+`category`, `severity`, `source` and `recommendation`. It contains no filename,
+stored path, suggested path, Spotify ID or Navidrome ID.
+
+---
+
 ## Collections
 
 Named groups of library playlists — see [Collections](features/collections.md) and [Smart Collections](features/smart-collections.md). Stored as one JSON file per collection under `<downloads>/Playlists/.collections/`; there is no database. A collection may also carry `rules`; its `playlists` are then the static members unioned with the rule matches.
