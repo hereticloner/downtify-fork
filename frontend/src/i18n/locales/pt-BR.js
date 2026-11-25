@@ -556,6 +556,12 @@ export default {
       plain_only: 'Apenas texto',
       missing: 'Ausentes',
     },
+    errors: {
+      invalid_path: 'Caminho da biblioteca inválido',
+      lyrics_failed: 'Falha ao buscar letras',
+      write_failed: 'Não foi possível salvar as letras',
+      lyrics_disabled: 'O download de letras está desativado',
+    },
   },
   libraryHealth: {
     title: 'Saúde da biblioteca',

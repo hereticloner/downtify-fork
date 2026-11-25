@@ -564,6 +564,12 @@ export default {
       plain_only: 'Μόνο κείμενο',
       missing: 'Λείπουν',
     },
+    errors: {
+      invalid_path: 'Μη έγκυρη διαδρομή βιβλιοθήκης',
+      lyrics_failed: 'Αποτυχία αναζήτησης στίχων',
+      write_failed: 'Δεν ήταν δυνατή η αποθήκευση στίχων',
+      lyrics_disabled: 'Οι λήψεις στίχων είναι απενεργοποιημένες',
+    },
   },
   libraryHealth: {
     title: 'Υγεία βιβλιοθήκης',

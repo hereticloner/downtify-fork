@@ -546,6 +546,12 @@ export default {
       plain_only: 'Само текст',
       missing: 'Липсва',
     },
+    errors: {
+      invalid_path: 'Невалиден път в библиотеката',
+      lyrics_failed: 'Търсенето на текст е неуспешно',
+      write_failed: 'Текстът не можа да бъде запазен',
+      lyrics_disabled: 'Изтеглянето на текст е изключено',
+    },
   },
   libraryHealth: {
     title: 'Състояние на библиотеката',

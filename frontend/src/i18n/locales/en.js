@@ -541,6 +541,12 @@ export default {
       plain_only: 'Plain only',
       missing: 'Missing',
     },
+    errors: {
+      invalid_path: 'Invalid library path',
+      lyrics_failed: 'Lyrics lookup failed',
+      write_failed: 'Lyrics could not be saved',
+      lyrics_disabled: 'Lyrics downloads are disabled',
+    },
   },
   libraryHealth: {
     title: 'Library health',

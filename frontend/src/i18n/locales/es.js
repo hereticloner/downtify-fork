@@ -560,6 +560,12 @@ export default {
       plain_only: 'Solo texto',
       missing: 'Faltantes',
     },
+    errors: {
+      invalid_path: 'Ruta de biblioteca no válida',
+      lyrics_failed: 'Falló la búsqueda de letras',
+      write_failed: 'No se pudieron guardar las letras',
+      lyrics_disabled: 'Las descargas de letras están desactivadas',
+    },
   },
   libraryHealth: {
     title: 'Salud de la biblioteca',

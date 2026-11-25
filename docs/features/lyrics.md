@@ -52,6 +52,28 @@ When synced lyrics are available, Downtify also saves a `.lrc` file. By default 
 
 Deleting the track from the Library page removes the `.lrc` (beside the file and in the dedicated folder) along with the audio, so lyrics never linger as an orphaned file.
 
+## Search fallback and synced-only mode
+
+LRCLIB is first asked with its exact `/api/get` signature. If that misses,
+Downtify searches `/api/search` and keeps only candidates whose title and artist
+match, using album and duration to break close ties. This catches catalogued
+tracks whose duration or album spelling differs slightly from the download
+metadata.
+
+**Settings → Tags & lyrics → Synced lyrics only** makes the provider chain skip
+plain-only hits and continue looking for timed lyrics. It applies to downloads,
+external-folder sync and library upgrades, and is off by default.
+
+## Library health and device offset
+
+**Library → Lyrics** shows which files have synced lyrics, plain-only lyrics or
+none. An admin can fill the listed gaps explicitly; scanning itself changes
+nothing. See [Lyrics health](lyrics-health.md).
+
+The Now playing lyrics panel can shift highlighting and line-click seeking by
+±0.5 seconds. That offset is stored per browser device in the signed-in user's
+preferences; it never changes the audio file or `.lrc` sidecar.
+
 ## When nothing is found
 
 If no provider has the song, the download continues normally — the audio file is saved without lyrics, and no error is raised.

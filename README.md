@@ -34,7 +34,7 @@
 
 The fork carries everything the original Downtify does — link pasting, YouTube Music matching, tagging, lyrics, the player, playlist monitoring — and adds on top:
 
-Cross-device **Continue listening**, unified local/remote search, account-scoped listening time/completion/skip stats with 7/30/90-day periods, save-queue-as-playlist, one-click artist watching and Similar bulk downloads, persistent download failures with retry/exclude, opt-in Spotify Sync auto-downloads, queue priority and bulk waiting-job controls with quiet hours, plus the fork's Collections with grouped smart rules, previews, custom covers, play/queue actions and analysis, multi-channel notifications, read-only Telegram commands, atomic metadata backups with safe restore, read-only Library Health with redacted export, storage tools, Spotify Mirror/Sync and Monitor.
+Cross-device **Continue listening**, unified local/remote search, account-scoped listening time/completion/skip stats with 7/30/90-day periods, save-queue-as-playlist, one-click artist watching and Similar bulk downloads, persistent download failures with retry/exclude, opt-in Spotify Sync auto-downloads, queue priority and bulk waiting-job controls with quiet hours, plus the fork's Collections with grouped smart rules, previews, custom covers, play/queue actions and analysis, multi-channel notifications, read-only Telegram commands, atomic metadata backups with safe restore, read-only Library Health with redacted export, Lyrics Health with bounded gap filling and device-local sync offset, storage tools, Spotify Mirror/Sync and Monitor.
 
 <table>
 <tr>
@@ -95,7 +95,7 @@ The metadata comes from public pages, the audio from YouTube Music (YouTube as f
 
 ## Documentation
 
-Fork-specific features are documented in this repo, next to the code: [Collections](docs/features/collections.md), [Smart Collections](docs/features/smart-collections.md), [Stats](docs/features/stats.md), [Notifications](docs/features/notifications.md), [Backups](docs/features/backups.md), [Download Queue](docs/features/download-queue.md), [Library Health](docs/features/library-health.md), [Storage](docs/features/storage.md), [Spotify Mirror](docs/features/spotify-mirror.md), [Spotify Sync](docs/features/spotify-sync.md), [Scrobbling](docs/features/scrobbling.md), [Monitor](docs/features/playlist-monitor.md).
+Fork-specific features are documented in this repo, next to the code: [Collections](docs/features/collections.md), [Smart Collections](docs/features/smart-collections.md), [Stats](docs/features/stats.md), [Notifications](docs/features/notifications.md), [Backups](docs/features/backups.md), [Download Queue](docs/features/download-queue.md), [Library Health](docs/features/library-health.md), [Lyrics Health](docs/features/lyrics-health.md), [Storage](docs/features/storage.md), [Spotify Mirror](docs/features/spotify-mirror.md), [Spotify Sync](docs/features/spotify-sync.md), [Scrobbling](docs/features/scrobbling.md), [Monitor](docs/features/playlist-monitor.md).
 
 Everything the fork shares with the original is documented upstream: [getting started](https://downtify.henriquesebastiao.com/getting-started/), [every feature](https://downtify.henriquesebastiao.com/features/), [troubleshooting](https://downtify.henriquesebastiao.com/troubleshooting/), [API reference](https://downtify.henriquesebastiao.com/api-reference/).
 

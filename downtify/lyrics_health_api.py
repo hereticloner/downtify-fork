@@ -30,7 +30,11 @@ def _context() -> LibraryContext:
 
 @router.get('/api/lyrics/health')
 def lyrics_health_report() -> dict[str, Any]:
-    return scan_lyrics_health(_context(), api_mod.state.track_index)
+    report = scan_lyrics_health(_context(), api_mod.state.track_index)
+    report['synced_only'] = bool(
+        api_mod.state.settings.get('lyrics_synced_only', False)
+    )
+    return report
 
 
 @router.post('/api/lyrics/health/fill')

@@ -45,6 +45,7 @@ Downtify covers everything you need to build and maintain a local music library 
 | [Artist photo, banner & bio](artist-images.md) | Pick a real photo and banner for an artist from YouTube Music, Deezer, Spotify or your own upload, and fetch their bio, origin and links from Apple Music and Deezer, automatically or on demand |
 | [File Organization](file-organization.md) | Flat layout or per-artist subfolders |
 | [Lyrics](lyrics.md) | Automatically download and embed lyrics (plain and time-synced); `.lrc` next to the file or in a folder you choose |
+| [Lyrics health](lyrics-health.md) | Read-only synced/plain/missing report, explicit batch filling and a device-local ±0.5-second timing offset |
 | [YouTube Cookies](youtube-cookies.md) | Upload a `cookies.txt` from the web UI to download explicit/age-restricted tracks |
 | [Internationalization](internationalization.md) | English plus seven more languages out of the box |
 | [Update Notifications](updates.md) | Hourly check against GitHub Releases; a notice appears in the sidebar when a newer version is out |

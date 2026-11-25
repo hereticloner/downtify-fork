@@ -1859,6 +1859,70 @@ Drop the rest of the queue. Tracks already upgraded stay upgraded.
 
 ---
 
+## Lyrics Health
+
+Admin-only lyrics diagnostics and explicit gap filling — see
+[Lyrics health](features/lyrics-health.md). A scan reads a fresh disk snapshot
+and never contacts providers or writes files.
+
+### `GET /api/lyrics/health`
+
+**Response:**
+
+```json
+{
+  "version": 1,
+  "scanned_at": "2026-11-25T00:00:00+00:00",
+  "summary": {"tracks": 3, "synced": 1, "plain_only": 1, "missing": 1},
+  "findings": [
+    {
+      "file": "Artist/Album/Track.mp3",
+      "status": "missing",
+      "title": "Track",
+      "artist": "Artist",
+      "album": "Album",
+      "duration": 213.0,
+      "spotify_id": "4uLU6hMCjMI75M1A2tKUQC"
+    }
+  ],
+  "sources": {"disk": true},
+  "warnings": [],
+  "synced_only": false
+}
+```
+
+`status` is `synced`, `plain_only` or `missing`. Warning codes include
+`disk_unavailable` and `external_folder_unavailable`; no exception text or
+private path is included.
+
+---
+
+### `POST /api/lyrics/health/fill`
+
+**Body:** `{ "files": ["Artist/Album/Track.mp3", "..."] }`, at most 100 stored
+library paths. Paths are resolved inside the configured music roots; traversal
+is rejected. Already-synced files are skipped, and each file is rechecked before
+any write.
+
+**Response:**
+
+```json
+{
+  "requested": 2,
+  "found": 1,
+  "written": 1,
+  "skipped": 1,
+  "failed": 0,
+  "errors": []
+}
+```
+
+`errors` contains `{file, code}` with stable codes such as `invalid_path`,
+`lyrics_disabled`, `lyrics_failed` or `write_failed`. Disabled/empty provider
+settings return `400` before the fill starts.
+
+---
+
 ## Library Health
 
 Read-only diagnostics across disk audio, TrackIndex, the playlist catalog,

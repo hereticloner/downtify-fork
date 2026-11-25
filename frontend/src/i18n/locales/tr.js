@@ -553,6 +553,12 @@ export default {
       plain_only: 'Yalnız düz metin',
       missing: 'Eksik',
     },
+    errors: {
+      invalid_path: 'Geçersiz kütüphane yolu',
+      lyrics_failed: 'Söz araması başarısız',
+      write_failed: 'Sözler kaydedilemedi',
+      lyrics_disabled: 'Söz indirmeleri kapalı',
+    },
   },
   libraryHealth: {
     title: 'Kütüphane sağlığı',

@@ -384,7 +384,7 @@ def test_metadata_lookups_run_while_yt_dlp_downloads(tmp_path, monkeypatch):
     def _cover(url):
         started['cover'].set()
 
-    def _lyrics(song, providers, cache=None):
+    def _lyrics(song, providers, cache=None, *, synced_only=False):
         started['lyrics'].set()
 
     def _download(opts):

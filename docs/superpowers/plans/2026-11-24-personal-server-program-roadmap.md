@@ -14,8 +14,8 @@
 - [x] **Bildirim/Telegram + yedek/geri yükleme** → `2026-11-24-notifications-backup.md` — canlıda (`bbb0033`), health `ok`.
 - [x] **Kuyruk önceliği + sessiz saatler** → `2026-11-24-queue-priority-quiet-hours.md` — canlıda (`0fcf1d5`), health `ok`.
 - [x] **Collections güç araçları** → `2026-11-24-collections-tools.md` — canlıda (`d3e1fef`), health `ok`.
-- [x] **Library Health** → `2026-11-25-library-health.md` — canlıda (`997a8ba`), health `ok`.
-- [ ] **Söz sağlığı + senkron ofset** → alt plan Faz 8'de yazılacak
+- [x] **Library Health** → `2026-11-25-library-health.md` — canlıda (`1387368`), health `ok`.
+- [x] **Söz sağlığı + senkron ofset** → `2026-11-25-lyrics-health-offset.md` — tamamlandı; bağımsız inceleme ve deploy bekliyor.
 - [ ] **Playlist-albüm + Monitor dry-run/Wanted** → alt plan Faz 9'da yazılacak
 - [ ] **Offline PWA + depolama analizi + loudness** → alt plan Faz 10'da yazılacak
 - [ ] **Güvenlik + final doğrulama** → alt plan Faz 11'de yazılacak

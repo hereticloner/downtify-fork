@@ -107,7 +107,7 @@ git commit -m "feat(lyrics): add search fallback and synced-only mode"
 **Interfaces:**
 - Produces: `scan_lyrics_health(ctx, track_index=None) -> dict[str, Any]`.
 - Produces: `fill_lyrics(files, ctx, settings, cache, track_index=None) -> dict[str, Any]`.
-- Report: `{version, scanned_at, summary: {tracks, synced, plain_only, missing}, findings: [{file, status, title, artist, album, duration, spotify_id}], sources: {disk}, warnings: [code]}`.
+- Report: `{version, scanned_at, summary: {tracks, synced, plain_only, missing}, findings: [{file, status, title, artist, album, duration, spotify_id}], sources: {disk}, warnings: [code], synced_only: bool}`.
 - Fill result: `{requested, found, written, skipped, failed, errors: [{file, code}]}`.
 - Endpoints: admin-only `GET /api/lyrics/health` and `POST /api/lyrics/health/fill`.
 - Fill body: `{files: [stored path, ...]}`, maximum 100 paths per request.

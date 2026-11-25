@@ -102,6 +102,15 @@
           })
         }}
       </p>
+      <ul
+        v-if="fillErrors.length"
+        class="border-b border-line-2 px-4 py-2 text-[13px] text-danger"
+      >
+        <li v-for="item in fillErrors" :key="`${item.file}:${item.code}`">
+          <span class="mono">{{ item.file }}</span>
+          — {{ t('lyricsHealth.errors.' + item.code) }}
+        </li>
+      </ul>
       <p
         v-if="fillError"
         role="alert"
@@ -188,23 +197,22 @@ import {
   lyricsStatusCounts,
 } from '/src/lib/lyricsHealth'
 import { fillLyricsHealth, scanLyricsHealth } from '/src/model/lyricsHealth'
-import { useSettingsManager } from '/src/model/settings'
 
 const { t, locale } = useI18n()
 const auth = useAuth()
-const { settings } = useSettingsManager()
 const report = ref(null)
 const loading = ref(auth.isAdmin.value)
 const filling = ref(false)
 const error = ref('')
 const fillError = ref('')
 const fillResult = ref(null)
+const fillErrors = ref([])
 const progress = ref('')
 const status = ref('all')
 
 const counts = computed(() => lyricsStatusCounts(report.value))
 const eligibleFiles = computed(() =>
-  eligibleLyricsFiles(report.value, settings.value.lyrics_synced_only)
+  eligibleLyricsFiles(report.value, report.value?.synced_only)
 )
 const visibleFindings = computed(() => {
   const rows = report.value?.findings || []
@@ -247,6 +255,7 @@ async function load() {
 async function fill() {
   filling.value = true
   fillError.value = ''
+  fillErrors.value = []
   fillResult.value = { written: 0, skipped: 0, failed: 0 }
   const batches = chunkFiles(eligibleFiles.value)
   try {
@@ -259,6 +268,7 @@ async function fill() {
       for (const key of ['written', 'skipped', 'failed']) {
         fillResult.value[key] += Number(result[key] || 0)
       }
+      fillErrors.value.push(...(result.errors || []))
     }
     await load()
   } catch {

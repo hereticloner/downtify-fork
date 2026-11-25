@@ -554,6 +554,12 @@ export default {
       plain_only: 'Csak szöveg',
       missing: 'Hiányzik',
     },
+    errors: {
+      invalid_path: 'Érvénytelen könyvtárútvonal',
+      lyrics_failed: 'A szövegkeresés sikertelen',
+      write_failed: 'A szöveg nem menthető el',
+      lyrics_disabled: 'A szövegletöltés ki van kapcsolva',
+    },
   },
   libraryHealth: {
     title: 'Könyvtár állapota',

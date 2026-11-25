@@ -89,7 +89,7 @@ def test_health_report_returns_scanner_shape_without_filling(
     response = client.get('/api/lyrics/health')
 
     assert response.status_code == 200
-    assert response.json() == report
+    assert response.json() == {**report, 'synced_only': False}
 
 
 def test_fill_rejects_more_than_100_files(client, monkeypatch):

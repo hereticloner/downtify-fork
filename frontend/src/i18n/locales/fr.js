@@ -575,6 +575,12 @@ export default {
       plain_only: 'Texte brut',
       missing: 'Manquantes',
     },
+    errors: {
+      invalid_path: 'Chemin de bibliothèque invalide',
+      lyrics_failed: 'Échec de la recherche de paroles',
+      write_failed: "Impossible d'enregistrer les paroles",
+      lyrics_disabled: 'Le téléchargement des paroles est désactivé',
+    },
   },
   libraryHealth: {
     title: 'Santé de la bibliothèque',
