@@ -89,6 +89,18 @@ describe('i18n locale files', () => {
     ).toEqual(EXPECTED_CODES)
   })
 
+  it('defines unified listening source and import labels', () => {
+    expect(reference.messages.stats).toMatchObject({
+      sourceDowntify: expect.any(String),
+      sourceSpotify: expect.any(String),
+      sourceLastfm: expect.any(String),
+    })
+    expect(reference.messages.settings).toMatchObject({
+      lastfmImportHistory: expect.any(String),
+      lastfmImportHistoryHint: expect.any(String),
+    })
+  })
+
   it('loads the runtime registry', () => {
     expect(
       registry.error,

@@ -625,6 +625,9 @@ export default {
     topTracks: 'Най-слушани',
     empty: 'Още няма',
     spotifyRecent: 'Скорошни слушания в Spotify',
+    sourceDowntify: 'Downtify',
+    sourceSpotify: 'Spotify',
+    sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} записани изпълнения от Spotify',
     activityHeatmap: 'Активност на слушането',
     streakDays: 'Серия от дни',
@@ -1542,6 +1545,9 @@ export default {
     scrobblingOk: 'Връзката е OK.',
     scrobblingFailed: 'Връзката неуспешна.',
     scrobbleNowPlaying: 'Актуализирай сега играещо',
+    lastfmImportHistory: 'Импортиране на историята от Last.fm',
+    lastfmImportHistoryHint:
+      'Донеси scrobble-ите от Last.fm в Downtify Stats. Новите и старите записи се импортират във фонов режим.',
     scrobbleNowPlayingHint: 'Кажи на last.fm какво играе (не скроблява).',
     navidromeTitle: 'Navidrome',
     navidromeHint:

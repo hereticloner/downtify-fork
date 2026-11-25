@@ -49,6 +49,18 @@ describe('hidden server settings are wired', () => {
     expect(api.setSettings.mock.calls.at(-1)[0].lyrics_synced_only).toBe(true)
   })
 
+  it('defaults Last.fm history import off and saves the toggle', async () => {
+    const { settings, saveSettings } = useSettingsManager()
+    expect(settings.value.scrobbling.import_history).toBe(false)
+    settings.value.scrobbling.import_history = true
+
+    await saveSettings()
+
+    expect(api.setSettings.mock.calls.at(-1)[0].scrobbling.import_history).toBe(
+      true
+    )
+  })
+
   it('sends them when the settings form is saved', async () => {
     const { settings, saveSettings } = useSettingsManager()
     settings.value.navidrome.scan_after_download = false

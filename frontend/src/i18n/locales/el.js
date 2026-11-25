@@ -643,6 +643,9 @@ export default {
     topTracks: 'Πιο ακούσματα',
     empty: 'Τίποτα ακόμη',
     spotifyRecent: 'Πρόσφατες αναπαραγωγές στο Spotify',
+    sourceDowntify: 'Downtify',
+    sourceSpotify: 'Spotify',
+    sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} αναπαραγωγές Spotify αποθηκευμένες',
     activityHeatmap: 'Δραστηριότητα ακρόασης',
     streakDays: 'Συνεχόμενες ημέρες',
@@ -1569,6 +1572,9 @@ export default {
     scrobblingOk: 'Η σύνδεση είναι OK.',
     scrobblingFailed: 'Η σύνδεση απέτυχε.',
     scrobbleNowPlaying: 'Ενημέρωση τώρα που παίζει',
+    lastfmImportHistory: 'Εισαγωγή ιστορικού Last.fm',
+    lastfmImportHistoryHint:
+      'Φέρνει τα scrobble του Last.fm στα Stats του Downtify. Νέες και παλιές αναπαραγωγές εισάγονται στο παρασκήνιο.',
     scrobbleNowPlayingHint: 'Πείτε στο last.fm τι παίζει (δεν κάνει scrobble).',
     navidromeTitle: 'Navidrome',
     navidromeHint:

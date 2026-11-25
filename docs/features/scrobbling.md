@@ -6,7 +6,8 @@ icon: lucide/music
 
 Downtify can send the tracks you play to your [last.fm](https://www.last.fm)
 profile, so your listening history follows you even when you play from your
-own library instead of Spotify or YouTube Music.
+own library instead of Spotify or YouTube Music. It can also import the
+connected account's Last.fm history into Downtify Stats.
 
 Scrobbling is a Settings section for admins: **Settings → Scrobbling**.
 
@@ -42,6 +43,20 @@ playback continues unaffected.
 The session key is saved with your settings. To stop scrobbling, switch
 **Enable scrobbling** off or press **Disconnect**.
 
+## Importing history into Stats
+
+After Last.fm is connected, turn on **Import Last.fm history**. Downtify reads
+`user.getRecentTracks` every 15 minutes, stores the original scrobble objects,
+and merges them into the same canonical play history used by
+[Stats](stats.md). New plays are picked up first; older history is imported
+backwards in pages of up to 200 and resumes after a restart or API error.
+
+The import is read-only on Last.fm and does not need the session key for API
+reads, but the in-app switch stays disabled until the account is connected.
+The currently-playing entry is ignored. Last.fm usually has no Spotify track
+ID, so older entries remain in Stats by artist/title even when they cannot be
+linked to a Downtify library file.
+
 ## Settings
 
 | Setting | What it does |
@@ -50,6 +65,7 @@ The session key is saved with your settings. To stop scrobbling, switch
 | **last.fm** | Scrobble to last.fm |
 | **API key / API secret** | From your last.fm API account |
 | **Update now playing** | Also tell last.fm what is playing before it is scrobbled |
+| **Import Last.fm history** | Read the connected account's scrobbles into unified Downtify Stats |
 
 ## Where the settings live
 
@@ -64,6 +80,7 @@ The block is `scrobbling` in `settings.json`:
     "lastfm_api_secret": "...",
     "lastfm_session_key": "...",
     "lastfm_username": "yourname",
+    "import_history": false,
     "scrobble_now_playing": true
   }
 }

@@ -632,6 +632,9 @@ export default {
     topTracks: 'En çok dinlenenler',
     empty: 'Henüz veri yok',
     spotifyRecent: "Spotify'da son çalmalar",
+    sourceDowntify: 'Downtify',
+    sourceSpotify: 'Spotify',
+    sourceLastfm: 'Last.fm',
     spotifyPlayCount: 'Depolanan {count} Spotify çalması',
     activityHeatmap: 'Dinleme etkinliği',
     streakDays: 'Gün serisi',
@@ -1549,6 +1552,9 @@ export default {
     scrobblingOk: 'Bağlantı tam.',
     scrobblingFailed: 'Bağlantı başarısız.',
     scrobbleNowPlaying: "Şimdi çalınıyor'u güncelle",
+    lastfmImportHistory: 'Last.fm geçmişini içe aktar',
+    lastfmImportHistoryHint:
+      "Last.fm scrobble'larını Downtify Stats'a getirir. Yeni kayıtlar ve eski geçmiş arka planda içe alınır.",
     scrobbleNowPlayingHint: "last.fm'e ne çalındığını söyle (scrobble yapmaz).",
     navidromeTitle: 'Navidrome',
     navidromeHint:

@@ -804,6 +804,16 @@
                           :aria-label="t('settings.scrobbleNowPlaying')"
                         />
                       </SettingRow>
+                      <SettingRow
+                        :label="t('settings.lastfmImportHistory')"
+                        :description="t('settings.lastfmImportHistoryHint')"
+                      >
+                        <UiSwitch
+                          v-model="s.scrobbling.import_history"
+                          :disabled="!s.scrobbling.lastfm_session_key"
+                          :aria-label="t('settings.lastfmImportHistory')"
+                        />
+                      </SettingRow>
                     </template>
                   </template>
                 </SettingGroup>

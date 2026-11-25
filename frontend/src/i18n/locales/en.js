@@ -620,6 +620,9 @@ export default {
     topTracks: 'Most played',
     empty: 'Nothing yet',
     spotifyRecent: 'Recently played on Spotify',
+    sourceDowntify: 'Downtify',
+    sourceSpotify: 'Spotify',
+    sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} Spotify plays stored',
     activityHeatmap: 'Listening activity',
     streakDays: 'Day streak',
@@ -1520,6 +1523,9 @@ export default {
     scrobblingOk: 'Connection OK.',
     scrobblingFailed: 'Connection failed.',
     scrobbleNowPlaying: 'Update now playing',
+    lastfmImportHistory: 'Import Last.fm history',
+    lastfmImportHistoryHint:
+      'Bring your Last.fm scrobbles into Downtify Stats. New plays and older history are imported in the background.',
     scrobbleNowPlayingHint: 'Tell last.fm what is playing (does not scrobble).',
     navidromeTitle: 'Navidrome',
     navidromeHint:

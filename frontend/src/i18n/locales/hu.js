@@ -633,6 +633,9 @@ export default {
     topTracks: 'Legtöbbet játszottak',
     empty: 'Még nincs adat',
     spotifyRecent: 'Legutóbbi lejátszások a Spotify-on',
+    sourceDowntify: 'Downtify',
+    sourceSpotify: 'Spotify',
+    sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} tárolt Spotify-lejátszás',
     activityHeatmap: 'Hallgatási tevékenység',
     streakDays: 'Sorozatban játszott napok',
@@ -1557,6 +1560,9 @@ export default {
     scrobblingOk: 'Kapcsolat OK.',
     scrobblingFailed: 'Kapcsolat sikertelen.',
     scrobbleNowPlaying: 'Jelenlegi lejátszás frissítése',
+    lastfmImportHistory: 'Last.fm-előzmények importálása',
+    lastfmImportHistoryHint:
+      'A Last.fm scrobble-okat a Downtify Statisztikáiba viszi. Az új és régi lejátszások a háttérben importálódnak.',
     scrobbleNowPlayingHint:
       'Jelezze a last.fm-nek, mi játszik épp (nem scrobble-ol).',
     navidromeTitle: 'Navidrome',

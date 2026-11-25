@@ -639,6 +639,9 @@ export default {
     topTracks: 'Más reproducidas',
     empty: 'Nada todavía',
     spotifyRecent: 'Reproducciones recientes en Spotify',
+    sourceDowntify: 'Downtify',
+    sourceSpotify: 'Spotify',
+    sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} reproducciones de Spotify guardadas',
     activityHeatmap: 'Actividad de escucha',
     streakDays: 'Racha de días',
@@ -1566,6 +1569,9 @@ export default {
     scrobblingOk: 'Conexión OK.',
     scrobblingFailed: 'Conexión fallida.',
     scrobbleNowPlaying: 'Actualizar reproduciendo ahora',
+    lastfmImportHistory: 'Importar historial de Last.fm',
+    lastfmImportHistoryHint:
+      'Trae tus scrobbles de Last.fm a las estadísticas de Downtify. Las reproducciones nuevas y antiguas se importan en segundo plano.',
     scrobbleNowPlayingHint:
       'Dile a last.fm qué se está reproduciendo (no hace scrobble).',
     navidromeTitle: 'Navidrome',

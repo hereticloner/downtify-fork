@@ -52,6 +52,7 @@ const settings = ref({
     lastfm_api_secret: '',
     lastfm_session_key: '',
     lastfm_username: '',
+    import_history: false,
     scrobble_now_playing: true,
   },
   spotify_mirror: {

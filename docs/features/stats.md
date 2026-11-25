@@ -4,13 +4,13 @@ icon: lucide/bar-chart-3
 
 # Stats
 
-Stats is a read-only page that puts the size of your library and how much you use it in one place. It lives at `/library/stats`, in the Library area of the app (the **Library** item in the sidebar stays highlighted while you are there). There is nothing to configure — the page simply reads what Downtify already records.
+Stats is a read-only page that puts the size of your library and how much you use it in one place. It lives at `/library/stats`, in the Library area of the app (the **Library** item in the sidebar stays highlighted while you are there). Playback history is unified automatically; Last.fm backfill is an optional setting.
 
 ## Period and account scope
 
 The **7 / 30 / 90 days** control changes the measured listening cards. The page shows the signed-in account's playback by default. An admin can request the server-wide view through the API with `scope=server`; the web page keeps the personal view.
 
-Library size and likes remain server-wide in this version. Playback/download activity, the heatmap and the measured listening metrics are account-scoped.
+Library size and likes remain server-wide in this version. Unified playback history, downloads, the heatmap and the measured listening metrics are account-scoped. Spotify and Last.fm connections are server settings, so imported plays belong to the first Downtify admin account.
 
 ## The numbers
 
@@ -39,7 +39,11 @@ Below the cards, **Downloads per day** lists each day that had a download, oldes
 
 ## Recently played on Spotify
 
-**Recently played on Spotify** lists your last plays that Downtify mirrored out of Spotify, newest first — when each happened and its `Artist - Title` label — with the total number of stored plays underneath. It stays empty until you turn the history import on (**Settings → Spotify Mirror → Import listening history**, see [Spotify Mirror](spotify-mirror.md#importing-your-listening-history)); the plays are read from the same store the import fills, so nothing is fetched when the page loads.
+**Recently played on Spotify** lists your last imported Spotify plays, newest first — when each happened and its `Artist - Title` label — with the total number of stored plays underneath. It includes normal Spotify-client listening, not only tracks mirrored from Downtify. It stays empty until you turn the history import on (**Settings → Spotify Mirror → Import listening history**, see [Spotify Mirror](spotify-mirror.md#importing-your-listening-history)); the plays are read from the same store the import fills, so nothing is fetched when the page loads. Downtify keeps the original Spotify track object, ISRC and playback context for each imported play.
+
+## Last.fm history
+
+**Settings → Scrobbling → Import Last.fm history** brings the connected account's scrobbles into the same unified Stats history. New plays are picked up every 15 minutes; older history is imported backwards in bounded pages and resumes after a restart or API failure. The currently-playing Last.fm entry is not counted as a play. Last.fm records usually carry artist/title metadata rather than a Spotify ID, so older rows remain visible in Stats even when they cannot be linked to a specific Downtify library ID.
 
 ## Listening activity
 
@@ -55,11 +59,11 @@ Underneath the grid are two numbers:
 - **Day streak** — how many days in a row you played something. A day that hasn't finished doesn't break it: until midnight is over, yesterday's run still counts. Nothing played today *and* yesterday means zero.
 - **Busiest day** — the day of that window with the most plays, with the date and the count.
 
-Both come from the same [activity log](../features/users.md) as the other panels, filtered to the signed-in account: everyone using the same server keeps a separate grid.
+Both come from the same unified listening history as the other playback panels, filtered to the signed-in account: everyone using the same server keeps a separate grid.
 
 ## Recent plays
 
-**Recent plays** lists what you actually played, newest first: the time, the `Artist - Title` label, and — when the player knew it — **the queue it came from** as a small tag. That is the playlist, album or artist you pressed play on, so "what did I listen to" answers with a source rather than a bare title. Without a day picked in the heatmap it lists your newest plays; with one, only that day's.
+**Recent plays** lists what you played across Downtify, Spotify and Last.fm, newest first: the time, the `Artist - Title` label, a small provider badge, and — when Downtify knew it — **the queue it came from** as a small tag. That is the playlist, album or artist you pressed play on, so "what did I listen to" answers with a source rather than a bare title. Without a day picked in the heatmap it lists your newest plays; with one, only that day's.
 
 Only plays from after this shipped carry the tag. A player that reports no queue (an older app, a bare library play) is simply listed without one.
 
@@ -74,12 +78,13 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 ## Where the numbers come from
 
 - **Tracks, playlists and likes** come from the library stores Downtify already keeps — the file index, the library playlist list and the liked-songs store.
-- **Downloads and plays** come from the [activity log](../features/users.md) in `/data/downtify_activity.db`. The log keeps a year of entries, so every count here (including the all-time-looking ones) only covers the retained window.
+- **Downloads** come from the [activity log](../features/users.md) in `/data/downtify_activity.db`. The log keeps a year of entries, so download counts only cover the retained window.
 - A **download** is one logged *request*: a playlist or album batch counts once, not once per track, because that is what the activity log records.
-- A **play** is logged each time a song *starts* (a player reporting a new song), so replaying one song counts again. Top tracks group those plays by the label the log stored. The heatmap counts those same plays per day, one entry per day of the window — including the days with none, which come back as `0`.
-- **Measured listening** uses the position reports players already send about every 30 seconds. Repeated heartbeats count once; a seek jump is not listening time; a gap longer than 45 seconds is ignored. A track heard to at least 90% is one completion. Leaving before 25% or within 15 seconds is one skip. Replaying the same section does not add the same seconds twice.
-- The **Spotify** panel is the one exception to the retained window: those rows are only ever added, never pruned, so the total keeps counting up for as long as the import is on.
-- The activity and measured counts are **per account**. An admin can ask for the server total with `scope=server`; library size and likes remain server-wide.
+- **Plays** come from one canonical `listening_events` table in `/data/downtify_activity.db`. It combines Downtify player starts, imported Spotify plays and imported Last.fm scrobbles. Replaying a song counts again; the all-time total is not pruned with the activity log.
+- **Deduplication** uses normalized artist/title and a bounded time window. Source precedence is **Downtify → Spotify → Last.fm**. One real play seen through several providers produces one canonical row; a second observation from the same provider inside the window remains a separate play.
+- **Measured listening** still uses only Downtify's position reports, sent about every 30 seconds. Repeated heartbeats count once; a seek jump is not listening time; a gap longer than 45 seconds is ignored. A track heard to at least 90% is one completion. Leaving before 25% or within 15 seconds is one skip. Spotify and Last.fm do not fabricate seconds, completions or skips.
+- **Raw provider data** is kept separately: Spotify's original track object/ISRC/context and Last.fm's original scrobble object. These tables are included in metadata backups.
+- The unified playback and measured counts are **per account**. An admin can ask for the server total with `scope=server`; library size and likes remain server-wide.
 
 ## API
 
@@ -121,7 +126,8 @@ Only plays from after this shipped carry the tag. A player that reports no queue
         "date": "2026-10-12",
         "summary": "The Night Owls - Do I Still Recall",
         "context": "Chill Deploy",
-        "context_type": "playlist"
+        "context_type": "playlist",
+        "source": "downtify"
       }
     ],
     "top_contexts": [{ "context": "Chill Deploy", "count": 128 }]
@@ -148,13 +154,13 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 | `downloads.total` | Download requests in the activity log |
 | `downloads.last_30_days` | Those within the last 30 days |
 | `downloads.per_day` | `{date, count}` for each day with a download, oldest first |
-| `playback.total` | Plays in the activity log |
+| `playback.total` | All-time plays in the unified canonical listening history |
 | `playback.measured` | `{seconds, plays, completions, skips, completion_rate, skip_rate}` for the selected period and account/server scope |
 | `playback.top_tracks` | Up to ten `{summary, count}`, most played first |
 | `playback.heatmap` | `{date, count}` for every day of the retained window (364 days), oldest first — days without a play are `0` |
 | `playback.streak_days` | Days in a row with a play; a day still to come doesn't break it |
 | `playback.best_day` | `{date, count}` for the busiest day of the window, or `{"date": "", "count": 0}` when nothing was played |
-| `playback.recent` | Up to 400 of your newest plays, newest first, each `{at, date, summary, context, context_type}` — `context` is the queue it was served from, empty when the player reported none |
+| `playback.recent` | Up to 400 of your newest unified plays, newest first, each `{at, date, summary, context, context_type, source}` — `source` is `downtify`, `spotify` or `lastfm`; `context` is empty when no queue was known |
 | `playback.top_contexts` | Up to ten `{context, count}`, most played first; plays without a queue are left out |
 | `spotify.recent` | Up to ten mirrored plays, newest first, each `{played_at, artist_name, track_name, album_name}` |
 | `spotify.play_count` | Plays stored in the history table, all of them |

@@ -233,7 +233,7 @@
             <p v-if="!dayPlays.length" class="text-[13px] text-faint">
               {{ t('stats.empty') }}
             </p>
-            <ol class="flex max-h-96 flex-col overflow-y-auto">
+            <ol class="flex max-h-96 flex-col overflow-y-auto" role="list">
               <li
                 v-for="(row, i) in dayPlays"
                 :key="`${row.at}-${i}`"
@@ -251,6 +251,13 @@
                   :title="t('stats.playedFrom')"
                 >
                   {{ row.context }}
+                </span>
+                <span
+                  v-if="row.source"
+                  :data-source="row.source"
+                  class="mono shrink-0 whitespace-nowrap border border-line-2 px-1.5 text-faint"
+                >
+                  {{ sourceLabel(row.source) }}
                 </span>
               </li>
             </ol>
@@ -276,7 +283,7 @@
             >
               {{ t('stats.empty') }}
             </p>
-            <ol class="flex flex-col">
+            <ol class="flex flex-col" role="list">
               <li
                 v-for="row in stats.spotify?.recent || []"
                 :key="row.played_at"
@@ -507,6 +514,16 @@ function trendBlocks(count) {
   const value = Number(count) || 0
   if (!value) return 0
   return Math.max(1, Math.round((value / trendMax.value) * TREND_BLOCKS))
+}
+
+const SOURCE_LABELS = {
+  downtify: 'stats.sourceDowntify',
+  spotify: 'stats.sourceSpotify',
+  lastfm: 'stats.sourceLastfm',
+}
+
+function sourceLabel(source) {
+  return t(SOURCE_LABELS[source] || SOURCE_LABELS.downtify)
 }
 
 // When a play was made, in the reader's own locale. Activity stamps ISO
