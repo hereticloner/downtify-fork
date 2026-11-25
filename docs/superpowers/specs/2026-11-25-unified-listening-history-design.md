@@ -160,6 +160,7 @@ Bilinen sınır: farklı sanatçı yazımı, sürüm veya remaster aynı play'ı
 - `ActivityLog.record()` geriye uyumlu biçimde yeni satırın `id`'sini döndürür.
 - `POST /api/activity/playback` yeni bir play başlattığında canonical kayıt `source_key=activity:{id}` ile yazılır.
 - Eski `activity.playback` satırları açılışta bir kez `listening_events` tablosuna taşınır.
+- Spotify/Last.fm bekleyen ham satırlar lifespan başladıktan sonra arka planda küçük partlarda canonical günlüğe bağlanır; büyük ilk import healthcheck'i bloke etmez.
 - `PlaybackStore` ve ölçülmüş metrikler değişmez.
 
 ### 8.2 Spotify

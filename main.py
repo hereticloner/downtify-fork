@@ -52,6 +52,7 @@ from downtify import (
     download_failure_routes,
     download_policy_routes,
     lastfm_history,
+    listening_history,
     mobile_routes,
     playback_routes,
     queue_schedule,
@@ -753,6 +754,19 @@ def build_app() -> FastAPI:
             ),
             name='spotify-history-loop',
         )
+        # Drain historical provider rows after the server is listening so a
+        # large first import cannot hold startup or health checks open.
+        api.spawn_task(
+            listening_history.bootstrap_listening_history(
+                api.state.activity,
+                DATABASE_DIR / 'downtify_activity.db',
+                api.state.listening,
+                user_id=int(
+                    (api.state.auth.users.first_admin() or {}).get('id') or 0
+                ),
+            ),
+            name='listening-history-bootstrap',
+        )
         # Imports the connected Last.fm account's scrobbles, newest first
         # and then backwards in bounded pages. Off by default; the loop
         # idles until scrobbling.import_history is enabled.
@@ -907,13 +921,6 @@ def build_app() -> FastAPI:
     admin = api.state.auth.users.first_admin()
     history_user_id = int((admin or {}).get('id') or 0)
     spotify_history.ensure_schema(activity_db, user_id=history_user_id)
-    spotify_history.link_pending(
-        activity_db,
-        api.state.listening,
-        user_id=history_user_id,
-        limit=5000,
-    )
-    api.state.listening.backfill_activity(api.state.activity)
     app.add_middleware(
         AuthMiddleware,
         get_store=lambda: api.state.auth,

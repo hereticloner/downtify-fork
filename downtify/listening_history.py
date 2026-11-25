@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from . import lastfm_history, spotify_history
 from .sqlite_utils import connect_sqlite
 
 _SOURCE_PRIORITY = {'downtify': 0, 'spotify': 1, 'lastfm': 2}
@@ -383,3 +385,32 @@ class ListeningStore:
                 'DELETE FROM listening_events WHERE user_id=?', (int(user_id),)
             )
             return conn.total_changes - before
+
+
+async def bootstrap_listening_history(
+    activity: Any,
+    db_path: Any,
+    listening: Any,
+    *,
+    user_id: int,
+    batch_size: int = 200,
+    pause: float = 0.05,
+) -> int:
+    """Drain provider backlogs without holding up application startup."""
+
+    linked = 0
+    for module in (spotify_history, lastfm_history):
+        while True:
+            count = await asyncio.to_thread(
+                module.link_pending,
+                db_path,
+                listening,
+                user_id=user_id,
+                limit=batch_size,
+            )
+            linked += count
+            if not count:
+                break
+            await asyncio.sleep(pause)
+    await asyncio.to_thread(listening.backfill_activity, activity)
+    return linked

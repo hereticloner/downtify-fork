@@ -1,4 +1,6 @@
-from downtify import lastfm_history, spotify_history
+import pytest
+
+from downtify import lastfm_history, listening_history, spotify_history
 from downtify.activity import ActivityLog
 from downtify.listening_history import ListeningStore
 
@@ -66,3 +68,42 @@ def test_forget_user_also_removes_raw_provider_rows(tmp_path):
     assert spotify_history.count_plays(db) == 0
     assert lastfm_history.count_plays(db) == 0
     assert store.stats(user_id=0)['total'] == 0
+
+
+@pytest.mark.asyncio
+async def test_bootstrap_links_all_pending_rows_in_batches(
+    tmp_path, monkeypatch
+):
+    db = tmp_path / 'activity.db'
+    rows = [
+        {
+            'played_at': '2026-11-25T20:15:00Z',
+            'spotify_track_id': f's{index}',
+            'track_name': f'T{index}',
+            'artist_name': 'A',
+        }
+        for index in range(250)
+    ]
+    assert spotify_history.save_recently_played(db, rows, user_id=1) == 250
+    activity = ActivityLog(db)
+    activity.record(
+        'playback',
+        user_id=1,
+        summary='Z - X',
+        detail={'track': {'title': 'X', 'artist': 'Z'}},
+    )
+    store = ListeningStore(db)
+
+    async def no_pause(_seconds):
+        return None
+
+    monkeypatch.setattr(listening_history.asyncio, 'sleep', no_pause)
+    linked = await listening_history.bootstrap_listening_history(
+        activity,
+        db,
+        store,
+        user_id=1,
+        batch_size=100,
+    )
+    assert linked == 250
+    assert store.stats(user_id=1)['total'] == 251
