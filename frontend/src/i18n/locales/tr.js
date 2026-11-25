@@ -523,6 +523,37 @@ export default {
     importButton: 'CSV dosyası seç',
     importFailed: 'Bu CSV içe aktarılamadı.',
   },
+  lyricsHealth: {
+    title: 'Söz sağlığı',
+    subtitle: 'Zaman damgalı, düz metin ve eksik sözleri salt okunur tarar.',
+    scan: 'Tara',
+    fill: 'Bul ve kaydet',
+    loading: 'Sözler taranıyor…',
+    scannedAt: 'Tarama: {date}',
+    summary: 'Duruma göre sözler',
+    filter: 'Parçaları filtrele',
+    status: 'Durum',
+    file: 'Dosya',
+    findings: 'Söz sağlığı bulguları',
+    adminOnly: 'Yalnız yönetici',
+    adminOnlyHint:
+      'Kütüphane sözlerini taramak ve doldurmak için yönetici hesabıyla giriş yap.',
+    loadFailed: 'Sözler taranamadı',
+    fillFailed: 'Sözler doldurulamadı',
+    fillResult: '{written} yazıldı · {skipped} atlandı · {failed} başarısız',
+    progress: 'Parti {current}/{total}',
+    partial: 'Bazı kütüphane klasörleri denetlenemedi.',
+    empty: 'Bu görünümde parça yok',
+    emptyHint: 'Kütüphaneyi tara veya başka bir durum seç.',
+    readOnly:
+      'Tarama hiçbir şeyi değiştirmez. Bul ve kaydet yalnız listelenen boşluklara dokunur; zaten senkron sözleri yeniden yazmaz.',
+    statuses: {
+      all: 'Tümü',
+      synced: 'Senkron',
+      plain_only: 'Yalnız düz metin',
+      missing: 'Eksik',
+    },
+  },
   libraryHealth: {
     title: 'Kütüphane sağlığı',
     subtitle:
@@ -1005,6 +1036,8 @@ export default {
     noLyrics: 'Bu parçanın sözleri yok',
     noLyricsHint:
       'Yeni indirmelerle kaydetmek için Ayarlar’da “Şarkı sözlerini indir”i aç.',
+    lyricsOffset: 'Söz ofseti',
+    lyricsOffsetReset: 'Sıfırla',
     lyricsNotSynced: 'Bu sözler zamanlı değil.',
     cannotPlay: 'Bu dosya çalınamıyor.',
     sleepTimer: 'Uyku zamanlayıcısı',

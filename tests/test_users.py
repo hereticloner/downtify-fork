@@ -189,6 +189,31 @@ def test_preferences_are_per_user_and_typed(tmp_path):
     assert users.preferences(admin['id']) == {}
 
 
+def test_lyrics_offsets_are_bounded_and_per_device(tmp_path):
+    users = _users(tmp_path)
+    admin = users.by_username('admin')
+    users.set_preferences(
+        admin['id'],
+        {
+            'lyrics_offsets': {
+                'device-a': 0.3,
+                'device-b': -9,
+                'x' * 65: 0.1,
+            }
+        },
+    )
+    assert users.preferences(admin['id'])['lyrics_offsets'] == {
+        'device-a': 0.3,
+        'device-b': -0.5,
+    }
+
+    users.set_preferences(
+        admin['id'],
+        {'lyrics_offsets': {f'd{number:02}': 0.1 for number in range(33)}},
+    )
+    assert len(users.preferences(admin['id'])['lyrics_offsets']) == 32
+
+
 # ── the activity log ────────────────────────────────────────────────────
 
 

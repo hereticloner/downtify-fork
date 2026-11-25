@@ -827,6 +827,14 @@ function exportLibraryHealth(options = {}) {
   return API.get('/api/library/health/export', options)
 }
 
+function getLyricsHealth() {
+  return API.get('/api/lyrics/health')
+}
+
+function fillLyricsHealth(files) {
+  return API.post('/api/lyrics/health/fill', { files })
+}
+
 function getDownloadFailures() {
   return API.get('/api/download-failures')
 }
@@ -1143,6 +1151,8 @@ export default {
   getStats,
   getLibraryHealth,
   exportLibraryHealth,
+  getLyricsHealth,
+  fillLyricsHealth,
   getDownloadFailures,
   retryDownloadFailure,
   clearDownloadFailures,

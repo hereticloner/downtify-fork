@@ -32,7 +32,7 @@ const destinations = [
     name: 'Library',
     icon: 'library',
     label: 'nav.library',
-    match: ['Album', 'Artist', 'Playlist', 'LibraryHealth'],
+    match: ['Album', 'Artist', 'Playlist', 'LibraryHealth', 'LyricsHealth'],
   },
   { name: 'Queue', icon: 'download', label: 'nav.queue' },
   {

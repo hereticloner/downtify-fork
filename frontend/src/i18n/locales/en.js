@@ -511,6 +511,37 @@ export default {
     importButton: 'Choose CSV file',
     importFailed: "Couldn't import that CSV file.",
   },
+  lyricsHealth: {
+    title: 'Lyrics health',
+    subtitle: 'Read-only scan for timed, plain-only and missing lyrics.',
+    scan: 'Scan',
+    fill: 'Find & save',
+    loading: 'Scanning lyrics…',
+    scannedAt: 'Scanned {date}',
+    summary: 'Lyrics by status',
+    filter: 'Filter tracks',
+    status: 'Status',
+    file: 'File',
+    findings: 'Lyrics health findings',
+    adminOnly: 'Admin only',
+    adminOnlyHint:
+      'Sign in with an admin account to scan and fill library lyrics.',
+    loadFailed: "Couldn't scan lyrics",
+    fillFailed: "Couldn't finish filling lyrics",
+    fillResult: '{written} written · {skipped} skipped · {failed} failed',
+    progress: 'Batch {current}/{total}',
+    partial: 'Some library folders could not be checked.',
+    empty: 'No tracks in this view',
+    emptyHint: 'Scan the library or choose another status.',
+    readOnly:
+      'Scanning changes nothing. Find & save only touches the listed gaps and never rewrites already-synced lyrics.',
+    statuses: {
+      all: 'All',
+      synced: 'Synced',
+      plain_only: 'Plain only',
+      missing: 'Missing',
+    },
+  },
   libraryHealth: {
     title: 'Library health',
     subtitle:
@@ -988,6 +1019,8 @@ export default {
     noLyrics: 'No lyrics for this track',
     noLyricsHint:
       'Turn on “Download lyrics” in Settings to save them with new downloads.',
+    lyricsOffset: 'Lyrics offset',
+    lyricsOffsetReset: 'Reset',
     lyricsNotSynced: 'These lyrics aren’t time-synced.',
     cannotPlay: "This file can't be played.",
     sleepTimer: 'Sleep timer',

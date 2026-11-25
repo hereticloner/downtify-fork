@@ -55,6 +55,12 @@ const routes = [
     component: () => import('/src/views/LibraryHealthView.vue'),
   },
   {
+    // Lyrics health scan and explicit gap filling.
+    path: '/library/lyrics',
+    name: 'LyricsHealth',
+    component: () => import('/src/views/LyricsHealthView.vue'),
+  },
+  {
     // Library maintenance: scan what's on disk and repair it.
     path: '/library/upgrade',
     name: 'Upgrade',

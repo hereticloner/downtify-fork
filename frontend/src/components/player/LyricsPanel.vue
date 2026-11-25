@@ -1,6 +1,25 @@
 <template>
   <div class="flex h-full min-h-0 flex-col">
     <div
+      v-if="lines.length"
+      class="flex flex-wrap items-center gap-2 border-b border-line-2 px-2 py-2"
+    >
+      <span class="eyebrow mr-auto text-muted">
+        {{ t('player.lyricsOffset') }}
+        <span class="mono ml-1 text-fg">{{ formattedOffset }}</span>
+      </span>
+      <UiButton size="sm" variant="secondary" @click="adjust(-0.1)">
+        −0.1
+      </UiButton>
+      <UiButton size="sm" variant="secondary" @click="adjust(0.1)">
+        +0.1
+      </UiButton>
+      <UiButton size="sm" variant="ghost" @click="resetOffset">
+        {{ t('player.lyricsOffsetReset') }}
+      </UiButton>
+    </div>
+
+    <div
       v-if="loading"
       class="flex flex-1 flex-col justify-center gap-4 px-2"
       aria-hidden="true"
@@ -35,7 +54,7 @@
               ? 'border-transparent text-faint hover:text-muted'
               : 'border-transparent text-muted hover:text-fg',
         ]"
-        @click="player.seek(line.time)"
+        @click="player.seek(lyricsSeekTime(line.time, lyricsOffset.value))"
       >
         {{ line.text || '♪' }}
       </button>
@@ -73,9 +92,17 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import AppIcon from '../ui/AppIcon.vue'
+import UiButton from '../ui/UiButton.vue'
 import { usePlayer } from '/src/model/player'
+import { usePlayerPrefs } from '/src/model/playerPrefs'
 import { loadLyrics } from '/src/model/lyrics'
 import { activeLineIndex } from '/src/lib/lrc'
+import {
+  clampLyricsOffset,
+  formatLyricsOffset,
+  lyricsHighlightTime,
+  lyricsSeekTime,
+} from '/src/lib/lyricsHealth'
 import { useI18n } from '/src/i18n'
 
 const props = defineProps({
@@ -83,6 +110,7 @@ const props = defineProps({
 })
 
 const player = usePlayer()
+const { lyricsOffset } = usePlayerPrefs()
 const { t } = useI18n()
 const loading = ref(false)
 const lines = ref([])
@@ -108,8 +136,21 @@ watch(
   { immediate: true }
 )
 
+const formattedOffset = computed(() => formatLyricsOffset(lyricsOffset.value))
+
+function adjust(delta) {
+  lyricsOffset.value = clampLyricsOffset(lyricsOffset.value + delta)
+}
+
+function resetOffset() {
+  lyricsOffset.value = 0
+}
+
 const active = computed(() =>
-  activeLineIndex(lines.value, player.currentTime.value + 0.25)
+  activeLineIndex(
+    lines.value,
+    lyricsHighlightTime(player.currentTime.value, lyricsOffset.value)
+  )
 )
 
 function userScrolled() {

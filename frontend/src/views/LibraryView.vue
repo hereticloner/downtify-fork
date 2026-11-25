@@ -22,6 +22,14 @@
         <span class="max-sm:sr-only">{{ t('libraryHealth.title') }}</span>
       </UiButton>
       <UiButton
+        v-if="auth.isAdmin.value"
+        variant="secondary"
+        icon="lyrics"
+        :to="{ name: 'LyricsHealth' }"
+      >
+        <span class="max-sm:sr-only">{{ t('lyricsHealth.title') }}</span>
+      </UiButton>
+      <UiButton
         v-if="auth.isAdmin.value && trashCapability.canManage.value"
         variant="secondary"
         icon="trash"

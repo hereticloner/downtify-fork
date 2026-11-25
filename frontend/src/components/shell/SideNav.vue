@@ -79,7 +79,7 @@ const items = [
     name: 'Library',
     icon: 'library',
     label: 'nav.library',
-    match: ['Album', 'Artist', 'Playlist', 'LibraryHealth'],
+    match: ['Album', 'Artist', 'Playlist', 'LibraryHealth', 'LyricsHealth'],
   },
   { name: 'Collections', icon: 'list', label: 'collections.title' },
   { name: 'Stats', icon: 'gauge', label: 'stats.title' },

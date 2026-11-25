@@ -544,6 +544,38 @@ export default {
     importButton: 'Choisir un fichier CSV',
     importFailed: 'Impossible d’importer ce CSV.',
   },
+  lyricsHealth: {
+    title: 'Santé des paroles',
+    subtitle:
+      'Analyse en lecture seule des paroles synchronisées, en texte brut ou manquantes.',
+    scan: 'Analyser',
+    fill: 'Rechercher et enregistrer',
+    loading: 'Analyse des paroles…',
+    scannedAt: 'Analysé : {date}',
+    summary: 'Paroles par état',
+    filter: 'Filtrer les pistes',
+    status: 'État',
+    file: 'Fichier',
+    findings: 'Problèmes de paroles',
+    adminOnly: 'Administrateurs uniquement',
+    adminOnlyHint:
+      'Connectez-vous comme administrateur pour analyser et compléter les paroles.',
+    loadFailed: "Impossible d'analyser les paroles",
+    fillFailed: 'Impossible de compléter les paroles',
+    fillResult: '{written} écrites · {skipped} ignorées · {failed} échouées',
+    progress: 'Lot {current}/{total}',
+    partial: "Certains dossiers n'ont pas pu être vérifiés.",
+    empty: 'Aucune piste dans cette vue',
+    emptyHint: 'Analysez la bibliothèque ou choisissez un autre état.',
+    readOnly:
+      "L'analyse ne change rien. Rechercher et enregistrer ne touche que les manques listés et ne réécrit jamais les paroles déjà synchronisées.",
+    statuses: {
+      all: 'Tout',
+      synced: 'Synchronisées',
+      plain_only: 'Texte brut',
+      missing: 'Manquantes',
+    },
+  },
   libraryHealth: {
     title: 'Santé de la bibliothèque',
     subtitle:
@@ -1033,6 +1065,8 @@ export default {
     noLyrics: 'Pas de paroles pour ce titre',
     noLyricsHint:
       'Activez « Télécharger les paroles » dans les paramètres pour les enregistrer avec les prochains téléchargements.',
+    lyricsOffset: 'Décalage des paroles',
+    lyricsOffsetReset: 'Réinitialiser',
     lyricsNotSynced: 'Ces paroles ne sont pas synchronisées.',
     cannotPlay: 'Ce fichier ne peut pas être lu.',
     sleepTimer: 'Minuterie de veille',

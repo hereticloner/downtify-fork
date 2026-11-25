@@ -525,6 +525,38 @@ export default {
     importButton: 'Escolher arquivo CSV',
     importFailed: 'Não foi possível importar esse CSV.',
   },
+  lyricsHealth: {
+    title: 'Saúde das letras',
+    subtitle:
+      'Verificação somente leitura de letras sincronizadas, apenas texto e ausentes.',
+    scan: 'Verificar',
+    fill: 'Buscar e salvar',
+    loading: 'Verificando letras…',
+    scannedAt: 'Verificado: {date}',
+    summary: 'Letras por status',
+    filter: 'Filtrar faixas',
+    status: 'Status',
+    file: 'Arquivo',
+    findings: 'Problemas nas letras',
+    adminOnly: 'Somente administradores',
+    adminOnlyHint:
+      'Entre como administrador para verificar e completar as letras da biblioteca.',
+    loadFailed: 'Não foi possível verificar as letras',
+    fillFailed: 'Não foi possível completar as letras',
+    fillResult: '{written} escritas · {skipped} ignoradas · {failed} falharam',
+    progress: 'Lote {current}/{total}',
+    partial: 'Algumas pastas não puderam ser verificadas.',
+    empty: 'Nenhuma faixa nesta visualização',
+    emptyHint: 'Verifique a biblioteca ou escolha outro status.',
+    readOnly:
+      'Verificar não altera nada. Buscar e salvar toca apenas as lacunas listadas e nunca reescreve letras já sincronizadas.',
+    statuses: {
+      all: 'Tudo',
+      synced: 'Sincronizadas',
+      plain_only: 'Apenas texto',
+      missing: 'Ausentes',
+    },
+  },
   libraryHealth: {
     title: 'Saúde da biblioteca',
     subtitle:
@@ -1009,6 +1041,8 @@ export default {
     noLyrics: 'Sem letra para esta faixa',
     noLyricsHint:
       'Ative “Baixar letras” nas Configurações para salvá-las nos próximos downloads.',
+    lyricsOffset: 'Deslocamento das letras',
+    lyricsOffsetReset: 'Redefinir',
     lyricsNotSynced: 'Esta letra não está sincronizada.',
     cannotPlay: 'Este arquivo não pode ser reproduzido.',
     sleepTimer: 'Timer de desligamento',

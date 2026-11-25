@@ -523,6 +523,38 @@ export default {
     importButton: 'CSV fájl kiválasztása',
     importFailed: 'Nem sikerült importálni a CSV-t.',
   },
+  lyricsHealth: {
+    title: 'Szövegek állapota',
+    subtitle:
+      'Csak olvasható átvilágítás a szinkron, csak szöveges és hiányzó szövegekre.',
+    scan: 'Ellenőrzés',
+    fill: 'Keresés és mentés',
+    loading: 'Szövegek ellenőrzése…',
+    scannedAt: 'Ellenőrizve: {date}',
+    summary: 'Szövegek állapot szerint',
+    filter: 'Számok szűrése',
+    status: 'Állapot',
+    file: 'Fájl',
+    findings: 'Szövegproblémák',
+    adminOnly: 'Csak rendszergazdák',
+    adminOnlyHint:
+      'A könyvtár szövegeinek ellenőrzéséhez és kitöltéséhez rendszergazdai bejelentkezés kell.',
+    loadFailed: 'Nem sikerült ellenőrizni a szövegeket',
+    fillFailed: 'Nem sikerült kitölteni a szövegeket',
+    fillResult: '{written} mentve · {skipped} kihagyva · {failed} hibás',
+    progress: 'Köteg {current}/{total}',
+    partial: 'Egyes mappák nem ellenőrizhetők.',
+    empty: 'Nincs szám ebben a nézetben',
+    emptyHint: 'Ellenőrizd a könyvtárat vagy válassz másik állapotot.',
+    readOnly:
+      'Az ellenőrzés nem változtat semmit. A keresés és mentés csak a felsorolt hiányokat érinti, a már szinkron szöveget nem írja felül.',
+    statuses: {
+      all: 'Mind',
+      synced: 'Szinkron',
+      plain_only: 'Csak szöveg',
+      missing: 'Hiányzik',
+    },
+  },
   libraryHealth: {
     title: 'Könyvtár állapota',
     subtitle:
@@ -1010,6 +1042,8 @@ export default {
     noLyrics: 'Ehhez a számhoz nincs dalszöveg',
     noLyricsHint:
       'Kapcsold be a „Dalszövegek letöltése” opciót a Beállításokban, hogy az új letöltésekkel mentődjenek.',
+    lyricsOffset: 'Szövegeltolás',
+    lyricsOffsetReset: 'Visszaállítás',
     lyricsNotSynced: 'Ez a dalszöveg nincs időzítve.',
     cannotPlay: 'Ez a fájl nem játszható le.',
     sleepTimer: 'Elalvási időzítő',

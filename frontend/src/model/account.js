@@ -11,6 +11,7 @@ import { ref, watch } from 'vue'
 import API from '/src/model/api'
 import { currentLocale, setLocale } from '/src/i18n'
 import { playbackReport } from '/src/lib/auth'
+import { lyricsOffsetForDevice, withLyricsOffset } from '/src/lib/lyricsHealth'
 import { useAuth } from '/src/model/auth'
 import { usePlayer } from '/src/model/player'
 import { usePlayerPrefs } from '/src/model/playerPrefs'
@@ -19,26 +20,34 @@ import { useTheme } from '/src/model/theme'
 const searchAlbums = ref(true)
 const ready = ref(false)
 let started = false
+let savedPrefs = {}
 
 function current() {
   const theme = useTheme()
-  const { showLyrics } = usePlayerPrefs()
+  const { showLyrics, lyricsDeviceId, lyricsOffset } = usePlayerPrefs()
   return {
     theme: theme.mode.value,
     locale: currentLocale.value,
     show_lyrics: showLyrics.value,
     search_albums: searchAlbums.value,
+    lyrics_offsets: withLyricsOffset(
+      savedPrefs,
+      lyricsDeviceId.value,
+      lyricsOffset.value
+    ),
   }
 }
 
 function apply(prefs) {
   const theme = useTheme()
-  const { showLyrics } = usePlayerPrefs()
+  const { showLyrics, lyricsDeviceId, lyricsOffset } = usePlayerPrefs()
+  savedPrefs = prefs
   if (prefs.theme) theme.setMode(prefs.theme)
   if (prefs.locale && prefs.locale !== currentLocale.value)
     setLocale(prefs.locale)
   if (typeof prefs.show_lyrics === 'boolean')
     showLyrics.value = prefs.show_lyrics
+  lyricsOffset.value = lyricsOffsetForDevice(prefs, lyricsDeviceId.value)
   if (typeof prefs.search_albums === 'boolean')
     searchAlbums.value = prefs.search_albums
 }
@@ -65,12 +74,16 @@ async function start() {
   apply(prefs)
   ready.value = true
   // An account without them adopts this browser's.
-  if (Object.keys(prefs).length < 4) save()
+  if (!prefs.lyrics_offsets || Object.keys(prefs).length < 4) save()
   const theme = useTheme()
-  const { showLyrics } = usePlayerPrefs()
-  watch([theme.mode, currentLocale, showLyrics, searchAlbums], () => save(), {
-    flush: 'post',
-  })
+  const { showLyrics, lyricsOffset } = usePlayerPrefs()
+  watch(
+    [theme.mode, currentLocale, showLyrics, searchAlbums, lyricsOffset],
+    () => save(),
+    {
+      flush: 'post',
+    }
+  )
 }
 
 // ── Playback reports ──────────────────────────────────────────────────

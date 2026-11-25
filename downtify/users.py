@@ -30,6 +30,7 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import re
 import secrets
 import sqlite3
@@ -66,6 +67,7 @@ PREFERENCES: dict[str, type] = {
     'locale': str,
     'show_lyrics': bool,
     'search_albums': bool,
+    'lyrics_offsets': dict,
 }
 
 
@@ -154,7 +156,23 @@ def clean_preferences(values: Any) -> dict[str, Any]:
         if key not in values:
             continue
         value = values[key]
-        if kind is bool:
+        if key == 'lyrics_offsets':
+            if not isinstance(value, dict):
+                continue
+            offsets: dict[str, float] = {}
+            for raw_device, raw_offset in value.items():
+                device = str(raw_device or '').strip()
+                if not device or len(device) > 64:
+                    continue
+                try:
+                    offset = float(raw_offset)
+                except (TypeError, ValueError):
+                    continue
+                if not math.isfinite(offset):
+                    continue
+                offsets[device] = round(min(0.5, max(-0.5, offset)), 2)
+            clean[key] = dict(sorted(offsets.items())[:32])
+        elif kind is bool:
             clean[key] = bool(value)
         elif value is None:
             clean[key] = ''
