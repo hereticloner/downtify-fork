@@ -7,7 +7,13 @@ from pathlib import Path
 import pytest
 
 from downtify import backup as backup_module
-from downtify import collections, lastfm_history, monitor, spotify_history
+from downtify import (
+    collections,
+    lastfm_history,
+    monitor,
+    spotify_context,
+    spotify_history,
+)
 from downtify.backup import BackupStore
 from downtify.download_queue import PendingDownload, PendingDownloads
 from downtify.likes import LikedTracks
@@ -223,6 +229,23 @@ def test_backup_restores_unified_history_and_raw_provider_rows(tmp_path):
             "SELECT newest_at FROM history_import_state WHERE source='lastfm'"
         ).fetchone()[0]
         assert state == '2026-11-25T21:15:00+00:00'
+
+
+def test_backup_restores_spotify_context_cache(tmp_path):
+    source = tmp_path / 'source'
+    source.mkdir()
+    db = source / 'downtify_activity.db'
+    spotify_context.ensure_schema(db)
+    spotify_context.cache_name(db, 'spotify:playlist:abc', 'Cached Playlist')
+
+    path = BackupStore(source).write()
+    target = tmp_path / 'target'
+    target.mkdir()
+    BackupStore(target).restore(path, dry_run=False, requeue_missing=False)
+
+    assert spotify_context.labels_for(
+        target / 'downtify_activity.db', ['spotify:playlist:abc']
+    ) == {'spotify:playlist:abc': 'Cached Playlist'}
 
 
 def test_backup_rotation_keeps_two_private_atomic_files(tmp_path):

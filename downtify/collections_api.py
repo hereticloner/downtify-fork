@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 
 from . import collections as coll
+from . import spotify_context
 from . import stats as stats_mod
 from .collection_actions import collection_analysis, collection_tracks
 from .library_paths_cache import invalidate_library_paths_cache
@@ -389,6 +390,9 @@ async def stats_endpoint(
         likes = 0
     activity = st.activity
     spotify = _spotify_stats()
+    from main import DATABASE_DIR  # noqa: PLC0415
+
+    activity_db = DATABASE_DIR / 'downtify_activity.db'
     measured = (
         st.playback.summary(user_id, days=window)
         if st.playback is not None
@@ -447,10 +451,11 @@ async def stats_endpoint(
                     },
                 },
                 'day': {'date': '', 'total': 0, 'plays': []},
+                'context_labels': {},
             },
             'spotify': spotify,
         }
-    return stats_mod.build_stats(
+    data = stats_mod.build_stats(
         activity=activity,
         track_count=track_count,
         likes=likes,
@@ -463,6 +468,15 @@ async def stats_endpoint(
         listening_stats=listening_stats,
         day_stats=day_stats,
     )
+    contexts = [row.get('context') for row in data['playback']['top_contexts']]
+    contexts.extend(row.get('context') for row in data['playback']['recent'])
+    contexts.extend(
+        row.get('context') for row in data['playback']['day']['plays']
+    )
+    data['playback']['context_labels'] = spotify_context.labels_for(
+        activity_db, contexts
+    )
+    return data
 
 
 @router.delete('/api/collections/{name}')

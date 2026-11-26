@@ -16,7 +16,7 @@ import pytest
 from starlette.testclient import TestClient
 
 import main
-from downtify import api, lastfm_history, spotify_history
+from downtify import api, lastfm_history, spotify_context, spotify_history
 from downtify import stats as stats_mod
 
 
@@ -266,6 +266,40 @@ def test_lastfm_loved_and_mbid_counts_are_scoped(client):
 
     assert (personal['loved_plays'], personal['mbid_plays']) == (0, 0)
     assert (server['loved_plays'], server['mbid_plays']) == (1, 1)
+
+
+def test_stats_context_labels_are_cache_only(client, monkeypatch):
+    db_path = main.DATABASE_DIR / 'downtify_activity.db'
+    api.state.listening.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='context-label',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+        context='spotify:playlist:abc',
+        context_type='playlist',
+    )
+    spotify_context.cache_name(
+        db_path, 'spotify:playlist:abc', 'Cached Playlist'
+    )
+
+    def no_network(*args, **kwargs):
+        raise AssertionError('Stats must not call Spotify')
+
+    monkeypatch.setattr('httpx.request', no_network)
+
+    data = client.get('/api/stats').json()['playback']
+
+    assert data['context_labels'] == {
+        'spotify:playlist:abc': 'Cached Playlist'
+    }
+
+
+def test_stats_empty_activity_has_empty_context_labels(client, monkeypatch):
+    monkeypatch.setattr(api.state, 'activity', None)
+
+    assert client.get('/api/stats').json()['playback']['context_labels'] == {}
 
 
 def test_downtify_spotify_lastfm_same_play_is_one_event(client):

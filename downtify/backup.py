@@ -19,6 +19,7 @@ from . import (
     monitor,
     notifications,
     playlist_mosaic,
+    spotify_context,
     spotify_history,
 )
 from .download_queue import PendingDownloads
@@ -62,6 +63,7 @@ _SQLITE_TABLES: dict[str, tuple[str, ...]] = {
         'spotify_recently_played',
         'lastfm_recent_tracks',
         'history_import_state',
+        'spotify_context_cache',
     ),
 }
 
@@ -92,6 +94,7 @@ _PRIMARY_KEYS: dict[str, tuple[str, ...]] = {
     'spotify_recently_played': ('source_key',),
     'lastfm_recent_tracks': ('source_key',),
     'history_import_state': ('source',),
+    'spotify_context_cache': ('context_key',),
 }
 
 
@@ -258,6 +261,7 @@ def _ensure_schema(filename: str, data_dir: Path) -> None:
         ListeningStore(data_dir / filename)
         spotify_history.ensure_schema(data_dir / filename)
         lastfm_history.ensure_schema(data_dir / filename)
+        spotify_context.ensure_schema(data_dir / filename)
 
 
 def _merge_missing(existing: Any, incoming: Any) -> Any:
