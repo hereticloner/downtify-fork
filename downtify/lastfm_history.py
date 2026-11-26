@@ -315,6 +315,15 @@ def _load_state(db_path: Any) -> dict[str, Any]:
     }
 
 
+def import_state(db_path: Any) -> dict[str, Any]:
+    """Read Last.fm import progress without fetching provider data."""
+
+    try:
+        return _load_state(db_path)
+    except sqlite3.Error:
+        return {'newest_at': '', 'oldest_at': '', 'backfill_done': False}
+
+
 def _save_state(db_path: Any, state: dict[str, Any]) -> None:
     with connect_sqlite(str(db_path)) as conn:
         conn.execute(

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import sqlite3
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -331,4 +332,65 @@ def test_failed_page_write_does_not_advance_cursor(tmp_path):
         'newest_at': '',
         'oldest_at': '',
         'backfill_done': False,
+    }
+
+
+def test_lastfm_detail_counts_linked_loved_and_mbid_events_once(tmp_path):
+    db = tmp_path / 'activity.db'
+    now = datetime.now(timezone.utc)
+    rows = [
+        {
+            'played_at': (now - timedelta(minutes=2)).isoformat(),
+            'uts': int((now - timedelta(minutes=2)).timestamp()),
+            'artist_name': 'A',
+            'track_name': 'T',
+            'mbid': 'mbid-1',
+            'raw_item': {'name': 'T', 'loved': '1'},
+        },
+        {
+            'played_at': (now - timedelta(minutes=1)).isoformat(),
+            'uts': int((now - timedelta(minutes=1)).timestamp()),
+            'artist_name': 'B',
+            'track_name': 'U',
+            'mbid': '',
+            'raw_item': {'name': 'U', 'loved': '0'},
+        },
+    ]
+    lastfm_history.save_recent_tracks(db, rows, user_id=1)
+    listening = ListeningStore(db)
+    lastfm_history.link_pending(db, listening, user_id=1)
+
+    data = listening.stats(user_id=1, days=7)['lastfm']
+
+    assert data['loved_plays'] == 1
+    assert data['mbid_plays'] == 1
+    assert data['imported_plays'] == 2
+    assert data['backfill'] == {
+        'done': False,
+        'oldest_at': '',
+        'newest_at': '',
+    }
+
+
+def test_import_state_is_public_and_preserves_cursor_values(tmp_path):
+    db = tmp_path / 'activity.db'
+    lastfm_history.ensure_schema(db)
+    assert lastfm_history.import_state(db) == {
+        'newest_at': '',
+        'oldest_at': '',
+        'backfill_done': False,
+    }
+    lastfm_history._save_state(
+        db,
+        {
+            'newest_at': '2026-11-25T20:00:00+00:00',
+            'oldest_at': '2026-10-11T20:00:00+00:00',
+            'backfill_done': True,
+        },
+    )
+
+    assert lastfm_history.import_state(db) == {
+        'newest_at': '2026-11-25T20:00:00+00:00',
+        'oldest_at': '2026-10-11T20:00:00+00:00',
+        'backfill_done': True,
     }

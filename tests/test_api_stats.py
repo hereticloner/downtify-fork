@@ -16,7 +16,7 @@ import pytest
 from starlette.testclient import TestClient
 
 import main
-from downtify import api, spotify_history
+from downtify import api, lastfm_history, spotify_history
 from downtify import stats as stats_mod
 
 
@@ -159,6 +159,63 @@ def test_best_day_is_the_older_maximum_not_the_newest_active_day(client):
         'date': older.isoformat(),
         'count': 40,
     }
+
+
+def test_lastfm_detail_survives_malformed_raw_json(client):
+    db_path = main.DATABASE_DIR / 'downtify_activity.db'
+    now = datetime.now(timezone.utc)
+    lastfm_history.save_recent_tracks(
+        db_path,
+        [
+            {
+                'played_at': now.isoformat(),
+                'uts': int(now.timestamp()),
+                'artist_name': 'A',
+                'track_name': 'T',
+                'raw_item': {'name': 'T'},
+            }
+        ],
+        user_id=1,
+    )
+    lastfm_history.link_pending(db_path, api.state.listening, user_id=1)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("UPDATE lastfm_recent_tracks SET raw_json='not-json'")
+
+    response = client.get('/api/stats')
+
+    assert response.status_code == 200, response.text
+    assert response.json()['playback']['lastfm']['loved_plays'] == 0
+
+
+def test_lastfm_loved_and_mbid_counts_are_scoped(client):
+    second = api.state.auth.users.create('second', 'second-password')
+    db_path = main.DATABASE_DIR / 'downtify_activity.db'
+    now = datetime.now(timezone.utc)
+    lastfm_history.save_recent_tracks(
+        db_path,
+        [
+            {
+                'played_at': now.isoformat(),
+                'uts': int(now.timestamp()),
+                'artist_name': 'B',
+                'track_name': 'U',
+                'mbid': 'mbid-2',
+                'raw_item': {'name': 'U', 'loved': '1'},
+            }
+        ],
+        user_id=second['id'],
+    )
+    lastfm_history.link_pending(
+        db_path, api.state.listening, user_id=second['id']
+    )
+
+    personal = client.get('/api/stats').json()['playback']['lastfm']
+    server = client.get('/api/stats', params={'scope': 'server'}).json()[
+        'playback'
+    ]['lastfm']
+
+    assert (personal['loved_plays'], personal['mbid_plays']) == (0, 0)
+    assert (server['loved_plays'], server['mbid_plays']) == (1, 1)
 
 
 def test_downtify_spotify_lastfm_same_play_is_one_event(client):

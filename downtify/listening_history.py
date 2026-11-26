@@ -304,6 +304,9 @@ class ListeningStore:
         window_end = today.isoformat()
         period_where = f'{where} AND ' if where else 'WHERE '
         period_args: tuple[Any, ...] = (*args, window_start, window_end)
+        loved_plays = 0
+        mbid_plays = 0
+        imported_plays = 0
         with self._connect() as conn:
             total = int(
                 conn.execute(
@@ -407,8 +410,47 @@ class ListeningStore:
             ):
                 if row['weekday'] is not None and 0 <= int(row['weekday']) < 7:
                     by_weekday[int(row['weekday'])] = int(row['count'])
+            has_lastfm = conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                (lastfm_history.TABLE,),
+            ).fetchone()
+            if has_lastfm:
+                event_where = 'WHERE e.user_id=?' if user_id else ''
+                loved_sql = (
+                    'CASE WHEN json_valid(l.raw_json) THEN '
+                    "CAST(json_extract(l.raw_json, '$.loved') AS INTEGER) "
+                    'ELSE 0 END'
+                )
+                detail = conn.execute(
+                    'SELECT COUNT(DISTINCT CASE WHEN '
+                    f'{loved_sql} = 1 THEN e.id END) AS loved, '
+                    "COUNT(DISTINCT CASE WHEN l.mbid != '' THEN e.id END) AS mbid "
+                    f'FROM listening_events e JOIN {lastfm_history.TABLE} l '
+                    'ON l.listening_event_id=e.id '
+                    f'{event_where} '
+                    'AND substr(e.played_at, 1, 10) BETWEEN ? AND ?',
+                    period_args,
+                ).fetchone()
+                loved_plays = int(detail['loved'])
+                mbid_plays = int(detail['mbid'])
+                imported_plays = int(
+                    conn.execute(
+                        f'SELECT COUNT(*) FROM {lastfm_history.TABLE}'
+                    ).fetchone()[0]
+                )
         period_total = sum(by_hour)
         with_duration = int(duration['with_duration'])
+        state = lastfm_history.import_state(self._path)
+        lastfm = {
+            'loved_plays': loved_plays,
+            'mbid_plays': mbid_plays,
+            'imported_plays': imported_plays,
+            'backfill': {
+                'done': bool(state['backfill_done']),
+                'oldest_at': state['oldest_at'],
+                'newest_at': state['newest_at'],
+            },
+        }
         return {
             'total': total,
             'top_tracks': top_tracks,
@@ -431,6 +473,7 @@ class ListeningStore:
                 'plays_without_duration': period_total - with_duration,
             },
             'patterns': {'by_hour': by_hour, 'by_weekday': by_weekday},
+            'lastfm': lastfm,
         }
 
     def forget_user(self, user_id: int) -> int:

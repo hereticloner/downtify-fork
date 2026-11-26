@@ -338,6 +338,14 @@ def build_stats(
         if listening_stats is not None
         else None
     ) or {'by_hour': [0] * 24, 'by_weekday': [0] * 7}
+    lastfm = (
+        listening_stats.get('lastfm') if listening_stats is not None else None
+    ) or {
+        'loved_plays': 0,
+        'mbid_plays': 0,
+        'imported_plays': 0,
+        'backfill': {'done': False, 'oldest_at': '', 'newest_at': ''},
+    }
 
     heatmap = _heatmap_from_counts(daily_counts)
     busiest = max(
@@ -380,6 +388,7 @@ def build_stats(
             'unique': unique,
             'track_time': track_time,
             'patterns': patterns,
+            'lastfm': lastfm,
         },
         'spotify': {
             'recent': recent,

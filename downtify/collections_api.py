@@ -418,6 +418,16 @@ async def stats_endpoint(
                     'plays_without_duration': 0,
                 },
                 'patterns': {'by_hour': [0] * 24, 'by_weekday': [0] * 7},
+                'lastfm': {
+                    'loved_plays': 0,
+                    'mbid_plays': 0,
+                    'imported_plays': 0,
+                    'backfill': {
+                        'done': False,
+                        'oldest_at': '',
+                        'newest_at': '',
+                    },
+                },
             },
             'spotify': spotify,
         }
