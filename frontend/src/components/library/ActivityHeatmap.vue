@@ -1,18 +1,23 @@
 <template>
   <div>
     <!--
-      The grid: one 2px block per day, oldest week first, 2px gaps showing
-      the ink behind it. Hover is read off one delegated listener on the
-      grid rather than 365 of them.
+      The grid: one painted 2px block per day, oldest week first. Pointer
+      targets stay compact on fine pointers and grow on touch screens.
     -->
     <div
       class="overflow-x-auto pb-1"
       data-heatmap
+      role="group"
+      :aria-label="t('stats.activityHeatmap')"
+      aria-describedby="heatmap-help"
       @mouseover="onHover"
-      @mouseleave="hovered = null"
+      @mouseleave="hoveredDate = ''"
       @focusin="onHover"
-      @focusout="hovered = null"
+      @focusout="onFocusout"
     >
+      <span id="heatmap-help" class="sr-only">{{
+        t('stats.heatmapKeyboardHint')
+      }}</span>
       <div class="stagger flex min-w-max gap-0.5">
         <div
           v-for="(week, w) in columns"
@@ -29,30 +34,37 @@
             v-for="cell in week"
             :key="cell.date"
             type="button"
-            class="size-2 transition-colors duration-100 hover:z-10 hover:outline hover:outline-1 hover:outline-line focus-visible:z-10"
-            :class="[
-              LEVEL_CLASSES[cell.level],
-              cell.date === selected ? SELECTED_CLASS : '',
-            ]"
+            class="heatmap-cell focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-accent"
             :data-date="cell.date"
             :data-cell="cell.date"
             :data-selected="cell.date === selected ? cell.date : undefined"
+            :tabindex="tabindexFor(indexByDate.get(cell.date))"
             :aria-pressed="cell.date === selected"
-            :aria-label="`${cell.date}: ${cell.count}`"
+            :aria-label="`${formatDay(cell.date)}: ${playCount(cell.count)}`"
+            :aria-describedby="
+              cell.date === hoveredDate ? 'heatmap-tip' : undefined
+            "
             @click="emit('select', cell.date)"
-          />
+            @keydown="onCellKeydown($event, indexByDate.get(cell.date))"
+          >
+            <span
+              class="size-2 transition-colors duration-100"
+              :class="[
+                LEVEL_CLASSES[cell.level],
+                cell.date === selected ? SELECTED_CLASS : '',
+              ]"
+            />
+          </button>
         </div>
       </div>
     </div>
 
-    <!--
-      The hovered day. A native `title` can't be styled, so the visible
-      one is our own and the cell carries `aria-label` for anything that
-      reads the grid instead of looking at it.
-    -->
+    <!-- The hovered or focused day, derived from its date so refreshes follow. -->
     <Transition name="tip">
       <div
         v-if="hovered"
+        id="heatmap-tip"
+        role="tooltip"
         class="pointer-events-none mt-2 inline-flex items-baseline gap-2 border-2 border-line bg-surface-2 px-2 py-1"
         data-heatmap-tip
       >
@@ -66,11 +78,13 @@
 <script setup>
 import { computed, ref } from 'vue'
 
+import { useI18n } from '/src/i18n'
 import {
   HEATMAP_WEEKS,
   heatmapCells,
   heatmapColumns,
   heatmapLead,
+  resolveHeatmapKey,
 } from '/src/lib/heatmap'
 
 const props = defineProps({
@@ -83,6 +97,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select'])
+const { t } = useI18n()
 
 // Written out rather than interpolated (`bg-accent/${level * 25}`) so
 // Tailwind sees each class as a whole. Level 0 is the empty-cell grey,
@@ -95,24 +110,58 @@ const LEVEL_CLASSES = [
   'bg-accent',
 ]
 
-// The picked day keeps an accent frame: the only accent in the grid, and
-// only while it is a state.
+// The picked day keeps an accent frame. Hover never replaces it.
 const SELECTED_CLASS = 'outline-2 outline-accent'
 
 const cells = computed(() => heatmapCells(props.days, props.weeks))
 const columns = computed(() => heatmapColumns(cells.value))
 const lead = computed(() => heatmapLead(cells.value))
-
-// The day under the cursor (or keyboard focus), or null.
-const hovered = ref(null)
 const byDate = computed(
   () => new Map(cells.value.map((cell) => [cell.date, cell]))
 )
+const indexByDate = computed(
+  () => new Map(cells.value.map((cell, index) => [cell.date, index]))
+)
 
-/** Delegated hover: find the cell the pointer landed on. */
+// Store the date, not a cell snapshot: refreshed counts follow the pointer.
+const hoveredDate = ref('')
+const hovered = computed(() =>
+  hoveredDate.value ? (byDate.value.get(hoveredDate.value) ?? null) : null
+)
+const activeIndex = ref(0)
+
+/** Delegated hover/focus: gaps inside the grid are not an exit. */
 function onHover(event) {
   const node = event.target?.closest?.('[data-cell]')
-  hovered.value = node ? (byDate.value.get(node.dataset.cell) ?? null) : null
+  if (!node) return
+  const date = node.dataset.cell
+  if (!byDate.value.has(date)) return
+  hoveredDate.value = date
+  activeIndex.value = indexByDate.value[date] ?? activeIndex.value
+}
+
+function onFocusout(event) {
+  if (event.relatedTarget?.closest?.('[data-cell]')) return
+  hoveredDate.value = ''
+}
+
+function tabindexFor(index) {
+  return index === activeIndex.value ? 0 : -1
+}
+
+function onCellKeydown(event, index) {
+  const intent = resolveHeatmapKey(event, index, cells.value.length)
+  if (!intent) return
+  event.preventDefault?.()
+  event.stopPropagation?.()
+  activeIndex.value = intent.index
+  if (intent.type === 'activate') {
+    const cell = cells.value[intent.index]
+    if (cell) emit('select', cell.date)
+    return
+  }
+  const nodes = document.querySelectorAll('[data-heatmap] [data-cell]')
+  nodes[intent.index]?.focus?.()
 }
 
 /**
@@ -134,12 +183,25 @@ function formatDay(date) {
 }
 
 function playCount(count) {
-  const plays = Number(count) || 0
-  return plays === 1 ? '1 play' : `${plays} plays`
+  return t('stats.playCount', { count: Number(count) || 0 })
 }
 </script>
 
 <style scoped>
+.heatmap-cell {
+  display: grid;
+  width: 8px;
+  height: 8px;
+  place-items: center;
+}
+
+@media (pointer: coarse) {
+  .heatmap-cell {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 /* The hover box fades rather than jumping under the cursor. */
 .tip-enter-active,
 .tip-leave-active {

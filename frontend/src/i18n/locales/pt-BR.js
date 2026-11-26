@@ -640,6 +640,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} reproduções do Spotify guardadas',
     activityHeatmap: 'Atividade de escuta',
+    playCount: { one: '{count} reprodução', other: '{count} reproduções' },
+    heatmapKeyboardHint:
+      'Use as setas para navegar por dias ou semanas. Pressione Enter ou Espaço para selecionar um dia.',
     streakDays: 'Sequência de dias',
     streak: {
       one: '{count} dia seguido',

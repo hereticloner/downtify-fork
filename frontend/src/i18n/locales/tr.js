@@ -637,6 +637,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: 'Depolanan {count} Spotify çalması',
     activityHeatmap: 'Dinleme etkinliği',
+    playCount: { one: '{count} çalma', other: '{count} çalma' },
+    heatmapKeyboardHint:
+      'Ok tuşlarıyla gün veya hafta arasında gezin. Bir günü seçmek için Enter veya Boşluk tuşuna basın.',
     streakDays: 'Gün serisi',
     streak: {
       one: '{count} gün üst üste',

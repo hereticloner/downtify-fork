@@ -71,6 +71,32 @@ export function heatmapLead(cells) {
   return weekdayIndex(Array.isArray(cells) ? cells[0]?.date : '')
 }
 
+/** Resolve a heatmap key into a clamped 2D move, edge or activation. */
+export function resolveHeatmapKey(event, index, count) {
+  const size = Math.max(0, Number(count) || 0)
+  if (!size) return null
+  const current = Math.min(Math.max(Number(index) || 0, 0), size - 1)
+  switch (event?.key) {
+    case 'ArrowRight':
+      return { type: 'move', index: Math.min(current + 1, size - 1) }
+    case 'ArrowLeft':
+      return { type: 'move', index: Math.max(current - 1, 0) }
+    case 'ArrowDown':
+      return { type: 'move', index: Math.min(current + HEATMAP_DAYS, size - 1) }
+    case 'ArrowUp':
+      return { type: 'move', index: Math.max(current - HEATMAP_DAYS, 0) }
+    case 'Home':
+      return { type: 'edge', index: 0 }
+    case 'End':
+      return { type: 'edge', index: size - 1 }
+    case 'Enter':
+    case ' ':
+      return { type: 'activate', index: current }
+    default:
+      return null
+  }
+}
+
 /** How many days the 30-day trend line spans. */
 export const TREND_DAYS = 30
 

@@ -630,6 +630,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} записани изпълнения от Spotify',
     activityHeatmap: 'Активност на слушането',
+    playCount: { one: '{count} изпълнение', other: '{count} изпълнения' },
+    heatmapKeyboardHint:
+      'Използвайте стрелките за преместване по дни или седмици. Натиснете Enter или Space, за да изберете ден.',
     streakDays: 'Серия от дни',
     streak: {
       one: '{count} ден поред',

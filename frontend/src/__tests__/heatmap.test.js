@@ -14,6 +14,7 @@ import {
   heatmapLevel,
   heatmapTotals,
   heatmapTrend,
+  resolveHeatmapKey,
   trendPoints,
   weekdayIndex,
 } from '/src/lib/heatmap'
@@ -180,6 +181,56 @@ describe('trendPoints', () => {
   })
 })
 
+describe('resolveHeatmapKey', () => {
+  it('moves by day and week and clamps at the edges', () => {
+    expect(resolveHeatmapKey({ key: 'ArrowRight' }, 10, 364)).toEqual({
+      type: 'move',
+      index: 11,
+    })
+    expect(resolveHeatmapKey({ key: 'ArrowLeft' }, 10, 364)).toEqual({
+      type: 'move',
+      index: 9,
+    })
+    expect(resolveHeatmapKey({ key: 'ArrowDown' }, 10, 364)).toEqual({
+      type: 'move',
+      index: 17,
+    })
+    expect(resolveHeatmapKey({ key: 'ArrowUp' }, 10, 364)).toEqual({
+      type: 'move',
+      index: 3,
+    })
+    expect(resolveHeatmapKey({ key: 'ArrowLeft' }, 0, 364)).toEqual({
+      type: 'move',
+      index: 0,
+    })
+    expect(resolveHeatmapKey({ key: 'ArrowDown' }, 360, 364)).toEqual({
+      type: 'move',
+      index: 363,
+    })
+  })
+
+  it('supports edges, activation and ignores unrelated keys', () => {
+    expect(resolveHeatmapKey({ key: 'Home' }, 10, 364)).toEqual({
+      type: 'edge',
+      index: 0,
+    })
+    expect(resolveHeatmapKey({ key: 'End' }, 10, 364)).toEqual({
+      type: 'edge',
+      index: 363,
+    })
+    expect(resolveHeatmapKey({ key: 'Enter' }, 10, 364)).toEqual({
+      type: 'activate',
+      index: 10,
+    })
+    expect(resolveHeatmapKey({ key: ' ' }, 10, 364)).toEqual({
+      type: 'activate',
+      index: 10,
+    })
+    expect(resolveHeatmapKey({ key: 'Escape' }, 10, 364)).toBeNull()
+    expect(resolveHeatmapKey({ key: 'ArrowRight' }, 10, 0)).toBeNull()
+  })
+})
+
 describe('ActivityHeatmap', () => {
   it('renders a cell for every day of the window', async () => {
     const html = await render(ActivityHeatmap, { days: year() })
@@ -199,7 +250,7 @@ describe('ActivityHeatmap', () => {
     expect(today).toContain('bg-accent ')
     expect(today).toContain('data-date=')
     expect(yesterday).toContain('bg-line-2')
-    expect(html).toContain(`${days.at(-1).date}: 9`)
+    expect(html).toContain('9 plays')
   })
 
   it('honours a narrower window', async () => {
@@ -217,6 +268,16 @@ describe('ActivityHeatmap', () => {
     const html = await render(ActivityHeatmap, { days, selected: picked })
     expect(html).toContain(`data-selected="${picked}"`)
     expect(html.split('data-selected=')).toHaveLength(2)
+    expect(html).toContain('outline-accent')
+  })
+
+  it('uses one roving tab stop and keeps selection clear on hover', async () => {
+    const html = await render(ActivityHeatmap, { days: year() })
+    expect(html.match(/tabindex="0"/g) || []).toHaveLength(1)
+    expect(html.match(/tabindex="-1"/g) || []).toHaveLength(
+      HEATMAP_WEEKS * HEATMAP_DAYS - 1
+    )
+    expect(html).not.toContain('hover:outline')
   })
 
   it('lets a cell be clicked to pick that day', async () => {

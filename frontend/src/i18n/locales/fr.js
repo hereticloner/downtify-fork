@@ -659,6 +659,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} écoutes Spotify enregistrées',
     activityHeatmap: 'Activité d’écoute',
+    playCount: { one: '{count} lecture', other: '{count} lectures' },
+    heatmapKeyboardHint:
+      'Utilisez les flèches pour vous déplacer par jour ou par semaine. Appuyez sur Entrée ou Espace pour sélectionner un jour.',
     streakDays: 'Série de jours',
     streak: {
       one: '{count} jour d’affilée',

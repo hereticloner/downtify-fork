@@ -638,6 +638,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} tárolt Spotify-lejátszás',
     activityHeatmap: 'Hallgatási tevékenység',
+    playCount: { one: '{count} lejátszás', other: '{count} lejátszás' },
+    heatmapKeyboardHint:
+      'A nyilakkal napok vagy hetek között léphetsz. Egy nap kiválasztásához nyomj Entert vagy Szóközt.',
     streakDays: 'Sorozatban játszott napok',
     streak: {
       one: '{count} nap egyhuzamosan',
