@@ -2116,7 +2116,7 @@ Library and usage numbers — see [Stats](features/stats.md).
 
 ### `GET /api/stats`
 
-Client. Query: `days=7|30|90` (default `30`) and `scope=user|server` (default `user`). `scope=server` is admin-only. Library size and likes are server-wide; activity and measured listening follow the selected account or server scope.
+Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user`) and optional `date=YYYY-MM-DD`. `scope=server` is admin-only. Invalid calendar dates return `400`. Library size and likes are server-wide; activity and measured listening follow the selected account or server scope.
 
 **Response:**
 
@@ -2143,7 +2143,33 @@ Client. Query: `days=7|30|90` (default `30`) and `scope=user|server` (default `u
     ],
     "heatmap": [{ "date": "2026-09-29", "count": 2 }],
     "streak_days": 4,
-    "best_day": { "date": "2026-10-10", "count": 31 }
+    "best_day": { "date": "2026-10-10", "count": 31 },
+    "period": {
+      "days": 30,
+      "total": 1200,
+      "by_source": { "downtify": 20, "spotify": 1100, "lastfm": 80 }
+    },
+    "unique": { "tracks": 700, "artists": 210, "albums": 380 },
+    "track_time": {
+      "seconds": 2520000,
+      "plays_with_duration": 1190,
+      "plays_without_duration": 10
+    },
+    "patterns": {
+      "by_hour": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "by_weekday": [0, 0, 0, 0, 0, 0, 0]
+    },
+    "lastfm": {
+      "loved_plays": 4,
+      "mbid_plays": 75,
+      "imported_plays": 3800,
+      "backfill": {
+        "done": false,
+        "oldest_at": "2026-10-11T21:46:08Z",
+        "newest_at": "2026-11-25T21:00:00Z"
+      }
+    },
+    "day": { "date": "", "total": 0, "plays": [] }
   },
   "spotify": {
     "recent": [
@@ -2159,7 +2185,15 @@ Client. Query: `days=7|30|90` (default `30`) and `scope=user|server` (default `u
 }
 ```
 
-Counts come from the library stores and the activity log (which keeps a year of entries); a download request counts once, and a play is logged each time a song starts. `playback.measured` adds unique listening seconds, completions (at least 90% heard) and skips (left before 25% or within 15 seconds) for the selected period; repeated heartbeats and seek jumps are not double-counted. `playback.heatmap` is one `{date, count}` per day of that window (364 days, days without a play included as `0`), `playback.streak_days` the current run of consecutive days with a play, and `playback.best_day` the busiest of them (`{"date": "", "count": 0}` when nothing was played). `playback.recent` carries up to 400 of your newest plays, newest first, each `{at, date, summary, context, context_type}` — `context` is the playlist, album or artist the play was served from, empty when the player reported no queue — and `playback.top_contexts` those same plays grouped by queue, most played first. `spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
+Counts come from the library stores, the activity log and the canonical `listening_events` history. A download request counts once. `playback.total` is all stored canonical plays; `playback.measured` adds Downtify-only unique listening seconds, completions (at least 90% heard) and skips (left before 25% or within 15 seconds) for the selected period. Spotify and Last.fm never fabricate those measured values.
+
+`playback.heatmap` is one `{date, count}` per day of the retained 364-day window, including zero days; `playback.streak_days` is the current consecutive-day run and `playback.best_day` is the maximum-count day, not merely the newest active day. `playback.recent` carries up to 400 newest canonical plays, each `{at, date, summary, context, context_type, source}`. `playback.top_contexts` groups those plays by known queue.
+
+`playback.period`, `playback.unique`, `playback.track_time`, `playback.patterns`, `playback.lastfm.loved_plays` and `playback.lastfm.mbid_plays` cover the selected UTC calendar window. `period.by_source` uses the canonical winning source after dedupe. `unique` counts normalized track keys and non-empty artist/album names. `track_time` sums known track lengths and reports duration coverage; it is not listening time. `patterns.by_hour` has 24 UTC-hour counts and `patterns.by_weekday` has seven Sunday-first counts. `lastfm.imported_plays` and `lastfm.backfill` are connection-level import facts; loved means the linked scrobble was marked loved at import.
+
+Optional `date=YYYY-MM-DD` fills `playback.day` with that exact UTC day's true total and up to 400 newest plays. Without it, `day` is `{"date":"","total":0,"plays":[]}`. Historical raw metadata is copied into blank canonical album/context fields by an idempotent background fill-only pass; it never changes play identity or counts and never runs in this GET.
+
+`spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
 
 ---
 

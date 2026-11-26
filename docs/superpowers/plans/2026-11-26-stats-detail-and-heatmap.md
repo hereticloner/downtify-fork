@@ -218,7 +218,10 @@ def test_day_plays_returns_exact_scoped_total_and_capped_rows():
 
 
 def test_stats_date_query_rejects_invalid_dates(client):
-    assert client.get('/api/stats', params={'date': '2026-02-30'}).status_code == 400
+    assert (
+        client.get('/api/stats', params={'date': '2026-02-30'}).status_code
+        == 400
+    )
 ```
 
 Add an endpoint test where the selected day predates the 400 most recent rows and still returns its play.

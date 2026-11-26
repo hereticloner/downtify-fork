@@ -8,7 +8,7 @@ Stats is a read-only page that puts the size of your library and how much you us
 
 ## Period and account scope
 
-The **7 / 30 / 90 days** control changes the measured listening cards. The page shows the signed-in account's playback by default. An admin can request the server-wide view through the API with `scope=server`; the web page keeps the personal view.
+The **7 / 30 / 90 days** control changes the measured listening cards and the selected-period listening profile, source split, unique counts, known track time, UTC patterns and Last.fm detail. The page shows the signed-in account's playback by default. An admin can request the server-wide view through the API with `scope=server`; the web page keeps the personal view.
 
 Library size and likes remain server-wide in this version. Unified playback history, downloads, the heatmap and the measured listening metrics are account-scoped. Spotify and Last.fm connections are server settings, so imported plays belong to the first Downtify admin account.
 
@@ -22,12 +22,31 @@ Eight cards sit across the top:
 | **Playlists in library** | Playlists in the library |
 | **Downloads (30 days)** | Download requests recorded in the last 30 days |
 | **Downloads (all time)** | Download requests in the whole retained activity log |
-| **Listening time** | Unique seconds heard in the selected 7, 30 or 90 days |
+| **Measured listening** | Unique seconds heard through Downtify in the selected 7, 30 or 90 days; Spotify and Last.fm do not add fabricated seconds |
 | **Completed** | Tracks heard to at least 90%, with the completion rate |
 | **Skipped** | Tracks left before 25% or within 15 seconds, with the skip rate |
 | **Liked** | Songs with a heart, from [Liked songs](liked-songs.md) |
 
 The two download cards come from the same log: one counts the retained window, the other everything still in it (see [Where the numbers come from](#where-the-numbers-come-from)).
+
+## Listening profile
+
+The selected-period profile counts only canonical plays, so one real play linked to Downtify, Spotify and Last.fm is still one play. It shows:
+
+- **Plays in period** for the selected UTC calendar window.
+- **Source split** across Downtify, Spotify and Last.fm. These are the canonical winning sources after dedupe, not raw provider observation counts.
+- **Unique tracks, artists and known albums.** Tracks use the normalized artist/title key; empty artist and album names are left out. “Known albums” is deliberate: some Last.fm rows do not carry an album.
+- **Known track time**, the sum of stored track lengths, with a coverage line such as `120/123 plays have track duration`. This is **not** listening time: a skipped track still contributes its full length, and Last.fm usually has no duration at all.
+
+Counts describe history stored/imported on this server. They do not claim a provider's complete lifetime total while Spotify's rolling window or Last.fm backfill is incomplete.
+
+## Listening patterns (UTC)
+
+Two compact distributions use the same selected window: **Hour of day (UTC)** has 24 bars and **Day of week (UTC)** has seven, Sunday first. They are explicitly UTC because Downtify does not store a reliable per-user timezone.
+
+## Last.fm detail
+
+The Last.fm block shows canonical plays whose linked scrobble was marked loved **at import**, canonical plays with a MusicBrainz ID, the number of imported Last.fm rows and the backfill state. The loved flag is a historical snapshot, not the account's current loved-track list. When backfill is running, the oldest imported timestamp is shown; after an empty page is reached, the import is marked complete.
 
 ## Downloads per day
 
@@ -43,16 +62,17 @@ Below the cards, **Downloads per day** lists each day that had a download, oldes
 
 ## Last.fm history
 
-**Settings → Scrobbling → Import Last.fm history** brings the connected account's scrobbles into the same unified Stats history. New plays are picked up every 15 minutes; older history is imported backwards in bounded pages and resumes after a restart or API failure. The currently-playing Last.fm entry is not counted as a play. Last.fm records usually carry artist/title metadata rather than a Spotify ID, so older rows remain visible in Stats even when they cannot be linked to a specific Downtify library ID.
+**Settings → Scrobbling → Import Last.fm history** brings the connected account's scrobbles into the same unified Stats history. New plays are picked up every 15 minutes; older history is imported backwards in bounded pages and resumes after a restart or API failure. The currently-playing Last.fm entry is not counted as a play. Last.fm records usually carry artist/title metadata rather than a Spotify ID, so older rows remain visible in Stats even when they cannot be linked to a specific Downtify library ID. A background fill-only pass copies missing album names from linked Last.fm rows and missing Spotify context/album values into canonical history; it never overwrites a value Downtify already knows.
 
 ## Listening activity
 
-**Listening activity** is a GitHub-style heatmap of the last 52 weeks: one column per week, one cell per day, oldest week on the left. A day with no play is the empty grey; the more you played, the stronger the green. The shading is scaled to your busiest day of that window, so even a quiet month keeps its shape.
+**Listening activity** is a GitHub-style heatmap of the last 52 weeks: one column per week, one cell per day, oldest week on the left. A day with no play is the empty grey; the more you played, the stronger the accent shade. The shading is scaled to your busiest day of that window, so even a quiet month keeps its shape.
 
-The cells arrive one after another rather than all at once, each column a moment behind the last, and each cell grows under the cursor and when the keyboard reaches it.
+The cells arrive one after another rather than all at once, each column a moment behind the last. Fine pointers use compact 8px painted cells; touch screens use 24px button targets with the same painted squares and horizontal scrolling.
 
-- **Hovering** (or focusing) a cell shows the full date and how many songs were played on it.
-- **Clicking** a cell — or pressing it with the keyboard — opens **Recent plays** filtered to that day, and rings the cell so the choice stays visible once the cursor moves away. Clicking the same cell again, or **All days**, clears it.
+- **Hovering** (or focusing) a cell shows the full date and localized play count. Crossing the small gaps inside the grid does not hide it, and refreshed counts follow the hovered date.
+- The grid is one tab stop. **Arrow Left/Right** move one day, **Arrow Up/Down** move seven days, **Home/End** jump to the edges, and **Enter/Space** select.
+- **Clicking** a cell — or pressing it with the keyboard — opens **Recent plays** filtered to that exact day, and rings the cell so the choice stays visible on hover and focus. Clicking the same cell again, or **All days**, clears it.
 
 Underneath the grid are two numbers:
 
@@ -63,7 +83,7 @@ Both come from the same unified listening history as the other playback panels, 
 
 ## Recent plays
 
-**Recent plays** lists what you played across Downtify, Spotify and Last.fm, newest first: the time, the `Artist - Title` label, a small provider badge, and — when Downtify knew it — **the queue it came from** as a small tag. The panel header shows the all-time unified play total. That is the playlist, album or artist you pressed play on, so "what did I listen to" answers with a source rather than a bare title. Without a day picked in the heatmap it lists your newest plays; with one, only that day's.
+**Recent plays** lists what you played across Downtify, Spotify and Last.fm, newest first: the time, the `Artist - Title` label, a small provider badge, and — when Downtify knew it — **the queue it came from** as a small tag. The panel header shows the all-time unified play total. That is the playlist, album or artist you pressed play on, so "what did I listen to" answers with a source rather than a bare title. Without a day picked in the heatmap it lists your newest 400 plays; with one, the server returns that exact UTC day's newest 400 plays and its true total. A day older than the recent page therefore does not show an empty list. If the day is larger than 400 plays, the panel says it is truncated. Day requests run in the background, keep the heatmap in place and offer an inline retry on failure.
 
 Only plays from after this shipped carry the tag. A player that reports no queue (an older app, a bare library play) is simply listed without one.
 
@@ -73,7 +93,7 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 
 ## Last 30 days
 
-**Last 30 days** draws the tail of the heatmap as a line, scaled to its own busiest day so a quiet week still reads as a shape. Under it: how many plays those 30 days hold, how many of them you listened on a day at all, and your average per listening day.
+**Last 30 days** draws the tail of the heatmap as square blocks, one column per day, scaled to its own busiest day so a quiet week still reads as a shape. Under it: how many plays those 30 days hold, how many of them you listened on a day at all, and your average per listening day.
 
 ## Where the numbers come from
 
@@ -83,12 +103,17 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 - **Plays** come from one canonical `listening_events` table in `/data/downtify_activity.db`. It combines Downtify player starts, imported Spotify plays and imported Last.fm scrobbles. Replaying a song counts again; the all-time total is not pruned with the activity log.
 - **Deduplication** uses normalized artist/title and a bounded time window. Source precedence is **Downtify → Spotify → Last.fm**. One real play seen through several providers produces one canonical row; a second observation from the same provider inside the window remains a separate play.
 - **Measured listening** still uses only Downtify's position reports, sent about every 30 seconds. Repeated heartbeats count once; a seek jump is not listening time; a gap longer than 45 seconds is ignored. A track heard to at least 90% is one completion. Leaving before 25% or within 15 seconds is one skip. Spotify and Last.fm do not fabricate seconds, completions or skips.
+- **Selected-period profile** reads canonical events from today and the preceding `days - 1` UTC calendar days. Source counts use the canonical winning source; unique tracks use `match_key`; unique artists/albums exclude empty names.
+- **Known track time** sums positive `duration_ms` and reports how many period plays have a duration. It is track length, never measured listening time.
+- **UTC patterns** group the same canonical period rows by UTC hour and weekday (Sunday first). No local-timezone claim is made.
+- **Last.fm detail** counts distinct linked canonical events with a truthy raw `loved` value or non-empty MBID. Imported-row count and backfill state are connection-level facts. Malformed raw JSON is ignored safely.
+- **Historical enrichment** is a background, idempotent fill-only pass over already-linked raw Spotify/Last.fm rows. It repairs blank canonical album/context fields without changing source, identity, timestamp or play count, and never runs in a Stats GET.
 - **Raw provider data** is kept separately: Spotify's original track object/ISRC/context and Last.fm's original scrobble object. These tables are included in metadata backups.
 - The unified playback and measured counts are **per account**. An admin can ask for the server total with `scope=server`; library size and likes remain server-wide.
 
 ## API
 
-`GET /api/stats?days=30&scope=user` returns one object. `days` accepts `7`, `30` or `90`; anything else falls back to `30`. `scope=user` is the default and returns the signed-in account's activity. `scope=server` is admin-only and aggregates every account.
+`GET /api/stats?days=30&scope=user` returns one object. `days` accepts `7`, `30` or `90`; anything else falls back to `30`. `scope=user` is the default and returns the signed-in account's activity. `scope=server` is admin-only and aggregates every account. Optional `date=YYYY-MM-DD` loads one exact UTC day into `playback.day`; invalid calendar dates return `400`.
 
 ```json
 {
@@ -130,7 +155,33 @@ Only plays from after this shipped carry the tag. A player that reports no queue
         "source": "downtify"
       }
     ],
-    "top_contexts": [{ "context": "Chill Deploy", "count": 128 }]
+    "top_contexts": [{ "context": "Chill Deploy", "count": 128 }],
+    "period": {
+      "days": 30,
+      "total": 1200,
+      "by_source": { "downtify": 20, "spotify": 1100, "lastfm": 80 }
+    },
+    "unique": { "tracks": 700, "artists": 210, "albums": 380 },
+    "track_time": {
+      "seconds": 2520000,
+      "plays_with_duration": 1190,
+      "plays_without_duration": 10
+    },
+    "patterns": {
+      "by_hour": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "by_weekday": [0, 0, 0, 0, 0, 0, 0]
+    },
+    "lastfm": {
+      "loved_plays": 4,
+      "mbid_plays": 75,
+      "imported_plays": 3800,
+      "backfill": {
+        "done": false,
+        "oldest_at": "2026-10-11T21:46:08Z",
+        "newest_at": "2026-11-25T21:00:00Z"
+      }
+    },
+    "day": { "date": "", "total": 0, "plays": [] }
   },
   "spotify": {
     "recent": [
@@ -162,6 +213,12 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 | `playback.best_day` | `{date, count}` for the busiest day of the window, or `{"date": "", "count": 0}` when nothing was played |
 | `playback.recent` | Up to 400 of your newest unified plays, newest first, each `{at, date, summary, context, context_type, source}` — `source` is `downtify`, `spotify` or `lastfm`; `context` is empty when no queue was known |
 | `playback.top_contexts` | Up to ten `{context, count}`, most played first; plays without a queue are left out |
+| `playback.period` | `{days, total, by_source}` for the selected UTC calendar window; `by_source` always has `downtify`, `spotify` and `lastfm` |
+| `playback.unique` | `{tracks, artists, albums}` for the period; empty names are excluded and albums mean known album names |
+| `playback.track_time` | `{seconds, plays_with_duration, plays_without_duration}` for the period; track lengths, not listened time |
+| `playback.patterns` | `{by_hour, by_weekday}` integer arrays for the period; 24 UTC hours and seven UTC weekdays, Sunday first |
+| `playback.lastfm` | `{loved_plays, mbid_plays, imported_plays, backfill}`; loved/MBID counts are period-scoped canonical events, import facts are connection-level |
+| `playback.day` | `{date, total, plays}` for the optional exact UTC day; up to 400 newest plays with the true total, or an empty object when `date` is omitted |
 | `spotify.recent` | Up to ten mirrored plays, newest first, each `{played_at, artist_name, track_name, album_name}` |
 | `spotify.play_count` | Plays stored in the history table, all of them |
 
