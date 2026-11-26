@@ -7,6 +7,7 @@ const fixture = vi.hoisted(() => ({
 vi.mock('/src/model/api', () => ({ default: fixture.api }))
 
 import { formatDuration, formatPercent } from '../lib/format'
+import { playsForDay } from '../model/stats'
 
 let stats
 
@@ -40,6 +41,94 @@ describe('Stats period', () => {
       days: 90,
       scope: 'user',
     })
+  })
+
+  it('loads an exact day in the background without blanking the page', async () => {
+    fixture.api.getStats.mockResolvedValue({
+      data: { playback: { day: { date: '2026-11-20', total: 1, plays: [] } } },
+    })
+
+    await stats.load('2026-11-20', { background: true })
+
+    expect(fixture.api.getStats).toHaveBeenCalledWith({
+      days: 30,
+      scope: 'user',
+      date: '2026-11-20',
+    })
+    expect(stats.loading.value).toBe(false)
+    expect(stats.dayLoading.value).toBe(false)
+    expect(stats.dayError.value).toBe(false)
+  })
+
+  it('ignores a stale response after a newer day request', async () => {
+    let resolveFirst
+    let resolveSecond
+    fixture.api.getStats
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve
+          })
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecond = resolve
+          })
+      )
+
+    const first = stats.load('2026-11-20', { background: true })
+    const second = stats.load('2026-11-21', { background: true })
+    resolveSecond({ data: { playback: { day: { date: '2026-11-21' } } } })
+    await second
+    resolveFirst({ data: { playback: { day: { date: '2026-11-20' } } } })
+    await first
+
+    expect(stats.stats.value.playback.day.date).toBe('2026-11-21')
+  })
+
+  it('keeps day errors separate from whole-page errors', async () => {
+    fixture.api.getStats.mockRejectedValue(new Error('offline'))
+
+    await stats.load('2026-11-20', { background: true })
+
+    expect(stats.error.value).toBe(false)
+    expect(stats.dayError.value).toBe(true)
+    expect(stats.loading.value).toBe(false)
+  })
+})
+
+describe('playsForDay', () => {
+  it('uses recent plays when no day is selected', () => {
+    expect(
+      playsForDay({ playback: { recent: [{ summary: 'Recent' }] } }, '')
+    ).toEqual([{ summary: 'Recent' }])
+  })
+
+  it('uses the exact server day page when a day is selected', () => {
+    expect(
+      playsForDay(
+        {
+          playback: {
+            recent: [{ summary: 'Recent' }],
+            day: {
+              date: '2026-11-20',
+              plays: [{ summary: 'Older exact day' }],
+            },
+          },
+        },
+        '2026-11-20'
+      )
+    ).toEqual([{ summary: 'Older exact day' }])
+  })
+
+  it('returns an empty list for a selected day with no response yet', () => {
+    expect(
+      playsForDay(
+        { playback: { recent: [{ summary: 'Recent' }] } },
+        '2026-11-20'
+      )
+    ).toEqual([])
   })
 })
 

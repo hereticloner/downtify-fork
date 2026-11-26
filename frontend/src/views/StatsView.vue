@@ -52,6 +52,167 @@
         </div>
       </section>
 
+      <!-- Selected-period listening profile, sourced only from canonical plays. -->
+      <section class="border-b-2 border-line">
+        <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+          <h2 class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2">
+            {{ t('stats.listeningProfile') }}
+          </h2>
+          <span
+            class="mono tabular flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+            >{{ days }}</span
+          >
+        </div>
+        <div class="grid grid-cols-2 border-l-2 border-line md:grid-cols-4">
+          <div
+            v-for="metric in profileMetrics"
+            :key="metric.key"
+            class="border-r-2 border-b-2 border-line px-4 py-3"
+          >
+            <div
+              class="text-display tabular text-[28px] leading-none font-bold"
+            >
+              {{ metric.value }}
+            </div>
+            <span class="eyebrow mt-2 block truncate">{{ metric.label }}</span>
+          </div>
+        </div>
+        <div class="grid xl:grid-cols-3">
+          <div
+            class="flex min-w-0 flex-col border-b-2 border-line px-3 py-4 xl:border-r-2 xl:border-b-0"
+          >
+            <h3 class="eyebrow mb-3">{{ t('stats.sourceSplit') }}</h3>
+            <ul class="flex flex-col gap-3">
+              <li v-for="row in sourceRows" :key="row.source">
+                <div class="mb-1 flex items-baseline justify-between gap-3">
+                  <span class="text-[13px]">{{ row.label }}</span>
+                  <span class="mono tabular text-faint">{{ row.count }}</span>
+                </div>
+                <div class="h-2 border border-line-2" aria-hidden="true">
+                  <div
+                    class="h-full bg-fg"
+                    :style="{ width: `${sourcePercent(row.count)}%` }"
+                  />
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div
+            class="flex min-w-0 flex-col border-b-2 border-line px-3 py-4 xl:border-r-2 xl:border-b-0"
+          >
+            <h3 class="eyebrow">{{ t('stats.knownTrackTime') }}</h3>
+            <div
+              class="text-display mt-2 tabular text-[28px] leading-none font-bold"
+            >
+              {{ formatDuration(trackTime.seconds) }}
+            </div>
+            <p class="mono mt-2 text-faint">{{ t('stats.trackTimeHint') }}</p>
+            <p class="mono mt-1 text-faint">
+              {{
+                t('stats.durationCoverage', {
+                  with: trackTime.plays_with_duration,
+                  total: profilePeriod.total ?? 0,
+                })
+              }}
+            </p>
+          </div>
+          <div class="flex min-w-0 flex-col px-3 py-4">
+            <h3 class="eyebrow mb-3">{{ t('stats.lastfmDetail') }}</h3>
+            <dl class="flex flex-col gap-2">
+              <div class="flex items-baseline justify-between gap-3">
+                <dt class="text-[13px]">{{ t('stats.lastfmLoved') }}</dt>
+                <dd class="mono tabular text-fg-3">{{ lastfm.loved_plays }}</dd>
+              </div>
+              <div class="flex items-baseline justify-between gap-3">
+                <dt class="text-[13px]">{{ t('stats.lastfmMbid') }}</dt>
+                <dd class="mono tabular text-fg-3">{{ lastfm.mbid_plays }}</dd>
+              </div>
+              <div class="flex items-baseline justify-between gap-3">
+                <dt class="text-[13px]">
+                  {{
+                    t('stats.lastfmImported', { count: lastfm.imported_plays })
+                  }}
+                </dt>
+                <dd class="mono tabular text-fg-3">
+                  {{ lastfm.imported_plays }}
+                </dd>
+              </div>
+            </dl>
+            <p class="mono mt-3 border-t-2 border-line pt-2 text-faint">
+              {{ lastfmImportLabel }}
+            </p>
+          </div>
+        </div>
+        <p class="mono border-t-2 border-line px-3 py-2 text-faint">
+          {{ t('stats.historyCoverage') }}
+        </p>
+      </section>
+
+      <!-- UTC patterns: the server stores UTC and has no user timezone. -->
+      <section class="border-b-2 border-line">
+        <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+          <h2 class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2">
+            {{ t('stats.patterns') }}
+          </h2>
+        </div>
+        <div class="grid xl:grid-cols-2">
+          <div
+            class="border-b-2 border-line px-3 py-4 xl:border-r-2 xl:border-b-0"
+          >
+            <h3 class="eyebrow mb-3">{{ t('stats.hourOfDayUtc') }}</h3>
+            <div
+              class="flex h-28 items-end gap-1"
+              role="img"
+              :aria-label="t('stats.hourOfDayUtc')"
+            >
+              <div
+                v-for="row in byHour"
+                :key="row.hour"
+                class="flex h-full min-w-0 flex-1 flex-col justify-end gap-1"
+                :title="`${row.label}: ${row.count}`"
+              >
+                <span
+                  class="w-full"
+                  :class="row.count ? 'bg-fg' : 'border border-line-2'"
+                  :style="{ height: `${patternPercent(row.count, hourMax)}%` }"
+                />
+                <span
+                  v-if="row.hour % 3 === 0"
+                  class="mono text-[9px] text-faint"
+                  >{{ row.label }}</span
+                >
+              </div>
+            </div>
+          </div>
+          <div class="px-3 py-4">
+            <h3 class="eyebrow mb-3">{{ t('stats.weekdayUtc') }}</h3>
+            <div
+              class="flex h-28 items-end gap-2"
+              role="img"
+              :aria-label="t('stats.weekdayUtc')"
+            >
+              <div
+                v-for="row in byWeekday"
+                :key="row.weekday"
+                class="flex h-full min-w-0 flex-1 flex-col justify-end gap-1"
+                :title="`${row.label}: ${row.count}`"
+              >
+                <span
+                  class="w-full"
+                  :class="row.count ? 'bg-fg' : 'border border-line-2'"
+                  :style="{
+                    height: `${patternPercent(row.count, weekdayMax)}%`,
+                  }"
+                />
+                <span class="mono text-center text-[9px] text-faint">{{
+                  row.label
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Ingest chart + top origins: square blocks, mono axes. -->
       <section
         class="grid border-b-2 border-line xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]"
@@ -233,11 +394,27 @@
               {{ t('stats.clearDay') }}
             </button>
           </div>
-          <div class="min-w-0 px-3 py-3">
+          <div class="min-w-0 px-3 py-3" :aria-busy="selectedDay && dayLoading">
             <p v-if="selectedDay" class="mono mb-2 text-faint" data-day-filter>
-              {{ t('stats.dayPlays', { date: selectedDay }) }}
+              {{ t('stats.dayPlays', { date: selectedDay }) }} · {{ dayTotal }}
             </p>
-            <p v-if="!dayPlays.length" class="text-[13px] text-faint">
+            <template v-if="selectedDay && dayLoading">
+              <UiSkeleton class="mb-2 h-7" />
+              <UiSkeleton class="mb-2 h-7" />
+              <UiSkeleton class="h-7" />
+            </template>
+            <div
+              v-else-if="selectedDay && dayError"
+              class="flex flex-col items-start gap-2"
+            >
+              <p class="text-[13px] text-faint">
+                {{ t('stats.dayLoadFailed') }}
+              </p>
+              <UiButton icon="refresh" @click="retryDay">{{
+                t('common.retry')
+              }}</UiButton>
+            </div>
+            <p v-else-if="!dayPlays.length" class="text-[13px] text-faint">
               {{ t('stats.empty') }}
             </p>
             <ol class="flex max-h-96 flex-col overflow-y-auto" role="list">
@@ -268,6 +445,17 @@
                 </span>
               </li>
             </ol>
+            <p
+              v-if="selectedDay && dayTotal > dayPlays.length"
+              class="mono mt-2 border-t-2 border-line pt-2 text-faint"
+            >
+              {{
+                t('stats.dayTruncated', {
+                  shown: dayPlays.length,
+                  total: dayTotal,
+                })
+              }}
+            </p>
           </div>
         </div>
 
@@ -395,15 +583,15 @@ import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import UiSegmented from '/src/components/ui/UiSegmented.vue'
 import { formatDuration, formatPercent } from '/src/lib/format'
 import { heatmapCells, heatmapTotals, heatmapTrend } from '/src/lib/heatmap'
-import { useStats } from '/src/model/stats'
+import { playsForDay, useStats } from '/src/model/stats'
 // Local registration: SSR renders this view without the app's directives.
 import { countUpDirective as vCountUp } from '/src/composables/useCountUp'
 
 const { t, locale } = useI18n()
-const { stats, loading, error, days, load } = useStats()
+const { stats, loading, error, dayLoading, dayError, days, load } = useStats()
 
-onMounted(load)
-watch(days, load)
+onMounted(() => load())
+watch(days, () => load(selectedDay.value))
 
 // Block charts: a column of squares per day, 2px apart, never a curve.
 const CHART_BLOCKS = 10
@@ -469,7 +657,7 @@ const metrics = computed(() => [
   },
   {
     key: 'listeningTime',
-    label: t('stats.listeningTime'),
+    label: t('stats.measuredListening'),
     value: formatDuration(measured.value.seconds),
   },
   {
@@ -491,6 +679,48 @@ const metrics = computed(() => [
   },
 ])
 
+const profilePeriod = computed(() => stats.value.playback?.period || {})
+const profileUnique = computed(() => stats.value.playback?.unique || {})
+const trackTime = computed(
+  () =>
+    stats.value.playback?.track_time || {
+      seconds: 0,
+      plays_with_duration: 0,
+      plays_without_duration: 0,
+    }
+)
+const lastfm = computed(
+  () =>
+    stats.value.playback?.lastfm || {
+      loved_plays: 0,
+      mbid_plays: 0,
+      imported_plays: 0,
+      backfill: {},
+    }
+)
+const profileMetrics = computed(() => [
+  {
+    key: 'periodPlays',
+    label: t('stats.periodPlays'),
+    value: profilePeriod.value.total ?? 0,
+  },
+  {
+    key: 'uniqueTracks',
+    label: t('stats.uniqueTracks'),
+    value: profileUnique.value.tracks ?? 0,
+  },
+  {
+    key: 'uniqueArtists',
+    label: t('stats.uniqueArtists'),
+    value: profileUnique.value.artists ?? 0,
+  },
+  {
+    key: 'knownAlbums',
+    label: t('stats.knownAlbums'),
+    value: profileUnique.value.albums ?? 0,
+  },
+])
+
 // The day a heatmap cell was clicked on, or '' for all of them.
 const selectedDay = ref('')
 
@@ -499,13 +729,18 @@ function pickDay(date) {
   selectedDay.value = selectedDay.value === date ? '' : date || ''
 }
 
-// Your newest plays, newest first, narrowed to the picked day.
-const dayPlays = computed(() => {
-  const recent = stats.value.playback?.recent || []
-  return selectedDay.value
-    ? recent.filter((row) => row.date === selectedDay.value)
-    : recent
-})
+// Selected-day rows come from the exact-day endpoint, not the recent page.
+const dayPlays = computed(() => playsForDay(stats.value, selectedDay.value))
+const dayTotal = computed(() =>
+  selectedDay.value && stats.value.playback?.day?.date === selectedDay.value
+    ? (stats.value.playback.day.total ?? 0)
+    : 0
+)
+watch(selectedDay, (date) => load(date, { background: true }))
+
+function retryDay() {
+  load(selectedDay.value, { background: true })
+}
 
 // The trend window: the last 30 days of the same grid the heatmap
 // draws, so the blocks and the cells can never disagree.
@@ -531,6 +766,68 @@ const SOURCE_LABELS = {
 
 function sourceLabel(source) {
   return t(SOURCE_LABELS[source] || SOURCE_LABELS.downtify)
+}
+
+const sourceRows = computed(() =>
+  ['downtify', 'spotify', 'lastfm'].map((source) => ({
+    source,
+    label: sourceLabel(source),
+    count: Number(profilePeriod.value.by_source?.[source]) || 0,
+  }))
+)
+const sourceMax = computed(() =>
+  Math.max(1, ...sourceRows.value.map((row) => row.count))
+)
+
+function sourcePercent(count) {
+  return ((Number(count) || 0) / sourceMax.value) * 100
+}
+
+const lastfmImportLabel = computed(() => {
+  if (!Number(lastfm.value.imported_plays)) return t('stats.lastfmImportNone')
+  if (lastfm.value.backfill?.done) return t('stats.lastfmImportDone')
+  return t('stats.lastfmImporting', {
+    date: playedAt(lastfm.value.backfill?.oldest_at),
+  })
+})
+
+const byHour = computed(() => {
+  const counts = stats.value.playback?.patterns?.by_hour || []
+  return Array.from({ length: 24 }, (_, hour) => ({
+    hour,
+    label: String(hour).padStart(2, '0'),
+    count: Number(counts[hour]) || 0,
+  }))
+})
+const hourMax = computed(() =>
+  Math.max(1, ...byHour.value.map((row) => row.count))
+)
+
+function weekdayShort(weekday) {
+  try {
+    return new Intl.DateTimeFormat(locale.value, {
+      weekday: 'short',
+      timeZone: 'UTC',
+    }).format(new Date(Date.UTC(2024, 0, 7 + weekday)))
+  } catch {
+    return String(weekday)
+  }
+}
+
+const byWeekday = computed(() => {
+  const counts = stats.value.playback?.patterns?.by_weekday || []
+  return Array.from({ length: 7 }, (_, weekday) => ({
+    weekday,
+    label: weekdayShort(weekday),
+    count: Number(counts[weekday]) || 0,
+  }))
+})
+const weekdayMax = computed(() =>
+  Math.max(1, ...byWeekday.value.map((row) => row.count))
+)
+
+function patternPercent(count, max) {
+  return ((Number(count) || 0) / max) * 100
 }
 
 // When a play was made, in the reader's own locale. Activity stamps ISO

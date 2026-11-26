@@ -177,10 +177,18 @@ describe('StatsView', () => {
       'stats.playlists',
       'stats.downloads30',
       'stats.downloadsTotal',
-      'stats.listeningTime',
+      'stats.measuredListening',
       'stats.completed',
       'stats.skipped',
       'stats.likes',
+      'stats.listeningProfile',
+      'stats.periodPlays',
+      'stats.uniqueTracks',
+      'stats.uniqueArtists',
+      'stats.knownAlbums',
+      'stats.knownTrackTime',
+      'stats.patterns',
+      'stats.lastfmDetail',
     ]) {
       expect(html, key).toContain(t(key))
     }

@@ -8,26 +8,50 @@ import API from '/src/model/api'
 const stats = ref({})
 const loading = ref(true)
 const error = ref(false)
+const dayLoading = ref(false)
+const dayError = ref(false)
 const days = ref(30)
+let requestSequence = 0
 
-async function load() {
-  loading.value = true
-  error.value = false
+export function playsForDay(value, selectedDate) {
+  const playback = value?.playback || {}
+  if (!selectedDate) return playback.recent || []
+  return playback.day?.date === selectedDate ? playback.day.plays || [] : []
+}
+
+async function load(selectedDate = '', { background = false } = {}) {
+  const request = ++requestSequence
+  if (background) {
+    dayLoading.value = true
+    dayError.value = false
+  } else {
+    loading.value = true
+    error.value = false
+    dayLoading.value = false
+    dayError.value = false
+  }
+  const params = { days: days.value, scope: 'user' }
+  if (selectedDate) params.date = selectedDate
   try {
-    const res = await API.getStats({ days: days.value, scope: 'user' })
+    const res = await API.getStats(params)
     // The Axios interceptor hands back the whole response. The panels
     // read `stats.library.tracks` and friends, so this has to be the
     // body - keeping the envelope leaves every panel on its `?? 0`
     // fallback and the tab looks empty however full the library is.
-    stats.value = res.data
+    if (request === requestSequence) stats.value = res.data
   } catch {
-    error.value = true
+    if (request !== requestSequence) return
+    if (background) dayError.value = true
+    else error.value = true
   } finally {
-    loading.value = false
+    if (request === requestSequence) {
+      loading.value = false
+      dayLoading.value = false
+    }
   }
 }
 
 /** The Stats tab's data, plus the `load` the page calls on mount. */
 export function useStats() {
-  return { stats, loading, error, days, load }
+  return { stats, loading, error, dayLoading, dayError, days, load }
 }
