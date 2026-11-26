@@ -76,18 +76,27 @@
 ```python
 def test_normalize_context_accepts_supported_spotify_forms():
     assert normalize_context('spotify:playlist:abc') == 'spotify:playlist:abc'
-    assert normalize_context('spotify:user:u:playlist:abc') == 'spotify:playlist:abc'
-    assert normalize_context('https://open.spotify.com/playlist/abc?si=x') == 'spotify:playlist:abc'
-    assert normalize_context('https://api.spotify.com/v1/artists/abc') == 'spotify:artist:abc'
+    assert (
+        normalize_context('spotify:user:u:playlist:abc')
+        == 'spotify:playlist:abc'
+    )
+    assert (
+        normalize_context('https://open.spotify.com/playlist/abc?si=x')
+        == 'spotify:playlist:abc'
+    )
+    assert (
+        normalize_context('https://api.spotify.com/v1/artists/abc')
+        == 'spotify:artist:abc'
+    )
     assert normalize_context('Downtify Playlist') == ''
 
 
 def test_labels_for_returns_only_cached_nonempty_names(tmp_path):
     ensure_schema(db)
     cache_name(db, 'spotify:playlist:abc', 'Cached Playlist')
-    assert labels_for(db, ['spotify:playlist:abc', 'spotify:artist:missing']) == {
-        'spotify:playlist:abc': 'Cached Playlist'
-    }
+    assert labels_for(
+        db, ['spotify:playlist:abc', 'spotify:artist:missing']
+    ) == {'spotify:playlist:abc': 'Cached Playlist'}
 ```
 
 - [ ] **Run tests and verify RED**
@@ -151,7 +160,10 @@ git commit -m "feat(stats): add Spotify context name cache"
 def test_resolver_uses_existing_token_and_caches_name():
     summary = run_once(settings, db, request=fake_request)
     assert summary['resolved'] == 1
-    assert labels_for(db, ['spotify:playlist:abc'])['spotify:playlist:abc'] == 'Real Playlist'
+    assert (
+        labels_for(db, ['spotify:playlist:abc'])['spotify:playlist:abc']
+        == 'Real Playlist'
+    )
 
 
 def test_resolver_stops_on_429_and_honors_retry_after():
@@ -207,8 +219,15 @@ def test_pattern_detail_matches_hour_bar_and_uses_canonical_sources():
 
 
 def test_stats_pattern_query_validates_kind_and_bucket(client):
-    assert client.get('/api/stats', params={'pattern': 'hour', 'bucket': 24}).status_code == 400
-    assert client.get('/api/stats', params={'pattern': 'hour'}).status_code == 400
+    assert (
+        client.get(
+            '/api/stats', params={'pattern': 'hour', 'bucket': 24}
+        ).status_code
+        == 400
+    )
+    assert (
+        client.get('/api/stats', params={'pattern': 'hour'}).status_code == 400
+    )
 ```
 
 Add weekday, UTC boundary, scope, cap/truncation, empty shape and context-label coverage for detail-only rows.

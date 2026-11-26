@@ -2116,7 +2116,7 @@ Library and usage numbers — see [Stats](features/stats.md).
 
 ### `GET /api/stats`
 
-Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user`) and optional `date=YYYY-MM-DD`. `scope=server` is admin-only. Invalid calendar dates return `400`. Library size and likes are server-wide; activity and measured listening follow the selected account or server scope.
+Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user`), optional `date=YYYY-MM-DD`, and optional `pattern=hour|weekday&bucket=N`. `scope=server` is admin-only. Invalid dates, unpaired pattern parameters, unknown pattern kinds and out-of-range buckets return `400`. Library size and likes are server-wide; activity and measured listening follow the selected account or server scope.
 
 **Response:**
 
@@ -2169,7 +2169,27 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
         "newest_at": "2026-11-25T21:00:00Z"
       }
     },
-    "day": { "date": "", "total": 0, "plays": [] }
+    "day": { "date": "", "total": 0, "plays": [] },
+    "pattern_detail": {
+      "kind": "hour",
+      "bucket": 14,
+      "total": 40,
+      "by_source": { "downtify": 2, "spotify": 35, "lastfm": 3 },
+      "top_tracks": [{ "summary": "Artist - Title", "count": 8 }],
+      "top_artists": [{ "artist": "Artist", "count": 12 }],
+      "recent": [
+        {
+          "at": "2026-11-25T14:15:00+00:00",
+          "date": "2026-11-25",
+          "summary": "Artist - Title",
+          "context": "spotify:playlist:abc",
+          "context_type": "playlist",
+          "source": "spotify"
+        }
+      ],
+      "truncated": true
+    },
+    "context_labels": { "spotify:playlist:abc": "Resolved Playlist" }
   },
   "spotify": {
     "recent": [
@@ -2191,7 +2211,9 @@ Counts come from the library stores, the activity log and the canonical `listeni
 
 `playback.period`, `playback.unique`, `playback.track_time`, `playback.patterns`, `playback.lastfm.loved_plays` and `playback.lastfm.mbid_plays` cover the selected UTC calendar window. `period.by_source` uses the canonical winning source after dedupe. `unique` counts normalized track keys and non-empty artist/album names. `track_time` sums known track lengths and reports duration coverage; it is not listening time. `patterns.by_hour` has 24 UTC-hour counts and `patterns.by_weekday` has seven Sunday-first counts. `lastfm.imported_plays` and `lastfm.backfill` are connection-level import facts; loved means the linked scrobble was marked loved at import.
 
-Optional `date=YYYY-MM-DD` fills `playback.day` with that exact UTC day's true total and up to 400 newest plays. Without it, `day` is `{"date":"","total":0,"plays":[]}`. Historical raw metadata is copied into blank canonical album/context fields by an idempotent background fill-only pass; it never changes play identity or counts and never runs in this GET.
+Optional `date=YYYY-MM-DD` fills `playback.day` with that exact UTC day's true total and up to 400 newest plays. Without it, `day` is `{"date":"","total":0,"plays":[]}`. Optional `pattern=hour|weekday&bucket=N` fills `playback.pattern_detail` with the exact selected-period UTC bucket total, canonical source split, top five tracks/artists and up to 50 newest plays plus `truncated`. Without it, the detail object has empty kind/bucket and zero/list defaults. `playback.context_labels` maps normalized Spotify context URIs present in the response to cached display names; the GET never calls Spotify. Historical raw metadata is copied into blank canonical album/context fields by an idempotent background fill-only pass; it never changes play identity or counts and never runs in this GET.
+
+Spotify context names are resolved by a separate background loop using the existing mirror OAuth token. It runs only when the mirror is enabled with a usable token, resolves at most 25 distinct Spotify-linked contexts per 15-minute pass, oldest first, spaces calls by one second, refreshes successful names after 30 days, retries failures later and honors `429 Retry-After`. `401/403` stops the pass. The persistent `spotify_context_cache` table is included in metadata backups. Missing names fall back to a localized Spotify type label in the UI; raw URIs remain in the API for identity and diagnostics.
 
 `spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
 

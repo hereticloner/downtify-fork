@@ -42,7 +42,13 @@ Counts describe history stored/imported on this server. They do not claim a prov
 
 ## Listening patterns (UTC)
 
-Two compact distributions use the same selected window: **Hour of day (UTC)** has 24 bars and **Day of week (UTC)** has seven, Sunday first. They are explicitly UTC because Downtify does not store a reliable per-user timezone.
+Two interactive distributions use the same selected window: **Hour of day (UTC)** has 24 buttons and **Day of week (UTC)** has seven, Sunday first. They are explicitly UTC because Downtify does not store a reliable per-user timezone.
+
+- Hover or keyboard focus shows the bucket label, exact play count and share of the selected period.
+- Each chart is one tab stop. **Arrow Left/Right** moves one bucket, **Home/End** jumps to an edge, and **Enter/Space** selects.
+- Selecting a bucket opens a detail panel with the exact canonical total, Downtify/Spotify/Last.fm split, top five tracks, top five artists and up to 50 newest plays. A truncation note appears when more plays exist.
+- Detail loads run in the background with skeleton, inline retry and empty states. Selecting a heatmap day clears the pattern selection; selecting a pattern clears the heatmap day. Changing the period keeps the selection and reloads its detail.
+- Fine pointers keep compact bars; touch screens use at least 24px-wide targets and horizontal scrolling. Tooltip motion is disabled under reduced motion.
 
 ## Last.fm detail
 
@@ -91,6 +97,10 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 
 **Most played from** groups the same plays by the queue that served them, most played first — the playlists you actually start, rather than the songs inside them.
 
+Spotify context URIs are shown as human-readable labels. A background resolver uses the existing Spotify Mirror OAuth connection to cache playlist, artist and album names in `spotify_context_cache`; the same formatter is used in **Most played from**, recent/day plays and pattern details. Until a name is available — or when Spotify refuses a private/deleted resource — Stats shows a localized fallback such as **Spotify playlist**. Stats GETs only read this cache and never wait for Spotify.
+
+The resolver runs when the mirror is enabled and has a usable token, independent of the history-import switch or playback device. It processes at most 25 distinct Spotify-linked contexts per 15-minute pass, oldest first, spaces requests by one second, refreshes successful names after 30 days and honors Spotify `429 Retry-After`. Errors retry later; `401/403` stops the pass. The cache is included in metadata backups.
+
 ## Last 30 days
 
 **Last 30 days** draws the tail of the heatmap as square blocks, one column per day, scaled to its own busiest day so a quiet week still reads as a shape. Under it: how many plays those 30 days hold, how many of them you listened on a day at all, and your average per listening day.
@@ -108,12 +118,13 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 - **UTC patterns** group the same canonical period rows by UTC hour and weekday (Sunday first). No local-timezone claim is made.
 - **Last.fm detail** counts distinct linked canonical events with a truthy raw `loved` value or non-empty MBID. Imported-row count and backfill state are connection-level facts. Malformed raw JSON is ignored safely.
 - **Historical enrichment** is a background, idempotent fill-only pass over already-linked raw Spotify/Last.fm rows. It repairs blank canonical album/context fields without changing source, identity, timestamp or play count, and never runs in a Stats GET.
+- **Spotify context names** are display-only cached metadata. Canonical `context` keeps the original URI for identity; `context_labels` carries resolved names for the current response. Missing/failed resolution falls back to a localized Spotify type label.
 - **Raw provider data** is kept separately: Spotify's original track object/ISRC/context and Last.fm's original scrobble object. These tables are included in metadata backups.
 - The unified playback and measured counts are **per account**. An admin can ask for the server total with `scope=server`; library size and likes remain server-wide.
 
 ## API
 
-`GET /api/stats?days=30&scope=user` returns one object. `days` accepts `7`, `30` or `90`; anything else falls back to `30`. `scope=user` is the default and returns the signed-in account's activity. `scope=server` is admin-only and aggregates every account. Optional `date=YYYY-MM-DD` loads one exact UTC day into `playback.day`; invalid calendar dates return `400`.
+`GET /api/stats?days=30&scope=user` returns one object. `days` accepts `7`, `30` or `90`; anything else falls back to `30`. `scope=user` is the default and returns the signed-in account's activity. `scope=server` is admin-only and aggregates every account. Optional `date=YYYY-MM-DD` loads one exact UTC day into `playback.day`; invalid calendar dates return `400`. Optional `pattern=hour|weekday&bucket=N` loads exact bucket detail into `playback.pattern_detail`; both parameters are required together, hour is `0..23`, weekday is `0..6` (Sunday first), and invalid values return `400`.
 
 ```json
 {
@@ -181,7 +192,27 @@ Only plays from after this shipped carry the tag. A player that reports no queue
         "newest_at": "2026-11-25T21:00:00Z"
       }
     },
-    "day": { "date": "", "total": 0, "plays": [] }
+    "day": { "date": "", "total": 0, "plays": [] },
+    "pattern_detail": {
+      "kind": "hour",
+      "bucket": 14,
+      "total": 40,
+      "by_source": { "downtify": 2, "spotify": 35, "lastfm": 3 },
+      "top_tracks": [{ "summary": "Artist - Title", "count": 8 }],
+      "top_artists": [{ "artist": "Artist", "count": 12 }],
+      "recent": [
+        {
+          "at": "2026-11-25T14:15:00+00:00",
+          "date": "2026-11-25",
+          "summary": "Artist - Title",
+          "context": "spotify:playlist:abc",
+          "context_type": "playlist",
+          "source": "spotify"
+        }
+      ],
+      "truncated": true
+    },
+    "context_labels": { "spotify:playlist:abc": "Resolved Playlist" }
   },
   "spotify": {
     "recent": [
@@ -219,6 +250,8 @@ Only plays from after this shipped carry the tag. A player that reports no queue
 | `playback.patterns` | `{by_hour, by_weekday}` integer arrays for the period; 24 UTC hours and seven UTC weekdays, Sunday first |
 | `playback.lastfm` | `{loved_plays, mbid_plays, imported_plays, backfill}`; loved/MBID counts are period-scoped canonical events, import facts are connection-level |
 | `playback.day` | `{date, total, plays}` for the optional exact UTC day; up to 400 newest plays with the true total, or an empty object when `date` is omitted |
+| `playback.pattern_detail` | `{kind, bucket, total, by_source, top_tracks, top_artists, recent, truncated}` for the optional UTC bucket; top lists are capped at five and recent plays at 50 |
+| `playback.context_labels` | Map of normalized Spotify context URI to cached display name for contexts present in this response; missing names use the UI's localized type fallback |
 | `spotify.recent` | Up to ten mirrored plays, newest first, each `{played_at, artist_name, track_name, album_name}` |
 | `spotify.play_count` | Plays stored in the history table, all of them |
 
