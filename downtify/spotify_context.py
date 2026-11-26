@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
+import asyncio
 import sqlite3
-from datetime import datetime, timezone
+import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable, Optional
 from urllib.parse import urlparse
 
+from loguru import logger
+
+from . import spotify_mirror
 from .sqlite_utils import connect_sqlite
 
 TABLE = 'spotify_context_cache'
 _KINDS = {'playlist', 'artist', 'album'}
+_NAME_TTL = timedelta(days=30)
+_ERROR_RETRY = timedelta(hours=6)
+_NOT_FOUND_RETRY = timedelta(hours=24)
 
 _CREATE_TABLE = f"""
 CREATE TABLE IF NOT EXISTS {TABLE} (
@@ -126,3 +134,224 @@ def labels_for(db_path: Any, values: Iterable[Any]) -> dict[str, str]:
         for row in rows
         if str(row['context_key']) in wanted and str(row['name'] or '').strip()
     }
+
+
+def _stamp(value: Any) -> Optional[datetime]:
+    try:
+        parsed = datetime.fromisoformat(str(value or ''))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _pending_contexts(db_path: Any, limit: int) -> list[str]:
+    if not Path(db_path).is_file():
+        return []
+    ensure_schema(db_path)
+    now = datetime.now(timezone.utc)
+    with connect_sqlite(str(db_path), row_factory=True) as conn:
+        contexts = conn.execute(
+            'SELECT e.context, MIN(e.played_at) AS oldest '
+            'FROM listening_events e JOIN listening_event_sources s '
+            'ON s.event_id=e.id AND s.source=? '
+            "WHERE e.context != '' GROUP BY e.context "
+            'ORDER BY oldest, e.context',
+            ('spotify',),
+        ).fetchall()
+        cached = {
+            str(row['context_key']): row
+            for row in conn.execute(f'SELECT * FROM {TABLE}')
+        }
+    pending: list[str] = []
+    seen: set[str] = set()
+    for row in contexts:
+        key = normalize_context(row['context'])
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        entry = cached.get(key)
+        if entry is not None:
+            retry_at = _stamp(entry['retry_at'])
+            if retry_at and retry_at > now:
+                continue
+            fetched_at = _stamp(entry['fetched_at'])
+            if (
+                str(entry['name'] or '').strip()
+                and fetched_at
+                and now - fetched_at < _NAME_TTL
+            ):
+                continue
+        pending.append(key)
+        if len(pending) >= max(1, int(limit)):
+            break
+    return pending
+
+
+def _cache_error(
+    db_path: Any,
+    context_key: str,
+    error: str,
+    retry_after: timedelta,
+) -> None:
+    key = normalize_context(context_key)
+    if not key:
+        return
+    ensure_schema(db_path)
+    with connect_sqlite(str(db_path)) as conn:
+        conn.execute(
+            f'INSERT INTO {TABLE} '
+            '(context_key, kind, name, fetched_at, last_error, retry_at) '
+            "VALUES (?, ?, '', '', ?, ?) "
+            'ON CONFLICT(context_key) DO UPDATE SET '
+            'last_error=excluded.last_error, retry_at=excluded.retry_at',
+            (
+                key,
+                context_kind(key),
+                str(error or 'unknown_error')[:160],
+                (datetime.now(timezone.utc) + retry_after).isoformat(),
+            ),
+        )
+
+
+def _retry_after(response: Any) -> float:
+    headers = getattr(response, 'headers', None) or {}
+    try:
+        return max(0.0, float(headers.get('Retry-After') or 0))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _mirror_config(settings: Any) -> Optional[dict[str, Any]]:
+    block = (
+        settings.get('spotify_mirror') if isinstance(settings, dict) else None
+    )
+    if not isinstance(block, dict) or not block.get('enabled'):
+        return None
+    if not str(block.get('client_id') or '').strip():
+        return None
+    if not (
+        str(block.get('access_token') or '').strip()
+        or str(block.get('refresh_token') or '').strip()
+    ):
+        return None
+    return dict(block)
+
+
+def run_once(
+    settings: Any,
+    db_path: Any,
+    *,
+    limit: int = 25,
+    request: Optional[Callable[..., Any]] = None,
+) -> dict[str, Any]:
+    """Resolve a bounded batch of canonical Spotify context names."""
+
+    summary: dict[str, Any] = {
+        'enabled': False,
+        'examined': 0,
+        'resolved': 0,
+        'failed': 0,
+        'rate_limited': False,
+        'retry_after': 0,
+        'tokens': {},
+    }
+    config = _mirror_config(settings)
+    if config is None:
+        return summary
+    summary['enabled'] = True
+    current = spotify_mirror.ensure_token(config, request=request)
+    if current is None:
+        summary['error'] = 'auth_failed'
+        return summary
+    if current.get('access_token') != config.get('access_token'):
+        summary['tokens'] = {
+            'access_token': current.get('access_token', ''),
+            'refresh_token': current.get('refresh_token', ''),
+            'token_expires_at': current.get('token_expires_at', 0),
+        }
+    pending = _pending_contexts(db_path, limit)
+    summary['examined'] = len(pending)
+    sender = request or spotify_mirror._request
+    token = str(current.get('access_token') or '')
+    for index, key in enumerate(pending):
+        _prefix, kind, resource_id = key.split(':', 2)
+        url = f'{spotify_mirror.SPOTIFY_API}/{kind}s/{resource_id}'
+        try:
+            response = sender(
+                'GET', url, headers=spotify_mirror._bearer(token)
+            )
+            status = int(getattr(response, 'status_code', 200) or 200)
+            if status == 429:
+                delay = _retry_after(response)
+                summary['rate_limited'] = True
+                summary['retry_after'] = delay
+                summary['failed'] += 1
+                _cache_error(
+                    db_path, key, 'rate_limited', timedelta(seconds=delay)
+                )
+                break
+            if status in {401, 403}:
+                summary['failed'] += 1
+                summary['stopped'] = status
+                _cache_error(db_path, key, f'http_{status}', _ERROR_RETRY)
+                break
+            if status == 404:
+                summary['failed'] += 1
+                _cache_error(db_path, key, 'http_404', _NOT_FOUND_RETRY)
+                continue
+            if status >= 400:
+                summary['failed'] += 1
+                _cache_error(db_path, key, f'http_{status}', _ERROR_RETRY)
+                continue
+            body = response.json()
+            name = (
+                str(body.get('name') or '').strip()
+                if isinstance(body, dict)
+                else ''
+            )
+            if not name:
+                summary['failed'] += 1
+                _cache_error(db_path, key, 'missing_name', _ERROR_RETRY)
+                continue
+            cache_name(db_path, key, name)
+            summary['resolved'] += 1
+        except Exception as exc:  # noqa: BLE001 - background best-effort
+            summary['failed'] += 1
+            _cache_error(db_path, key, type(exc).__name__, _ERROR_RETRY)
+        if index + 1 < len(pending):
+            time.sleep(1.0)
+    return summary
+
+
+async def spotify_context_loop(
+    cfg_getter: Callable[[], Any],
+    db_path: Any,
+    *,
+    idle_seconds: float = 900,
+    limit: int = 25,
+    request: Optional[Callable[..., Any]] = None,
+    persist_tokens: Optional[Callable[[dict[str, Any]], Any]] = None,
+) -> None:
+    """Periodically resolve names without making Stats wait for Spotify."""
+
+    while True:
+        try:
+            summary = await asyncio.to_thread(
+                run_once,
+                cfg_getter(),
+                db_path,
+                limit=limit,
+                request=request,
+            )
+            tokens = summary.pop('tokens', None)
+            if tokens and persist_tokens is not None:
+                await asyncio.to_thread(persist_tokens, tokens)
+            if summary.get('resolved'):
+                logger.info(
+                    'Spotify context: resolved {} name(s)', summary['resolved']
+                )
+        except Exception:  # noqa: BLE001 - loop must survive everything
+            logger.exception('Spotify context resolver loop failed')
+        await asyncio.sleep(idle_seconds)
