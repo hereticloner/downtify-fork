@@ -133,6 +133,56 @@ def test_stats_period_aggregates_follow_selected_window(client):
     }
 
 
+def test_stats_date_query_rejects_invalid_dates(client):
+    for value in ('2026-02-30', 'not-a-date', '2026-11-20T00:00:00Z'):
+        assert (
+            client.get('/api/stats', params={'date': value}).status_code == 400
+        )
+
+
+def test_stats_selected_day_is_not_limited_to_recent_page(client):
+    listening = api.state.listening
+    today = datetime.now(timezone.utc).date()
+    older = today - timedelta(days=2)
+    listening.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='older',
+        played_at=f'{older.isoformat()}T20:15:00Z',
+        artist='Old',
+        title='Play',
+    )
+    for index in range(stats_mod.PLAYBACK_RECENT_LIMIT):
+        listening.link_or_create(
+            user_id=1,
+            source='lastfm',
+            source_key=f'newer:{index}',
+            played_at=f'{today.isoformat()}T20:15:00Z',
+            artist='New',
+            title=f'Play {index}',
+        )
+
+    playback = client.get(
+        '/api/stats', params={'date': older.isoformat()}
+    ).json()['playback']
+
+    assert len(playback['recent']) == stats_mod.PLAYBACK_RECENT_LIMIT
+    assert all(row['date'] != older.isoformat() for row in playback['recent'])
+    assert playback['day']['date'] == older.isoformat()
+    assert playback['day']['total'] == 1
+    assert [row['summary'] for row in playback['day']['plays']] == [
+        'Old - Play'
+    ]
+
+
+def test_stats_without_date_has_empty_day_object(client):
+    assert client.get('/api/stats').json()['playback']['day'] == {
+        'date': '',
+        'total': 0,
+        'plays': [],
+    }
+
+
 def test_best_day_is_the_older_maximum_not_the_newest_active_day(client):
     listening = api.state.listening
     today = datetime.now(timezone.utc).date()

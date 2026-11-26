@@ -5,6 +5,7 @@ Kept as its own module so upstream merges into ``api.py`` never touch it.
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -341,6 +342,7 @@ async def stats_endpoint(
     request: Request,
     days: int = Query(30, ge=7, le=90),
     scope: str = Query('user'),
+    selected_date: str | None = Query(None, alias='date'),
 ) -> dict[str, Any]:
     from downtify import api as api_mod  # noqa: PLC0415
 
@@ -351,6 +353,17 @@ async def stats_endpoint(
         raise HTTPException(status_code=400, detail='Unknown stats scope')
     if scope == 'server' and not principal.is_admin:
         raise HTTPException(status_code=403, detail='This needs an admin')
+    if selected_date:
+        try:
+            parsed_date = date.fromisoformat(selected_date)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400, detail='date must be YYYY-MM-DD'
+            ) from exc
+        if parsed_date.isoformat() != selected_date:
+            raise HTTPException(
+                status_code=400, detail='date must be YYYY-MM-DD'
+            )
     window = days if days in {7, 30, 90} else 30
     user_id = 0 if scope == 'server' else principal.user_id
     st = api_mod.state
@@ -393,6 +406,11 @@ async def stats_endpoint(
         if st.listening is not None
         else None
     )
+    day_stats = (
+        st.listening.day_plays(selected_date, user_id=user_id)
+        if selected_date and st.listening is not None
+        else None
+    )
     if activity is None:
         return {
             'library': {'tracks': 0, 'playlists': 0, 'likes': 0},
@@ -428,6 +446,7 @@ async def stats_endpoint(
                         'newest_at': '',
                     },
                 },
+                'day': {'date': '', 'total': 0, 'plays': []},
             },
             'spotify': spotify,
         }
@@ -442,6 +461,7 @@ async def stats_endpoint(
         days=window,
         playback=st.playback,
         listening_stats=listening_stats,
+        day_stats=day_stats,
     )
 
 

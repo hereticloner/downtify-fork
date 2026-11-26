@@ -364,3 +364,32 @@ def test_period_aggregates_are_user_scoped_and_exclude_future_plays(tmp_path):
     assert personal['period']['total'] == 1
     assert personal['unique']['tracks'] == 1
     assert store.stats(user_id=0, days=7)['period']['total'] == 2
+
+
+def test_day_plays_returns_exact_scoped_total_and_capped_rows(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    for index in range(3):
+        store.link_or_create(
+            user_id=1,
+            source='spotify',
+            source_key=f's{index}',
+            played_at=f'2026-11-20T2{index}:15:00Z',
+            artist='A',
+            title=f'T{index}',
+        )
+    store.link_or_create(
+        user_id=2,
+        source='lastfm',
+        source_key='other-user',
+        played_at='2026-11-20T23:15:00Z',
+        artist='B',
+        title='Other',
+    )
+
+    day = store.day_plays('2026-11-20', user_id=1, limit=2)
+
+    assert day['date'] == '2026-11-20'
+    assert day['total'] == 3
+    assert len(day['plays']) == 2
+    assert day['plays'][0]['at'] == '2026-11-20T22:15:00Z'
+    assert all(row['date'] == '2026-11-20' for row in day['plays'])

@@ -237,6 +237,7 @@ def build_stats(
     days: int = 30,
     playback: Any = None,
     listening_stats: Optional[dict[str, Any]] = None,
+    day_stats: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """The numbers the Stats page renders.
 
@@ -389,6 +390,7 @@ def build_stats(
             'track_time': track_time,
             'patterns': patterns,
             'lastfm': lastfm,
+            'day': day_stats or {'date': '', 'total': 0, 'plays': []},
         },
         'spotify': {
             'recent': recent,

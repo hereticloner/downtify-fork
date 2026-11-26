@@ -14,6 +14,7 @@ from .sqlite_utils import connect_sqlite
 
 _SOURCE_PRIORITY = {'downtify': 0, 'spotify': 1, 'lastfm': 2}
 _MAX_MATCH_SECONDS = 1800
+DAY_PLAYS_LIMIT = 400
 
 
 def _now() -> str:
@@ -475,6 +476,53 @@ class ListeningStore:
             'patterns': {'by_hour': by_hour, 'by_weekday': by_weekday},
             'lastfm': lastfm,
         }
+
+    def day_plays(
+        self,
+        on_date: str,
+        user_id: int = 0,
+        limit: int = DAY_PLAYS_LIMIT,
+    ) -> dict[str, Any]:
+        """One exact UTC day, with its true total and a bounded play page."""
+
+        empty = {'date': str(on_date or ''), 'total': 0, 'plays': []}
+        if not on_date:
+            return empty
+        where = 'WHERE user_id=?' if user_id else ''
+        args: list[Any] = [int(user_id)] if user_id else []
+        summary_sql = (
+            "CASE WHEN artist != '' AND title != '' "
+            "THEN artist || ' - ' || title "
+            "WHEN title != '' THEN title ELSE artist END"
+        )
+        with self._connect() as conn:
+            day_where = f'{where} AND ' if where else 'WHERE '
+            day_args: tuple[Any, ...] = (*args, str(on_date))
+            total = int(
+                conn.execute(
+                    'SELECT COUNT(*) FROM listening_events '
+                    f'{day_where}substr(played_at, 1, 10)=?',
+                    day_args,
+                ).fetchone()[0]
+            )
+            plays = [
+                {
+                    'at': row['played_at'],
+                    'date': str(row['played_at'])[:10],
+                    'summary': row['summary'],
+                    'context': row['context'],
+                    'context_type': row['context_type'],
+                    'source': row['source'],
+                }
+                for row in conn.execute(
+                    f'SELECT played_at, {summary_sql} AS summary, context, '
+                    f'context_type, source FROM listening_events {day_where}'
+                    'substr(played_at, 1, 10)=? '
+                    'ORDER BY played_at DESC, id DESC LIMIT ?',
+                    (*day_args, max(1, min(int(limit), DAY_PLAYS_LIMIT))),
+                ).fetchall()
+            ]
+        return {'date': str(on_date), 'total': total, 'plays': plays}
 
     def forget_user(self, user_id: int) -> int:
         with self._connect() as conn:
