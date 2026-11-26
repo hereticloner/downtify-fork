@@ -137,7 +137,7 @@ function onHover(event) {
   const date = node.dataset.cell
   if (!byDate.value.has(date)) return
   hoveredDate.value = date
-  activeIndex.value = indexByDate.value[date] ?? activeIndex.value
+  activeIndex.value = indexByDate.value.get(date) ?? activeIndex.value
 }
 
 function onFocusout(event) {

@@ -123,6 +123,7 @@ class ListeningStore:
         identity_key = f'{source}:{source_key}'
         match_key = normalize_match_key(artist, title)
         when = _parse_time(played_at)
+        played_at = played_at if played_at.endswith('Z') else when.isoformat()
         duration = max(0, int(duration_ms or 0))
         with self._connect() as conn:
             conn.execute('BEGIN IMMEDIATE')
@@ -329,23 +330,23 @@ class ListeningStore:
             daily = [
                 {'date': row['day'], 'count': int(row['count'])}
                 for row in conn.execute(
-                    'SELECT substr(played_at, 1, 10) AS day, COUNT(*) AS count '
+                    'SELECT date(played_at) AS day, COUNT(*) AS count '
                     f'FROM listening_events {daily_where}'
-                    'substr(played_at, 1, 10)>=? GROUP BY day ORDER BY day',
+                    'date(played_at)>=? GROUP BY day ORDER BY day',
                     (*args, cutoff),
                 ).fetchall()
             ]
             recent = [
                 {
                     'at': row['played_at'],
-                    'date': str(row['played_at'])[:10],
+                    'date': row['day'],
                     'summary': row['summary'],
                     'context': row['context'],
                     'context_type': row['context_type'],
                     'source': row['source'],
                 }
                 for row in conn.execute(
-                    f'SELECT played_at, {summary_sql} AS summary, context, '
+                    f'SELECT played_at, date(played_at) AS day, {summary_sql} AS summary, context, '
                     f'context_type, source FROM listening_events {where} '
                     'ORDER BY played_at DESC, id DESC LIMIT ?',
                     (*args, max(1, int(recent_limit))),
@@ -369,7 +370,7 @@ class ListeningStore:
             for row in conn.execute(
                 'SELECT source, COUNT(*) AS count '
                 f'FROM listening_events {period_where}'
-                'substr(played_at, 1, 10) BETWEEN ? AND ? GROUP BY source',
+                'date(played_at) BETWEEN ? AND ? GROUP BY source',
                 period_args,
             ):
                 if row['source'] in by_source:
@@ -380,7 +381,7 @@ class ListeningStore:
                 "AS tracks, COUNT(DISTINCT NULLIF(artist, '')) AS artists, "
                 "COUNT(DISTINCT NULLIF(album, '')) AS albums "
                 f'FROM listening_events {period_where}'
-                'substr(played_at, 1, 10) BETWEEN ? AND ?',
+                'date(played_at) BETWEEN ? AND ?',
                 period_args,
             ).fetchone()
             duration = conn.execute(
@@ -389,7 +390,7 @@ class ListeningStore:
                 'COALESCE(SUM(CASE WHEN duration_ms > 0 THEN 1 ELSE 0 END), 0) '
                 'AS with_duration '
                 f'FROM listening_events {period_where}'
-                'substr(played_at, 1, 10) BETWEEN ? AND ?',
+                'date(played_at) BETWEEN ? AND ?',
                 period_args,
             ).fetchone()
             by_hour = [0] * 24
@@ -398,7 +399,7 @@ class ListeningStore:
                 "SELECT CAST(strftime('%H', played_at) AS INTEGER) AS hour, "
                 'COUNT(*) AS count '
                 f'FROM listening_events {period_where}'
-                'substr(played_at, 1, 10) BETWEEN ? AND ? GROUP BY hour',
+                'date(played_at) BETWEEN ? AND ? GROUP BY hour',
                 period_args,
             ):
                 if row['hour'] is not None and 0 <= int(row['hour']) < 24:
@@ -407,7 +408,7 @@ class ListeningStore:
                 "SELECT CAST(strftime('%w', played_at) AS INTEGER) AS weekday, "
                 'COUNT(*) AS count '
                 f'FROM listening_events {period_where}'
-                'substr(played_at, 1, 10) BETWEEN ? AND ? GROUP BY weekday',
+                'date(played_at) BETWEEN ? AND ? GROUP BY weekday',
                 period_args,
             ):
                 if row['weekday'] is not None and 0 <= int(row['weekday']) < 7:
@@ -430,7 +431,7 @@ class ListeningStore:
                     f'FROM listening_events e JOIN {lastfm_history.TABLE} l '
                     'ON l.listening_event_id=e.id '
                     f'{event_where} '
-                    'AND substr(e.played_at, 1, 10) BETWEEN ? AND ?',
+                    'AND date(e.played_at) BETWEEN ? AND ?',
                     period_args,
                 ).fetchone()
                 loved_plays = int(detail['loved'])
@@ -440,7 +441,7 @@ class ListeningStore:
                         f'SELECT COUNT(*) FROM {lastfm_history.TABLE}'
                     ).fetchone()[0]
                 )
-        period_total = sum(by_hour)
+        period_total = sum(by_source.values())
         with_duration = int(duration['with_duration'])
         state = lastfm_history.import_state(self._path)
         lastfm = {
@@ -470,7 +471,7 @@ class ListeningStore:
                 'albums': int(unique['albums']),
             },
             'track_time': {
-                'seconds': int(duration['duration_ms']) / 1000,
+                'seconds': int(duration['duration_ms']) // 1000,
                 'plays_with_duration': with_duration,
                 'plays_without_duration': period_total - with_duration,
             },
@@ -502,23 +503,23 @@ class ListeningStore:
             total = int(
                 conn.execute(
                     'SELECT COUNT(*) FROM listening_events '
-                    f'{day_where}substr(played_at, 1, 10)=?',
+                    f'{day_where}date(played_at)=?',
                     day_args,
                 ).fetchone()[0]
             )
             plays = [
                 {
                     'at': row['played_at'],
-                    'date': str(row['played_at'])[:10],
+                    'date': row['day'],
                     'summary': row['summary'],
                     'context': row['context'],
                     'context_type': row['context_type'],
                     'source': row['source'],
                 }
                 for row in conn.execute(
-                    f'SELECT played_at, {summary_sql} AS summary, context, '
+                    f'SELECT played_at, date(played_at) AS day, {summary_sql} AS summary, context, '
                     f'context_type, source FROM listening_events {day_where}'
-                    'substr(played_at, 1, 10)=? '
+                    'date(played_at)=? '
                     'ORDER BY played_at DESC, id DESC LIMIT ?',
                     (*day_args, max(1, min(int(limit), DAY_PLAYS_LIMIT))),
                 ).fetchall()

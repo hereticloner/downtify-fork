@@ -124,6 +124,19 @@ describe('ActivityHeatmap interaction', () => {
     expect(bindings.hovered.value).toBeNull()
   })
 
+  it('keeps the keyboard tab stop on the hovered or focused cell', () => {
+    const { bindings } = setup(
+      Array.from({ length: 28 }, (_, index) => ({
+        date: `2026-11-${String(index + 1).padStart(2, '0')}`,
+        count: 1,
+      }))
+    )
+
+    bindings.onHover(cellEvent('2026-11-11'))
+
+    expect(bindings.activeIndex.value).toBe(10)
+  })
+
   it('moves the single tab stop with two-dimensional keys', () => {
     const focus = vi.fn()
     vi.stubGlobal('document', {

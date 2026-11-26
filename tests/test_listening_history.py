@@ -28,6 +28,68 @@ def test_same_source_is_idempotent(tmp_path):
     assert (first, created, again, created_again) == (1, True, 1, False)
 
 
+def test_offset_timestamp_is_stored_as_utc_for_stats_and_day_queries(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    event_id, _ = store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='offset',
+        played_at='2026-11-21T23:30:00-02:00',
+        artist='A',
+        title='T',
+    )
+    with sqlite3.connect(db) as conn:
+        played_at = conn.execute(
+            'SELECT played_at FROM listening_events WHERE id=?', (event_id,)
+        ).fetchone()[0]
+    assert played_at == '2026-11-22T01:30:00+00:00'
+    assert store.day_plays('2026-11-22', user_id=1)['total'] == 1
+
+
+def test_period_total_does_not_depend_on_sqlite_hour_parsing(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    today = datetime.now(timezone.utc).date().isoformat()
+    store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='offset-seconds',
+        played_at=f'{today}T20:15:00+03:00:30',
+        artist='A',
+        title='T',
+    )
+
+    data = store.stats(user_id=1, days=7)
+
+    assert data['period']['total'] == 1
+    assert data['track_time']['plays_without_duration'] == 1
+    assert sum(data['patterns']['by_hour']) == 1
+    assert store.day_plays(today, user_id=1)['total'] == 1
+    assert data['daily'] == [{'date': today, 'count': 1}]
+
+
+def test_period_window_includes_midnight_and_last_second(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    today = datetime.now(timezone.utc).date()
+    start = today - timedelta(days=6)
+    for source_key, played_at in (
+        ('start', f'{start.isoformat()}T00:00:00Z'),
+        ('end', f'{today.isoformat()}T23:59:59Z'),
+        ('before', f'{(start - timedelta(days=1)).isoformat()}T23:59:59Z'),
+        ('future', f'{(today + timedelta(days=1)).isoformat()}T00:00:00Z'),
+    ):
+        store.link_or_create(
+            user_id=1,
+            source='spotify',
+            source_key=source_key,
+            played_at=played_at,
+            artist='A',
+            title=source_key,
+        )
+
+    assert store.stats(user_id=1, days=7)['period']['total'] == 2
+
+
 def test_higher_priority_promotes_without_changing_identity(tmp_path):
     db = tmp_path / 'activity.db'
     store = ListeningStore(db)
@@ -325,6 +387,7 @@ def test_period_aggregates_report_unique_duration_and_utc_patterns(tmp_path):
         'plays_with_duration': 1,
         'plays_without_duration': 1,
     }
+    assert isinstance(data['track_time']['seconds'], int)
     assert len(data['patterns']['by_hour']) == 24
     assert data['patterns']['by_hour'][1:3] == [1, 1]
     assert len(data['patterns']['by_weekday']) == 7
