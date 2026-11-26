@@ -3,6 +3,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
+from downtify import lastfm_history, spotify_history
 from downtify.listening_history import ListeningStore, normalize_match_key
 
 
@@ -393,3 +394,128 @@ def test_day_plays_returns_exact_scoped_total_and_capped_rows(tmp_path):
     assert len(day['plays']) == 2
     assert day['plays'][0]['at'] == '2026-11-20T22:15:00Z'
     assert all(row['date'] == '2026-11-20' for row in day['plays'])
+
+
+def _link_spotify_observation(
+    db,
+    store,
+    event_id,
+    *,
+    album='Spotify Album',
+    context_uri='spotify:playlist:abc',
+):
+    spotify_history.save_recently_played(
+        db,
+        [
+            {
+                'played_at': '2026-11-25T20:15:00Z',
+                'spotify_track_id': 's1',
+                'track_name': 'T',
+                'artist_name': 'A',
+                'album_name': album,
+                'context': {
+                    'type': 'playlist',
+                    'uri': context_uri,
+                },
+            }
+        ],
+        user_id=1,
+    )
+    assert spotify_history.link_pending(db, store, user_id=1) == 1
+    with sqlite3.connect(db) as conn:
+        assert (
+            conn.execute(
+                'SELECT listening_event_id FROM spotify_recently_played'
+            ).fetchone()[0]
+            == event_id
+        )
+
+
+def _canonical_row(db):
+    with sqlite3.connect(db) as conn:
+        conn.row_factory = sqlite3.Row
+        return dict(
+            conn.execute(
+                'SELECT source, played_at, album, context, context_type '
+                'FROM listening_events WHERE id=1'
+            ).fetchone()
+        )
+
+
+def test_enrichment_fills_only_blank_canonical_metadata(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    event_id, _ = store.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+    )
+    _link_spotify_observation(db, store, event_id)
+
+    assert store.enrich_from_raw() == 1
+
+    row = _canonical_row(db)
+    assert row['album'] == 'Spotify Album'
+    assert row['context'] == 'spotify:playlist:abc'
+    assert row['context_type'] == 'playlist'
+    assert row['source'] == 'downtify'
+    assert row['played_at'] == '2026-11-25T20:15:00Z'
+    assert store.stats(user_id=1)['total'] == 1
+
+
+def test_enrichment_is_idempotent_and_preserves_known_values(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    event_id, _ = store.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+        album='Downtify Album',
+        context='Downtify Playlist',
+        context_type='playlist',
+    )
+    _link_spotify_observation(db, store, event_id)
+
+    assert store.enrich_from_raw() == 0
+    assert store.enrich_from_raw() == 0
+    assert _canonical_row(db)['context'] == 'Downtify Playlist'
+    assert _canonical_row(db)['album'] == 'Downtify Album'
+
+
+def test_enrichment_fills_lastfm_album_without_changing_source(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    event_id, _ = store.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+    )
+    lastfm_history.save_recent_tracks(
+        db,
+        [
+            {
+                'played_at': '2026-11-25T20:15:00+00:00',
+                'uts': 1794166500,
+                'artist_name': 'A',
+                'track_name': 'T',
+                'album_name': 'Last.fm Album',
+            }
+        ],
+        user_id=1,
+    )
+    assert lastfm_history.link_pending(db, store, user_id=1) == 1
+
+    assert store.enrich_from_raw() == 1
+
+    row = _canonical_row(db)
+    assert row['album'] == 'Last.fm Album'
+    assert row['source'] == 'downtify'

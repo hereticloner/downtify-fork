@@ -477,6 +477,54 @@ def test_run_once_links_imported_play_to_canonical_history(tmp_path: Path):
     assert listening.stats(user_id=1)['total'] == 1
 
 
+def test_run_once_enriches_canonical_context_from_late_raw_payload(
+    tmp_path: Path,
+):
+    db = tmp_path / 'activity.db'
+    save_recently_played(db, [_play()], user_id=1)
+    listening = ListeningStore(db)
+    assert link_pending(db, listening, user_id=1) == 1
+    with sqlite3.connect(db) as conn:
+        assert not conn.execute(
+            'SELECT context FROM listening_events'
+        ).fetchone()[0]
+
+    summary = run_once(
+        _settings(),
+        db,
+        user_id=1,
+        listening=listening,
+        request=_history_request(
+            [],
+            {
+                'items': [
+                    {
+                        'played_at': '2026-10-13T10:00:00.000Z',
+                        'context': {
+                            'type': 'album',
+                            'uri': 'spotify:album:a1',
+                        },
+                        'track': {
+                            'id': 't1',
+                            'name': 'Song',
+                            'artists': [{'name': 'Artist'}],
+                            'album': {'name': 'Album'},
+                            'duration_ms': 201000,
+                        },
+                    }
+                ]
+            },
+        ),
+    )
+
+    assert summary['saved'] == 0
+    with sqlite3.connect(db) as conn:
+        row = conn.execute(
+            'SELECT context, context_type FROM listening_events'
+        ).fetchone()
+    assert row == ('spotify:album:a1', 'album')
+
+
 def test_run_once_stores_what_it_reads(tmp_path: Path):
     calls = []
     db = tmp_path / 'activity.db'

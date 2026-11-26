@@ -578,6 +578,7 @@ def run_once(
     summary['saved'] = save_recently_played(db_path, rows, user_id=user_id)
     if listening is not None:
         link_pending(db_path, listening, user_id=user_id)
+        listening.enrich_from_raw()
     if config.get('access_token') != before_token:
         summary['tokens'] = {
             'access_token': config.get('access_token', ''),

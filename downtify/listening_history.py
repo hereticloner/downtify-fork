@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sqlite3
 import unicodedata
 from datetime import datetime, timedelta, timezone
@@ -524,6 +525,115 @@ class ListeningStore:
             ]
         return {'date': str(on_date), 'total': total, 'plays': plays}
 
+    @staticmethod
+    def _fill_spotify_event(conn: sqlite3.Connection, row: Any) -> int:
+        try:
+            context = json.loads(row['context_json'] or '{}')
+        except (TypeError, ValueError):
+            context = {}
+        if not isinstance(context, dict):
+            context = {}
+        event_id = int(row['listening_event_id'])
+        event = conn.execute(
+            'SELECT album, context, context_type FROM listening_events WHERE id=?',
+            (event_id,),
+        ).fetchone()
+        if event is None:
+            return 0
+        raw_values = {
+            'album': str(row['album_name'] or '').strip(),
+            'context': str(
+                context.get('uri') or context.get('href') or ''
+            ).strip(),
+            'context_type': str(context.get('type') or '').strip(),
+        }
+        assignments: list[str] = []
+        conditions: list[str] = []
+        values: list[Any] = []
+        for column, value in raw_values.items():
+            if value and not str(event[column] or '').strip():
+                assignments.append(f'{column}=?')
+                conditions.append(f"{column}=''")
+                values.append(value)
+        if not assignments:
+            return 0
+        cursor = conn.execute(
+            'UPDATE listening_events SET '
+            + ', '.join(assignments)
+            + ' WHERE id=? AND '
+            + ' AND '.join(conditions),
+            (*values, event_id),
+        )
+        return max(0, int(cursor.rowcount))
+
+    def _enrich_spotify_rows(self, conn: sqlite3.Connection, size: int) -> int:
+        updated = 0
+        last_id = 0
+        while True:
+            rows = conn.execute(
+                f'SELECT id, listening_event_id, album_name, context_json '
+                f'FROM {spotify_history.TABLE} '
+                'WHERE id>? AND listening_event_id IS NOT NULL '
+                "AND (album_name != '' OR context_json NOT IN ('', '{}')) "
+                'ORDER BY id LIMIT ?',
+                (last_id, size),
+            ).fetchall()
+            if not rows:
+                return updated
+            for row in rows:
+                updated += self._fill_spotify_event(conn, row)
+            last_id = int(rows[-1]['id'])
+
+    @staticmethod
+    def _enrich_lastfm_rows(conn: sqlite3.Connection, size: int) -> int:
+        updated = 0
+        last_id = 0
+        while True:
+            rows = conn.execute(
+                f'SELECT id, listening_event_id, album_name '
+                f'FROM {lastfm_history.TABLE} WHERE id>? '
+                'AND listening_event_id IS NOT NULL '
+                "AND album_name != '' ORDER BY id LIMIT ?",
+                (last_id, size),
+            ).fetchall()
+            if not rows:
+                return updated
+            for row in rows:
+                cursor = conn.execute(
+                    'UPDATE listening_events SET album=? '
+                    "WHERE id=? AND album=''",
+                    (
+                        str(row['album_name'] or '').strip(),
+                        int(row['listening_event_id']),
+                    ),
+                )
+                updated += max(0, int(cursor.rowcount))
+            last_id = int(rows[-1]['id'])
+
+    def enrich_from_raw(self, batch_size: int = 500) -> int:
+        """Fill blank canonical metadata from linked raw provider rows."""
+
+        size = max(1, min(int(batch_size), 5000))
+        try:
+            with self._connect() as conn:
+                tables = {
+                    row[0]
+                    for row in conn.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    )
+                }
+                if spotify_history.TABLE in tables:
+                    return self._enrich_spotify_rows(conn, size) + (
+                        self._enrich_lastfm_rows(conn, size)
+                        if lastfm_history.TABLE in tables
+                        else 0
+                    )
+                if lastfm_history.TABLE in tables:
+                    return self._enrich_lastfm_rows(conn, size)
+        except sqlite3.Error:
+            return 0
+        return 0
+
     def forget_user(self, user_id: int) -> int:
         with self._connect() as conn:
             before = conn.total_changes
@@ -575,4 +685,5 @@ async def bootstrap_listening_history(
                 break
             await asyncio.sleep(pause)
     await asyncio.to_thread(listening.backfill_activity, activity)
+    await asyncio.to_thread(listening.enrich_from_raw)
     return linked
