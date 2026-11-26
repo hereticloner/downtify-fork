@@ -686,6 +686,17 @@ export default {
     contextSpotifyPlaylist: 'Playlist Spotify',
     contextSpotifyArtist: 'Artiste Spotify',
     contextSpotifyAlbum: 'Album Spotify',
+    patternHourTitle: 'Heure {hour}:00–{hour}:59 UTC',
+    patternShare: '{percent}% de la période',
+    patternDetail: 'Détail du schéma',
+    patternTopTracks: 'Titres les plus écoutés',
+    patternTopArtists: 'Artistes les plus écoutés',
+    patternRecent: 'Lectures récentes du bloc',
+    patternEmpty: 'Aucune lecture dans ce bloc',
+    patternLoadFailed: 'Impossible de charger ce schéma.',
+    patternTruncated:
+      'Affichage des {shown} lectures les plus récentes sur {total}.',
+    patternClear: 'Effacer le schéma',
     playCount: { one: '{count} lecture', other: '{count} lectures' },
     heatmapKeyboardHint:
       'Utilisez les flèches pour vous déplacer par jour ou par semaine. Appuyez sur Entrée ou Espace pour sélectionner un jour.',

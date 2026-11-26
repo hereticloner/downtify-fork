@@ -39,6 +39,16 @@ const required = [
   'contextSpotifyPlaylist',
   'contextSpotifyArtist',
   'contextSpotifyAlbum',
+  'patternHourTitle',
+  'patternShare',
+  'patternDetail',
+  'patternTopTracks',
+  'patternTopArtists',
+  'patternRecent',
+  'patternEmpty',
+  'patternLoadFailed',
+  'patternTruncated',
+  'patternClear',
 ]
 
 describe('Stats locale contract', () => {

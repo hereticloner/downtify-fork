@@ -148,67 +148,149 @@
         </p>
       </section>
 
-      <!-- UTC patterns: the server stores UTC and has no user timezone. -->
+      <!-- UTC patterns: real buttons with exact bucket drilldown. -->
       <section class="border-b-2 border-line">
         <div class="flex items-stretch border-b-2 border-line bg-surface-2">
           <h2 class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2">
             {{ t('stats.patterns') }}
           </h2>
         </div>
-        <div class="grid xl:grid-cols-2">
-          <div
-            class="border-b-2 border-line px-3 py-4 xl:border-r-2 xl:border-b-0"
-          >
-            <h3 class="eyebrow mb-3">{{ t('stats.hourOfDayUtc') }}</h3>
-            <div
-              class="flex h-28 items-end gap-1"
-              role="img"
-              :aria-label="t('stats.hourOfDayUtc')"
+        <ListeningPatterns
+          :hours="stats.playback?.patterns?.by_hour || []"
+          :weekdays="stats.playback?.patterns?.by_weekday || []"
+          :selected="selectedPattern"
+          :period-total="profilePeriod.total ?? 0"
+          :locale="locale"
+          @select="pickPattern"
+        />
+        <div v-if="selectedPattern" class="border-t-2 border-line">
+          <div class="flex items-stretch border-b-2 border-line bg-surface-2">
+            <h3 class="eyebrow flex min-w-0 flex-1 items-center px-3 py-2">
+              {{ t('stats.patternDetail') }} · {{ patternTitle }}
+            </h3>
+            <span
+              class="mono tabular flex shrink-0 items-center border-l-2 border-line px-3 text-faint"
+              >{{ patternDetail.total }}</span
             >
-              <div
-                v-for="row in byHour"
-                :key="row.hour"
-                class="flex h-full min-w-0 flex-1 flex-col justify-end gap-1"
-                :title="`${row.label}: ${row.count}`"
-              >
+            <button
+              type="button"
+              class="eyebrow flex shrink-0 items-center border-l-2 border-line px-3 text-muted transition-colors duration-100 hover:text-fg"
+              @click="clearPattern"
+            >
+              {{ t('stats.patternClear') }}
+            </button>
+          </div>
+          <div class="px-3 py-4" :aria-busy="patternLoading">
+            <template v-if="patternLoading">
+              <UiSkeleton class="mb-2 h-8" />
+              <UiSkeleton class="mb-2 h-8" />
+              <UiSkeleton class="h-8" />
+            </template>
+            <div
+              v-else-if="patternError"
+              class="flex flex-col items-start gap-2"
+            >
+              <p class="text-[13px] text-faint">
+                {{ t('stats.patternLoadFailed') }}
+              </p>
+              <UiButton icon="refresh" @click="retryPattern">{{
+                t('common.retry')
+              }}</UiButton>
+            </div>
+            <p v-else-if="!patternDetail.total" class="text-[13px] text-faint">
+              {{ t('stats.patternEmpty') }}
+            </p>
+            <template v-else>
+              <div class="mb-4 flex flex-wrap gap-2">
                 <span
-                  class="w-full"
-                  :class="row.count ? 'bg-fg' : 'border border-line-2'"
-                  :style="{ height: `${patternPercent(row.count, hourMax)}%` }"
-                />
-                <span
-                  v-if="row.hour % 3 === 0"
-                  class="mono text-[9px] text-faint"
-                  >{{ row.label }}</span
+                  v-for="row in patternSourceRows"
+                  :key="row.source"
+                  class="mono border border-line-2 px-2 py-1 text-faint"
+                  >{{ row.label }} {{ row.count }}</span
                 >
               </div>
-            </div>
-          </div>
-          <div class="px-3 py-4">
-            <h3 class="eyebrow mb-3">{{ t('stats.weekdayUtc') }}</h3>
-            <div
-              class="flex h-28 items-end gap-2"
-              role="img"
-              :aria-label="t('stats.weekdayUtc')"
-            >
-              <div
-                v-for="row in byWeekday"
-                :key="row.weekday"
-                class="flex h-full min-w-0 flex-1 flex-col justify-end gap-1"
-                :title="`${row.label}: ${row.count}`"
-              >
-                <span
-                  class="w-full"
-                  :class="row.count ? 'bg-fg' : 'border border-line-2'"
-                  :style="{
-                    height: `${patternPercent(row.count, weekdayMax)}%`,
-                  }"
-                />
-                <span class="mono text-center text-[9px] text-faint">{{
-                  row.label
-                }}</span>
+              <div class="grid gap-4 xl:grid-cols-3">
+                <div>
+                  <h4 class="eyebrow mb-2">
+                    {{ t('stats.patternTopTracks') }}
+                  </h4>
+                  <ol class="flex flex-col gap-1.5">
+                    <li
+                      v-for="row in patternDetail.top_tracks"
+                      :key="row.summary"
+                      class="flex items-baseline justify-between gap-3 text-[13px]"
+                    >
+                      <span class="min-w-0 flex-1 truncate">{{
+                        row.summary
+                      }}</span>
+                      <span class="mono tabular text-faint">{{
+                        row.count
+                      }}</span>
+                    </li>
+                  </ol>
+                </div>
+                <div>
+                  <h4 class="eyebrow mb-2">
+                    {{ t('stats.patternTopArtists') }}
+                  </h4>
+                  <ol class="flex flex-col gap-1.5">
+                    <li
+                      v-for="row in patternDetail.top_artists"
+                      :key="row.artist"
+                      class="flex items-baseline justify-between gap-3 text-[13px]"
+                    >
+                      <span class="min-w-0 flex-1 truncate">{{
+                        row.artist
+                      }}</span>
+                      <span class="mono tabular text-faint">{{
+                        row.count
+                      }}</span>
+                    </li>
+                  </ol>
+                </div>
+                <div class="min-w-0">
+                  <h4 class="eyebrow mb-2">{{ t('stats.patternRecent') }}</h4>
+                  <ol
+                    class="flex max-h-72 flex-col overflow-y-auto"
+                    role="list"
+                  >
+                    <li
+                      v-for="(row, index) in patternDetail.recent"
+                      :key="`${row.at}-${index}`"
+                      class="flex items-center gap-2 border-b border-line-2 py-1.5 last:border-b-0"
+                    >
+                      <span class="mono tabular w-14 shrink-0 text-faint">{{
+                        clockOf(row.at)
+                      }}</span>
+                      <span class="min-w-0 flex-1 truncate text-[13px]">{{
+                        row.summary
+                      }}</span>
+                      <span
+                        v-if="row.context"
+                        class="mono max-w-32 shrink-0 truncate border border-line-2 px-1.5 text-muted"
+                        >{{ contextName(row.context) }}</span
+                      >
+                      <span
+                        v-if="row.source"
+                        class="mono shrink-0 whitespace-nowrap border border-line-2 px-1.5 text-faint"
+                        >{{ sourceLabel(row.source) }}</span
+                      >
+                    </li>
+                  </ol>
+                </div>
               </div>
-            </div>
+              <p
+                v-if="patternDetail.truncated"
+                class="mono mt-3 border-t-2 border-line pt-2 text-faint"
+              >
+                {{
+                  t('stats.patternTruncated', {
+                    shown: patternDetail.recent.length,
+                    total: patternDetail.total,
+                  })
+                }}
+              </p>
+            </template>
           </div>
         </div>
       </section>
@@ -577,6 +659,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from '/src/i18n'
 import { contextLabel } from '/src/lib/context'
 import ActivityHeatmap from '/src/components/library/ActivityHeatmap.vue'
+import ListeningPatterns from '/src/components/library/ListeningPatterns.vue'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
@@ -589,7 +672,20 @@ import { playsForDay, useStats } from '/src/model/stats'
 import { countUpDirective as vCountUp } from '/src/composables/useCountUp'
 
 const { t, locale } = useI18n()
-const { stats, loading, error, dayLoading, dayError, days, load } = useStats()
+const {
+  stats,
+  loading,
+  error,
+  dayLoading,
+  dayError,
+  patternLoading,
+  patternError,
+  selectedPattern,
+  days,
+  load,
+  loadPattern,
+  clearPattern,
+} = useStats()
 
 onMounted(() => load())
 watch(days, () => load(selectedDay.value))
@@ -729,10 +825,27 @@ const profileMetrics = computed(() => [
 
 // The day a heatmap cell was clicked on, or '' for all of them.
 const selectedDay = ref('')
+let skipDayLoad = false
 
-/** Clicking the picked day again clears the filter. */
+/** Clicking the picked day again clears the filter and any pattern drilldown. */
 function pickDay(date) {
-  selectedDay.value = selectedDay.value === date ? '' : date || ''
+  const next = selectedDay.value === date ? '' : date || ''
+  if (next) clearPattern()
+  selectedDay.value = next
+}
+
+function pickPattern(selection) {
+  if (selectedDay.value) {
+    skipDayLoad = true
+    selectedDay.value = ''
+  }
+  loadPattern(selection.kind, selection.bucket)
+}
+
+function retryPattern() {
+  if (selectedPattern.value) {
+    loadPattern(selectedPattern.value.kind, selectedPattern.value.bucket)
+  }
 }
 
 // Selected-day rows come from the exact-day endpoint, not the recent page.
@@ -742,7 +855,13 @@ const dayTotal = computed(() =>
     ? (stats.value.playback.day.total ?? 0)
     : 0
 )
-watch(selectedDay, (date) => load(date, { background: true }))
+watch(selectedDay, (date) => {
+  if (skipDayLoad) {
+    skipDayLoad = false
+    return
+  }
+  load(date, { background: true })
+})
 
 function retryDay() {
   load(selectedDay.value, { background: true })
@@ -797,44 +916,46 @@ const lastfmImportLabel = computed(() => {
   })
 })
 
-const byHour = computed(() => {
-  const counts = stats.value.playback?.patterns?.by_hour || []
-  return Array.from({ length: 24 }, (_, hour) => ({
-    hour,
-    label: String(hour).padStart(2, '0'),
-    count: Number(counts[hour]) || 0,
+const patternDetail = computed(
+  () =>
+    stats.value.playback?.pattern_detail || {
+      kind: '',
+      bucket: null,
+      total: 0,
+      by_source: {},
+      top_tracks: [],
+      top_artists: [],
+      recent: [],
+      truncated: false,
+    }
+)
+const patternSourceRows = computed(() =>
+  ['downtify', 'spotify', 'lastfm'].map((source) => ({
+    source,
+    label: sourceLabel(source),
+    count: Number(patternDetail.value.by_source?.[source]) || 0,
   }))
-})
-const hourMax = computed(() =>
-  Math.max(1, ...byHour.value.map((row) => row.count))
 )
 
-function weekdayShort(weekday) {
+function patternWeekdayFull(weekday) {
   try {
     return new Intl.DateTimeFormat(locale.value, {
-      weekday: 'short',
+      weekday: 'long',
       timeZone: 'UTC',
-    }).format(new Date(Date.UTC(2024, 0, 7 + weekday)))
+    }).format(new Date(Date.UTC(2024, 0, 7 + Number(weekday))))
   } catch {
     return String(weekday)
   }
 }
 
-const byWeekday = computed(() => {
-  const counts = stats.value.playback?.patterns?.by_weekday || []
-  return Array.from({ length: 7 }, (_, weekday) => ({
-    weekday,
-    label: weekdayShort(weekday),
-    count: Number(counts[weekday]) || 0,
-  }))
+const patternTitle = computed(() => {
+  const selected = selectedPattern.value
+  if (!selected) return ''
+  if (selected.kind === 'weekday') return patternWeekdayFull(selected.bucket)
+  return t('stats.patternHourTitle', {
+    hour: String(selected.bucket).padStart(2, '0'),
+  })
 })
-const weekdayMax = computed(() =>
-  Math.max(1, ...byWeekday.value.map((row) => row.count))
-)
-
-function patternPercent(count, max) {
-  return ((Number(count) || 0) / max) * 100
-}
 
 // When a play was made, in the reader's own locale. Activity stamps ISO
 // instants; an unparseable one falls back to the raw text rather than

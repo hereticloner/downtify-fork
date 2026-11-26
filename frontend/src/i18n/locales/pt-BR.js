@@ -666,6 +666,17 @@ export default {
     contextSpotifyPlaylist: 'Playlist do Spotify',
     contextSpotifyArtist: 'Artista do Spotify',
     contextSpotifyAlbum: 'Álbum do Spotify',
+    patternHourTitle: 'Hora {hour}:00–{hour}:59 UTC',
+    patternShare: '{percent}% do período',
+    patternDetail: 'Detalhes do padrão',
+    patternTopTracks: 'Faixas mais tocadas',
+    patternTopArtists: 'Artistas mais tocados',
+    patternRecent: 'Reproduções recentes no intervalo',
+    patternEmpty: 'Nenhuma reprodução neste intervalo',
+    patternLoadFailed: 'Não foi possível carregar este padrão.',
+    patternTruncated:
+      'Mostrando as {shown} reproduções mais recentes de {total}.',
+    patternClear: 'Limpar padrão',
     playCount: { one: '{count} reprodução', other: '{count} reproduções' },
     heatmapKeyboardHint:
       'Use as setas para navegar por dias ou semanas. Pressione Enter ou Espaço para selecionar um dia.',

@@ -96,6 +96,121 @@ describe('Stats period', () => {
     expect(stats.dayError.value).toBe(true)
     expect(stats.loading.value).toBe(false)
   })
+
+  it('merges background day detail without replacing base stats', async () => {
+    stats.stats.value = {
+      library: { tracks: 7 },
+      playback: { recent: [{ summary: 'Recent' }] },
+    }
+    fixture.api.getStats.mockResolvedValue({
+      data: {
+        library: { tracks: 999 },
+        playback: {
+          day: { date: '2026-11-20', total: 1, plays: [] },
+          context_labels: { 'spotify:playlist:abc': 'Playlist' },
+        },
+      },
+    })
+
+    await stats.load('2026-11-20', { background: true })
+
+    expect(stats.stats.value.library.tracks).toBe(7)
+    expect(stats.stats.value.playback.recent).toEqual([{ summary: 'Recent' }])
+    expect(stats.stats.value.playback.day.date).toBe('2026-11-20')
+    expect(stats.stats.value.playback.context_labels).toEqual({
+      'spotify:playlist:abc': 'Playlist',
+    })
+  })
+
+  it('loads and selects exact pattern detail in the background', async () => {
+    fixture.api.getStats.mockResolvedValue({
+      data: {
+        playback: {
+          pattern_detail: { kind: 'hour', bucket: 14, total: 2 },
+          context_labels: { 'spotify:artist:abc': 'Artist' },
+        },
+      },
+    })
+
+    await stats.loadPattern('hour', 14)
+
+    expect(fixture.api.getStats).toHaveBeenCalledWith({
+      days: 30,
+      scope: 'user',
+      pattern: 'hour',
+      bucket: 14,
+    })
+    expect(stats.selectedPattern.value).toEqual({ kind: 'hour', bucket: 14 })
+    expect(stats.stats.value.playback.pattern_detail.total).toBe(2)
+    expect(stats.patternLoading.value).toBe(false)
+    expect(stats.patternError.value).toBe(false)
+  })
+
+  it('ignores stale pattern responses', async () => {
+    let resolveFirst
+    let resolveSecond
+    fixture.api.getStats
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve
+          })
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecond = resolve
+          })
+      )
+
+    const first = stats.loadPattern('hour', 14)
+    const second = stats.loadPattern('hour', 15)
+    resolveSecond({
+      data: { playback: { pattern_detail: { kind: 'hour', bucket: 15 } } },
+    })
+    await second
+    resolveFirst({
+      data: { playback: { pattern_detail: { kind: 'hour', bucket: 14 } } },
+    })
+    await first
+
+    expect(stats.stats.value.playback.pattern_detail.bucket).toBe(15)
+    expect(stats.selectedPattern.value.bucket).toBe(15)
+  })
+
+  it('keeps pattern errors separate and supports clear', async () => {
+    fixture.api.getStats.mockRejectedValue(new Error('offline'))
+
+    await stats.loadPattern('weekday', 1)
+
+    expect(stats.error.value).toBe(false)
+    expect(stats.patternError.value).toBe(true)
+    stats.clearPattern()
+    expect(stats.selectedPattern.value).toBeNull()
+    expect(stats.patternError.value).toBe(false)
+    expect(stats.stats.value.playback?.pattern_detail?.kind).toBe('')
+  })
+
+  it('keeps pattern selection on a foreground period reload', async () => {
+    fixture.api.getStats.mockResolvedValue({
+      data: { playback: { pattern_detail: { kind: 'hour', bucket: 14 } } },
+    })
+    await stats.loadPattern('hour', 14)
+    stats.days.value = 7
+    fixture.api.getStats.mockResolvedValue({
+      data: { playback: { pattern_detail: { kind: 'hour', bucket: 14 } } },
+    })
+
+    await stats.load()
+
+    expect(fixture.api.getStats).toHaveBeenLastCalledWith({
+      days: 7,
+      scope: 'user',
+      pattern: 'hour',
+      bucket: 14,
+    })
+    expect(stats.selectedPattern.value).toEqual({ kind: 'hour', bucket: 14 })
+  })
 })
 
 describe('playsForDay', () => {

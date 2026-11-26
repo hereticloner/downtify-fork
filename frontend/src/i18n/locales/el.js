@@ -677,6 +677,17 @@ export default {
     contextSpotifyPlaylist: 'Λίστα αναπαραγωγής Spotify',
     contextSpotifyArtist: 'Καλλιτέχνης Spotify',
     contextSpotifyAlbum: 'Άλμπουμ Spotify',
+    patternHourTitle: 'Ώρα {hour}:00–{hour}:59 UTC',
+    patternShare: '{percent}% της περιόδου',
+    patternDetail: 'Λεπτομέρειες μοντέλου',
+    patternTopTracks: 'Κορυφαία κομμάτια',
+    patternTopArtists: 'Κορυφαίοι καλλιτέχνες',
+    patternRecent: 'Πρόσφατες αναπαραγωγές στο διάστημα',
+    patternEmpty: 'Δεν υπάρχουν αναπαραγωγές σε αυτό το διάστημα',
+    patternLoadFailed: 'Δεν ήταν δυνατή η φόρτωση αυτού του μοντέλου.',
+    patternTruncated:
+      'Εμφανίζονται οι {shown} πιο πρόσφατες αναπαραγωγές από {total}.',
+    patternClear: 'Καθαρισμός μοντέλου',
     playCount: { one: '{count} αναπαραγωγή', other: '{count} αναπαραγωγές' },
     heatmapKeyboardHint:
       'Χρησιμοποιήστε τα βέλη για να μετακινηθείτε ανά ημέρα ή εβδομάδα. Πατήστε Enter ή Space για να επιλέξετε μια ημέρα.',
