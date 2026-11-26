@@ -99,6 +99,68 @@ def test_stats_counts_spotify_and_lastfm_without_faking_measured_time(client):
     assert data['measured']['plays'] == 0
 
 
+def test_stats_period_aggregates_follow_selected_window(client):
+    listening = api.state.listening
+    today = datetime.now(timezone.utc).date()
+    for source, key, offset in (
+        ('spotify', 's7', 0),
+        ('lastfm', 'l30', 8),
+        ('downtify', 'd90', 40),
+    ):
+        listening.link_or_create(
+            user_id=1,
+            source=source,
+            source_key=key,
+            played_at=f'{(today - timedelta(days=offset)).isoformat()}T20:15:00Z',
+            artist=source,
+            title=key,
+        )
+
+    seven = client.get('/api/stats', params={'days': 7}).json()['playback']
+    thirty = client.get('/api/stats', params={'days': 30}).json()['playback']
+    ninety = client.get('/api/stats', params={'days': 90}).json()['playback']
+
+    assert [
+        seven['period']['total'],
+        thirty['period']['total'],
+        ninety['period']['total'],
+    ] == [1, 2, 3]
+    assert seven['total'] == thirty['total'] == ninety['total'] == 3
+    assert ninety['period']['by_source'] == {
+        'downtify': 1,
+        'spotify': 1,
+        'lastfm': 1,
+    }
+
+
+def test_best_day_is_the_older_maximum_not_the_newest_active_day(client):
+    listening = api.state.listening
+    today = datetime.now(timezone.utc).date()
+    older = today - timedelta(days=10)
+    for index in range(40):
+        listening.link_or_create(
+            user_id=1,
+            source='spotify',
+            source_key=f'older:{index}',
+            played_at=f'{older.isoformat()}T20:15:00Z',
+            artist='A',
+            title=f'T{index}',
+        )
+    listening.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='newest',
+        played_at=f'{today.isoformat()}T20:15:00Z',
+        artist='B',
+        title='Newest',
+    )
+
+    assert client.get('/api/stats').json()['playback']['best_day'] == {
+        'date': older.isoformat(),
+        'count': 40,
+    }
+
+
 def test_downtify_spotify_lastfm_same_play_is_one_event(client):
     listening = api.state.listening
     listening.link_or_create(

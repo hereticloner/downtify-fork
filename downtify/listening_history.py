@@ -286,7 +286,7 @@ class ListeningStore:
         return created
 
     def stats(
-        self, user_id: int = 0, recent_limit: int = 400
+        self, user_id: int = 0, recent_limit: int = 400, *, days: int = 30
     ) -> dict[str, Any]:
         where = 'WHERE user_id=?' if user_id else ''
         args: list[Any] = [int(user_id)] if user_id else []
@@ -298,6 +298,12 @@ class ListeningStore:
         cutoff = (
             datetime.now(timezone.utc).date() - timedelta(days=363)
         ).isoformat()
+        window = days if days in {7, 30, 90} else 30
+        today = datetime.now(timezone.utc).date()
+        window_start = (today - timedelta(days=window - 1)).isoformat()
+        window_end = today.isoformat()
+        period_where = f'{where} AND ' if where else 'WHERE '
+        period_args: tuple[Any, ...] = (*args, window_start, window_end)
         with self._connect() as conn:
             total = int(
                 conn.execute(
@@ -354,12 +360,77 @@ class ListeningStore:
                     args,
                 ).fetchall()
             ]
+            by_source = {source: 0 for source in _SOURCE_PRIORITY}
+            for row in conn.execute(
+                'SELECT source, COUNT(*) AS count '
+                f'FROM listening_events {period_where}'
+                'substr(played_at, 1, 10) BETWEEN ? AND ? GROUP BY source',
+                period_args,
+            ):
+                if row['source'] in by_source:
+                    by_source[row['source']] = int(row['count'])
+            unique = conn.execute(
+                'SELECT '
+                "COUNT(DISTINCT CASE WHEN match_key != '|' THEN match_key END) "
+                "AS tracks, COUNT(DISTINCT NULLIF(artist, '')) AS artists, "
+                "COUNT(DISTINCT NULLIF(album, '')) AS albums "
+                f'FROM listening_events {period_where}'
+                'substr(played_at, 1, 10) BETWEEN ? AND ?',
+                period_args,
+            ).fetchone()
+            duration = conn.execute(
+                'SELECT COALESCE(SUM(CASE WHEN duration_ms > 0 '
+                'THEN duration_ms ELSE 0 END), 0) AS duration_ms, '
+                'COALESCE(SUM(CASE WHEN duration_ms > 0 THEN 1 ELSE 0 END), 0) '
+                'AS with_duration '
+                f'FROM listening_events {period_where}'
+                'substr(played_at, 1, 10) BETWEEN ? AND ?',
+                period_args,
+            ).fetchone()
+            by_hour = [0] * 24
+            by_weekday = [0] * 7
+            for row in conn.execute(
+                "SELECT CAST(strftime('%H', played_at) AS INTEGER) AS hour, "
+                'COUNT(*) AS count '
+                f'FROM listening_events {period_where}'
+                'substr(played_at, 1, 10) BETWEEN ? AND ? GROUP BY hour',
+                period_args,
+            ):
+                if row['hour'] is not None and 0 <= int(row['hour']) < 24:
+                    by_hour[int(row['hour'])] = int(row['count'])
+            for row in conn.execute(
+                "SELECT CAST(strftime('%w', played_at) AS INTEGER) AS weekday, "
+                'COUNT(*) AS count '
+                f'FROM listening_events {period_where}'
+                'substr(played_at, 1, 10) BETWEEN ? AND ? GROUP BY weekday',
+                period_args,
+            ):
+                if row['weekday'] is not None and 0 <= int(row['weekday']) < 7:
+                    by_weekday[int(row['weekday'])] = int(row['count'])
+        period_total = sum(by_hour)
+        with_duration = int(duration['with_duration'])
         return {
             'total': total,
             'top_tracks': top_tracks,
             'daily': daily,
             'recent': recent,
             'top_contexts': contexts,
+            'period': {
+                'days': window,
+                'total': period_total,
+                'by_source': by_source,
+            },
+            'unique': {
+                'tracks': int(unique['tracks']),
+                'artists': int(unique['artists']),
+                'albums': int(unique['albums']),
+            },
+            'track_time': {
+                'seconds': int(duration['duration_ms']) / 1000,
+                'plays_with_duration': with_duration,
+                'plays_without_duration': period_total - with_duration,
+            },
+            'patterns': {'by_hour': by_hour, 'by_weekday': by_weekday},
         }
 
     def forget_user(self, user_id: int) -> int:

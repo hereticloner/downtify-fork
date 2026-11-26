@@ -389,7 +389,9 @@ async def stats_endpoint(
         }
     )
     listening_stats = (
-        st.listening.stats(user_id) if st.listening is not None else None
+        st.listening.stats(user_id, days=window)
+        if st.listening is not None
+        else None
     )
     if activity is None:
         return {
@@ -404,6 +406,18 @@ async def stats_endpoint(
                 'best_day': {'date': '', 'count': 0},
                 'recent': [],
                 'top_contexts': [],
+                'period': {
+                    'days': window,
+                    'total': 0,
+                    'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 0},
+                },
+                'unique': {'tracks': 0, 'artists': 0, 'albums': 0},
+                'track_time': {
+                    'seconds': 0,
+                    'plays_with_duration': 0,
+                    'plays_without_duration': 0,
+                },
+                'patterns': {'by_hour': [0] * 24, 'by_weekday': [0] * 7},
             },
             'spotify': spotify,
         }

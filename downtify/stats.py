@@ -314,10 +314,36 @@ def build_stats(
         playback_total = int(listening_stats.get('total') or 0)
     per_day = Counter(_parse_at(e.get('at')) for e in downloads if e.get('at'))
     recent = _spotify_recent(spotify_recent)
+    period = (
+        listening_stats.get('period') if listening_stats is not None else None
+    ) or {
+        'days': window,
+        'total': 0,
+        'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 0},
+    }
+    unique = (
+        listening_stats.get('unique') if listening_stats is not None else None
+    ) or {'tracks': 0, 'artists': 0, 'albums': 0}
+    track_time = (
+        listening_stats.get('track_time')
+        if listening_stats is not None
+        else None
+    ) or {
+        'seconds': 0,
+        'plays_with_duration': 0,
+        'plays_without_duration': 0,
+    }
+    patterns = (
+        listening_stats.get('patterns')
+        if listening_stats is not None
+        else None
+    ) or {'by_hour': [0] * 24, 'by_weekday': [0] * 7}
 
     heatmap = _heatmap_from_counts(daily_counts)
-    busiest = next(
-        (day for day in reversed(heatmap) if day['count'] > 0), None
+    busiest = max(
+        (day for day in heatmap if day['count'] > 0),
+        key=lambda day: day['count'],
+        default=None,
     )
 
     return {
@@ -350,6 +376,10 @@ def build_stats(
             # stands for.
             'recent': recent_plays,
             'top_contexts': top_contexts,
+            'period': period,
+            'unique': unique,
+            'track_time': track_time,
+            'patterns': patterns,
         },
         'spotify': {
             'recent': recent,
