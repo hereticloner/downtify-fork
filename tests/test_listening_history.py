@@ -3,6 +3,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from downtify import lastfm_history, spotify_history
 from downtify.listening_history import ListeningStore, normalize_match_key
 
@@ -457,6 +459,109 @@ def test_day_plays_returns_exact_scoped_total_and_capped_rows(tmp_path):
     assert len(day['plays']) == 2
     assert day['plays'][0]['at'] == '2026-11-20T22:15:00Z'
     assert all(row['date'] == '2026-11-20' for row in day['plays'])
+
+
+def test_pattern_detail_matches_hour_bar_and_uses_canonical_sources(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    today = datetime.now(timezone.utc).date().isoformat()
+    for index in range(2):
+        store.link_or_create(
+            user_id=1,
+            source='spotify',
+            source_key=f'hour:{index}',
+            played_at=f'{today}T14:15:00Z',
+            artist='A',
+            title=f'T{index}',
+        )
+    store.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='other-hour',
+        played_at=f'{today}T15:15:00Z',
+        artist='B',
+        title='Other',
+    )
+
+    detail = store.pattern_detail(1, 7, 'hour', 14)
+    stats = store.stats(1, days=7)
+
+    assert detail['total'] == stats['patterns']['by_hour'][14] == 2
+    assert detail['by_source'] == {'downtify': 0, 'spotify': 2, 'lastfm': 0}
+    assert len(detail['top_tracks']) == 2
+    assert detail['top_artists'] == [{'artist': 'A', 'count': 2}]
+    assert len(detail['recent']) == 2
+    assert detail['truncated'] is False
+
+
+def test_pattern_detail_supports_weekday_and_utc_boundaries(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    today = datetime.now(timezone.utc).date()
+    weekday = int(today.strftime('%w'))
+    for key, at in (
+        ('midnight', f'{today.isoformat()}T00:00:00Z'),
+        ('last-second', f'{today.isoformat()}T23:59:59Z'),
+    ):
+        store.link_or_create(
+            user_id=1,
+            source='spotify',
+            source_key=key,
+            played_at=at,
+            artist='A',
+            title=key,
+        )
+
+    assert store.pattern_detail(1, 7, 'hour', 0)['total'] == 1
+    assert store.pattern_detail(1, 7, 'hour', 23)['total'] == 1
+    assert store.pattern_detail(1, 7, 'weekday', weekday)['total'] == 2
+
+
+def test_pattern_detail_is_scoped_capped_and_truncated(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    today = datetime.now(timezone.utc).date().isoformat()
+    for index in range(55):
+        store.link_or_create(
+            user_id=1,
+            source='spotify',
+            source_key=f'user1:{index}',
+            played_at=f'{today}T14:15:00Z',
+            artist='A',
+            title=f'T{index}',
+        )
+    store.link_or_create(
+        user_id=2,
+        source='lastfm',
+        source_key='user2',
+        played_at=f'{today}T14:15:00Z',
+        artist='B',
+        title='Other',
+    )
+
+    personal = store.pattern_detail(1, 7, 'hour', 14, recent_limit=50)
+    server = store.pattern_detail(0, 7, 'hour', 14, recent_limit=50)
+
+    assert personal['total'] == 55
+    assert len(personal['recent']) == 50
+    assert personal['truncated'] is True
+    assert server['total'] == 56
+
+
+def test_pattern_detail_empty_shape_and_validation(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+
+    assert store.pattern_detail(1, 7, 'hour', 14) == {
+        'kind': 'hour',
+        'bucket': 14,
+        'total': 0,
+        'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 0},
+        'top_tracks': [],
+        'top_artists': [],
+        'recent': [],
+        'truncated': False,
+    }
+    with pytest.raises(ValueError, match='out of range'):
+        store.pattern_detail(1, 7, 'hour', 24)
+    with pytest.raises(ValueError, match='kind must be'):
+        store.pattern_detail(1, 7, 'month', 1)
 
 
 def _link_spotify_observation(

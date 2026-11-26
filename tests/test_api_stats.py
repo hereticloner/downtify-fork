@@ -296,6 +296,77 @@ def test_stats_context_labels_are_cache_only(client, monkeypatch):
     }
 
 
+def test_stats_pattern_query_returns_exact_detail_and_detail_labels(
+    client, monkeypatch
+):
+    db_path = main.DATABASE_DIR / 'downtify_activity.db'
+    today = datetime.now(timezone.utc).date().isoformat()
+    api.state.listening.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='pattern-context',
+        played_at=f'{today}T14:15:00Z',
+        artist='A',
+        title='T',
+        context='spotify:playlist:pattern-only',
+        context_type='playlist',
+    )
+    spotify_context.cache_name(
+        db_path, 'spotify:playlist:pattern-only', 'Pattern Playlist'
+    )
+    monkeypatch.setattr(
+        api.state.listening,
+        'stats',
+        lambda *args, **kwargs: {
+            'total': 0,
+            'top_tracks': [],
+            'daily': [],
+            'recent': [],
+            'top_contexts': [],
+        },
+    )
+
+    playback = client.get(
+        '/api/stats', params={'pattern': 'hour', 'bucket': 14}
+    ).json()['playback']
+
+    assert playback['pattern_detail']['total'] == 1
+    assert playback['context_labels'] == {
+        'spotify:playlist:pattern-only': 'Pattern Playlist'
+    }
+
+
+def test_stats_pattern_query_validates_kind_and_bucket(client):
+    for params in (
+        {'pattern': 'hour'},
+        {'bucket': 14},
+        {'pattern': 'month', 'bucket': 1},
+        {'pattern': 'hour', 'bucket': 24},
+        {'pattern': 'weekday', 'bucket': 7},
+        {'pattern': 'hour', 'bucket': 'nope'},
+    ):
+        assert client.get('/api/stats', params=params).status_code == 400
+
+
+def test_stats_empty_activity_has_empty_pattern_detail(client, monkeypatch):
+    monkeypatch.setattr(api.state, 'activity', None)
+
+    playback = client.get(
+        '/api/stats', params={'pattern': 'hour', 'bucket': 14}
+    ).json()['playback']
+
+    assert playback['pattern_detail'] == {
+        'kind': '',
+        'bucket': None,
+        'total': 0,
+        'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 0},
+        'top_tracks': [],
+        'top_artists': [],
+        'recent': [],
+        'truncated': False,
+    }
+
+
 def test_stats_empty_activity_has_empty_context_labels(client, monkeypatch):
     monkeypatch.setattr(api.state, 'activity', None)
 

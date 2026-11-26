@@ -479,6 +479,117 @@ class ListeningStore:
             'lastfm': lastfm,
         }
 
+    def pattern_detail(
+        self,
+        user_id: int,
+        days: int,
+        kind: str,
+        bucket: int,
+        *,
+        top_limit: int = 5,
+        recent_limit: int = 50,
+    ) -> dict[str, Any]:
+        """Exact canonical plays for one UTC hour or weekday bucket."""
+
+        if kind not in {'hour', 'weekday'}:
+            raise ValueError('kind must be hour or weekday')
+        try:
+            selected = int(bucket)
+        except (TypeError, ValueError) as exc:
+            raise ValueError('bucket must be an integer') from exc
+        maximum = 23 if kind == 'hour' else 6
+        if selected < 0 or selected > maximum:
+            raise ValueError('bucket is out of range')
+        window = days if days in {7, 30, 90} else 30
+        today = datetime.now(timezone.utc).date()
+        start = (today - timedelta(days=window - 1)).isoformat()
+        where = 'WHERE user_id=?' if user_id else ''
+        args: list[Any] = [int(user_id)] if user_id else []
+        period_where = f'{where} AND ' if where else 'WHERE '
+        bucket_sql = (
+            "CAST(strftime('%H', played_at) AS INTEGER)"
+            if kind == 'hour'
+            else "CAST(strftime('%w', played_at) AS INTEGER)"
+        )
+        bucket_args: tuple[Any, ...] = (
+            *args,
+            start,
+            today.isoformat(),
+            selected,
+        )
+        summary_sql = (
+            "CASE WHEN artist != '' AND title != '' "
+            "THEN artist || ' - ' || title "
+            "WHEN title != '' THEN title ELSE artist END"
+        )
+        with self._connect() as conn:
+            total = int(
+                conn.execute(
+                    'SELECT COUNT(*) FROM listening_events '
+                    f'{period_where}date(played_at) BETWEEN ? AND ? '
+                    f'AND {bucket_sql}=?',
+                    bucket_args,
+                ).fetchone()[0]
+            )
+            by_source = {source: 0 for source in _SOURCE_PRIORITY}
+            for row in conn.execute(
+                'SELECT source, COUNT(*) AS count FROM listening_events '
+                f'{period_where}date(played_at) BETWEEN ? AND ? '
+                f'AND {bucket_sql}=? GROUP BY source',
+                bucket_args,
+            ):
+                if row['source'] in by_source:
+                    by_source[row['source']] = int(row['count'])
+            top_tracks = [
+                {'summary': row['summary'], 'count': int(row['count'])}
+                for row in conn.execute(
+                    f'SELECT {summary_sql} AS summary, COUNT(*) AS count '
+                    'FROM listening_events '
+                    f'{period_where}date(played_at) BETWEEN ? AND ? '
+                    f"AND {bucket_sql}=? GROUP BY summary HAVING summary != '' "
+                    'ORDER BY count DESC, summary LIMIT ?',
+                    (*bucket_args, max(1, min(int(top_limit), 20))),
+                ).fetchall()
+            ]
+            top_artists = [
+                {'artist': row['artist'], 'count': int(row['count'])}
+                for row in conn.execute(
+                    'SELECT artist, COUNT(*) AS count FROM listening_events '
+                    f'{period_where}date(played_at) BETWEEN ? AND ? '
+                    f"AND {bucket_sql}=? AND artist != '' "
+                    'GROUP BY artist ORDER BY count DESC, artist LIMIT ?',
+                    (*bucket_args, max(1, min(int(top_limit), 20))),
+                ).fetchall()
+            ]
+            recent = [
+                {
+                    'at': row['played_at'],
+                    'date': row['day'],
+                    'summary': row['summary'],
+                    'context': row['context'],
+                    'context_type': row['context_type'],
+                    'source': row['source'],
+                }
+                for row in conn.execute(
+                    f'SELECT played_at, date(played_at) AS day, '
+                    f'{summary_sql} AS summary, context, context_type, source '
+                    'FROM listening_events '
+                    f'{period_where}date(played_at) BETWEEN ? AND ? '
+                    f'AND {bucket_sql}=? ORDER BY played_at DESC, id DESC LIMIT ?',
+                    (*bucket_args, max(1, min(int(recent_limit), 200))),
+                ).fetchall()
+            ]
+        return {
+            'kind': kind,
+            'bucket': selected,
+            'total': total,
+            'by_source': by_source,
+            'top_tracks': top_tracks,
+            'top_artists': top_artists,
+            'recent': recent,
+            'truncated': total > len(recent),
+        }
+
     def day_plays(
         self,
         on_date: str,

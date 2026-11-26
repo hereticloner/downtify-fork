@@ -238,6 +238,7 @@ def build_stats(
     playback: Any = None,
     listening_stats: Optional[dict[str, Any]] = None,
     day_stats: Optional[dict[str, Any]] = None,
+    pattern_stats: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """The numbers the Stats page renders.
 
@@ -391,6 +392,17 @@ def build_stats(
             'patterns': patterns,
             'lastfm': lastfm,
             'day': day_stats or {'date': '', 'total': 0, 'plays': []},
+            'pattern_detail': pattern_stats
+            or {
+                'kind': '',
+                'bucket': None,
+                'total': 0,
+                'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 0},
+                'top_tracks': [],
+                'top_artists': [],
+                'recent': [],
+                'truncated': False,
+            },
         },
         'spotify': {
             'recent': recent,

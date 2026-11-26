@@ -344,6 +344,8 @@ async def stats_endpoint(
     days: int = Query(30, ge=7, le=90),
     scope: str = Query('user'),
     selected_date: str | None = Query(None, alias='date'),
+    pattern: str | None = Query(None),
+    bucket: str | None = Query(None),
 ) -> dict[str, Any]:
     from downtify import api as api_mod  # noqa: PLC0415
 
@@ -365,6 +367,28 @@ async def stats_endpoint(
             raise HTTPException(
                 status_code=400, detail='date must be YYYY-MM-DD'
             )
+    pattern_kind: str | None = None
+    pattern_bucket: int | None = None
+    if bool(pattern) != bool(bucket):
+        raise HTTPException(
+            status_code=400,
+            detail='pattern and bucket must be supplied together',
+        )
+    if pattern:
+        if pattern not in {'hour', 'weekday'}:
+            raise HTTPException(status_code=400, detail='Unknown pattern')
+        try:
+            pattern_bucket = int(bucket or '')
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400, detail='bucket must be an integer'
+            ) from exc
+        maximum = 23 if pattern == 'hour' else 6
+        if pattern_bucket < 0 or pattern_bucket > maximum:
+            raise HTTPException(
+                status_code=400, detail='bucket is out of range'
+            )
+        pattern_kind = pattern
     window = days if days in {7, 30, 90} else 30
     user_id = 0 if scope == 'server' else principal.user_id
     st = api_mod.state
@@ -415,6 +439,15 @@ async def stats_endpoint(
         if selected_date and st.listening is not None
         else None
     )
+    pattern_stats = (
+        st.listening.pattern_detail(
+            user_id, window, pattern_kind, pattern_bucket
+        )
+        if pattern_kind
+        and pattern_bucket is not None
+        and st.listening is not None
+        else None
+    )
     if activity is None:
         return {
             'library': {'tracks': 0, 'playlists': 0, 'likes': 0},
@@ -451,6 +484,16 @@ async def stats_endpoint(
                     },
                 },
                 'day': {'date': '', 'total': 0, 'plays': []},
+                'pattern_detail': {
+                    'kind': '',
+                    'bucket': None,
+                    'total': 0,
+                    'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 0},
+                    'top_tracks': [],
+                    'top_artists': [],
+                    'recent': [],
+                    'truncated': False,
+                },
                 'context_labels': {},
             },
             'spotify': spotify,
@@ -467,11 +510,16 @@ async def stats_endpoint(
         playback=st.playback,
         listening_stats=listening_stats,
         day_stats=day_stats,
+        pattern_stats=pattern_stats,
     )
     contexts = [row.get('context') for row in data['playback']['top_contexts']]
     contexts.extend(row.get('context') for row in data['playback']['recent'])
     contexts.extend(
         row.get('context') for row in data['playback']['day']['plays']
+    )
+    contexts.extend(
+        row.get('context')
+        for row in data['playback']['pattern_detail']['recent']
     )
     data['playback']['context_labels'] = spotify_context.labels_for(
         activity_db, contexts
