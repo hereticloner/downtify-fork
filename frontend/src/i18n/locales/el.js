@@ -674,6 +674,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} αναπαραγωγές Spotify αποθηκευμένες',
     activityHeatmap: 'Δραστηριότητα ακρόασης',
+    contextSpotifyPlaylist: 'Λίστα αναπαραγωγής Spotify',
+    contextSpotifyArtist: 'Καλλιτέχνης Spotify',
+    contextSpotifyAlbum: 'Άλμπουμ Spotify',
     playCount: { one: '{count} αναπαραγωγή', other: '{count} αναπαραγωγές' },
     heatmapKeyboardHint:
       'Χρησιμοποιήστε τα βέλη για να μετακινηθείτε ανά ημέρα ή εβδομάδα. Πατήστε Enter ή Space για να επιλέξετε μια ημέρα.',

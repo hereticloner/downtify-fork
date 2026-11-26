@@ -653,6 +653,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} записани изпълнения от Spotify',
     activityHeatmap: 'Активност на слушането',
+    contextSpotifyPlaylist: 'Spotify плейлист',
+    contextSpotifyArtist: 'Spotify артист',
+    contextSpotifyAlbum: 'Spotify албум',
     playCount: { one: '{count} изпълнение', other: '{count} изпълнения' },
     heatmapKeyboardHint:
       'Използвайте стрелките за преместване по дни или седмици. Натиснете Enter или Space, за да изберете ден.',

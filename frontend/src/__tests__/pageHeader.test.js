@@ -27,6 +27,21 @@ vi.mock('/src/model/api', () => ({
               skip_rate: 0.0909,
             },
             top_tracks: [],
+            top_contexts: [
+              { context: 'spotify:playlist:abc', count: 2 },
+              { context: 'Downtify Playlist', count: 1 },
+            ],
+            recent: [
+              {
+                at: '2026-11-25T21:15:00+00:00',
+                date: '2026-11-25',
+                summary: 'Artist - Track',
+                context: 'spotify:artist:xyz',
+                context_type: 'artist',
+                source: 'spotify',
+              },
+            ],
+            context_labels: { 'spotify:playlist:abc': 'Resolved Playlist' },
           },
           spotify: {
             recent: [
@@ -192,6 +207,20 @@ describe('StatsView', () => {
     ]) {
       expect(html, key).toContain(t(key))
     }
+  })
+
+  it('renders resolved and fallback context labels instead of raw URIs', async () => {
+    const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { load } = useStats()
+    await load()
+
+    const html = await render(StatsView)
+
+    expect(html).toContain('Resolved Playlist')
+    expect(html).toContain(t('stats.contextSpotifyArtist'))
+    expect(html).toContain('Downtify Playlist')
+    expect(html).not.toContain('spotify:playlist:abc')
+    expect(html).not.toContain('spotify:artist:xyz')
   })
 
   // The plays the Spotify history import mirrored are their own panel:

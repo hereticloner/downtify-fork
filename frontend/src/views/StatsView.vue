@@ -294,7 +294,7 @@
                 }}</span>
                 <span class="min-w-0 flex-1">
                   <span class="block truncate text-[13px]">{{
-                    row.context
+                    contextName(row.context)
                   }}</span>
                   <span class="mt-1 flex h-2 gap-0.5" aria-hidden="true">
                     <span
@@ -434,7 +434,7 @@
                   class="mono max-w-32 shrink-0 truncate border border-line-2 px-1.5 text-muted"
                   :title="t('stats.playedFrom')"
                 >
-                  {{ row.context }}
+                  {{ contextName(row.context) }}
                 </span>
                 <span
                   v-if="row.source"
@@ -575,6 +575,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from '/src/i18n'
+import { contextLabel } from '/src/lib/context'
 import ActivityHeatmap from '/src/components/library/ActivityHeatmap.vue'
 import PageHeader from '/src/components/library/PageHeader.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
@@ -606,6 +607,11 @@ const periodOptions = computed(() => [
 
 const perDay = computed(() => stats.value.downloads?.per_day || [])
 const topContexts = computed(() => stats.value.playback?.top_contexts || [])
+const contextLabels = computed(() => stats.value.playback?.context_labels || {})
+
+function contextName(value) {
+  return contextLabel(value, contextLabels.value, t)
+}
 
 const maxDay = computed(() =>
   Math.max(1, ...perDay.value.map((day) => Number(day.count) || 0))

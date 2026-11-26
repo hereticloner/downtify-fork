@@ -660,6 +660,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: 'Depolanan {count} Spotify çalması',
     activityHeatmap: 'Dinleme etkinliği',
+    contextSpotifyPlaylist: 'Spotify playlist’i',
+    contextSpotifyArtist: 'Spotify sanatçısı',
+    contextSpotifyAlbum: 'Spotify albümü',
     playCount: { one: '{count} çalma', other: '{count} çalma' },
     heatmapKeyboardHint:
       'Ok tuşlarıyla gün veya hafta arasında gezin. Bir günü seçmek için Enter veya Boşluk tuşuna basın.',

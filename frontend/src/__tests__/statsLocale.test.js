@@ -36,6 +36,9 @@ const required = [
   'dayTruncated',
   'playCount',
   'heatmapKeyboardHint',
+  'contextSpotifyPlaylist',
+  'contextSpotifyArtist',
+  'contextSpotifyAlbum',
 ]
 
 describe('Stats locale contract', () => {

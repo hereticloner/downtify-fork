@@ -669,6 +669,9 @@ export default {
     sourceLastfm: 'Last.fm',
     spotifyPlayCount: '{count} reproducciones de Spotify guardadas',
     activityHeatmap: 'Actividad de escucha',
+    contextSpotifyPlaylist: 'Lista de Spotify',
+    contextSpotifyArtist: 'Artista de Spotify',
+    contextSpotifyAlbum: 'Álbum de Spotify',
     playCount: { one: '{count} reproducción', other: '{count} reproducciones' },
     heatmapKeyboardHint:
       'Usa las flechas para moverte por días o semanas. Pulsa Enter o Espacio para seleccionar un día.',
