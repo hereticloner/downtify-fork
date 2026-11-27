@@ -1,7 +1,7 @@
 # Stats profile typography and album covers
 
 - **Date:** 2026-11-27
-- **Status:** Approved — frontend-only refinement
+- **Status:** Implemented
 - **Scope:** `frontend/src/views/StatsView.vue`, its tests and any pure display helper needed for cover matching
 
 ## Intent
