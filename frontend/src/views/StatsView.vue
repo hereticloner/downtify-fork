@@ -101,7 +101,7 @@
         >
           <div
             v-count-up="1500"
-            class="text-display text-[34px] leading-none font-bold tabular"
+            class="text-display stat-reveal text-[34px] leading-none font-bold tabular"
           >
             {{ metric.value }}
           </div>

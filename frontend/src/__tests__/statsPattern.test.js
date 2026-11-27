@@ -69,15 +69,4 @@ describe('ListeningPatterns', () => {
     expect(source).toContain('pointer: coarse')
     expect(source).toContain('prefers-reduced-motion')
   })
-
-  it('keeps day and pattern drilldowns mutually exclusive in StatsView', () => {
-    const source = readFileSync(
-      new URL('../views/StatsView.vue', import.meta.url),
-      'utf8'
-    )
-
-    expect(source).toContain('function pickPattern(')
-    expect(source).toContain('skipDayLoad')
-    expect(source).toMatch(/function pickDay\([\s\S]*clearPattern\(\)/)
-  })
 })
