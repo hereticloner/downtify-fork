@@ -7,7 +7,9 @@ vi.mock('/src/model/api', () => ({
     onUnauthorized: () => () => {},
     onForbidden: () => () => {},
     getAuthStatus: () =>
-      Promise.resolve({ data: { signed_in: true, user: { role: 'admin' } } }),
+      Promise.resolve({
+        data: { signed_in: true, user: { role: 'admin', username: 'yeet' } },
+      }),
     getSettings: () => Promise.resolve({ data: {} }),
     getQueue: () => Promise.resolve({ data: [] }),
     onMessage: () => () => {},
@@ -26,22 +28,68 @@ vi.mock('/src/model/api', () => ({
               completion_rate: 0.8181,
               skip_rate: 0.0909,
             },
-            top_tracks: [],
-            top_contexts: [
-              { context: 'spotify:playlist:abc', count: 2 },
-              { context: 'Downtify Playlist', count: 1 },
+            top_tracks: [
+              {
+                summary: 'Artist - Track',
+                artist: 'Artist',
+                title: 'Track',
+                album: 'Album',
+                count: 11,
+              },
             ],
+            top_contexts: [],
             recent: [
               {
                 at: '2026-11-25T21:15:00+00:00',
                 date: '2026-11-25',
                 summary: 'Artist - Track',
-                context: 'spotify:artist:xyz',
-                context_type: 'artist',
+                artist: 'Artist',
+                title: 'Track',
+                album: 'Album',
+                context: '',
+                context_type: '',
                 source: 'spotify',
               },
             ],
-            context_labels: { 'spotify:playlist:abc': 'Resolved Playlist' },
+            profile: {
+              first_at: '2026-10-07T12:18:00+00:00',
+              last_at: '2026-11-25T12:00:00Z',
+              unique: { tracks: 8, artists: 4, albums: 5 },
+              by_source: { downtify: 2, spotify: 7, lastfm: 2 },
+              top_artists: [
+                { artist: 'Artist', count: 11 },
+                { artist: 'Second Artist', count: 3 },
+              ],
+              top_albums: [{ album: 'Album', artist: 'Artist', count: 11 }],
+              weeks: [
+                { start: '2026-10-31', end: '2026-11-06', count: 8 },
+                { start: '2026-11-07', end: '2026-11-13', count: 6 },
+                { start: '2026-11-14', end: '2026-11-20', count: 4 },
+                { start: '2026-11-21', end: '2026-11-27', count: 2 },
+              ],
+            },
+            period: {
+              days: 30,
+              total: 5,
+              by_source: { downtify: 1, spotify: 3, lastfm: 1 },
+            },
+            unique: { tracks: 4, artists: 2, albums: 3 },
+            track_time: {
+              seconds: 3661,
+              plays_with_duration: 5,
+              plays_without_duration: 0,
+            },
+            lastfm: {
+              loved_plays: 0,
+              mbid_plays: 4,
+              imported_plays: 3800,
+              backfill: {
+                done: false,
+                oldest_at: '2026-10-11T21:46:08Z',
+                newest_at: '2026-11-25T11:51:48Z',
+              },
+            },
+            context_labels: {},
           },
           spotify: {
             recent: [
@@ -163,80 +211,133 @@ function expectPageHeader(html, title) {
 }
 
 describe('StatsView', () => {
-  it('renders its title through PageHeader', async () => {
+  it('renders the signed-in listener profile masthead', async () => {
     const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { load } = useStats()
+    await load()
     const html = await render(StatsView)
-    expectPageHeader(html, t('stats.title'))
-    expect(html).not.toContain('text-2xl font-semibold')
+    expect(html).toMatch(/<h1[^>]*text-display[^>]*>yeet<\/h1>/)
+    expect(html).toContain(t('stats.profileSubtitle'))
+    expect(html).toContain(t('stats.period30'))
   })
 
-  // Every panel reads `stats.library.tracks`, `stats.downloads.total` and
-  // the rest, so `load` has to unwrap the Axios envelope - keeping the
-  // response itself puts them all on their `?? 0` fallback and the tab
-  // looks empty however full the library is.
-  it('renders the numbers the stats endpoint reported', async () => {
+  it('renders lifetime profile totals and canonical source ledger', async () => {
     const StatsView = (await import('/src/views/StatsView.vue')).default
     const { stats, load } = useStats()
     await load()
-    expect(stats.value.library.tracks).toBe(7)
-    expect(stats.value.downloads.total).toBe(3)
 
-    // SSR never runs onMounted, so the load above is what fills the
-    // store the panels read.
     const html = await render(StatsView)
-    expect(html).toMatch(/>7<\/div>/)
-    expect(html).toMatch(/>3<\/div>/)
-    expect(html).toContain('1:01:01')
+
+    expect(stats.value.playback.total).toBe(11)
+    expect(html).toMatch(/>11<\/div>/)
+    expect(html).toMatch(/>4<\/div>/)
+    expect(html).toMatch(/>8<\/div>/)
+    expect(html).toMatch(/>5<\/div>/)
+    expect(html).toContain(t('stats.totalPlays'))
+    expect(html).toContain(t('stats.allTime'))
+    expect(html).toContain(t('stats.sourceSpotify'))
+    expect(html).toContain(t('stats.sourceLastfm'))
+  })
+
+  it('renders recent, top artists, top albums, top tracks and weekly report', async () => {
+    const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { load } = useStats()
+    await load()
+
+    const html = await render(StatsView)
+
     for (const key of [
-      'stats.tracks',
-      'stats.playlists',
-      'stats.downloads30',
-      'stats.downloadsTotal',
-      'stats.measuredListening',
-      'stats.completed',
-      'stats.skipped',
-      'stats.likes',
-      'stats.listeningProfile',
-      'stats.periodPlays',
-      'stats.uniqueTracks',
-      'stats.uniqueArtists',
-      'stats.knownAlbums',
+      'stats.recentPlays',
+      'stats.topArtists',
+      'stats.topAlbums',
+      'stats.topTracks',
+      'stats.listeningReport',
+      'stats.canonicalPlays',
+      'stats.archiveScope',
       'stats.knownTrackTime',
-      'stats.patterns',
+      'stats.trackTimeHint',
       'stats.lastfmDetail',
     ]) {
       expect(html, key).toContain(t(key))
     }
+    expect(html).toContain('Artist')
+    expect(html).toContain('Track')
+    expect(html).toContain('Album')
+    expect(html).toContain(t('stats.hoursMinutes', { hours: 1, minutes: 1 }))
+    expect(html).toContain(t('stats.periodSummary', { days: 30 }))
+    expect(html).toContain('data-source="spotify"')
+    expect(html).toMatch(/data-play-count[^>]*>11</)
   })
 
-  it('renders resolved and fallback context labels instead of raw URIs', async () => {
+  it('does not render hourly patterns, heatmap or legacy dashboard panels', async () => {
     const StatsView = (await import('/src/views/StatsView.vue')).default
     const { load } = useStats()
     await load()
 
     const html = await render(StatsView)
 
-    expect(html).toContain('Resolved Playlist')
-    expect(html).toContain(t('stats.contextSpotifyArtist'))
-    expect(html).toContain('Downtify Playlist')
-    expect(html).not.toContain('spotify:playlist:abc')
-    expect(html).not.toContain('spotify:artist:xyz')
+    for (const key of [
+      'stats.patterns',
+      'stats.activityHeatmap',
+      'stats.downloadsPerDay',
+      'stats.spotifyRecent',
+      'stats.topContexts',
+      'stats.trend',
+    ]) {
+      expect(html, key).not.toContain(t(key))
+    }
+    expect(html).not.toContain('data-pattern-chart')
+    expect(html).not.toContain('data-heatmap')
   })
 
-  // The plays the Spotify history import mirrored are their own panel:
-  // when did each happen, who played it, and how many are stored.
-  it('renders the mirrored Spotify plays', async () => {
+  it('renders a truthful empty profile without invented rows', async () => {
     const StatsView = (await import('/src/views/StatsView.vue')).default
-    const { load } = useStats()
-    await load()
+    const { stats, loading } = useStats()
+    stats.value = {
+      playback: {
+        total: 0,
+        top_tracks: [],
+        recent: [],
+        profile: {
+          first_at: '',
+          last_at: '',
+          unique: { tracks: 0, artists: 0, albums: 0 },
+          by_source: { downtify: 0, spotify: 0, lastfm: 0 },
+          top_artists: [],
+          top_albums: [],
+          weeks: [
+            { start: '2026-10-31', end: '2026-11-06', count: 0 },
+            { start: '2026-11-07', end: '2026-11-13', count: 0 },
+            { start: '2026-11-14', end: '2026-11-20', count: 0 },
+            { start: '2026-11-21', end: '2026-11-27', count: 0 },
+          ],
+        },
+        period: {
+          days: 30,
+          total: 0,
+          by_source: { downtify: 0, spotify: 0, lastfm: 0 },
+        },
+        unique: { tracks: 0, artists: 0, albums: 0 },
+        track_time: {
+          seconds: 0,
+          plays_with_duration: 0,
+          plays_without_duration: 0,
+        },
+        lastfm: {
+          loved_plays: 0,
+          mbid_plays: 0,
+          imported_plays: 0,
+          backfill: { done: false, oldest_at: '', newest_at: '' },
+        },
+      },
+    }
+    loading.value = false
 
     const html = await render(StatsView)
-    expect(html).toContain(t('stats.spotifyRecent'))
-    expect(html).toContain('The Night Owls - Do I Still Recall')
-    // The timestamp is shown as a locale date, never as the raw ISO text.
-    expect(html).not.toContain('2026-10-12T21:15:00+00:00')
-    expect(html).toMatch(/\w+ \d{1,2}, 2026/)
-    expect(html).toContain(t('stats.spotifyPlayCount', { count: 12 }))
+
+    expect(html).toContain(t('stats.profileEmpty'))
+    expect(html).not.toContain('undefined')
+    expect(html).not.toContain('Invalid Date')
   })
 })
 
