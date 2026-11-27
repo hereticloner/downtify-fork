@@ -2129,7 +2129,7 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
     "per_day": [{ "date": "2026-09-29", "count": 3 }]
   },
   "playback": {
-    "total": 1543,
+    "total": 4560,
     "measured": {
       "seconds": 18305,
       "plays": 1543,
@@ -2139,34 +2139,69 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
       "skip_rate": 0.0635
     },
     "top_tracks": [
-      { "summary": "The Night Owls - Do I Still Recall", "count": 42 }
+      {
+        "summary": "No Clear Mind - Big Thing",
+        "artist": "No Clear Mind",
+        "title": "Big Thing",
+        "album": "Makena",
+        "count": 115
+      }
     ],
+    "recent": [
+      {
+        "at": "2026-11-25T12:00:00Z",
+        "date": "2026-11-25",
+        "summary": "The Best Pessimist - Above the Fog (Pt.2)",
+        "artist": "The Best Pessimist",
+        "title": "Above the Fog (Pt.2)",
+        "album": "",
+        "context": "",
+        "context_type": "",
+        "source": "spotify"
+      }
+    ],
+    "profile": {
+      "first_at": "2026-10-07T12:18:00+00:00",
+      "last_at": "2026-11-25T12:00:00Z",
+      "unique": { "tracks": 1905, "artists": 788, "albums": 991 },
+      "by_source": { "downtify": 226, "spotify": 2875, "lastfm": 1459 },
+      "top_artists": [{ "artist": "No Clear Mind", "count": 732 }],
+      "top_albums": [
+        { "album": "Makena", "artist": "No Clear Mind", "count": 194 }
+      ],
+      "weeks": [
+        { "start": "2026-10-31", "end": "2026-11-06", "count": 832 },
+        { "start": "2026-11-07", "end": "2026-11-13", "count": 808 },
+        { "start": "2026-11-14", "end": "2026-11-20", "count": 561 },
+        { "start": "2026-11-21", "end": "2026-11-27", "count": 420 }
+      ]
+    },
     "heatmap": [{ "date": "2026-09-29", "count": 2 }],
     "streak_days": 4,
     "best_day": { "date": "2026-10-10", "count": 31 },
     "period": {
       "days": 30,
-      "total": 1200,
-      "by_source": { "downtify": 20, "spotify": 1100, "lastfm": 80 }
+      "total": 2762,
+      "by_source": { "downtify": 167, "spotify": 1881, "lastfm": 714 }
     },
-    "unique": { "tracks": 700, "artists": 210, "albums": 380 },
+    "unique": { "tracks": 1352, "artists": 638, "albums": 818 },
     "track_time": {
-      "seconds": 2520000,
-      "plays_with_duration": 1190,
-      "plays_without_duration": 10
+      "seconds": 574904,
+      "plays_with_duration": 2043,
+      "plays_without_duration": 719
     },
     "patterns": {
       "by_hour": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       "by_weekday": [0, 0, 0, 0, 0, 0, 0]
     },
     "lastfm": {
-      "loved_plays": 4,
-      "mbid_plays": 75,
+      "loved_plays": 0,
+      "mbid_plays": 1718,
       "imported_plays": 3800,
       "backfill": {
         "done": false,
         "oldest_at": "2026-10-11T21:46:08Z",
-        "newest_at": "2026-11-25T21:00:00Z"
+        "newest_at": "2026-11-25T11:51:48Z"
       }
     },
     "day": { "date": "", "total": 0, "plays": [] },
@@ -2207,7 +2242,9 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
 
 Counts come from the library stores, the activity log and the canonical `listening_events` history. A download request counts once. `playback.total` is all stored canonical plays; `playback.measured` adds Downtify-only unique listening seconds, completions (at least 90% heard) and skips (left before 25% or within 15 seconds) for the selected period. Spotify and Last.fm never fabricate those measured values.
 
-`playback.heatmap` is one `{date, count}` per day of the retained 364-day window, including zero days; `playback.streak_days` is the current consecutive-day run and `playback.best_day` is the maximum-count day, not merely the newest active day. `playback.recent` carries up to 400 newest canonical plays, each `{at, date, summary, context, context_type, source}`. `playback.top_contexts` groups those plays by known queue.
+`playback.heatmap` is one `{date, count}` per day of the retained 364-day window, including zero days; `playback.streak_days` is the current consecutive-day run and `playback.best_day` is the maximum-count day, not merely the newest active day. `playback.recent` carries up to 400 newest canonical plays, each `{at, date, summary, artist, title, album, context, context_type, source}`. `playback.top_contexts` groups those plays by known queue.
+
+`playback.profile` is the all-time canonical listening profile for the selected account scope. It contains `first_at`, `last_at`, all-time `unique` counts, all-time `by_source` counts, up to ten `top_artists`, up to eight `top_albums` grouped by album and artist, and four consecutive seven-day UTC `weeks` ending today. Empty history returns empty timestamps, zero counts and empty top lists; the four week rows remain present with zero counts. `playback.top_tracks` is also all-time; it keeps `summary` and `count` and adds structured `artist`, `title` and `album`.
 
 `playback.period`, `playback.unique`, `playback.track_time`, `playback.patterns`, `playback.lastfm.loved_plays` and `playback.lastfm.mbid_plays` cover the selected UTC calendar window. `period.by_source` uses the canonical winning source after dedupe. `unique` counts normalized track keys and non-empty artist/album names. `track_time` sums known track lengths and reports duration coverage; it is not listening time. `patterns.by_hour` has 24 UTC-hour counts and `patterns.by_weekday` has seven Sunday-first counts. `lastfm.imported_plays` and `lastfm.backfill` are connection-level import facts; loved means the linked scrobble was marked loved at import.
 

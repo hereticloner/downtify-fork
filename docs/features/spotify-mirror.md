@@ -113,8 +113,8 @@ token is replaced. The save is refused up front with that message if the
 import is switched on while the account has no tokens.
 :::
 
-Whatever the import has stored shows up on the [Stats](stats.md#recently-played-on-spotify)
-page as your last plays, with the total stored underneath.
+Whatever the import has stored shows up on the [Stats](stats.md#recent-plays)
+page as recent plays, with the total stored underneath.
 :::
 
 ::: info A backstop, not a sampler
