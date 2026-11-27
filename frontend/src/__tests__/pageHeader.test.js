@@ -1,4 +1,17 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+// Library index state shared by every useLibrary() caller in this file. Tests
+// mutate it in place to model which albums the background lookup discovered.
+const libraryMock = vi.hoisted(() => ({
+  albums: { value: [] },
+  albumsComplete: { value: true },
+  ensureAlbums: vi.fn(() => Promise.resolve()),
+}))
+const testRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
+const readView = (name) => readFileSync(join(testRoot, 'views', name), 'utf8')
 
 // The views below reach the API/model layer; stub the pieces they touch so
 // the SSR render stays in Node without a request or a socket.
@@ -110,6 +123,9 @@ vi.mock('/src/model/library', () => ({
   useLibrary: () => ({
     playlists: { value: [] },
     tracks: { value: [] },
+    albums: libraryMock.albums,
+    albumsComplete: libraryMock.albumsComplete,
+    ensureAlbums: libraryMock.ensureAlbums,
     loaded: { value: false },
     loading: { value: false },
     trackCount: { value: 0 },
@@ -353,6 +369,140 @@ describe('StatsView', () => {
     expect(html).toContain(t('stats.profileEmpty'))
     expect(html).not.toContain('undefined')
     expect(html).not.toContain('Invalid Date')
+  })
+})
+
+describe('StatsView top album covers', () => {
+  beforeEach(() => {
+    libraryMock.albums.value = []
+    libraryMock.albumsComplete.value = true
+    libraryMock.ensureAlbums.mockReset()
+    libraryMock.ensureAlbums.mockImplementation(() => Promise.resolve())
+  })
+
+  async function renderWith({ library = [], topAlbums = [] } = {}) {
+    const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { stats, load } = useStats()
+    await load()
+    libraryMock.albums.value = library
+    stats.value.playback.profile.top_albums = topAlbums
+    return render(StatsView)
+  }
+
+  it('renders the matching library cover with the album as alt text', async () => {
+    const html = await renderWith({
+      library: [
+        {
+          artist: 'Artist',
+          title: 'Album',
+          cover: '/cover?file=Artist%20-%20Album.jpg',
+        },
+      ],
+      topAlbums: [{ album: 'Album', artist: 'Artist', count: 11 }],
+    })
+
+    expect(html).toContain('/cover?file=Artist%20-%20Album.jpg')
+    expect(html).toMatch(/<img[^>]*alt="Album"/)
+  })
+
+  it('keeps the initials fallback when no library album matches', async () => {
+    const html = await renderWith({
+      library: [
+        {
+          artist: 'Other',
+          title: 'Other Album',
+          cover: '/cover?file=other.jpg',
+        },
+      ],
+      topAlbums: [{ album: 'Unmatched Album', artist: 'Nobody', count: 3 }],
+    })
+
+    expect(html).not.toContain('/cover?file=')
+    expect(html).toContain('>UA</span>')
+  })
+
+  it("picks each row's own cover when two artists share an album title", async () => {
+    const html = await renderWith({
+      library: [
+        {
+          artist: 'Artist One',
+          title: 'Same Title',
+          cover: '/cover?file=one.jpg',
+        },
+        {
+          artist: 'Artist Two',
+          title: 'Same Title',
+          cover: '/cover?file=two.jpg',
+        },
+      ],
+      topAlbums: [
+        { album: 'Same Title', artist: 'Artist One', count: 4 },
+        { album: 'Same Title', artist: 'Artist Two', count: 2 },
+      ],
+    })
+
+    expect(html).toContain('/cover?file=one.jpg')
+    expect(html).toContain('/cover?file=two.jpg')
+    expect(html.indexOf('/cover?file=one.jpg')).toBeLessThan(
+      html.indexOf('/cover?file=two.jpg')
+    )
+  })
+
+  it('matches artist + album case-insensitively', async () => {
+    const html = await renderWith({
+      library: [
+        { artist: 'artist', title: 'album', cover: '/cover?file=lower.jpg' },
+      ],
+      topAlbums: [{ album: 'ALBUM', artist: 'ARTIST', count: 5 }],
+    })
+
+    expect(html).toContain('/cover?file=lower.jpg')
+  })
+
+  it('truncates long localized album and artist names', async () => {
+    const longAlbum =
+      'An Extremely Long Album Title That Must Not Break The Grid'
+    const longArtist = 'A Very Long Localized Artist Name With Many Words'
+    const html = await renderWith({
+      topAlbums: [{ album: longAlbum, artist: longArtist, count: 1 }],
+    })
+
+    expect(html).toContain(longAlbum)
+    expect(html).toContain(longArtist)
+    expect(html).toContain('mt-3 truncate font-bold')
+    expect(html).toContain('mt-1 truncate text-[13px] text-muted')
+  })
+
+  it('guards the background album lookup against rejection', () => {
+    const source = readView('StatsView.vue')
+
+    expect(source).toMatch(/if \(!library\.albumsComplete\.value\)/)
+    expect(source).toMatch(/library\.ensureAlbums\(\)\.catch\(/)
+  })
+})
+
+describe('StatsView compact display scale', () => {
+  it('uses the approved compact classes and drops the oversized ones', () => {
+    const source = readView('StatsView.vue')
+
+    for (const cls of [
+      'sm:text-[32px]',
+      'text-[28px]',
+      'text-[24px]',
+      'text-[20px]',
+    ]) {
+      expect(source, cls).toContain(cls)
+    }
+    // The approved 30px period total uses the `text-3xl` utility, so the
+    // oversized arbitrary values must be gone from every display role.
+    for (const cls of [
+      'sm:text-[42px]',
+      'text-[34px]',
+      'text-[36px]',
+      'text-[30px]',
+    ]) {
+      expect(source, cls).not.toContain(cls)
+    }
   })
 })
 

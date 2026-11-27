@@ -37,7 +37,7 @@
             </div>
             <div class="min-w-0 flex-1">
               <h1
-                class="text-display truncate text-[34px] leading-none font-bold tracking-[-0.02em] sm:text-[42px]"
+                class="text-display truncate text-[28px] leading-none font-bold tracking-[-0.02em] sm:text-[32px]"
               >
                 {{ username }}
               </h1>
@@ -71,7 +71,7 @@
               <span class="mono text-faint">#01</span>
             </div>
             <div v-if="topTrack">
-              <p class="text-display text-2xl leading-tight font-bold">
+              <p class="text-display text-[20px] leading-tight font-bold">
                 {{ topTrack.parts.title || topTrack.summary }}
               </p>
               <p class="mt-1 truncate text-[13px] text-muted">
@@ -81,7 +81,7 @@
                 </span>
               </p>
               <p
-                class="text-display mt-4 text-3xl leading-none font-bold tabular"
+                class="text-display mt-4 text-[24px] leading-none font-bold tabular"
               >
                 {{ number(topTrack.count) }}
                 <span class="eyebrow ml-2">{{ t('stats.plays') }}</span>
@@ -103,7 +103,7 @@
         >
           <div
             v-count-up="1500"
-            class="text-display stat-reveal text-[34px] leading-none font-bold tabular"
+            class="text-display stat-reveal text-[28px] leading-none font-bold tabular"
           >
             {{ metric.value }}
           </div>
@@ -291,11 +291,12 @@
                 :key="`${row.artist}-${row.album}`"
                 class="min-w-0 border-b-2 border-r-2 border-line p-3 last:border-r-0 lg:[&:nth-child(4n)]:border-r-0"
               >
-                <div
-                  class="flex aspect-square items-center justify-center border-2 border-line bg-surface-2 font-display text-2xl font-bold"
-                >
-                  {{ initials(row.album) }}
-                </div>
+                <CoverArt
+                  :src="row.cover"
+                  :name="row.album"
+                  :alt="row.album"
+                  class="aspect-square"
+                />
                 <h3 class="mt-3 truncate font-bold">{{ row.album }}</h3>
                 <p class="mt-1 truncate text-[13px] text-muted">
                   {{ row.artist }}
@@ -429,7 +430,7 @@
           <section class="border-b-2 border-line p-4 sm:p-6">
             <h2 class="eyebrow">{{ t('stats.periodSummary', { days }) }}</h2>
             <div
-              class="text-display mt-3 text-4xl leading-none font-bold tabular"
+              class="text-display mt-3 text-3xl leading-none font-bold tabular"
             >
               {{ number(period.total ?? 0) }}
               <span class="eyebrow ml-2">{{ t('stats.plays') }}</span>
@@ -489,7 +490,7 @@
           <section class="p-4 sm:p-6">
             <h2 class="eyebrow">{{ t('stats.knownTrackTime') }}</h2>
             <div
-              class="text-display mt-3 text-3xl leading-none font-bold tabular"
+              class="text-display mt-3 text-[24px] leading-none font-bold tabular"
             >
               {{ t('stats.hoursMinutes', trackTimeParts) }}
             </div>
@@ -518,21 +519,42 @@
 import { computed, onMounted, watch } from 'vue'
 import { useI18n } from '/src/i18n'
 import { useAuth } from '/src/model/auth'
+import CoverArt from '/src/components/ui/CoverArt.vue'
 import UiButton from '/src/components/ui/UiButton.vue'
 import UiEmpty from '/src/components/ui/UiEmpty.vue'
 import UiSegmented from '/src/components/ui/UiSegmented.vue'
 import UiSkeleton from '/src/components/ui/UiSkeleton.vue'
 import { countUpDirective as vCountUp } from '/src/composables/useCountUp'
 import { formatPercent, initials, splitLength } from '/src/lib/format'
+import { albumKey } from '/src/lib/library'
 import { trackParts, weekLabel } from '/src/lib/statsProfile'
+import { useLibrary } from '/src/model/library'
 import { useStats } from '/src/model/stats'
 
 const { t, locale } = useI18n()
 const auth = useAuth()
+const library = useLibrary()
 const { stats, loading, error, days, load } = useStats()
 
-onMounted(() => load())
+onMounted(() => {
+  load()
+  // Artwork is optional decoration: a failed background lookup must not
+  // break the profile.
+  if (!library.albumsComplete.value) {
+    void library.ensureAlbums().catch(() => {})
+  }
+})
 watch(days, () => load())
+
+const coverByAlbum = computed(() => {
+  const map = new Map()
+  for (const album of library.albums.value || []) {
+    if (!album.cover) continue
+    const key = albumKey(album.artist, album.title)
+    if (!map.has(key)) map.set(key, album.cover)
+  }
+  return map
+})
 
 const periodOptions = computed(() => [
   { value: 7, label: t('stats.period7') },
@@ -608,7 +630,12 @@ const topTracks = computed(() =>
 )
 const topTrack = computed(() => topTracks.value[0] || null)
 const topArtists = computed(() => profile.value.top_artists || [])
-const topAlbums = computed(() => profile.value.top_albums || [])
+const topAlbums = computed(() =>
+  (profile.value.top_albums || []).map((row) => ({
+    ...row,
+    cover: coverByAlbum.value.get(albumKey(row.artist, row.album)) || '',
+  }))
+)
 const recentRows = computed(() =>
   (playback.value.recent || []).slice(0, 10).map((row) => ({
     ...row,

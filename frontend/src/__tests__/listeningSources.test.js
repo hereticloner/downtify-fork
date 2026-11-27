@@ -6,6 +6,7 @@ vi.mock('/src/model/api', () => ({
   default: {
     getStats: vi.fn(),
     onUnauthorized: () => () => {},
+    onMessage: () => () => {},
   },
 }))
 

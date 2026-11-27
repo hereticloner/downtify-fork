@@ -34,7 +34,7 @@ The source ledger shows Downtify, Spotify and Last.fm canonical counts and perce
 ## Top artists, albums and tracks
 
 - **Top artists** ranks ten artists by canonical play count.
-- **Top albums** shows eight album/artist pairs with typographic artwork frames and counts. The same album name from different artists remains separate.
+- **Top albums** shows eight album/artist pairs with counts and real library cover art when a matching album is available locally; initials appear only as the missing or broken-art fallback. The same album name from different artists remains separate.
 - **Top tracks** ranks ten tracks with artist, known album and count. Structured `artist`, `title` and `album` fields accompany the existing `summary` label.
 
 Every list has a truthful empty state and excludes blank names where the aggregate requires them.
