@@ -317,15 +317,69 @@ class ListeningStore:
                 ).fetchone()[0]
             )
             top_tracks = [
-                {'summary': row['summary'], 'count': int(row['count'])}
+                {
+                    'summary': row['summary'],
+                    'artist': row['artist'],
+                    'title': row['title'],
+                    'album': row['album'],
+                    'count': int(row['count']),
+                }
                 for row in conn.execute(
-                    f'SELECT {summary_sql} AS summary, COUNT(*) AS count '
+                    f'SELECT {summary_sql} AS summary, MAX(artist) AS artist, '
+                    'MAX(title) AS title, MAX(album) AS album, '
+                    'COUNT(*) AS count '
                     f'FROM listening_events {where} '
                     "GROUP BY summary HAVING summary != '' "
                     'ORDER BY count DESC, summary LIMIT 10',
                     args,
                 ).fetchall()
             ]
+            top_artists = [
+                {'artist': row['artist'], 'count': int(row['count'])}
+                for row in conn.execute(
+                    'SELECT artist, COUNT(*) AS count '
+                    f'FROM listening_events {where}'
+                    + (" AND artist != ''" if where else " WHERE artist != ''")
+                    + ' GROUP BY artist ORDER BY count DESC, artist LIMIT 10',
+                    args,
+                ).fetchall()
+            ]
+            top_albums = [
+                {
+                    'album': row['album'],
+                    'artist': row['artist'],
+                    'count': int(row['count']),
+                }
+                for row in conn.execute(
+                    'SELECT album, artist, COUNT(*) AS count '
+                    f'FROM listening_events {where}'
+                    + (" AND album != ''" if where else " WHERE album != ''")
+                    + ' GROUP BY album, artist ORDER BY count DESC, album, artist '
+                    'LIMIT 8',
+                    args,
+                ).fetchall()
+            ]
+            profile_unique = conn.execute(
+                'SELECT '
+                "COUNT(DISTINCT CASE WHEN match_key != '|' THEN match_key END) "
+                "AS tracks, COUNT(DISTINCT NULLIF(artist, '')) AS artists, "
+                "COUNT(DISTINCT NULLIF(album, '')) AS albums "
+                f'FROM listening_events {where}',
+                args,
+            ).fetchone()
+            profile_sources = {source: 0 for source in _SOURCE_PRIORITY}
+            for row in conn.execute(
+                'SELECT source, COUNT(*) AS count '
+                f'FROM listening_events {where} GROUP BY source',
+                args,
+            ):
+                if row['source'] in profile_sources:
+                    profile_sources[row['source']] = int(row['count'])
+            profile_range = conn.execute(
+                'SELECT MIN(played_at) AS first_at, MAX(played_at) AS last_at '
+                f'FROM listening_events {where}',
+                args,
+            ).fetchone()
             daily_where = f'{where} AND ' if where else 'WHERE '
             daily = [
                 {'date': row['day'], 'count': int(row['count'])}
@@ -341,12 +395,16 @@ class ListeningStore:
                     'at': row['played_at'],
                     'date': row['day'],
                     'summary': row['summary'],
+                    'artist': row['artist'],
+                    'title': row['title'],
+                    'album': row['album'],
                     'context': row['context'],
                     'context_type': row['context_type'],
                     'source': row['source'],
                 }
                 for row in conn.execute(
-                    f'SELECT played_at, date(played_at) AS day, {summary_sql} AS summary, context, '
+                    f'SELECT played_at, date(played_at) AS day, '
+                    f'{summary_sql} AS summary, artist, title, album, context, '
                     f'context_type, source FROM listening_events {where} '
                     'ORDER BY played_at DESC, id DESC LIMIT ?',
                     (*args, max(1, int(recent_limit))),
@@ -443,6 +501,21 @@ class ListeningStore:
                 )
         period_total = sum(by_source.values())
         with_duration = int(duration['with_duration'])
+        daily_counts = {row['date']: row['count'] for row in daily}
+        weeks = []
+        for index in range(4):
+            end = today - timedelta(days=(3 - index) * 7)
+            start = end - timedelta(days=6)
+            weeks.append({
+                'start': start.isoformat(),
+                'end': end.isoformat(),
+                'count': sum(
+                    daily_counts.get(
+                        (start + timedelta(days=offset)).isoformat(), 0
+                    )
+                    for offset in range(7)
+                ),
+            })
         state = lastfm_history.import_state(self._path)
         lastfm = {
             'loved_plays': loved_plays,
@@ -460,6 +533,19 @@ class ListeningStore:
             'daily': daily,
             'recent': recent,
             'top_contexts': contexts,
+            'profile': {
+                'first_at': profile_range['first_at'] or '',
+                'last_at': profile_range['last_at'] or '',
+                'unique': {
+                    'tracks': int(profile_unique['tracks']),
+                    'artists': int(profile_unique['artists']),
+                    'albums': int(profile_unique['albums']),
+                },
+                'by_source': profile_sources,
+                'top_artists': top_artists,
+                'top_albums': top_albums,
+                'weeks': weeks,
+            },
             'period': {
                 'days': window,
                 'total': period_total,

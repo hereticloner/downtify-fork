@@ -109,6 +109,17 @@ def _play_source(entry: dict[str, Any]) -> tuple[str, str]:
     return _text(track.get('context')), _text(track.get('context_type'))
 
 
+def _track_fields(entry: dict[str, Any]) -> tuple[str, str, str]:
+    track = _detail(entry).get('track')
+    if not isinstance(track, dict):
+        track = {}
+    return (
+        _text(track.get('artist')),
+        _text(track.get('title')),
+        _text(track.get('album')),
+    )
+
+
 def _recent_plays(
     entries: list[dict[str, Any]], limit: int = PLAYBACK_RECENT_LIMIT
 ) -> list[dict[str, Any]]:
@@ -122,15 +133,89 @@ def _recent_plays(
     for entry in list(entries or [])[:limit]:
         at = str(entry.get('at') or '')
         context, kind = _play_source(entry)
+        artist, title, album = _track_fields(entry)
         out.append({
             'at': at,
             'date': _parse_at(at),
             'summary': _text(entry.get('summary')),
+            'artist': artist,
+            'title': title,
+            'album': album,
             'context': context,
             'context_type': kind,
             'source': 'downtify',
         })
     return out
+
+
+def empty_listening_profile(*, today: Optional[date] = None) -> dict[str, Any]:
+    end = today or _today()
+    weeks = []
+    for index in range(4):
+        week_end = end - timedelta(days=(3 - index) * 7)
+        weeks.append({
+            'start': (week_end - timedelta(days=6)).isoformat(),
+            'end': week_end.isoformat(),
+            'count': 0,
+        })
+    return {
+        'first_at': '',
+        'last_at': '',
+        'unique': {'tracks': 0, 'artists': 0, 'albums': 0},
+        'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 0},
+        'top_artists': [],
+        'top_albums': [],
+        'weeks': weeks,
+    }
+
+
+def _activity_listening_profile(
+    entries: list[dict[str, Any]], *, today: Optional[date] = None
+) -> dict[str, Any]:
+    profile = empty_listening_profile(today=today)
+    rows = list(entries or [])
+    profile['first_at'] = min(
+        (str(row.get('at') or '') for row in rows if row.get('at')),
+        default='',
+    )
+    profile['last_at'] = max(
+        (str(row.get('at') or '') for row in rows if row.get('at')),
+        default='',
+    )
+    fields = [_track_fields(row) for row in rows]
+    profile['unique'] = {
+        'tracks': len({
+            (artist.casefold(), title.casefold())
+            for artist, title, _album in fields
+            if artist or title
+        }),
+        'artists': len({
+            artist for artist, _title, _album in fields if artist
+        }),
+        'albums': len({album for _artist, _title, album in fields if album}),
+    }
+    profile['by_source']['downtify'] = len(rows)
+    profile['top_artists'] = [
+        {'artist': artist, 'count': count}
+        for artist, count in Counter(
+            artist for artist, _title, _album in fields if artist
+        ).most_common(10)
+    ]
+    album_counts = Counter(
+        (album, artist) for artist, _title, album in fields if album
+    )
+    profile['top_albums'] = [
+        {'album': album, 'artist': artist, 'count': count}
+        for (album, artist), count in album_counts.most_common(8)
+    ]
+    daily = _played_days(rows)
+    for week in profile['weeks']:
+        start = date.fromisoformat(week['start'])
+        week['count'] = sum(
+            daily.get((start + timedelta(days=offset)).isoformat(), 0)
+            for offset in range(7)
+        )
+    return profile
 
 
 def _top_contexts(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -296,14 +381,26 @@ def build_stats(
         counts = Counter(
             str(e.get('summary') or '') for e in playbacks if e.get('summary')
         )
-        top_tracks = [
-            {'summary': summary, 'count': count}
-            for summary, count in counts.most_common(10)
-        ]
+        fields_by_summary = {
+            str(entry.get('summary') or ''): _track_fields(entry)
+            for entry in playbacks
+            if entry.get('summary')
+        }
+        top_tracks = []
+        for summary, count in counts.most_common(10):
+            artist, title, album = fields_by_summary.get(summary, ('', '', ''))
+            top_tracks.append({
+                'summary': summary,
+                'artist': artist,
+                'title': title,
+                'album': album,
+                'count': count,
+            })
         daily_counts = _played_days(playbacks)
         recent_plays = _recent_plays(playbacks)
         top_contexts = _top_contexts(playbacks)
         playback_total = len(playbacks)
+        profile = _activity_listening_profile(playbacks)
     else:
         top_tracks = list(listening_stats.get('top_tracks') or [])
         daily_counts = Counter({
@@ -314,6 +411,7 @@ def build_stats(
         recent_plays = list(listening_stats.get('recent') or [])
         top_contexts = list(listening_stats.get('top_contexts') or [])
         playback_total = int(listening_stats.get('total') or 0)
+        profile = listening_stats.get('profile') or empty_listening_profile()
     per_day = Counter(_parse_at(e.get('at')) for e in downloads if e.get('at'))
     recent = _spotify_recent(spotify_recent)
     period = (
@@ -386,6 +484,7 @@ def build_stats(
             # stands for.
             'recent': recent_plays,
             'top_contexts': top_contexts,
+            'profile': profile,
             'period': period,
             'unique': unique,
             'track_time': track_time,

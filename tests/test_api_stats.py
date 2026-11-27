@@ -18,6 +18,7 @@ from starlette.testclient import TestClient
 import main
 from downtify import api, lastfm_history, spotify_context, spotify_history
 from downtify import stats as stats_mod
+from downtify.activity import ActivityLog
 
 
 @pytest.fixture
@@ -131,6 +132,107 @@ def test_stats_period_aggregates_follow_selected_window(client):
         'spotify': 1,
         'lastfm': 1,
     }
+
+
+def test_stats_exposes_all_time_listening_profile(client):
+    listening = api.state.listening
+    listening.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='api-profile:s1',
+        played_at='2026-10-08T10:00:00Z',
+        artist='Artist A',
+        title='Track A',
+        album='Album A',
+    )
+    listening.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='api-profile:l1',
+        played_at='2026-11-20T10:00:00Z',
+        artist='Artist A',
+        title='Track B',
+        album='Album A',
+    )
+
+    playback = client.get('/api/stats').json()['playback']
+
+    assert playback['total'] == 2
+    assert playback['profile']['unique'] == {
+        'tracks': 2,
+        'artists': 1,
+        'albums': 1,
+    }
+    assert playback['profile']['by_source'] == {
+        'downtify': 0,
+        'spotify': 1,
+        'lastfm': 1,
+    }
+    assert playback['profile']['top_artists'] == [
+        {'artist': 'Artist A', 'count': 2}
+    ]
+    assert playback['profile']['top_albums'] == [
+        {'album': 'Album A', 'artist': 'Artist A', 'count': 2}
+    ]
+    assert len(playback['profile']['weeks']) == 4
+    assert playback['top_tracks'][0]['artist'] == 'Artist A'
+    assert playback['recent'][0]['title'] == 'Track B'
+
+
+def test_stats_empty_activity_has_empty_listening_profile(client, monkeypatch):
+    monkeypatch.setattr(api.state, 'activity', None)
+
+    profile = client.get('/api/stats').json()['playback']['profile']
+
+    assert not profile['first_at']
+    assert not profile['last_at']
+    assert profile['unique'] == {'tracks': 0, 'artists': 0, 'albums': 0}
+    assert profile['by_source'] == {
+        'downtify': 0,
+        'spotify': 0,
+        'lastfm': 0,
+    }
+    assert profile['top_artists'] == []
+    assert profile['top_albums'] == []
+    assert len(profile['weeks']) == 4
+    assert sum(row['count'] for row in profile['weeks']) == 0
+
+
+def test_activity_only_stats_builds_structured_listening_profile(tmp_path):
+    activity = ActivityLog(tmp_path / 'activity.db')
+    activity.record(
+        'playback',
+        user_id=1,
+        summary='Artist A - Track A',
+        detail={
+            'track': {
+                'artist': 'Artist A',
+                'title': 'Track A',
+                'album': 'Album A',
+            }
+        },
+    )
+
+    data = stats_mod.build_stats(
+        activity=activity,
+        track_count=0,
+        user_id=1,
+        days=30,
+    )['playback']
+
+    assert data['total'] == 1
+    assert data['profile']['unique'] == {
+        'tracks': 1,
+        'artists': 1,
+        'albums': 1,
+    }
+    assert data['profile']['by_source'] == {
+        'downtify': 1,
+        'spotify': 0,
+        'lastfm': 0,
+    }
+    assert data['top_tracks'][0]['artist'] == 'Artist A'
+    assert data['recent'][0]['title'] == 'Track A'
 
 
 def test_stats_date_query_rejects_invalid_dates(client):

@@ -461,6 +461,7 @@ async def stats_endpoint(
                 'best_day': {'date': '', 'count': 0},
                 'recent': [],
                 'top_contexts': [],
+                'profile': stats_mod.empty_listening_profile(),
                 'period': {
                     'days': window,
                     'total': 0,

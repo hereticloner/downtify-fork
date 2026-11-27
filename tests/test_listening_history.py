@@ -250,11 +250,129 @@ def test_stats_are_user_scoped_and_sql_aggregated(tmp_path):
     )
     personal = store.stats(user_id=1)
     assert personal['total'] == 1
-    assert personal['top_tracks'] == [{'summary': 'A - T', 'count': 1}]
+    assert personal['top_tracks'] == [
+        {
+            'summary': 'A - T',
+            'artist': 'A',
+            'title': 'T',
+            'album': '',
+            'count': 1,
+        }
+    ]
     assert personal['daily'] == [{'date': today, 'count': 1}]
     assert personal['top_contexts'] == [{'context': 'Mix', 'count': 1}]
     assert personal['recent'][0]['source'] == 'spotify'
     assert store.stats(user_id=0)['total'] == 2
+
+
+def test_all_time_profile_aggregates_are_canonical_and_user_scoped(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='profile:s1',
+        played_at='2026-10-08T10:00:00Z',
+        artist='Artist A',
+        title='Track A',
+        album='Album A',
+    )
+    store.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='profile:l1',
+        played_at='2026-11-20T10:00:00Z',
+        artist='Artist A',
+        title='Track B',
+        album='Album A',
+    )
+    store.link_or_create(
+        user_id=2,
+        source='downtify',
+        source_key='profile:other',
+        played_at='2026-11-21T10:00:00Z',
+        artist='Other',
+        title='Hidden',
+        album='Other album',
+    )
+
+    data = store.stats(user_id=1, days=7)
+
+    assert data['total'] == 2
+    assert data['profile'] == {
+        'first_at': '2026-10-08T10:00:00Z',
+        'last_at': '2026-11-20T10:00:00Z',
+        'unique': {'tracks': 2, 'artists': 1, 'albums': 1},
+        'by_source': {'downtify': 0, 'spotify': 1, 'lastfm': 1},
+        'top_artists': [{'artist': 'Artist A', 'count': 2}],
+        'top_albums': [{'album': 'Album A', 'artist': 'Artist A', 'count': 2}],
+        'weeks': data['profile']['weeks'],
+    }
+    assert len(data['profile']['weeks']) == 4
+    assert data['top_tracks'][0] == {
+        'summary': 'Artist A - Track A',
+        'artist': 'Artist A',
+        'title': 'Track A',
+        'album': 'Album A',
+        'count': 1,
+    }
+    assert data['recent'][0] == {
+        'at': '2026-11-20T10:00:00Z',
+        'date': '2026-11-20',
+        'summary': 'Artist A - Track B',
+        'artist': 'Artist A',
+        'title': 'Track B',
+        'album': 'Album A',
+        'context': '',
+        'context_type': '',
+        'source': 'lastfm',
+    }
+
+
+def test_profile_weeks_are_four_consecutive_utc_buckets(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    today = datetime.now(timezone.utc).date()
+    for index, offset in enumerate((0, 6, 7, 13, 14, 20, 21, 27)):
+        store.link_or_create(
+            user_id=1,
+            source='spotify',
+            source_key=f'week:{index}',
+            played_at=f'{(today - timedelta(days=offset)).isoformat()}T12:00:00Z',
+            artist='A',
+            title=f'T{index}',
+        )
+
+    weeks = store.stats(user_id=1, days=7)['profile']['weeks']
+
+    assert [row['count'] for row in weeks] == [2, 2, 2, 2]
+    assert weeks[0]['start'] == (today - timedelta(days=27)).isoformat()
+    assert weeks[-1]['end'] == today.isoformat()
+    for previous, current in zip(weeks, weeks[1:]):
+        assert (
+            datetime.fromisoformat(current['start']).date()
+            - datetime.fromisoformat(previous['end']).date()
+        ).days == 1
+
+
+def test_profile_top_albums_keep_artists_separate(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    for index, (artist, album) in enumerate((
+        ('Artist A', 'Same Album'),
+        ('Artist B', 'Same Album'),
+    )):
+        store.link_or_create(
+            user_id=1,
+            source='spotify',
+            source_key=f'album-artist:{index}',
+            played_at=f'2026-11-2{index}T10:00:00Z',
+            artist=artist,
+            title=f'Track {index}',
+            album=album,
+        )
+
+    assert store.stats(user_id=1)['profile']['top_albums'] == [
+        {'album': 'Same Album', 'artist': 'Artist A', 'count': 1},
+        {'album': 'Same Album', 'artist': 'Artist B', 'count': 1},
+    ]
 
 
 def test_forget_user_removes_events_and_source_links(tmp_path):
