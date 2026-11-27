@@ -47,6 +47,7 @@ Reduce the Stats profile's oversized display type and replace empty album-initia
 
 - A computed map joins `useLibrary().albums` to the profile's top albums with case-insensitive `albumKey(artist, album)`; albums with no cover URL are omitted so the initials fallback wins.
 - The album index is requested on mount only when `albumsComplete` is false, and a rejected background lookup is swallowed — artwork is decoration, not required for Stats to render.
+- The `CoverArt` fallback is locally restyled on the Stats instance only with `[&_.eyebrow]:font-display [&_.eyebrow]:text-[24px] [&_.eyebrow]:font-bold [&_.eyebrow]:text-fg`, so missing or broken art keeps the original 24px bold display initials. `CoverArt` itself is unchanged.
 
 ## Acceptance
 

@@ -295,7 +295,7 @@
                   :src="row.cover"
                   :name="row.album"
                   :alt="row.album"
-                  class="aspect-square"
+                  class="aspect-square [&_.eyebrow]:font-display [&_.eyebrow]:text-[24px] [&_.eyebrow]:font-bold [&_.eyebrow]:text-fg"
                 />
                 <h3 class="mt-3 truncate font-bold">{{ row.album }}</h3>
                 <p class="mt-1 truncate text-[13px] text-muted">

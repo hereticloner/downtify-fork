@@ -482,6 +482,37 @@ describe('StatsView top album covers', () => {
 })
 
 describe('StatsView compact display scale', () => {
+  it('restyles the Stats-only cover fallback to display initials', async () => {
+    const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { stats, load } = useStats()
+    await load()
+    libraryMock.albums.value = []
+    stats.value.playback.profile.top_albums = [
+      { album: 'Unmatched Album', artist: 'Nobody', count: 3 },
+    ]
+
+    const html = await render(StatsView)
+
+    expect(html).toContain('>UA</span>')
+    // SSR escapes `&` to `&amp;` inside class attributes.
+    for (const cls of [
+      '_.eyebrow]:font-display',
+      '_.eyebrow]:text-[24px]',
+      '_.eyebrow]:font-bold',
+      '_.eyebrow]:text-fg',
+    ]) {
+      expect(html, cls).toContain(cls)
+    }
+  })
+
+  it('keeps the period total at the approved 30px role size', () => {
+    const source = readView('StatsView.vue')
+
+    expect(source).toMatch(
+      /class="text-display mt-3 text-3xl leading-none font-bold tabular"[\s\S]{0,120}\{\{ number\(period\.total \?\? 0\) \}\}/
+    )
+  })
+
   it('uses the approved compact classes and drops the oversized ones', () => {
     const source = readView('StatsView.vue')
 
