@@ -221,6 +221,21 @@ describe('StatsView', () => {
     expect(html).toContain(t('stats.period30'))
   })
 
+  it('splits a legacy summary-only top track in the masthead', async () => {
+    const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { stats, load } = useStats()
+    await load()
+    stats.value.playback.top_tracks = [
+      { summary: 'Legacy Artist - Legacy Track', count: 11 },
+    ]
+
+    const html = await render(StatsView)
+
+    expect(html).toContain('Legacy Artist')
+    expect(html).toContain('Legacy Track')
+    expect(html).not.toContain('Legacy Artist - Legacy Track')
+  })
+
   it('renders lifetime profile totals and canonical source ledger', async () => {
     const StatsView = (await import('/src/views/StatsView.vue')).default
     const { stats, load } = useStats()

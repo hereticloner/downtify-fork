@@ -72,11 +72,13 @@
             </div>
             <div v-if="topTrack">
               <p class="text-display text-2xl leading-tight font-bold">
-                {{ topTrack.title || topTrack.summary }}
+                {{ topTrack.parts.title || topTrack.summary }}
               </p>
               <p class="mt-1 truncate text-[13px] text-muted">
-                {{ topTrack.artist }}
-                <span v-if="topTrack.album"> · {{ topTrack.album }}</span>
+                {{ topTrack.parts.artist }}
+                <span v-if="topTrack.parts.album">
+                  · {{ topTrack.parts.album }}
+                </span>
               </p>
               <p
                 class="text-display mt-4 text-3xl leading-none font-bold tabular"
