@@ -834,7 +834,7 @@ class ListeningStore:
         cursor = conn.execute(
             'UPDATE listening_events SET '
             + ', '.join(assignments)
-            + ' WHERE id=? AND '
+            + " WHERE id=? AND source!='lastfm' AND "
             + ' AND '.join(conditions),
             (*values, event_id),
         )

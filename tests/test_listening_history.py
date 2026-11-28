@@ -1125,3 +1125,57 @@ def test_reconcile_lastfm_sources_keeps_downtify_links(
         'Downtify Playlist',
         'playlist',
     )
+
+
+def test_enrichment_ignores_spotify_context_on_lastfm_winner(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    event_id, _ = store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='Spotify Artist',
+        title='Spotify Title',
+        duration_ms=180000,
+        context='spotify:playlist:abc',
+        context_type='playlist',
+    )
+    _link_legacy_lastfm_row(db, event_id)
+    assert store.reconcile_lastfm_sources() == 1
+
+    spotify_history.save_recently_played(
+        db,
+        [
+            {
+                'played_at': '2026-11-25T20:15:00Z',
+                'source_key': 'spotify:1',
+                'spotify_track_id': 's1',
+                'track_name': 'Spotify Title',
+                'artist_name': 'Spotify Artist',
+                'album_name': 'Spotify Album',
+                'context': {
+                    'type': 'playlist',
+                    'uri': 'spotify:playlist:abc',
+                },
+            }
+        ],
+        user_id=1,
+    )
+    with sqlite3.connect(db) as conn:
+        conn.execute(
+            'UPDATE spotify_recently_played SET listening_event_id=?',
+            (event_id,),
+        )
+
+    assert store.enrich_from_raw() == 0
+
+    row = _canonical_row(db)
+    assert row['album'] == 'Last.fm Album'
+    assert not row['context']
+    assert not row['context_type']
+    data = store.stats(user_id=1)
+    assert not data['recent'][0]['context']
+    assert 'spotify:playlist:abc' not in [
+        item['context'] for item in data['top_contexts']
+    ]
