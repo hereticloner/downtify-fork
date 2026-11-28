@@ -8,7 +8,7 @@ import sqlite3
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Optional
 
 from . import lastfm_history, spotify_history
 from .sqlite_utils import connect_sqlite
@@ -962,3 +962,54 @@ async def bootstrap_listening_history(
     await asyncio.to_thread(listening.enrich_from_raw)
     await asyncio.to_thread(listening.reconcile_lastfm_sources)
     return linked
+
+
+async def catch_up_listening_history(
+    settings: Any,
+    db_path: Any,
+    listening: Any,
+    *,
+    user_id: int,
+    persist_tokens: Optional[Callable[[dict[str, Any]], Any]] = None,
+) -> dict[str, Any]:
+    """One bounded provider sweep at startup; a failure stays in its summary.
+
+    Both providers are asked for their newest page concurrently. Tokens are
+    handed to *persist_tokens* and stripped before the summary is returned
+    or logged, so no credential can escape into a log line.
+    """
+
+    def as_summary(result: Any) -> dict[str, Any]:
+        if isinstance(result, dict):
+            return dict(result)
+        return {'error': type(result).__name__}
+
+    spotify_job = asyncio.to_thread(
+        spotify_history.run_once,
+        settings,
+        db_path,
+        user_id=user_id,
+        listening=listening,
+    )
+    lastfm_job = asyncio.to_thread(
+        lastfm_history.run_once,
+        settings,
+        db_path,
+        user_id=user_id,
+        listening=listening,
+        max_pages=1,
+    )
+    spotify, lastfm = await asyncio.gather(
+        spotify_job, lastfm_job, return_exceptions=True
+    )
+    spotify_summary = as_summary(spotify)
+    lastfm_summary = as_summary(lastfm)
+    tokens = spotify_summary.pop('tokens', None)
+    if persist_tokens is not None and tokens:
+        await asyncio.to_thread(persist_tokens, tokens)
+    reconciled = await asyncio.to_thread(listening.reconcile_lastfm_sources)
+    return {
+        'spotify': spotify_summary,
+        'lastfm': lastfm_summary,
+        'reconciled': reconciled,
+    }

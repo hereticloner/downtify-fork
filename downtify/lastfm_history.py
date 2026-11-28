@@ -467,7 +467,7 @@ async def lastfm_history_loop(
                     'last.fm history: stored {} new play(s)', summary['saved']
                 )
             elif summary['error']:
-                logger.debug(
+                logger.info(
                     'last.fm history: nothing stored ({})', summary['error']
                 )
         except Exception:  # noqa: BLE001 - a loop must survive everything

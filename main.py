@@ -739,6 +739,23 @@ def build_app() -> FastAPI:
             ),
             name='spotify-sync-loop',
         )
+        # Catch the newest provider page once before the history loops
+        # start, so a server that was off for a while is not stale until
+        # the first idle tick. The helper isolates provider failures; the
+        # guard here keeps anything else from failing startup.
+        try:
+            summary = await listening_history.catch_up_listening_history(
+                api.state.settings,
+                DATABASE_DIR / 'downtify_activity.db',
+                api.state.listening,
+                user_id=int(
+                    (api.state.auth.users.first_admin() or {}).get('id') or 0
+                ),
+                persist_tokens=api._persist_mirror_tokens,
+            )
+            logger.info('Listening history catch-up: {}', summary)
+        except Exception:
+            logger.exception('Listening history catch-up failed')
         # Reads the account's Spotify listening history back into its own
         # table (see downtify/spotify_history.py). It rides the same
         # OAuth connection and is off by default; the loop idles (and

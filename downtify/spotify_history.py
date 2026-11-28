@@ -630,7 +630,7 @@ async def spotify_history_loop(
                     'Spotify history: stored {} new play(s)', summary['saved']
                 )
             elif summary['error']:
-                logger.debug(
+                logger.info(
                     'Spotify history: nothing stored ({})', summary['error']
                 )
         except Exception:  # noqa: BLE001 - a loop must survive everything
