@@ -339,7 +339,14 @@ def test_raw_payload_and_pending_link_are_idempotent(tmp_path: Path):
     listening = ListeningStore(db)
     assert link_pending(db, listening, user_id=1) == 1
     assert link_pending(db, listening, user_id=1) == 0
-    assert listening.stats(user_id=1)['total'] == 1
+    # The import landed exactly one canonical row, but Stats excludes
+    # Spotify-only winners (Task 2), so the visible total stays zero.
+    assert listening.stats(user_id=1)['total'] == 0
+    with sqlite3.connect(db) as conn:
+        assert (
+            conn.execute('SELECT COUNT(*) FROM listening_events').fetchone()[0]
+            == 1
+        )
     stored = get_recent_from_spotify(db)[0]
     assert json.loads(stored['raw_json']) == raw
     assert json.loads(stored['context_json']) == rows[0]['context']
@@ -474,7 +481,14 @@ def test_run_once_links_imported_play_to_canonical_history(tmp_path: Path):
         ),
     )
     assert summary['saved'] == 1
-    assert listening.stats(user_id=1)['total'] == 1
+    # The Spotify play was linked into canonical history, yet Stats must
+    # not count a Spotify-only winner (Task 2).
+    assert listening.stats(user_id=1)['total'] == 0
+    with sqlite3.connect(db) as conn:
+        assert (
+            conn.execute('SELECT COUNT(*) FROM listening_events').fetchone()[0]
+            == 1
+        )
 
 
 def test_run_once_enriches_canonical_context_from_late_raw_payload(
