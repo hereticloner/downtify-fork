@@ -464,7 +464,7 @@ def test_period_aggregates_count_canonical_events_once(tmp_path):
     assert data['period'] == {
         'days': 7,
         'total': 1,
-        'by_source': {'downtify': 0, 'spotify': 1, 'lastfm': 0},
+        'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 1},
     }
 
 
@@ -805,3 +805,202 @@ def test_enrichment_fills_lastfm_album_without_changing_source(tmp_path):
     row = _canonical_row(db)
     assert row['album'] == 'Last.fm Album'
     assert row['source'] == 'downtify'
+
+
+def test_lastfm_promotes_spotify_and_downtify_still_wins(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    event_id, created = store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='Song',
+    )
+    assert (event_id, created) == (1, True)
+
+    promoted, created = store.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='lastfm:1',
+        played_at='2026-11-25T20:18:00Z',
+        artist='A',
+        title='SONG',
+    )
+    assert (promoted, created) == (event_id, False)
+    with sqlite3.connect(db) as conn:
+        row = conn.execute(
+            'SELECT source, source_key, played_at, title, artist, album '
+            'FROM listening_events WHERE id=?',
+            (event_id,),
+        ).fetchone()
+    assert row == (
+        'lastfm',
+        'lastfm:1',
+        '2026-11-25T20:18:00Z',
+        'SONG',
+        'A',
+        '',
+    )
+    assert store.stats(user_id=1)['total'] == 1
+
+    local, created = store.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:9',
+        played_at='2026-11-25T20:16:00Z',
+        artist='A',
+        title='Song',
+    )
+    assert (local, created) == (event_id, False)
+    with sqlite3.connect(db) as conn:
+        row = conn.execute(
+            'SELECT source, source_key, played_at, title FROM listening_events '
+            'WHERE id=?',
+            (event_id,),
+        ).fetchone()
+    assert row == ('downtify', 'activity:9', '2026-11-25T20:16:00Z', 'Song')
+    assert store.stats(user_id=1)['total'] == 1
+
+
+def _link_legacy_lastfm_row(db, event_id):
+    """Attach a Last.fm raw observation to an existing canonical event."""
+
+    lastfm_history.save_recent_tracks(
+        db,
+        [
+            {
+                'played_at': '2026-11-25T20:18:00+00:00',
+                'uts': 1795633080,
+                'artist_name': 'Last.fm Artist',
+                'track_name': 'Last.fm Title',
+                'album_name': 'Last.fm Album',
+            }
+        ],
+        user_id=1,
+    )
+    with sqlite3.connect(db) as conn:
+        raw = conn.execute(
+            'SELECT source_key FROM lastfm_recent_tracks'
+        ).fetchone()[0]
+        conn.execute(
+            'INSERT INTO listening_event_sources (event_id, source, source_key) '
+            'VALUES (?, ?, ?)',
+            (event_id, 'lastfm', raw),
+        )
+        conn.execute(
+            'UPDATE lastfm_recent_tracks SET listening_event_id=?', (event_id,)
+        )
+    return raw
+
+
+def test_reconcile_lastfm_sources_upgrades_legacy_rows_idempotently(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    event_id, _ = store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='spotify:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='Spotify Artist',
+        title='Spotify Title',
+        album='Spotify Album',
+        duration_ms=180000,
+        context='spotify:playlist:abc',
+        context_type='playlist',
+    )
+    raw_key = _link_legacy_lastfm_row(db, event_id)
+    with sqlite3.connect(db) as conn:
+        before_event = conn.execute(
+            'SELECT id, identity_key, match_key FROM listening_events WHERE id=?',
+            (event_id,),
+        ).fetchone()
+        before_links = conn.execute(
+            'SELECT event_id, source, source_key FROM listening_event_sources '
+            'WHERE event_id=? ORDER BY source',
+            (event_id,),
+        ).fetchall()
+        before_raw = conn.execute(
+            'SELECT * FROM lastfm_recent_tracks'
+        ).fetchone()
+
+    assert store.reconcile_lastfm_sources() == 1
+    assert store.reconcile_lastfm_sources() == 0
+
+    with sqlite3.connect(db) as conn:
+        row = conn.execute(
+            'SELECT id, identity_key, match_key, source, source_key, played_at, '
+            'title, artist, album, duration_ms, context, context_type '
+            'FROM listening_events WHERE id=?',
+            (event_id,),
+        ).fetchone()
+        after_links = conn.execute(
+            'SELECT event_id, source, source_key FROM listening_event_sources '
+            'WHERE event_id=? ORDER BY source',
+            (event_id,),
+        ).fetchall()
+        after_raw = conn.execute(
+            'SELECT * FROM lastfm_recent_tracks'
+        ).fetchone()
+    assert row[:3] == before_event
+    assert (
+        row[3],
+        row[4],
+        row[5],
+        row[6],
+        row[7],
+        row[8],
+        row[9],
+        row[10],
+        row[11],
+    ) == (
+        'lastfm',
+        raw_key,
+        '2026-11-25T20:18:00+00:00',
+        'Last.fm Title',
+        'Last.fm Artist',
+        'Last.fm Album',
+        0,
+        '',
+        '',
+    )
+    assert after_links == before_links
+    assert after_raw == before_raw
+
+
+def test_reconcile_lastfm_sources_keeps_downtify_links(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    event_id, _ = store.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at='2026-11-25T20:15:00Z',
+        artist='A',
+        title='T',
+        album='Downtify Album',
+        duration_ms=200000,
+        context='Downtify Playlist',
+        context_type='playlist',
+    )
+    _link_legacy_lastfm_row(db, event_id)
+
+    assert store.reconcile_lastfm_sources() == 0
+    with sqlite3.connect(db) as conn:
+        row = conn.execute(
+            'SELECT source, source_key, played_at, title, artist, album, '
+            'duration_ms, context, context_type FROM listening_events WHERE id=?',
+            (event_id,),
+        ).fetchone()
+    assert row == (
+        'downtify',
+        'activity:1',
+        '2026-11-25T20:15:00Z',
+        'T',
+        'A',
+        'Downtify Album',
+        200000,
+        'Downtify Playlist',
+        'playlist',
+    )

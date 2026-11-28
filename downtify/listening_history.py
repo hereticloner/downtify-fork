@@ -13,7 +13,7 @@ from typing import Any
 from . import lastfm_history, spotify_history
 from .sqlite_utils import connect_sqlite
 
-_SOURCE_PRIORITY = {'downtify': 0, 'spotify': 1, 'lastfm': 2}
+_SOURCE_PRIORITY = {'downtify': 0, 'lastfm': 1, 'spotify': 2}
 _MAX_MATCH_SECONDS = 1800
 DAY_PLAYS_LIMIT = 400
 
@@ -248,6 +248,61 @@ class ListeningStore:
                 (event_id, source, source_key),
             )
         return event_id, True
+
+    def reconcile_lastfm_sources(self) -> int:
+        """Re-point legacy Spotify winners to their linked Last.fm rows."""
+
+        with self._connect() as conn:
+            tables = {
+                row[0]
+                for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+            if lastfm_history.TABLE not in tables:
+                return 0
+            rows = conn.execute(
+                'SELECT e.id, e.source, e.source_key, e.played_at, e.title, '
+                'e.artist, e.album, e.duration_ms, e.context, e.context_type, '
+                'l.source_key AS lastfm_key, l.played_at AS lastfm_at, '
+                'l.track_name, l.artist_name, l.album_name '
+                'FROM listening_events e '
+                'JOIN listening_event_sources s '
+                "ON s.event_id=e.id AND s.source='lastfm' "
+                f'JOIN {lastfm_history.TABLE} l ON l.source_key=s.source_key '
+                'WHERE NOT EXISTS ('
+                'SELECT 1 FROM listening_event_sources d '
+                "WHERE d.event_id=e.id AND d.source='downtify')"
+            ).fetchall()
+            changed = 0
+            for row in rows:
+                values = (
+                    str(row['lastfm_key']),
+                    str(row['lastfm_at']),
+                    str(row['track_name']),
+                    str(row['artist_name']),
+                    str(row['album_name']),
+                )
+                if (
+                    row['source'] == 'lastfm'
+                    and row['source_key'] == values[0]
+                    and row['played_at'] == values[1]
+                    and row['title'] == values[2]
+                    and row['artist'] == values[3]
+                    and row['album'] == values[4]
+                    and int(row['duration_ms']) == 0
+                    and not row['context']
+                    and not row['context_type']
+                ):
+                    continue
+                cursor = conn.execute(
+                    'UPDATE listening_events SET source=?, source_key=?, '
+                    'played_at=?, title=?, artist=?, album=?, duration_ms=0, '
+                    "context='', context_type='' WHERE id=?",
+                    ('lastfm', *values, int(row['id'])),
+                )
+                changed += max(0, int(cursor.rowcount))
+            return changed
 
     def backfill_activity(self, activity: Any) -> int:
         created = 0
@@ -884,4 +939,5 @@ async def bootstrap_listening_history(
             await asyncio.sleep(pause)
     await asyncio.to_thread(listening.backfill_activity, activity)
     await asyncio.to_thread(listening.enrich_from_raw)
+    await asyncio.to_thread(listening.reconcile_lastfm_sources)
     return linked
