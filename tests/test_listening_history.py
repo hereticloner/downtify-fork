@@ -35,7 +35,7 @@ def test_offset_timestamp_is_stored_as_utc_for_stats_and_day_queries(tmp_path):
     store = ListeningStore(db)
     event_id, _ = store.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='offset',
         played_at='2026-11-21T23:30:00-02:00',
         artist='A',
@@ -54,7 +54,7 @@ def test_period_total_does_not_depend_on_sqlite_hour_parsing(tmp_path):
     today = datetime.now(timezone.utc).date().isoformat()
     store.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='offset-seconds',
         played_at=f'{today}T20:15:00+03:00:30',
         artist='A',
@@ -82,7 +82,7 @@ def test_period_window_includes_midnight_and_last_second(tmp_path):
     ):
         store.link_or_create(
             user_id=1,
-            source='spotify',
+            source='lastfm',
             source_key=source_key,
             played_at=played_at,
             artist='A',
@@ -232,7 +232,7 @@ def test_stats_are_user_scoped_and_sql_aggregated(tmp_path):
     today = datetime.now(timezone.utc).date().isoformat()
     store.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='s1',
         played_at=f'{today}T20:15:00Z',
         artist='A',
@@ -261,15 +261,128 @@ def test_stats_are_user_scoped_and_sql_aggregated(tmp_path):
     ]
     assert personal['daily'] == [{'date': today, 'count': 1}]
     assert personal['top_contexts'] == [{'context': 'Mix', 'count': 1}]
-    assert personal['recent'][0]['source'] == 'spotify'
+    assert personal['recent'][0]['source'] == 'lastfm'
     assert store.stats(user_id=0)['total'] == 2
+
+
+def test_stats_excludes_spotify_only_but_keeps_lastfm_and_downtify(tmp_path):
+    db = tmp_path / 'activity.db'
+    store = ListeningStore(db)
+    today = datetime.now(timezone.utc).date().isoformat()
+
+    store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='spotify:only',
+        played_at=f'{today}T01:00:00Z',
+        artist='Solo',
+        title='Spotify Only',
+        duration_ms=600000,
+        context='spotify:playlist:ignored',
+        context_type='playlist',
+    )
+    store.link_or_create(
+        user_id=1,
+        source='lastfm',
+        source_key='lastfm:only',
+        played_at=f'{today}T02:00:00Z',
+        artist='Last',
+        title='FM Only',
+    )
+    legacy_id, _ = store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='spotify:legacy',
+        played_at='2026-11-25T20:15:00Z',
+        artist='Legacy',
+        title='Old',
+        duration_ms=180000,
+    )
+    _link_legacy_lastfm_row(db, legacy_id)
+    assert store.reconcile_lastfm_sources() == 1
+    store.link_or_create(
+        user_id=1,
+        source='downtify',
+        source_key='activity:1',
+        played_at=f'{today}T04:00:00Z',
+        artist='Local',
+        title='Play',
+        duration_ms=120000,
+    )
+    store.link_or_create(
+        user_id=1,
+        source='spotify',
+        source_key='spotify:linked',
+        played_at=f'{today}T04:00:30Z',
+        artist='Local',
+        title='Play',
+    )
+
+    data = store.stats(user_id=1)
+
+    assert data['total'] == 3
+    assert data['profile']['by_source'] == {
+        'downtify': 1,
+        'spotify': 0,
+        'lastfm': 2,
+    }
+    assert {row['source'] for row in data['recent']} == {'downtify', 'lastfm'}
+    assert 'Spotify Only' not in {row['summary'] for row in data['top_tracks']}
+    assert 'spotify:playlist:ignored' not in {
+        row['context'] for row in data['top_contexts']
+    }
+    assert data['track_time']['seconds'] == 120
+    # The excluded Spotify-only canonical row is still stored, untouched.
+    with sqlite3.connect(db) as conn:
+        row = conn.execute(
+            'SELECT duration_ms, context FROM listening_events '
+            "WHERE source='spotify'"
+        ).fetchone()
+    assert row == (600000, 'spotify:playlist:ignored')
+
+
+def test_day_and_pattern_details_use_the_same_stats_source_filter(tmp_path):
+    store = ListeningStore(tmp_path / 'activity.db')
+    today = datetime.now(timezone.utc).date().isoformat()
+    for user_id, source, key, minute, title in (
+        (1, 'spotify', 'spotify:day', 10, 'Ignored'),
+        (1, 'lastfm', 'lastfm:day', 20, 'Kept'),
+        (2, 'spotify', 'spotify:other', 30, 'Other User'),
+    ):
+        store.link_or_create(
+            user_id=user_id,
+            source=source,
+            source_key=key,
+            played_at=f'{today}T14:{minute:02d}:00Z',
+            artist=source,
+            title=title,
+        )
+
+    personal_day = store.day_plays(today, user_id=1)
+    personal_detail = store.pattern_detail(1, 7, 'hour', 14)
+    server_day = store.day_plays(today)
+    server_detail = store.pattern_detail(0, 7, 'hour', 14)
+
+    for day in (personal_day, server_day):
+        assert day['total'] == 1
+        assert [row['source'] for row in day['plays']] == ['lastfm']
+        assert [row['summary'] for row in day['plays']] == ['lastfm - Kept']
+    for detail in (personal_detail, server_detail):
+        assert detail['total'] == 1
+        assert detail['by_source'] == {
+            'downtify': 0,
+            'spotify': 0,
+            'lastfm': 1,
+        }
+        assert [row['source'] for row in detail['recent']] == ['lastfm']
+    assert store.stats(user_id=1, days=7)['patterns']['by_hour'][14] == 1
 
 
 def test_all_time_profile_aggregates_are_canonical_and_user_scoped(tmp_path):
     store = ListeningStore(tmp_path / 'activity.db')
     store.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='profile:s1',
         played_at='2026-10-08T10:00:00Z',
         artist='Artist A',
@@ -302,7 +415,7 @@ def test_all_time_profile_aggregates_are_canonical_and_user_scoped(tmp_path):
         'first_at': '2026-10-08T10:00:00Z',
         'last_at': '2026-11-20T10:00:00Z',
         'unique': {'tracks': 2, 'artists': 1, 'albums': 1},
-        'by_source': {'downtify': 0, 'spotify': 1, 'lastfm': 1},
+        'by_source': {'downtify': 0, 'spotify': 0, 'lastfm': 2},
         'top_artists': [{'artist': 'Artist A', 'count': 2}],
         'top_albums': [{'album': 'Album A', 'artist': 'Artist A', 'count': 2}],
         'weeks': data['profile']['weeks'],
@@ -334,7 +447,7 @@ def test_profile_weeks_are_four_consecutive_utc_buckets(tmp_path):
     for index, offset in enumerate((0, 6, 7, 13, 14, 20, 21, 27)):
         store.link_or_create(
             user_id=1,
-            source='spotify',
+            source='lastfm',
             source_key=f'week:{index}',
             played_at=f'{(today - timedelta(days=offset)).isoformat()}T12:00:00Z',
             artist='A',
@@ -361,7 +474,7 @@ def test_profile_top_albums_keep_artists_separate(tmp_path):
     )):
         store.link_or_create(
             user_id=1,
-            source='spotify',
+            source='lastfm',
             source_key=f'album-artist:{index}',
             played_at=f'2026-11-2{index}T10:00:00Z',
             artist=artist,
@@ -473,8 +586,8 @@ def test_period_aggregates_report_unique_duration_and_utc_patterns(tmp_path):
     today = datetime.now(timezone.utc).date()
     store.link_or_create(
         user_id=1,
-        source='spotify',
-        source_key='spotify:1',
+        source='downtify',
+        source_key='activity:duration',
         played_at=f'{today.isoformat()}T01:15:00Z',
         artist='A',
         title='T',
@@ -520,7 +633,7 @@ def test_period_aggregates_are_user_scoped_and_exclude_future_plays(tmp_path):
     today = datetime.now(timezone.utc).date()
     store.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='s1',
         played_at=f'{today.isoformat()}T20:15:00Z',
         artist='A',
@@ -555,7 +668,7 @@ def test_day_plays_returns_exact_scoped_total_and_capped_rows(tmp_path):
     for index in range(3):
         store.link_or_create(
             user_id=1,
-            source='spotify',
+            source='lastfm',
             source_key=f's{index}',
             played_at=f'2026-11-20T2{index}:15:00Z',
             artist='A',
@@ -585,7 +698,7 @@ def test_pattern_detail_matches_hour_bar_and_uses_canonical_sources(tmp_path):
     for index in range(2):
         store.link_or_create(
             user_id=1,
-            source='spotify',
+            source='lastfm',
             source_key=f'hour:{index}',
             played_at=f'{today}T14:15:00Z',
             artist='A',
@@ -604,7 +717,7 @@ def test_pattern_detail_matches_hour_bar_and_uses_canonical_sources(tmp_path):
     stats = store.stats(1, days=7)
 
     assert detail['total'] == stats['patterns']['by_hour'][14] == 2
-    assert detail['by_source'] == {'downtify': 0, 'spotify': 2, 'lastfm': 0}
+    assert detail['by_source'] == {'downtify': 0, 'spotify': 0, 'lastfm': 2}
     assert len(detail['top_tracks']) == 2
     assert detail['top_artists'] == [{'artist': 'A', 'count': 2}]
     assert len(detail['recent']) == 2
@@ -621,7 +734,7 @@ def test_pattern_detail_supports_weekday_and_utc_boundaries(tmp_path):
     ):
         store.link_or_create(
             user_id=1,
-            source='spotify',
+            source='lastfm',
             source_key=key,
             played_at=at,
             artist='A',
@@ -639,7 +752,7 @@ def test_pattern_detail_is_scoped_capped_and_truncated(tmp_path):
     for index in range(55):
         store.link_or_create(
             user_id=1,
-            source='spotify',
+            source='lastfm',
             source_key=f'user1:{index}',
             played_at=f'{today}T14:15:00Z',
             artist='A',

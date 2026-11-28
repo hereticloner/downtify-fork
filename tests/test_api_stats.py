@@ -75,7 +75,7 @@ def test_stats_counts_downtify_play_in_canonical_history(client):
     assert data['measured']['seconds'] == 0
 
 
-def test_stats_counts_spotify_and_lastfm_without_faking_measured_time(client):
+def test_stats_excludes_spotify_only_without_faking_measured_time(client):
     listening = api.state.listening
     listening.link_or_create(
         user_id=1,
@@ -94,8 +94,8 @@ def test_stats_counts_spotify_and_lastfm_without_faking_measured_time(client):
         title='U',
     )
     data = client.get('/api/stats').json()['playback']
-    assert data['total'] == 2
-    assert {row['source'] for row in data['recent']} == {'spotify', 'lastfm'}
+    assert data['total'] == 1
+    assert {row['source'] for row in data['recent']} == {'lastfm'}
     assert data['measured']['seconds'] == 0
     assert data['measured']['plays'] == 0
 
@@ -104,7 +104,7 @@ def test_stats_period_aggregates_follow_selected_window(client):
     listening = api.state.listening
     today = datetime.now(timezone.utc).date()
     for source, key, offset in (
-        ('spotify', 's7', 0),
+        ('lastfm', 'l7', 0),
         ('lastfm', 'l30', 8),
         ('downtify', 'd90', 40),
     ):
@@ -129,8 +129,8 @@ def test_stats_period_aggregates_follow_selected_window(client):
     assert seven['total'] == thirty['total'] == ninety['total'] == 3
     assert ninety['period']['by_source'] == {
         'downtify': 1,
-        'spotify': 1,
-        'lastfm': 1,
+        'spotify': 0,
+        'lastfm': 2,
     }
 
 
@@ -138,7 +138,7 @@ def test_stats_exposes_all_time_listening_profile(client):
     listening = api.state.listening
     listening.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='api-profile:s1',
         played_at='2026-10-08T10:00:00Z',
         artist='Artist A',
@@ -165,8 +165,8 @@ def test_stats_exposes_all_time_listening_profile(client):
     }
     assert playback['profile']['by_source'] == {
         'downtify': 0,
-        'spotify': 1,
-        'lastfm': 1,
+        'spotify': 0,
+        'lastfm': 2,
     }
     assert playback['profile']['top_artists'] == [
         {'artist': 'Artist A', 'count': 2}
@@ -248,7 +248,7 @@ def test_stats_selected_day_is_not_limited_to_recent_page(client):
     older = today - timedelta(days=2)
     listening.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='older',
         played_at=f'{older.isoformat()}T20:15:00Z',
         artist='Old',
@@ -292,7 +292,7 @@ def test_best_day_is_the_older_maximum_not_the_newest_active_day(client):
     for index in range(40):
         listening.link_or_create(
             user_id=1,
-            source='spotify',
+            source='lastfm',
             source_key=f'older:{index}',
             played_at=f'{older.isoformat()}T20:15:00Z',
             artist='A',
@@ -374,7 +374,7 @@ def test_stats_context_labels_are_cache_only(client, monkeypatch):
     db_path = main.DATABASE_DIR / 'downtify_activity.db'
     api.state.listening.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='context-label',
         played_at='2026-11-25T20:15:00Z',
         artist='A',
@@ -405,7 +405,7 @@ def test_stats_pattern_query_returns_exact_detail_and_detail_labels(
     today = datetime.now(timezone.utc).date().isoformat()
     api.state.listening.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='pattern-context',
         played_at=f'{today}T14:15:00Z',
         artist='A',
@@ -517,7 +517,7 @@ def test_canonical_history_is_user_scoped_and_server_total_is_admin_only(
     )
     api.state.listening.link_or_create(
         user_id=1,
-        source='spotify',
+        source='lastfm',
         source_key='s1',
         played_at='2026-11-25T20:15:00Z',
         artist='A',

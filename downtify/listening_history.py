@@ -14,6 +14,7 @@ from . import lastfm_history, spotify_history
 from .sqlite_utils import connect_sqlite
 
 _SOURCE_PRIORITY = {'downtify': 0, 'lastfm': 1, 'spotify': 2}
+_STATS_SOURCES = "('downtify', 'lastfm')"
 _MAX_MATCH_SECONDS = 1800
 DAY_PLAYS_LIMIT = 400
 
@@ -354,7 +355,11 @@ class ListeningStore:
     def stats(
         self, user_id: int = 0, recent_limit: int = 400, *, days: int = 30
     ) -> dict[str, Any]:
-        where = 'WHERE user_id=?' if user_id else ''
+        where = (
+            f'WHERE user_id=? AND source IN {_STATS_SOURCES}'
+            if user_id
+            else f'WHERE source IN {_STATS_SOURCES}'
+        )
         args: list[Any] = [int(user_id)] if user_id else []
         summary_sql = (
             "CASE WHEN artist != '' AND title != '' "
@@ -368,7 +373,7 @@ class ListeningStore:
         today = datetime.now(timezone.utc).date()
         window_start = (today - timedelta(days=window - 1)).isoformat()
         window_end = today.isoformat()
-        period_where = f'{where} AND ' if where else 'WHERE '
+        period_where = f'{where} AND '
         period_args: tuple[Any, ...] = (*args, window_start, window_end)
         loved_plays = 0
         mbid_plays = 0
@@ -402,7 +407,7 @@ class ListeningStore:
                 for row in conn.execute(
                     'SELECT artist, COUNT(*) AS count '
                     f'FROM listening_events {where}'
-                    + (" AND artist != ''" if where else " WHERE artist != ''")
+                    + " AND artist != ''"
                     + ' GROUP BY artist ORDER BY count DESC, artist LIMIT 10',
                     args,
                 ).fetchall()
@@ -416,7 +421,7 @@ class ListeningStore:
                 for row in conn.execute(
                     'SELECT album, artist, COUNT(*) AS count '
                     f'FROM listening_events {where}'
-                    + (" AND album != ''" if where else " WHERE album != ''")
+                    + " AND album != ''"
                     + ' GROUP BY album, artist ORDER BY count DESC, album, artist '
                     'LIMIT 8',
                     args,
@@ -443,7 +448,7 @@ class ListeningStore:
                 f'FROM listening_events {where}',
                 args,
             ).fetchone()
-            daily_where = f'{where} AND ' if where else 'WHERE '
+            daily_where = f'{where} AND '
             daily = [
                 {'date': row['day'], 'count': int(row['count'])}
                 for row in conn.execute(
@@ -478,11 +483,7 @@ class ListeningStore:
                 for row in conn.execute(
                     'SELECT context, COUNT(*) AS count '
                     f'FROM listening_events {where}'
-                    + (
-                        " AND context != ''"
-                        if where
-                        else " WHERE context != ''"
-                    )
+                    + " AND context != ''"
                     + ' GROUP BY context ORDER BY count DESC, context LIMIT 10',
                     args,
                 ).fetchall()
@@ -539,7 +540,11 @@ class ListeningStore:
                 (lastfm_history.TABLE,),
             ).fetchone()
             if has_lastfm:
-                event_where = 'WHERE e.user_id=?' if user_id else ''
+                event_where = (
+                    f'WHERE e.user_id=? AND e.source IN {_STATS_SOURCES}'
+                    if user_id
+                    else f'WHERE e.source IN {_STATS_SOURCES}'
+                )
                 loved_sql = (
                     'CASE WHEN json_valid(l.raw_json) THEN '
                     "CAST(json_extract(l.raw_json, '$.loved') AS INTEGER) "
@@ -652,9 +657,13 @@ class ListeningStore:
         window = days if days in {7, 30, 90} else 30
         today = datetime.now(timezone.utc).date()
         start = (today - timedelta(days=window - 1)).isoformat()
-        where = 'WHERE user_id=?' if user_id else ''
+        where = (
+            f'WHERE user_id=? AND source IN {_STATS_SOURCES}'
+            if user_id
+            else f'WHERE source IN {_STATS_SOURCES}'
+        )
         args: list[Any] = [int(user_id)] if user_id else []
-        period_where = f'{where} AND ' if where else 'WHERE '
+        period_where = f'{where} AND '
         bucket_sql = (
             "CAST(strftime('%H', played_at) AS INTEGER)"
             if kind == 'hour'
@@ -750,7 +759,11 @@ class ListeningStore:
         empty = {'date': str(on_date or ''), 'total': 0, 'plays': []}
         if not on_date:
             return empty
-        where = 'WHERE user_id=?' if user_id else ''
+        where = (
+            f'WHERE user_id=? AND source IN {_STATS_SOURCES}'
+            if user_id
+            else f'WHERE source IN {_STATS_SOURCES}'
+        )
         args: list[Any] = [int(user_id)] if user_id else []
         summary_sql = (
             "CASE WHEN artist != '' AND title != '' "
@@ -758,7 +771,7 @@ class ListeningStore:
             "WHEN title != '' THEN title ELSE artist END"
         )
         with self._connect() as conn:
-            day_where = f'{where} AND ' if where else 'WHERE '
+            day_where = f'{where} AND '
             day_args: tuple[Any, ...] = (*args, str(on_date))
             total = int(
                 conn.execute(
