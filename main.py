@@ -696,34 +696,11 @@ def build_app() -> FastAPI:
             ),
             name='playlist-spotify-cache',
         )
-        api.spawn_task(
-            monitor_loop(
-                db=api.state.monitor_db,
-                get_downloader=lambda: api.state.downloader,
-                broadcast=api.state.connections.broadcast,
-                loop=loop,
-                settings=api.state.settings,
-                get_library=api.library_stores,
-                notify=api.notify_event,
-            ),
-            name='monitor-loop',
-        )
         # Counted bytes are held in memory (an event-loop write per
         # response stalled every request); this saves them.
         api.spawn_task(
             traffic_flush_loop(lambda: api.state.traffic),
             name='traffic-flush',
-        )
-        # Separate hourly sweep that forgets a downloaded-track record once
-        # its file is gone from the downloads directory — see
-        # downtify/monitor.py:reconcile_loop for why this is a distinct,
-        # slower cadence from the per-watch monitor_loop above.
-        api.spawn_task(
-            reconcile_loop(
-                db=api.state.monitor_db,
-                get_downloader=lambda: api.state.downloader,
-            ),
-            name='reconcile-loop',
         )
         # Keeps downloaded Spotify playlists in step with their Spotify
         # source (see downtify/spotify_sync.py). Off by default; the loop
@@ -874,6 +851,34 @@ def build_app() -> FastAPI:
                 on_change=lambda _active: api._broadcast_queue_state(),
             ),
             name='queue-schedule-loop',
+        )
+
+        # Start filesystem/playlist sweeps only after startup-critical work
+        # is done. An overdue watch can occupy the default executor for a
+        # long time; starting it earlier can starve provider catch-up and
+        # prevent the ASGI lifespan from completing at all.
+        api.spawn_task(
+            monitor_loop(
+                db=api.state.monitor_db,
+                get_downloader=lambda: api.state.downloader,
+                broadcast=api.state.connections.broadcast,
+                loop=loop,
+                settings=api.state.settings,
+                get_library=api.library_stores,
+                notify=api.notify_event,
+            ),
+            name='monitor-loop',
+        )
+        # Separate hourly sweep that forgets a downloaded-track record once
+        # its file is gone from the downloads directory — see
+        # downtify/monitor.py:reconcile_loop for why this is a distinct,
+        # slower cadence from the per-watch monitor_loop above.
+        api.spawn_task(
+            reconcile_loop(
+                db=api.state.monitor_db,
+                get_downloader=lambda: api.state.downloader,
+            ),
+            name='reconcile-loop',
         )
 
         yield

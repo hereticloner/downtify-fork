@@ -300,3 +300,46 @@ def test_the_deferred_import_marks_the_history_imported(tmp_path, monkeypatch):
 
     main._backfill_library_history(monitor_db, catalog_import=True)
     assert main._backfill_done(monitor_db) is True
+
+
+@pytest.mark.asyncio
+async def test_monitor_sweeps_start_after_startup_critical_work(
+    tmp_path, monkeypatch
+):
+    """An overdue playlist must not starve provider catch-up during startup."""
+
+    _app(tmp_path, monkeypatch)
+    app = main.build_app()
+    events = []
+
+    def record_task(coro, name=None):
+        events.append(name or '')
+        coro.close()
+
+    async def catch_up(*_args, **_kwargs):
+        events.append('catch-up')
+        return {}
+
+    async def restore_queue():
+        events.append('restore-queue')
+
+    async def no_shutdown():
+        return None
+
+    monkeypatch.setattr(main.api, 'spawn_task', record_task)
+    monkeypatch.setattr(
+        main.listening_history, 'catch_up_listening_history', catch_up
+    )
+    monkeypatch.setattr(main.api, 'restore_download_queue', restore_queue)
+    monkeypatch.setattr(main.api, 'shutdown_resources', no_shutdown)
+    monkeypatch.setattr(main, 'discovery_enabled', lambda: False)
+
+    async with app.router.lifespan_context(app):
+        pass
+
+    assert events.index('catch-up') < events.index('monitor-loop')
+    assert events.index('restore-queue') < events.index('monitor-loop')
+    assert events.index('catch-up') < events.index('reconcile-loop')
+    assert events.index('restore-queue') < events.index('reconcile-loop')
+    assert events.index('monitor-loop') < events.index('library-backfill')
+    assert events.index('reconcile-loop') < events.index('library-backfill')
