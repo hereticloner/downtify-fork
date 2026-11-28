@@ -10,6 +10,7 @@ signature deliberately ignores timestamps: only the downloaded tracks matter.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import sqlite3
 
@@ -316,10 +317,6 @@ async def test_monitor_sweeps_start_after_startup_critical_work(
         events.append(name or '')
         coro.close()
 
-    async def catch_up(*_args, **_kwargs):
-        events.append('catch-up')
-        return {}
-
     async def restore_queue():
         events.append('restore-queue')
 
@@ -327,9 +324,6 @@ async def test_monitor_sweeps_start_after_startup_critical_work(
         return None
 
     monkeypatch.setattr(main.api, 'spawn_task', record_task)
-    monkeypatch.setattr(
-        main.listening_history, 'catch_up_listening_history', catch_up
-    )
     monkeypatch.setattr(main.api, 'restore_download_queue', restore_queue)
     monkeypatch.setattr(main.api, 'shutdown_resources', no_shutdown)
     monkeypatch.setattr(main, 'discovery_enabled', lambda: False)
@@ -337,9 +331,61 @@ async def test_monitor_sweeps_start_after_startup_critical_work(
     async with app.router.lifespan_context(app):
         pass
 
-    assert events.index('catch-up') < events.index('monitor-loop')
+    assert events.index('listening-history-catchup') < events.index(
+        'monitor-loop'
+    )
     assert events.index('restore-queue') < events.index('monitor-loop')
-    assert events.index('catch-up') < events.index('reconcile-loop')
+    assert events.index('listening-history-catchup') < events.index(
+        'reconcile-loop'
+    )
     assert events.index('restore-queue') < events.index('reconcile-loop')
     assert events.index('monitor-loop') < events.index('library-backfill')
     assert events.index('reconcile-loop') < events.index('library-backfill')
+
+
+@pytest.mark.asyncio
+async def test_history_catchup_does_not_block_startup(tmp_path, monkeypatch):
+    """A slow provider reconciliation must not hold the ASGI lifespan open."""
+
+    _app(tmp_path, monkeypatch)
+    app = main.build_app()
+    tasks = []
+    started = asyncio.Event()
+
+    def record_task(coro, name=None):
+        if name == 'listening-history-catchup':
+            task = asyncio.create_task(coro)
+            tasks.append(task)
+            return task
+        coro.close()
+
+    async def slow_catchup(*_args, **_kwargs):
+        started.set()
+        await asyncio.Event().wait()
+
+    async def restore_queue():
+        return None
+
+    async def no_shutdown():
+        return None
+
+    monkeypatch.setattr(main.api, 'spawn_task', record_task)
+    monkeypatch.setattr(
+        main.listening_history, 'catch_up_listening_history', slow_catchup
+    )
+    monkeypatch.setattr(main.api, 'restore_download_queue', restore_queue)
+    monkeypatch.setattr(main.api, 'shutdown_resources', no_shutdown)
+    monkeypatch.setattr(main, 'discovery_enabled', lambda: False)
+
+    try:
+        async with asyncio.timeout(1):
+            async with app.router.lifespan_context(app):
+                await asyncio.sleep(0)
+                assert started.is_set()
+    finally:
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    assert len(tasks) == 1
