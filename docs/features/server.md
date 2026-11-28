@@ -20,7 +20,7 @@ Setting it up on a compose server:
    ```
 4. `docker compose up -d mirror` — Soloist restores the stored session and appears as a Connect device.
 
-The device then shows up in **Settings → Spotify Mirror → Load devices**; plays started in Downtify begin there — silently — and land in your Spotify history.
+The device then shows up in **Settings → Spotify Mirror → Load devices**; plays started in Downtify begin there — silently — and land in your Spotify history. The container waits for PulseAudio and its null sink before starting Soloist; if audio never becomes ready it exits instead of running a device that immediately pauses. Check `docker logs downtify-mirror-1` when that happens.
 
 > Soloist builds expire after 90 days; rebuild the image (`docker compose build --no-cache mirror`) to renew. An expired build exits with code 10.
 
