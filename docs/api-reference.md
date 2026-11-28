@@ -2112,13 +2112,13 @@ Delete a collection. The playlists themselves are never touched.
 
 ## Stats
 
-Library and usage numbers — see [Stats](features/stats.md).
+Library and usage numbers — see [Stats](features/stats.md). Stats counts **Downtify + Last.fm plays only**: Spotify plays are still imported into canonical and raw history and the legacy top-level `spotify` fields remain, but Spotify-only rows are excluded from every Stats aggregate and detail, and `by_source.spotify` stays `0`. Canonical reconciliation uses **Downtify → Last.fm → Spotify** precedence, and startup catches up new provider pages before the periodic history loops start.
 
 ### `GET /api/stats`
 
 Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user`), optional `date=YYYY-MM-DD`, and optional `pattern=hour|weekday&bucket=N`. `scope=server` is admin-only. Invalid dates, unpaired pattern parameters, unknown pattern kinds and out-of-range buckets return `400`. Library size and likes are server-wide; activity and measured listening follow the selected account or server scope.
 
-**Response:**
+**Response:** illustrative two-source values (example counts, not a live measurement):
 
 ```json
 {
@@ -2129,14 +2129,14 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
     "per_day": [{ "date": "2026-09-29", "count": 3 }]
   },
   "playback": {
-    "total": 4560,
+    "total": 3,
     "measured": {
-      "seconds": 18305,
-      "plays": 1543,
-      "completions": 1204,
-      "skips": 98,
-      "completion_rate": 0.7804,
-      "skip_rate": 0.0635
+      "seconds": 183,
+      "plays": 1,
+      "completions": 1,
+      "skips": 0,
+      "completion_rate": 1,
+      "skip_rate": 0
     },
     "top_tracks": [
       {
@@ -2144,7 +2144,7 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
         "artist": "No Clear Mind",
         "title": "Big Thing",
         "album": "Makena",
-        "count": 115
+        "count": 2
       }
     ],
     "recent": [
@@ -2157,46 +2157,46 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
         "album": "",
         "context": "",
         "context_type": "",
-        "source": "spotify"
+        "source": "lastfm"
       }
     ],
     "profile": {
       "first_at": "2026-10-07T12:18:00+00:00",
       "last_at": "2026-11-25T12:00:00Z",
-      "unique": { "tracks": 1905, "artists": 788, "albums": 991 },
-      "by_source": { "downtify": 226, "spotify": 2875, "lastfm": 1459 },
-      "top_artists": [{ "artist": "No Clear Mind", "count": 732 }],
+      "unique": { "tracks": 3, "artists": 3, "albums": 1 },
+      "by_source": { "downtify": 1, "spotify": 0, "lastfm": 2 },
+      "top_artists": [{ "artist": "No Clear Mind", "count": 2 }],
       "top_albums": [
-        { "album": "Makena", "artist": "No Clear Mind", "count": 194 }
+        { "album": "Makena", "artist": "No Clear Mind", "count": 2 }
       ],
       "weeks": [
-        { "start": "2026-10-31", "end": "2026-11-06", "count": 832 },
-        { "start": "2026-11-07", "end": "2026-11-13", "count": 808 },
-        { "start": "2026-11-14", "end": "2026-11-20", "count": 561 },
-        { "start": "2026-11-21", "end": "2026-11-27", "count": 420 }
+        { "start": "2026-10-31", "end": "2026-11-06", "count": 0 },
+        { "start": "2026-11-07", "end": "2026-11-13", "count": 0 },
+        { "start": "2026-11-14", "end": "2026-11-20", "count": 1 },
+        { "start": "2026-11-21", "end": "2026-11-27", "count": 2 }
       ]
     },
-    "heatmap": [{ "date": "2026-09-29", "count": 2 }],
-    "streak_days": 4,
-    "best_day": { "date": "2026-10-10", "count": 31 },
+    "heatmap": [{ "date": "2026-11-25", "count": 2 }],
+    "streak_days": 2,
+    "best_day": { "date": "2026-11-25", "count": 2 },
     "period": {
       "days": 30,
-      "total": 2762,
-      "by_source": { "downtify": 167, "spotify": 1881, "lastfm": 714 }
+      "total": 2,
+      "by_source": { "downtify": 0, "spotify": 0, "lastfm": 2 }
     },
-    "unique": { "tracks": 1352, "artists": 638, "albums": 818 },
+    "unique": { "tracks": 3, "artists": 3, "albums": 1 },
     "track_time": {
-      "seconds": 574904,
-      "plays_with_duration": 2043,
-      "plays_without_duration": 719
+      "seconds": 574,
+      "plays_with_duration": 1,
+      "plays_without_duration": 2
     },
     "patterns": {
-      "by_hour": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      "by_hour": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       "by_weekday": [0, 0, 0, 0, 0, 0, 0]
     },
     "lastfm": {
       "loved_plays": 0,
-      "mbid_plays": 1718,
+      "mbid_plays": 2,
       "imported_plays": 3800,
       "backfill": {
         "done": false,
@@ -2208,10 +2208,10 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
     "pattern_detail": {
       "kind": "hour",
       "bucket": 14,
-      "total": 40,
-      "by_source": { "downtify": 2, "spotify": 35, "lastfm": 3 },
-      "top_tracks": [{ "summary": "Artist - Title", "count": 8 }],
-      "top_artists": [{ "artist": "Artist", "count": 12 }],
+      "total": 1,
+      "by_source": { "downtify": 0, "spotify": 0, "lastfm": 1 },
+      "top_tracks": [{ "summary": "Artist - Title", "count": 1 }],
+      "top_artists": [{ "artist": "Artist", "count": 1 }],
       "recent": [
         {
           "at": "2026-11-25T14:15:00+00:00",
@@ -2219,7 +2219,7 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
           "summary": "Artist - Title",
           "context": "spotify:playlist:abc",
           "context_type": "playlist",
-          "source": "spotify"
+          "source": "lastfm"
         }
       ],
       "truncated": true
@@ -2240,19 +2240,19 @@ Client. Query: `days=7|30|90` (default `30`), `scope=user|server` (default `user
 }
 ```
 
-Counts come from the library stores, the activity log and the canonical `listening_events` history. A download request counts once. `playback.total` is all stored canonical plays; `playback.measured` adds Downtify-only unique listening seconds, completions (at least 90% heard) and skips (left before 25% or within 15 seconds) for the selected period. Spotify and Last.fm never fabricate those measured values.
+Counts come from the library stores, the activity log and the canonical `listening_events` history. A download request counts once. `playback.total` is all stored Downtify and Last.fm canonical plays; Spotify-only canonical rows are excluded from every Stats count and detail. `playback.measured` adds Downtify-only unique listening seconds, completions (at least 90% heard) and skips (left before 25% or within 15 seconds) for the selected period. Spotify and Last.fm never fabricate those measured values.
 
-`playback.heatmap` is one `{date, count}` per day of the retained 364-day window, including zero days; `playback.streak_days` is the current consecutive-day run and `playback.best_day` is the maximum-count day, not merely the newest active day. `playback.recent` carries up to 400 newest canonical plays, each `{at, date, summary, artist, title, album, context, context_type, source}`. `playback.top_contexts` groups those plays by known queue.
+`playback.heatmap` is one `{date, count}` per day of the retained 364-day window, including zero days; `playback.streak_days` is the current consecutive-day run and `playback.best_day` is the maximum-count day, not merely the newest active day. `playback.recent` carries up to 400 newest Downtify/Last.fm canonical plays, each `{at, date, summary, artist, title, album, context, context_type, source}`; an older payload may still contain a Spotify row, which Stats drops before rendering. `playback.top_contexts` groups those plays by known queue.
 
-`playback.profile` is the all-time canonical listening profile for the selected account scope. It contains `first_at`, `last_at`, all-time `unique` counts, all-time `by_source` counts, up to ten `top_artists`, up to eight `top_albums` grouped by album and artist, and four consecutive seven-day UTC `weeks` ending today. Empty history returns empty timestamps, zero counts and empty top lists; the four week rows remain present with zero counts. `playback.top_tracks` is also all-time; it keeps `summary` and `count` and adds structured `artist`, `title` and `album`.
+`playback.profile` is the all-time canonical listening profile for the selected account scope. It contains `first_at`, `last_at`, all-time `unique` counts, all-time `by_source` counts, up to ten `top_artists`, up to eight `top_albums` grouped by album and artist, and four consecutive seven-day UTC `weeks` ending today. Spotify-only rows are excluded from all of these; `by_source.spotify` is retained as `0` for compatibility. Empty history returns empty timestamps, zero counts and empty top lists; the four week rows remain present with zero counts. `playback.top_tracks` is also all-time; it keeps `summary` and `count` and adds structured `artist`, `title` and `album`.
 
-`playback.period`, `playback.unique`, `playback.track_time`, `playback.patterns`, `playback.lastfm.loved_plays` and `playback.lastfm.mbid_plays` cover the selected UTC calendar window. `period.by_source` uses the canonical winning source after dedupe. `unique` counts normalized track keys and non-empty artist/album names. `track_time` sums known track lengths and reports duration coverage; it is not listening time. `patterns.by_hour` has 24 UTC-hour counts and `patterns.by_weekday` has seven Sunday-first counts. `lastfm.imported_plays` and `lastfm.backfill` are connection-level import facts; loved means the linked scrobble was marked loved at import.
+`playback.period`, `playback.unique`, `playback.track_time`, `playback.patterns`, `playback.lastfm.loved_plays` and `playback.lastfm.mbid_plays` cover the selected UTC calendar window and the same Downtify/Last.fm source filter. `period.by_source` uses the canonical winning source after dedupe and keeps `spotify: 0`. `unique` counts normalized track keys and non-empty artist/album names. `track_time` sums known track lengths and reports duration coverage; it is not listening time. `patterns.by_hour` has 24 UTC-hour counts and `patterns.by_weekday` has seven Sunday-first counts. `lastfm.imported_plays` and `lastfm.backfill` are connection-level import facts; loved means the linked scrobble was marked loved at import.
 
-Optional `date=YYYY-MM-DD` fills `playback.day` with that exact UTC day's true total and up to 400 newest plays. Without it, `day` is `{"date":"","total":0,"plays":[]}`. Optional `pattern=hour|weekday&bucket=N` fills `playback.pattern_detail` with the exact selected-period UTC bucket total, canonical source split, top five tracks/artists and up to 50 newest plays plus `truncated`. Without it, the detail object has empty kind/bucket and zero/list defaults. `playback.context_labels` maps normalized Spotify context URIs present in the response to cached display names; the GET never calls Spotify. Historical raw metadata is copied into blank canonical album/context fields by an idempotent background fill-only pass; it never changes play identity or counts and never runs in this GET.
+Optional `date=YYYY-MM-DD` fills `playback.day` with that exact UTC day's true Downtify/Last.fm total and up to 400 newest plays. Without it, `day` is `{"date":"","total":0,"plays":[]}`. Optional `pattern=hour|weekday&bucket=N` fills `playback.pattern_detail` with the exact selected-period UTC bucket total, the same filtered source split (`spotify: 0`), top five tracks/artists and up to 50 newest plays plus `truncated`. Without it, the detail object has empty kind/bucket and zero/list defaults. `playback.context_labels` maps normalized Spotify context URIs present in the response to cached display names; the GET never calls Spotify. Historical raw metadata is copied into blank canonical album/context fields by an idempotent background fill-only pass; it never changes play identity or counts and never runs in this GET.
 
 Spotify context names are resolved by a separate background loop using the existing mirror OAuth token. It runs only when the mirror is enabled with a usable token, resolves at most 25 distinct Spotify-linked contexts per 15-minute pass, oldest first, spaces calls by one second, refreshes successful names after 30 days, retries failures later and honors `429 Retry-After`. `401/403` stops the pass. The persistent `spotify_context_cache` table is included in metadata backups. Missing names fall back to a localized Spotify type label in the UI; raw URIs remain in the API for identity and diagnostics.
 
-`spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. See [Stats](features/stats.md#where-the-numbers-come-from).
+`spotify.recent` holds up to ten plays mirrored out of Spotify, newest first, and `spotify.play_count` how many are stored — both empty until the [history import](features/spotify-mirror.md#importing-your-listening-history) is on. These are retained raw/archive fields, not Stats sources; Spotify-only plays stay in the canonical table for reconciliation but never enter Stats aggregates or details. See [Stats](features/stats.md#where-the-numbers-come-from).
 
 ---
 

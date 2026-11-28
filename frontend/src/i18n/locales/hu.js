@@ -625,7 +625,7 @@ export default {
     canonicalPlays: 'Kanonikus lejátszási rekordok',
     periodSummary: '{days} napos összegzés',
     archiveScope: 'Archívum határai',
-    sourcePriority: 'Forrásprioritás: Downtify → Spotify → Last.fm',
+    sourcePriority: 'Forrásprioritás: Downtify → Last.fm',
     profileEmpty: 'Még nincs hallgatási előzmény',
     hoursMinutes: '{hours} óra {minutes} perc',
     weekLabel: 'Hét: {range}',
@@ -1564,7 +1564,7 @@ export default {
     spotifyMirrorNowFailed: 'Ezt a számot nem sikerült tükrözni.',
     spotifyMirrorImport: 'Hallgatási előzmény importálása',
     spotifyMirrorImportHint:
-      'Félóránként beolvassa a Spotify hallgatási előzményed a Downtifybe. Egyszer újra kell csatlakozni, hogy a Spotify megadja az engedélyt.',
+      'A Spotify hallgatási előzményeit félóránként külön tárolja. A Stats a Last.fm + Downtify forrásait használja. A Spotify engedélyezéséhez egyszeri újracsatlakozás szükséges.',
     mirrorStatus: 'Élő állapot',
     mirrorDevice: 'Eszköz',
     mirrorOnline: 'Online ✓',

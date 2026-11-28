@@ -617,7 +617,7 @@ export default {
     canonicalPlays: 'Канонични записи за изпълнения',
     periodSummary: 'Обобщение за {days} дни',
     archiveScope: 'Обхват на архива',
-    sourcePriority: 'Приоритет на източника: Downtify → Spotify → Last.fm',
+    sourcePriority: 'Приоритет на източника: Downtify → Last.fm',
     profileEmpty: 'Още няма история на слушане',
     hoursMinutes: '{hours} ч {minutes} мин',
     weekLabel: 'Седмица: {range}',
@@ -1551,7 +1551,7 @@ export default {
     spotifyMirrorNowFailed: 'Тази песен не можа да се огледа.',
     spotifyMirrorImport: 'Импортиране на историята на слушане',
     spotifyMirrorImportHint:
-      'Внася историята на слушане от Spotify в Downtify на всеки половин час. Изисква едно повторно свързване, за да даде Spotify разрешението.',
+      'Запазва историята на слушането в Spotify отделно на всеки половин час. Stats използва Last.fm + Downtify. Нужно е еднократно повторно свързване, за да разреши Spotify.',
     mirrorStatus: 'Състояние в реално време',
     mirrorDevice: 'Устройство',
     mirrorOnline: 'На линия ✓',

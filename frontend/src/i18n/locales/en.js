@@ -612,7 +612,7 @@ export default {
     canonicalPlays: 'Canonical play records',
     periodSummary: '{days}-day summary',
     archiveScope: 'Archive scope',
-    sourcePriority: 'Source priority: Downtify → Spotify → Last.fm',
+    sourcePriority: 'Source priority: Downtify → Last.fm',
     profileEmpty: 'No listening history yet',
     hoursMinutes: '{hours} h {minutes} min',
     weekLabel: 'Week: {range}',
@@ -1530,7 +1530,7 @@ export default {
     spotifyMirrorNowFailed: 'Could not mirror that track.',
     spotifyMirrorImport: 'Import listening history',
     spotifyMirrorImportHint:
-      'Read your Spotify listening history into Downtify every half hour. Needs one reconnect, so Spotify grants the scope.',
+      'Store your Spotify listening history separately every half hour. Stats uses Last.fm + Downtify. Needs one reconnect so Spotify grants the scope.',
     mirrorStatus: 'Live status',
     mirrorDevice: 'Device',
     mirrorOnline: 'Online ✓',

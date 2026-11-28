@@ -4,7 +4,7 @@ icon: lucide/bar-chart-3
 
 # Stats
 
-Stats is a read-only personal listening profile at `/library/stats`. It combines Downtify playback, imported Spotify plays and imported Last.fm scrobbles into one canonical history. The page uses the Technical Gazette visual system and does not show hour-of-day, weekday-pattern, clock or heatmap visualizations.
+Stats is a read-only personal listening profile at `/library/stats`. It counts **Downtify playback + Last.fm scrobbles only**. Spotify plays are still imported into the canonical history and kept as raw archive data, but Spotify-only plays are excluded from every Stats aggregate and detail. The page uses the Technical Gazette visual system and does not show hour-of-day, weekday-pattern, clock or heatmap visualizations.
 
 ## Period and account scope
 
@@ -14,7 +14,7 @@ The web page shows the signed-in account. An admin can request the server-wide v
 
 ## Profile masthead
 
-The masthead shows the signed-in username, a square monogram, the first and last stored play dates, source precedence and the all-time most-played track. Empty history shows a localized empty state instead of invented dates or tracks.
+The masthead shows the signed-in username, a square monogram, the first and last stored play dates, the Stats source order (Downtify → Last.fm) and the all-time most-played track. Empty history shows a localized empty state instead of invented dates or tracks.
 
 ## All-time profile
 
@@ -25,11 +25,11 @@ Four ruled cells summarize all stored canonical plays:
 - **Unique tracks** — distinct normalized artist/title keys.
 - **Known albums** — distinct non-empty album names. “Known” is deliberate because some provider rows have no album.
 
-The source ledger shows Downtify, Spotify and Last.fm canonical counts and percentages. These are winning sources after deduplication, not raw provider observation counts. Source precedence remains **Downtify → Spotify → Last.fm**.
+The source ledger shows only the Downtify and Last.fm canonical counts and percentages: these are winning sources after deduplication, not raw provider observation counts. Canonical reconciliation uses **Downtify → Last.fm → Spotify** precedence, so a play known to Downtify or Last.fm keeps that metadata while Spotify wins only when neither does. Spotify-only winners are not Stats sources, and `by_source.spotify` stays `0` for API compatibility.
 
 ## Recent plays
 
-**Recent plays** lists the ten newest unified plays with a typographic monogram, track, artist, provider and localized time. The header carries the all-time canonical play total. The API can still return up to 400 recent rows.
+**Recent plays** lists the ten newest Downtify/Last.fm plays with a typographic monogram, track, artist, provider badge and localized time. Legacy Spotify rows in an older payload are ignored. The header carries the filtered all-time Stats total; the API can still return up to 400 recent rows.
 
 ## Top artists, albums and tracks
 
@@ -64,38 +64,41 @@ A background fill-only pass copies missing album names from linked Last.fm rows 
 
 ## Where the numbers come from
 
-- **Plays** come from one canonical `listening_events` table in `/data/downtify_activity.db`. It combines Downtify player starts, imported Spotify plays and imported Last.fm scrobbles. Replaying a song counts again; the all-time total is not pruned with the activity log.
+- **Plays** come from one canonical `listening_events` table in `/data/downtify_activity.db`. It stores Downtify player starts, imported Spotify plays and imported Last.fm scrobbles, but Stats reads only Downtify and Last.fm winners. Replaying a song counts again; the all-time total is not pruned with the activity log.
 - **Deduplication** uses normalized artist/title and a bounded time window. One real play seen through several providers produces one canonical row; a second observation from the same provider inside the window remains a separate play.
-- **All-time profile** aggregates every stored canonical row for the selected account scope. Top albums group by album and artist so different artists' same-named albums do not merge.
-- **Four-week report** groups canonical rows into four consecutive UTC calendar weeks ending today. Zero-play weeks remain visible.
-- **Selected-period profile** reads canonical events from today and the preceding `days - 1` UTC calendar days. Source counts use the canonical winning source; unique tracks use `match_key`; unique artists/albums exclude empty names.
+- **Reconciliation** resolves the canonical winner in Downtify → Last.fm → Spotify order without changing event identity or provider links. A legacy Spotify winner linked to a Last.fm scrobble is upgraded to Last.fm metadata on bootstrap.
+- **Source filter** applies to all-time and period profiles, recent/top lists, track time, day detail and pattern detail: Spotify-only canonical rows are excluded everywhere in Stats, while the legacy `spotify` fields and raw rows are left intact.
+- **Startup catch-up** runs one bounded pass of each provider's importer before the periodic history loops start, so new Downtify/Last.fm pages and scrobbles appear without waiting for the next interval; a failing provider does not fail startup.
+- **All-time profile** aggregates every stored Downtify/Last.fm canonical row for the selected account scope. Top albums group by album and artist so different artists' same-named albums do not merge.
+- **Four-week report** groups the filtered canonical rows into four consecutive UTC calendar weeks ending today. Zero-play weeks remain visible.
+- **Selected-period profile** reads Downtify/Last.fm canonical events from today and the preceding `days - 1` UTC calendar days. Source counts use the canonical winning source; unique tracks use `match_key`; unique artists/albums exclude empty names.
 - **Known track time** sums positive `duration_ms` and reports how many period plays have a duration. It is track length, never measured listening time.
 - **Last.fm detail** counts distinct linked canonical events with a truthy raw `loved` value or non-empty MBID. Imported-row count and backfill state are connection-level facts. Malformed raw JSON is ignored safely.
 - **Historical enrichment** is a background, idempotent fill-only pass over already-linked raw Spotify/Last.fm rows. It repairs blank canonical album/context fields without changing source, identity, timestamp or play count, and never runs in a Stats GET.
-- **Raw provider data** is kept separately: Spotify's original track object/ISRC/context and Last.fm's original scrobble object. These tables are included in metadata backups.
+- **Raw provider data** is kept separately: Spotify's original track object/ISRC/context and Last.fm's original scrobble object. These tables are included in metadata backups; being stored does not make Spotify a Stats source.
 - **Measured listening** still uses only Downtify's position reports. Spotify and Last.fm do not fabricate seconds, completions or skips. The current Stats view does not display those measured cards.
 
 ## Retained API fields
 
-The existing `heatmap`, `streak_days`, `best_day`, `patterns`, `day`, `pattern_detail`, `top_contexts`, download and Spotify-only response fields remain available for compatibility. The current Stats view does not render them.
+The existing `heatmap`, `streak_days`, `best_day`, `patterns`, `day`, `pattern_detail`, `top_contexts`, download and top-level `spotify` response fields remain available for compatibility. The top-level Spotify archive and legacy `by_source.spotify` are not Stats sources (the latter stays `0`); the current Stats view does not render them.
 
 ## API
 
 `GET /api/stats?days=30&scope=user` returns one object. `days` accepts `7`, `30` or `90`; anything else falls back to `30`. `scope=user` is the default and returns the signed-in account's activity. `scope=server` is admin-only and aggregates every account. Optional `date=YYYY-MM-DD` loads one exact UTC day into `playback.day`; invalid calendar dates return `400`. Optional `pattern=hour|weekday&bucket=N` loads exact bucket detail into `playback.pattern_detail`; both parameters are required together, hour is `0..23`, weekday is `0..6` (Sunday first), and invalid values return `400`.
 
-The listening profile adds:
+The listening profile adds this illustrative two-source payload (example counts, not a live measurement):
 
 ```json
 {
   "playback": {
-    "total": 4560,
+    "total": 3,
     "top_tracks": [
       {
         "summary": "No Clear Mind - Big Thing",
         "artist": "No Clear Mind",
         "title": "Big Thing",
         "album": "Makena",
-        "count": 115
+        "count": 2
       }
     ],
     "recent": [
@@ -108,23 +111,23 @@ The listening profile adds:
         "album": "",
         "context": "",
         "context_type": "",
-        "source": "spotify"
+        "source": "lastfm"
       }
     ],
     "profile": {
       "first_at": "2026-10-07T12:18:00+00:00",
       "last_at": "2026-11-25T12:00:00Z",
-      "unique": { "tracks": 1905, "artists": 788, "albums": 991 },
-      "by_source": { "downtify": 226, "spotify": 2875, "lastfm": 1459 },
-      "top_artists": [{ "artist": "No Clear Mind", "count": 732 }],
+      "unique": { "tracks": 3, "artists": 3, "albums": 1 },
+      "by_source": { "downtify": 1, "spotify": 0, "lastfm": 2 },
+      "top_artists": [{ "artist": "No Clear Mind", "count": 2 }],
       "top_albums": [
-        { "album": "Makena", "artist": "No Clear Mind", "count": 194 }
+        { "album": "Makena", "artist": "No Clear Mind", "count": 2 }
       ],
       "weeks": [
-        { "start": "2026-10-31", "end": "2026-11-06", "count": 832 },
-        { "start": "2026-11-07", "end": "2026-11-13", "count": 808 },
-        { "start": "2026-11-14", "end": "2026-11-20", "count": 561 },
-        { "start": "2026-11-21", "end": "2026-11-27", "count": 420 }
+        { "start": "2026-10-31", "end": "2026-11-06", "count": 0 },
+        { "start": "2026-11-07", "end": "2026-11-13", "count": 0 },
+        { "start": "2026-11-14", "end": "2026-11-20", "count": 1 },
+        { "start": "2026-11-21", "end": "2026-11-27", "count": 2 }
       ]
     }
   }

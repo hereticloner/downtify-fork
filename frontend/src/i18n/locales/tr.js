@@ -624,7 +624,7 @@ export default {
     canonicalPlays: 'Tekil çalma kayıtları',
     periodSummary: '{days} günlük özet',
     archiveScope: 'Arşiv kapsamı',
-    sourcePriority: 'Kaynak önceliği: Downtify → Spotify → Last.fm',
+    sourcePriority: 'Kaynak önceliği: Downtify → Last.fm',
     profileEmpty: 'Henüz dinleme geçmişi yok',
     hoursMinutes: '{hours} sa {minutes} dk',
     weekLabel: 'Hafta: {range}',
@@ -1558,7 +1558,7 @@ export default {
     spotifyMirrorNowFailed: 'Bu parça yansıtılamadı.',
     spotifyMirrorImport: 'Dinleme geçmişini içe aktar',
     spotifyMirrorImportHint:
-      'Spotify dinleme geçmişini yarım saatte bir Downtify’ye çeker. Kapsam verilmesi için bir kez yeniden bağman gerekir.',
+      'Spotify dinleme geçmişini her yarım saatte ayrı olarak sakla. Stats Last.fm + Downtify kullanır. Spotify’in izni vermesi için bir kez yeniden bağlantı gerekir.',
     mirrorStatus: 'Canlı durum',
     mirrorDevice: 'Cihaz',
     mirrorOnline: 'Çevrimiçi ✓',

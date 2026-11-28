@@ -646,7 +646,7 @@ export default {
     canonicalPlays: 'Enregistrements canoniques d’écoute',
     periodSummary: 'Résumé sur {days} jours',
     archiveScope: 'Périmètre de l’archive',
-    sourcePriority: 'Priorité des sources : Downtify → Spotify → Last.fm',
+    sourcePriority: 'Priorité des sources : Downtify → Last.fm',
     profileEmpty: 'Aucun historique d’écoute pour le moment',
     hoursMinutes: '{hours} h {minutes} min',
     weekLabel: 'Semaine : {range}',
@@ -1598,7 +1598,7 @@ export default {
     spotifyMirrorNowFailed: 'Impossible de refléter ce titre.',
     spotifyMirrorImport: 'Importer l’historique d’écoute',
     spotifyMirrorImportHint:
-      'Lit ton historique d’écoute Spotify dans Downtify toutes les demi-heures. Il faut se reconnecter une fois pour que Spotify accorde la portée.',
+      'Enregistrez séparément votre historique d’écoute Spotify toutes les demi-heures. Stats utilise Last.fm + Downtify. Une reconnexion est nécessaire pour que Spotify accorde l’autorisation.',
     mirrorStatus: 'État en direct',
     mirrorDevice: 'Appareil',
     mirrorOnline: 'En ligne ✓',

@@ -635,7 +635,7 @@ export default {
     canonicalPlays: 'Κανονικές εγγραφές αναπαραγωγής',
     periodSummary: 'Σύνοψη {days} ημερών',
     archiveScope: 'Έκταση αρχείου',
-    sourcePriority: 'Προτεραιότητα πηγής: Downtify → Spotify → Last.fm',
+    sourcePriority: 'Προτεραιότητα πηγής: Downtify → Last.fm',
     profileEmpty: 'Δεν υπάρχει ακόμη ιστορικό ακρόασης',
     hoursMinutes: '{hours} ώρες {minutes} λεπτά',
     weekLabel: 'Εβδομάδα: {range}',
@@ -1580,7 +1580,7 @@ export default {
       'Δεν ήταν δυνατός ο κατοπτρισμός αυτού του κομματιού.',
     spotifyMirrorImport: 'Εισαγωγή ιστορικού ακροάσεων',
     spotifyMirrorImportHint:
-      'Διαβάζει το ιστορικό ακροάσεών σου από το Spotify στο Downtify κάθε μισή ώρα. Χρειάζεται μία επανασύνδεση, ώστε το Spotify να δώσει την άδεια.',
+      'Αποθηκεύστε χωριστά το ιστορικό ακρόασης Spotify κάθε μισή ώρα. Τα Stats χρησιμοποιούν Last.fm + Downtify. Απαιτείται μια επανασύνδεση για να παραχωρήσει άδεια το Spotify.',
     mirrorStatus: 'Ζωντανή κατάσταση',
     mirrorDevice: 'Συσκευή',
     mirrorOnline: 'Σε σύνδεση ✓',

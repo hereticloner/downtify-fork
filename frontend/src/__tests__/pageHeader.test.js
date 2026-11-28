@@ -61,14 +61,14 @@ vi.mock('/src/model/api', () => ({
                 album: 'Album',
                 context: '',
                 context_type: '',
-                source: 'spotify',
+                source: 'lastfm',
               },
             ],
             profile: {
               first_at: '2026-10-07T12:18:00+00:00',
               last_at: '2026-11-25T12:00:00Z',
               unique: { tracks: 8, artists: 4, albums: 5 },
-              by_source: { downtify: 2, spotify: 7, lastfm: 2 },
+              by_source: { downtify: 2, spotify: 0, lastfm: 9 },
               top_artists: [
                 { artist: 'Artist', count: 11 },
                 { artist: 'Second Artist', count: 3 },
@@ -84,7 +84,7 @@ vi.mock('/src/model/api', () => ({
             period: {
               days: 30,
               total: 5,
-              by_source: { downtify: 1, spotify: 3, lastfm: 1 },
+              by_source: { downtify: 1, spotify: 0, lastfm: 4 },
             },
             unique: { tracks: 4, artists: 2, albums: 3 },
             track_time: {
@@ -266,8 +266,9 @@ describe('StatsView', () => {
     expect(html).toMatch(/>5<\/div>/)
     expect(html).toContain(t('stats.totalPlays'))
     expect(html).toContain(t('stats.allTime'))
-    expect(html).toContain(t('stats.sourceSpotify'))
+    expect(html).toContain(t('stats.sourceDowntify'))
     expect(html).toContain(t('stats.sourceLastfm'))
+    expect(html).not.toContain(t('stats.sourceSpotify'))
   })
 
   it('renders recent, top artists, top albums, top tracks and weekly report', async () => {
@@ -296,8 +297,26 @@ describe('StatsView', () => {
     expect(html).toContain('Album')
     expect(html).toContain(t('stats.hoursMinutes', { hours: 1, minutes: 1 }))
     expect(html).toContain(t('stats.periodSummary', { days: 30 }))
-    expect(html).toContain('data-source="spotify"')
+    expect(html).toContain('data-source="lastfm"')
+    expect(html).not.toContain('data-source="spotify"')
     expect(html).toMatch(/data-play-count[^>]*>11</)
+  })
+
+  it('renders only two source rows, with Downtify as the solid bar', async () => {
+    const StatsView = (await import('/src/views/StatsView.vue')).default
+    const { load } = useStats()
+    await load()
+
+    const html = await render(StatsView)
+    const source = readView('StatsView.vue')
+
+    expect(source, 'sourceRows').toMatch(/\['downtify', 'lastfm'\]/)
+    expect(source, 'solid bar').toMatch(
+      /row\.source === 'downtify' \? 'bg-fg' : 'bg-surface-2'/
+    )
+    expect(html).not.toContain(t('stats.sourceSpotify'))
+    expect(html).toContain(t('stats.sourceDowntify'))
+    expect(html).toContain(t('stats.sourceLastfm'))
   })
 
   it('does not render hourly patterns, heatmap or legacy dashboard panels', async () => {

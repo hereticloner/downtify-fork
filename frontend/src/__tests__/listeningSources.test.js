@@ -23,6 +23,7 @@ globalThis.window = {
 }
 
 import StatsView from '/src/views/StatsView.vue'
+import { t } from '/src/i18n'
 import { useStats } from '/src/model/stats'
 
 async function render() {
@@ -44,6 +45,8 @@ async function render() {
       heatmap: [],
       streak_days: 0,
       best_day: { date: '', count: 0 },
+      // A legacy payload can still carry a Spotify recent row; Stats must
+      // drop it instead of presenting it as a Stats source.
       recent: [
         {
           at: '2026-11-25T20:15:00Z',
@@ -70,6 +73,20 @@ async function render() {
           source: 'lastfm',
         },
       ],
+      profile: {
+        first_at: '2026-11-25T20:15:00Z',
+        last_at: '2026-11-25T20:17:00Z',
+        unique: { tracks: 3, artists: 3, albums: 0 },
+        by_source: { downtify: 1, spotify: 0, lastfm: 2 },
+        top_artists: [],
+        top_albums: [],
+        weeks: [],
+      },
+      period: {
+        days: 30,
+        total: 3,
+        by_source: { downtify: 1, spotify: 0, lastfm: 2 },
+      },
       top_contexts: [],
     },
     spotify: { recent: [], play_count: 0 },
@@ -80,14 +97,15 @@ async function render() {
 }
 
 describe('unified listening sources', () => {
-  it('labels each recent play with its provider', async () => {
+  it('renders only Downtify and Last.fm rows and badges', async () => {
     const html = await render()
+
     expect(html).toContain('data-source="downtify"')
-    expect(html).toContain('data-source="spotify"')
+    expect(html).not.toContain('data-source="spotify"')
     expect(html).toContain('data-source="lastfm"')
-    expect(html).toContain('Downtify')
-    expect(html).toContain('Spotify')
-    expect(html).toContain('Last.fm')
+    expect(html).toContain(t('stats.sourceDowntify'))
+    expect(html).toContain(t('stats.sourceLastfm'))
+    expect(html).not.toContain(t('stats.sourceSpotify'))
     expect(html).toMatch(/data-play-count[^>]*>3</)
   })
 })

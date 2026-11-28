@@ -87,3 +87,38 @@ describe('Stats locale contract', () => {
     }
   )
 })
+
+describe('Stats two-source copy', () => {
+  it.each(Object.entries(locales))(
+    '%s describes only Downtify and Last.fm as Stats sources',
+    (code, messages) => {
+      const priority = messages.stats?.sourcePriority || ''
+      expect(priority, `${code}.stats.sourcePriority`).not.toContain('Spotify')
+      expect(priority, `${code}.stats.sourcePriority`).toContain(
+        'Downtify → Last.fm'
+      )
+    }
+  )
+
+  const importHints = {
+    en: 'Store your Spotify listening history separately every half hour. Stats uses Last.fm + Downtify. Needs one reconnect so Spotify grants the scope.',
+    tr: 'Spotify dinleme geçmişini her yarım saatte ayrı olarak sakla. Stats Last.fm + Downtify kullanır. Spotify’in izni vermesi için bir kez yeniden bağlantı gerekir.',
+    es: 'Guarda tu historial de escuchas de Spotify por separado cada media hora. Stats usa Last.fm + Downtify. Requiere una reconexión para que Spotify conceda el permiso.',
+    fr: 'Enregistrez séparément votre historique d’écoute Spotify toutes les demi-heures. Stats utilise Last.fm + Downtify. Une reconnexion est nécessaire pour que Spotify accorde l’autorisation.',
+    'pt-BR':
+      'Salve seu histórico de reproduções do Spotify separadamente a cada meia hora. As estatísticas usam Last.fm + Downtify. É necessário reconectar para o Spotify conceder a permissão.',
+    hu: 'A Spotify hallgatási előzményeit félóránként külön tárolja. A Stats a Last.fm + Downtify forrásait használja. A Spotify engedélyezéséhez egyszeri újracsatlakozás szükséges.',
+    el: 'Αποθηκεύστε χωριστά το ιστορικό ακρόασης Spotify κάθε μισή ώρα. Τα Stats χρησιμοποιούν Last.fm + Downtify. Απαιτείται μια επανασύνδεση για να παραχωρήσει άδεια το Spotify.',
+    bg: 'Запазва историята на слушането в Spotify отделно на всеки половин час. Stats използва Last.fm + Downtify. Нужно е еднократно повторно свързване, за да разреши Spotify.',
+  }
+
+  it.each(Object.entries(locales))(
+    '%s keeps Spotify history separate from Stats',
+    (code, messages) => {
+      expect(
+        messages.settings?.spotifyMirrorImportHint,
+        `${code}.settings.spotifyMirrorImportHint`
+      ).toBe(importHints[code])
+    }
+  )
+})

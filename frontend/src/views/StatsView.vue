@@ -121,7 +121,7 @@
             v-for="row in allSourceRows"
             :key="row.source"
             class="h-full border-r-2 border-line last:border-r-0"
-            :class="row.source === 'spotify' ? 'bg-fg' : 'bg-surface-2'"
+            :class="row.source === 'downtify' ? 'bg-fg' : 'bg-surface-2'"
             :style="{ width: `${sourcePercent(row.count, playbackTotal)}%` }"
           />
         </div>
@@ -637,10 +637,13 @@ const topAlbums = computed(() =>
   }))
 )
 const recentRows = computed(() =>
-  (playback.value.recent || []).slice(0, 10).map((row) => ({
-    ...row,
-    parts: trackParts(row),
-  }))
+  (playback.value.recent || [])
+    .filter((row) => row.source !== 'spotify')
+    .slice(0, 10)
+    .map((row) => ({
+      ...row,
+      parts: trackParts(row),
+    }))
 )
 const weeks = computed(() => profile.value.weeks || [])
 const weekMax = computed(() =>
@@ -658,7 +661,7 @@ function sourceLabel(source) {
 }
 
 function sourceRows(bySource) {
-  return ['downtify', 'spotify', 'lastfm'].map((source) => ({
+  return ['downtify', 'lastfm'].map((source) => ({
     source,
     label: sourceLabel(source),
     count: Number(bySource?.[source]) || 0,
