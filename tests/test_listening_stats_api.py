@@ -112,8 +112,9 @@ async def test_bootstrap_links_all_pending_rows_in_batches(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('legacy_empty_key', [False, True])
 async def test_bootstrap_reconciles_legacy_lastfm_linked_row(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, legacy_empty_key
 ):
     db = tmp_path / 'activity.db'
     store = ListeningStore(db)
@@ -149,7 +150,7 @@ async def test_bootstrap_reconciles_legacy_lastfm_linked_row(
         conn.execute(
             'INSERT INTO listening_event_sources (event_id, source, source_key) '
             'VALUES (?, ?, ?)',
-            (event_id, 'lastfm', raw_key),
+            (event_id, 'lastfm', '' if legacy_empty_key else raw_key),
         )
         conn.execute(
             'UPDATE lastfm_recent_tracks SET listening_event_id=?', (event_id,)

@@ -269,13 +269,21 @@ class ListeningStore:
                 'FROM listening_events e '
                 'JOIN listening_event_sources s '
                 "ON s.event_id=e.id AND s.source='lastfm' "
-                f'JOIN {lastfm_history.TABLE} l ON l.source_key=s.source_key '
+                f'JOIN {lastfm_history.TABLE} l ON '
+                '(l.source_key=s.source_key OR '
+                "(s.source_key='' AND l.listening_event_id=e.id)) "
                 'WHERE NOT EXISTS ('
                 'SELECT 1 FROM listening_event_sources d '
-                "WHERE d.event_id=e.id AND d.source='downtify')"
+                "WHERE d.event_id=e.id AND d.source='downtify') "
+                'ORDER BY e.id, l.id'
             ).fetchall()
             changed = 0
+            seen: set[int] = set()
             for row in rows:
+                event_id = int(row['id'])
+                if event_id in seen:
+                    continue
+                seen.add(event_id)
                 values = (
                     str(row['lastfm_key']),
                     str(row['lastfm_at']),
@@ -299,7 +307,7 @@ class ListeningStore:
                     'UPDATE listening_events SET source=?, source_key=?, '
                     'played_at=?, title=?, artist=?, album=?, duration_ms=0, '
                     "context='', context_type='' WHERE id=?",
-                    ('lastfm', *values, int(row['id'])),
+                    ('lastfm', *values, event_id),
                 )
                 changed += max(0, int(cursor.rowcount))
             return changed

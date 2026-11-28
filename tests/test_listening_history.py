@@ -864,7 +864,7 @@ def test_lastfm_promotes_spotify_and_downtify_still_wins(tmp_path):
     assert store.stats(user_id=1)['total'] == 1
 
 
-def _link_legacy_lastfm_row(db, event_id):
+def _link_legacy_lastfm_row(db, event_id, *, legacy_empty_key=False):
     """Attach a Last.fm raw observation to an existing canonical event."""
 
     lastfm_history.save_recent_tracks(
@@ -887,7 +887,7 @@ def _link_legacy_lastfm_row(db, event_id):
         conn.execute(
             'INSERT INTO listening_event_sources (event_id, source, source_key) '
             'VALUES (?, ?, ?)',
-            (event_id, 'lastfm', raw),
+            (event_id, 'lastfm', '' if legacy_empty_key else raw),
         )
         conn.execute(
             'UPDATE lastfm_recent_tracks SET listening_event_id=?', (event_id,)
@@ -895,7 +895,10 @@ def _link_legacy_lastfm_row(db, event_id):
     return raw
 
 
-def test_reconcile_lastfm_sources_upgrades_legacy_rows_idempotently(tmp_path):
+@pytest.mark.parametrize('legacy_empty_key', [False, True])
+def test_reconcile_lastfm_sources_upgrades_legacy_rows_idempotently(
+    tmp_path, legacy_empty_key
+):
     db = tmp_path / 'activity.db'
     store = ListeningStore(db)
     event_id, _ = store.link_or_create(
@@ -910,7 +913,9 @@ def test_reconcile_lastfm_sources_upgrades_legacy_rows_idempotently(tmp_path):
         context='spotify:playlist:abc',
         context_type='playlist',
     )
-    raw_key = _link_legacy_lastfm_row(db, event_id)
+    raw_key = _link_legacy_lastfm_row(
+        db, event_id, legacy_empty_key=legacy_empty_key
+    )
     with sqlite3.connect(db) as conn:
         before_event = conn.execute(
             'SELECT id, identity_key, match_key FROM listening_events WHERE id=?',
@@ -969,7 +974,10 @@ def test_reconcile_lastfm_sources_upgrades_legacy_rows_idempotently(tmp_path):
     assert after_raw == before_raw
 
 
-def test_reconcile_lastfm_sources_keeps_downtify_links(tmp_path):
+@pytest.mark.parametrize('legacy_empty_key', [False, True])
+def test_reconcile_lastfm_sources_keeps_downtify_links(
+    tmp_path, legacy_empty_key
+):
     db = tmp_path / 'activity.db'
     store = ListeningStore(db)
     event_id, _ = store.link_or_create(
@@ -984,7 +992,7 @@ def test_reconcile_lastfm_sources_keeps_downtify_links(tmp_path):
         context='Downtify Playlist',
         context_type='playlist',
     )
-    _link_legacy_lastfm_row(db, event_id)
+    _link_legacy_lastfm_row(db, event_id, legacy_empty_key=legacy_empty_key)
 
     assert store.reconcile_lastfm_sources() == 0
     with sqlite3.connect(db) as conn:
