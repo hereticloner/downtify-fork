@@ -68,8 +68,12 @@ def test_effective_interval_relaxes_at_the_threshold():
     assert (
         effective_interval_minutes(60, 3) == 60 * QUIET_PASS_RELAX_MULTIPLIER
     )
-    assert effective_interval_minutes(1440, 3) == 1440 * 7
-    assert effective_interval_minutes(60, 9) == 60 * 7
+    assert (
+        effective_interval_minutes(60, 9) == 60 * QUIET_PASS_RELAX_MULTIPLIER
+    )
+    for minutes in (1440, 10080, 20160, 43200):
+        assert effective_interval_minutes(minutes, 3) == minutes
+        assert effective_interval_minutes(minutes, 9) == minutes
 
 
 def test_effective_interval_resets_on_activity():
@@ -114,6 +118,14 @@ def test_next_due_minutes_follows_the_relaxed_interval(db):
     (listed,) = asyncio.run(api.list_monitor_playlists())
     # Due 7 hours after the last check, six of which have passed.
     assert listed['next_due_minutes'] == 60
+
+
+def test_next_due_minutes_daily_stays_strict_after_many_quiet_passes(db):
+    watch = _watch(db, interval_minutes=1440)
+    checked = datetime.now(timezone.utc) - timedelta(hours=25)
+    db.update_playlist(watch.id, last_checked=_iso(checked), quiet_passes=5)
+    (listed,) = asyncio.run(api.list_monitor_playlists())
+    assert listed['next_due_minutes'] == 0
 
 
 def test_next_due_minutes_ignores_a_plain_quiet_pass(db):

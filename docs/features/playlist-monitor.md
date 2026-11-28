@@ -177,17 +177,17 @@ By default, a playlist checked every day (or week / 2 weeks / month) syncs at wh
 
 - Only affects intervals of a full day or more — shorter intervals (15 min – 12 h) are unaffected, since anchoring them to a single daily time would break their cadence.
 - The very first check after adding a playlist always runs immediately, regardless of this setting.
-- A playlist that keeps coming back empty is checked less and less often — see [Quiet passes](#quiet-passes-relaxing-a-finished-watch) below.
+- A day-or-longer playlist always keeps its configured interval. Watches checked every 15 minutes through 12 hours can relax after repeated quiet passes — see [Quiet passes](#quiet-passes-relaxing-a-finished-watch) below.
 
 ## Quiet passes (relaxing a finished watch)
 
-A playlist that never changes shouldn't be swept at its full interval forever. So a check that finds **nothing new** is marked *quiet*, and once a watch has had **three quiet passes in a row** the **next** check is scheduled at **7× the configured interval** instead of the interval itself — an hourly watch becomes roughly a 7-hour watch, a daily one roughly weekly.
+A playlist that never changes shouldn't be swept at its full interval forever. For watches checked **more often than daily**, a check that finds **nothing new** is marked *quiet*, and once a watch has had **three quiet passes in a row** the **next** check is scheduled at **7× the configured interval** instead of the interval itself — an hourly watch becomes roughly a 7-hour watch, a 6-hour watch roughly a 42-hour watch.
 
-One or two empty passes relax nothing: a watch that goes quiet for a sweep or two (a playlist that only changes every few days, a sweep that hit a bad day) is still checked at the interval you asked for. Only a watch that has been empty that many passes running is treated as finished.
+One or two empty passes relax nothing: a watch that goes quiet for a sweep or two (a playlist that only changes every few days, a sweep that hit a bad day) is still checked at the interval you asked for. Only a sub-day watch that has been empty that many passes running is treated as finished.
 
 It snaps back on its own: the moment a check finds something to do — a new track, or a track that is already in your library and gets linked to the playlist — the quiet count is cleared, and the following check runs at the configured interval again. Each watch keeps its own count, so a busy playlist never relaxes because a different one is idle.
 
-Only **playlist** watches use quiet passes. Artist watches keep their configured interval. The **next check** badge on each row (see [Managing monitored playlists](#managing-monitored-playlists)) already counts from the relaxed due time, so you can see what a watch is really waiting for.
+Only **playlist** watches with intervals shorter than one day use quiet-pass relaxation. Artist watches and daily/weekly/two-week/monthly playlist watches always keep their configured interval. The **next check** badge on each row (see [Managing monitored playlists](#managing-monitored-playlists)) counts from the same effective interval the monitor uses.
 
 ## Per-track metadata enrichment
 

@@ -134,12 +134,17 @@ def effective_interval_minutes(
     consecutive passes finding nothing new (see
     :func:`next_quiet_passes`); from there on it is
     :data:`QUIET_PASS_RELAX_MULTIPLIER` times longer. Quiet passes
-    below the threshold are counted but relax nothing.
+    below the threshold are counted but relax nothing. Day-or-longer
+    intervals always stay strict so the configured schedule remains
+    truthful.
     """
 
+    interval = int(interval_minutes)
+    if interval >= MINUTES_PER_DAY:
+        return interval
     if quiet_passes and quiet_passes >= QUIET_PASS_RELAX_THRESHOLD:
-        return int(interval_minutes) * QUIET_PASS_RELAX_MULTIPLIER
-    return int(interval_minutes)
+        return interval * QUIET_PASS_RELAX_MULTIPLIER
+    return interval
 
 
 def next_quiet_passes(playlist: Any, had_activity: bool) -> int:
