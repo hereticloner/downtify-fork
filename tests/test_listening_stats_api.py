@@ -108,7 +108,11 @@ async def test_bootstrap_links_all_pending_rows_in_batches(
         batch_size=100,
     )
     assert linked == 250
-    assert store.stats(user_id=1)['total'] == 251
+    # The Spotify-only rows stay stored, but Stats counts only the local play.
+    assert spotify_history.count_plays(db) == 250
+    stats = store.stats(user_id=1)
+    assert stats['total'] == 1
+    assert stats['profile']['by_source']['spotify'] == 0
 
 
 @pytest.mark.asyncio
